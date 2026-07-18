@@ -23,3 +23,5 @@ Schedule::command('instagram:sync-feed')
 Schedule::command('rss:sync-external')
     ->hourly()
     ->when(fn (): bool => (bool) config('services.external_rss.enabled'));
+
+Schedule::command('monitoring:mark-offline')->everyMinute();

@@ -253,6 +253,13 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'webofficial.admin'])->group
     Route::delete('/kritik-saran/{feedback}', [WebOfficialFeedbackAdminController::class, 'destroy']);
 });
 
+// RS Agent monitoring (machine clients — enrollment key / device API key)
+Route::prefix('agent')->group(function () {
+    Route::post('/register', \App\Http\Controllers\Api\Agent\RegisterController::class);
+    Route::post('/heartbeat', \App\Http\Controllers\Api\Agent\HeartbeatController::class)
+        ->middleware('auth.agent');
+});
+
 // Telegram bot webhook (tanpa auth — dipanggil oleh Telegram)
 Route::post('/telegram/webhook', TelegramWebhookController::class)->name('api.telegram.webhook');
 

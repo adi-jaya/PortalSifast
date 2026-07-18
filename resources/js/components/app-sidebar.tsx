@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import {
+    Activity,
     BarChart3,
     Boxes,
     Building2,
@@ -76,6 +77,11 @@ const mainNavItems: NavItem[] = [
         title: 'Aset',
         href: '/aset',
         icon: Package,
+    },
+    {
+        title: 'Monitoring',
+        href: '/monitoring',
+        icon: Activity,
     },
     {
         title: 'Inventaris SIMRS',

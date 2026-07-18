@@ -33,6 +33,7 @@ use App\Http\Controllers\InventarisKategoriController;
 use App\Http\Controllers\InventarisMerkController;
 use App\Http\Controllers\InventarisProdusenController;
 use App\Http\Controllers\InventarisRuangController;
+use App\Http\Controllers\MonitoringDeviceController;
 use App\Http\Controllers\MutuCategoryController;
 use App\Http\Controllers\MutuIndicatorController;
 use App\Http\Controllers\MutuRealisationController;
@@ -219,6 +220,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('aset/{aset}/label-print', [AsetController::class, 'labelPrint'])->name('aset.label-print');
     Route::get('aset/{aset}/foto-sumber', [AsetFotoController::class, 'showSumber'])->name('aset.foto-sumber');
     Route::resource('aset', AsetController::class)->parameters(['aset' => 'aset']);
+
+    Route::get('monitoring', [MonitoringDeviceController::class, 'index'])->name('monitoring.index');
+    Route::get('monitoring/{device}', [MonitoringDeviceController::class, 'show'])->name('monitoring.show');
 
     // Rencana / Project (tracking per project)
     Route::resource('projects', ProjectController::class);

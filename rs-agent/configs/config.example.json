@@ -1,0 +1,8 @@
+{
+  "server": "https://portalsifast.example.com",
+  "enrollment_key": "change-me-agent-enrollment",
+  "api_key": "",
+  "interval": 30,
+  "log_level": "info",
+  "uuid": ""
+}
