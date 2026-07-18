@@ -1,0 +1,4 @@
+{
+  "summary": "Sidebar Inventaris dipecah jadi Inventaris Portal (bisa diubah) + Referensi SIMRS (hanya lihat). Ditambah menu & halaman master Katalog Non-Alkes di /aset/master/non-alkes. 5 test terkait lulus.",
+  "current_status": "Navigasi inventaris sudah dirapikan; master non-alkes punya menu. User perlu npm run build/dev agar UI sidebar & halaman baru terlihat, lalu import CSV katalog."
+}

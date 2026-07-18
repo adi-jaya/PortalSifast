@@ -29,6 +29,7 @@ class StoreAsetRequest extends FormRequest
             'aset_merk_id' => ['nullable', 'integer', 'exists:aset_merk,id'],
             'aset_produsen_id' => ['nullable', 'integer', 'exists:aset_produsen,id'],
             'aset_aspak_alat_id' => ['nullable', 'integer', 'exists:aset_aspak_alat,id'],
+            'aset_non_alkes_id' => ['nullable', 'integer', 'exists:aset_non_alkes,id'],
             'tahun_registrasi' => ['required', 'integer', 'min:1900', 'max:2100'],
             'tahun_produksi' => ['nullable', 'integer', 'min:1900', 'max:2100'],
             'tahun_mulai_operasi' => ['nullable', 'integer', 'min:1900', 'max:2100'],
@@ -54,7 +55,7 @@ class StoreAsetRequest extends FormRequest
             'daya_watt' => ['nullable', 'integer', 'min:0'],
             'level_teknologi' => ['nullable', Rule::in(['low', 'medium', 'high'])],
             'nilai_residu' => ['nullable', 'numeric', 'min:0'],
-            'nama_barang' => ['required_without:aset_barang_id', 'nullable', 'string', 'max:120'],
+            'nama_barang' => ['required_without_all:aset_barang_id,aset_non_alkes_id', 'nullable', 'string', 'max:120'],
             'kode_barang' => ['nullable', 'string', 'max:20'],
             'foto' => ['nullable', 'image', 'max:5120'],
         ];
@@ -63,6 +64,17 @@ class StoreAsetRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
+            $nonAlkesId = $this->input('aset_non_alkes_id');
+            if (filled($nonAlkesId)) {
+                $leaf = \App\Models\AsetNonAlkes::query()
+                    ->leaf()
+                    ->whereKey($nonAlkesId)
+                    ->exists();
+                if (! $leaf) {
+                    $validator->errors()->add('aset_non_alkes_id', 'Hanya item katalog paling bawah (leaf) yang boleh dipilih.');
+                }
+            }
+
             $list = $this->input('no_seri_list', []);
             if (! is_array($list)) {
                 return;

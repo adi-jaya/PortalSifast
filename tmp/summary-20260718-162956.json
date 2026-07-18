@@ -1,0 +1,4 @@
+{
+  "summary": "User konfirmasi fokususutan cukup dulu; diminta ringkasan apa yang masih belum. Disusun prioritas gap sisa: field Trilux (pelayanan/prioritas/kelas risiko), upload dokumen, master portal CRUD, fitur operasional lanjutan.",
+  "current_status": "Inventaris inti (aset, pinjam, mutasi, QR, katalog non-alkes, show ala Trilux, penyusutan+setting) sudah ada. Gap utama tersisa: dokumen pendukung, field lokasi/pelayanan/prioritas/risiko, dan master portal penuh."
+}

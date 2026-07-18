@@ -7,13 +7,38 @@ use App\Models\AsetDistributor;
 use App\Models\AsetJenis;
 use App\Models\AsetKategori;
 use App\Models\AsetMerk;
+use App\Models\AsetNonAlkes;
 use App\Models\AsetProdusen;
 use App\Services\Inventaris\GeneratorKodeMasterAset;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class AsetMasterController extends Controller
 {
+    public function searchNonAlkes(Request $request): JsonResponse
+    {
+        $q = trim((string) $request->query('q', ''));
+
+        $items = AsetNonAlkes::query()
+            ->leaf()
+            ->search($q)
+            ->orderBy('nama_alat')
+            ->limit(40)
+            ->get(['id', 'id_alat', 'nama_alat', 'kode', 'alat_code', 'level', 'sinonim']);
+
+        return response()->json(
+            $items->map(fn (AsetNonAlkes $item) => [
+                'id' => $item->id,
+                'id_alat' => $item->id_alat,
+                'nama_alat' => $item->nama_alat,
+                'kode' => $item->kode ?: $item->alat_code,
+                'level' => $item->level,
+                'label' => trim(($item->nama_alat).' ('.($item->kode ?: $item->alat_code ?: $item->id_alat).')'),
+            ])->values(),
+        );
+    }
+
     public function store(QuickStoreAsetMasterRequest $request, string $tipe, GeneratorKodeMasterAset $generator): JsonResponse
     {
         $nama = trim($request->validated('nama'));

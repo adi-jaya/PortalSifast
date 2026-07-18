@@ -1,0 +1,4 @@
+{
+  "summary": "User memilih opsi B: dokumen bisa dilampirkan ke unit aset ATAU katalog barang. Disajikan desain ringkas (tabel aset_dokumen, tipe, UI show, scope) untuk approval sebelum spec/implementasi.",
+  "current_status": "Brainstorming dokumen pendukung: opsi B dikunci; menunggu approval desain lalu spec + implementasi."
+}

@@ -1,0 +1,4 @@
+{
+  "summary": "Dokumen pendukung aset diimplementasikan (opsi B): tabel aset_dokumen dengan lingkup unit/barang, upload-unduh-hapus, UI di show aset, spec di docs. 4 feature test dokumen + suite Aset dijalankan.",
+  "current_status": "Upload dokumen pendukung siap: unit-only atau katalog barang (shared). Spec approved tersimpan. Perlu npm run build/dev untuk UI."
+}

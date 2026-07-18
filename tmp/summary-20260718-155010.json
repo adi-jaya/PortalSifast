@@ -1,0 +1,4 @@
+{
+  "summary": "User memberi referensi detail alat dari Trilux (identitas, lokasi, pendanaan, depresiasi, teknis, QR, dokumen). Sedang memetakan ke model/UI aset portal untuk gap analysis.",
+  "current_status": "Analisis gap Trilux vs PortalSifast aset show; belum implementasi sampai user pilih scope."
+}

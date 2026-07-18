@@ -57,6 +57,7 @@ type NavGroup = {
     id: string;
     label: string;
     icon: LucideIcon;
+    hint?: string;
     items: NavItem[];
 };
 
@@ -262,22 +263,25 @@ const moduleGroups: NavGroup[] = [
     },
     {
         id: 'inventaris',
-        label: 'Inventaris',
+        label: 'Inventaris Portal',
         icon: Boxes,
+        hint: 'Bisa diubah',
         items: [
             {
                 id: 'aset-list',
-                label: 'Aset (Portal)',
+                label: 'Aset',
                 href: '/aset',
                 icon: Package,
                 isActive: (path) =>
                     (path === '/aset' || path.startsWith('/aset/')) &&
                     !path.startsWith('/aset/sinkron') &&
-                    !path.startsWith('/aset/audit'),
+                    !path.startsWith('/aset/audit') &&
+                    !path.startsWith('/aset/master') &&
+                    !path.startsWith('/aset/pengaturan-penyusutan'),
             },
             {
                 id: 'aset-peminjaman',
-                label: 'Peminjaman Aset',
+                label: 'Peminjaman',
                 href: '/aset-peminjaman',
                 icon: HandCoins,
                 isActive: (path) => path.startsWith('/aset-peminjaman'),
@@ -297,57 +301,79 @@ const moduleGroups: NavGroup[] = [
                 isActive: (path) => path.startsWith('/aset/audit'),
             },
             {
+                id: 'aset-non-alkes',
+                label: 'Katalog Non-Alkes',
+                href: '/aset/master/non-alkes',
+                icon: Tags,
+                isActive: (path) => path.startsWith('/aset/master/non-alkes'),
+            },
+            {
+                id: 'aset-penyusutan',
+                label: 'Pengaturan Penyusutan',
+                href: '/aset/pengaturan-penyusutan',
+                icon: Wallet,
+                isActive: (path) => path.startsWith('/aset/pengaturan-penyusutan'),
+            },
+            {
                 id: 'aset-sinkron',
                 label: 'Sinkron SIMRS',
                 href: '/aset/sinkron',
                 icon: RefreshCw,
                 isActive: (path) => path.startsWith('/aset/sinkron'),
             },
+        ],
+    },
+    {
+        id: 'inventaris-simrs',
+        label: 'Referensi SIMRS',
+        icon: Package,
+        hint: 'Hanya lihat',
+        items: [
             {
                 id: 'inventaris-list',
-                label: 'Katalog SIMRS (lama)',
+                label: 'Katalog Inventaris',
                 href: '/inventaris',
                 icon: Package,
                 isActive: (path) => path === '/inventaris' || /^\/inventaris\/[^/]+/.test(path),
             },
             {
                 id: 'inventaris-barang',
-                label: 'Inventaris Barang',
+                label: 'Barang',
                 href: '/inventaris-barang',
                 icon: Boxes,
                 isActive: (path) => path === '/inventaris-barang' || /^\/inventaris-barang\/[^/]+/.test(path),
             },
             {
                 id: 'inventaris-ruang',
-                label: 'Master Ruang',
+                label: 'Ruang',
                 href: '/inventaris-ruang',
                 icon: MapPin,
                 isActive: (path) => path.startsWith('/inventaris-ruang'),
             },
             {
                 id: 'inventaris-kategori',
-                label: 'Master Kategori',
+                label: 'Kategori',
                 href: '/inventaris-kategori',
                 icon: Tags,
                 isActive: (path) => path.startsWith('/inventaris-kategori'),
             },
             {
                 id: 'inventaris-jenis',
-                label: 'Master Jenis',
+                label: 'Jenis',
                 href: '/inventaris-jenis',
                 icon: Shapes,
                 isActive: (path) => path.startsWith('/inventaris-jenis'),
             },
             {
                 id: 'inventaris-merk',
-                label: 'Master Merk',
+                label: 'Merk',
                 href: '/inventaris-merk',
                 icon: BadgeCheck,
                 isActive: (path) => path.startsWith('/inventaris-merk'),
             },
             {
                 id: 'inventaris-produsen',
-                label: 'Master Produsen',
+                label: 'Produsen',
                 href: '/inventaris-produsen',
                 icon: Building2,
                 isActive: (path) => path.startsWith('/inventaris-produsen'),
@@ -465,7 +491,14 @@ export function TemplateSidebar() {
                                     )}
                                 >
                                     <group.icon className="h-4 w-4 shrink-0" />
-                                    <span className="flex-1">{group.label}</span>
+                                    <span className="min-w-0 flex-1">
+                                        <span className="block truncate">{group.label}</span>
+                                        {group.hint ? (
+                                            <span className="block truncate text-[10px] font-normal text-sidebar-muted">
+                                                {group.hint}
+                                            </span>
+                                        ) : null}
+                                    </span>
                                     <ChevronDown
                                         className={cn(
                                             'h-4 w-4 shrink-0 transition-transform',

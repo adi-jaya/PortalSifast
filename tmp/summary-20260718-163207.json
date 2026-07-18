@@ -1,0 +1,4 @@
+{
+  "summary": "User setuju upload dokumen dan klarifikasi bahwa buku panduan bisa dipakai banyak unit. Sedang brainstorming: foto tetap 1 unit; dokumen pendukung cocok di level aset_barang atau M2M. Menunggu pilihan user soal lingkup lampiran.",
+  "current_status": "Brainstorming dokumen pendukung inventaris; belum implementasi. Pola aset_foto saat ini 1:N ke unit aset."
+}

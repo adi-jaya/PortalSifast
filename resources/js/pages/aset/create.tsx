@@ -12,6 +12,7 @@ import {
     Settings2,
 } from 'lucide-react';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { NonAlkesLeafSearchSelect, type NonAlkesOption } from '@/components/aset/non-alkes-leaf-search-select';
 import { CreatableSearchSelect } from '@/components/creatable-search-select';
 import InputError from '@/components/input-error';
 import { SearchSelect, type SearchSelectOption } from '@/components/search-select';
@@ -116,6 +117,7 @@ export default function AsetCreate({
     const [distributorList, setDistributorList] = useState(distributor);
     const [creatingMaster, setCreatingMaster] = useState<string | null>(null);
     const [masterError, setMasterError] = useState<string | null>(null);
+    const [selectedNonAlkes, setSelectedNonAlkes] = useState<NonAlkesOption | null>(null);
 
     const { data, setData, post, processing, errors, transform } = useForm({
         aset_barang_id: '',
@@ -125,6 +127,7 @@ export default function AsetCreate({
         aset_merk_id: '',
         aset_produsen_id: '',
         aset_aspak_alat_id: '',
+        aset_non_alkes_id: '',
         aset_ruang_id: '',
         aset_distributor_id: '',
         tahun_registrasi: String(new Date().getFullYear()),
@@ -245,8 +248,22 @@ export default function AsetCreate({
 
     const switchMode = (next: 'existing' | 'new') => {
         setMode(next);
-        if (next === 'new') setData('aset_barang_id', '');
-        else setData('nama_barang', '');
+        if (next === 'new') {
+            setData('aset_barang_id', '');
+        } else {
+            setData((d) => ({ ...d, nama_barang: '', aset_non_alkes_id: '' }));
+            setSelectedNonAlkes(null);
+        }
+    };
+
+    const onNonAlkesSelect = (option: NonAlkesOption | null) => {
+        setSelectedNonAlkes(option);
+        setData((d) => ({
+            ...d,
+            aset_non_alkes_id: option ? String(option.id) : '',
+            nama_barang: option?.nama_alat ?? d.nama_barang,
+            kelas_aset: option ? d.kelas_aset || 'non_medis' : d.kelas_aset,
+        }));
     };
 
     const onBarangSelect = (id: string) => {
@@ -263,7 +280,10 @@ export default function AsetCreate({
         }));
     };
 
-    const canProceedStep1 = mode === 'existing' ? Boolean(data.aset_barang_id) : Boolean(data.nama_barang.trim());
+    const canProceedStep1 =
+        mode === 'existing'
+            ? Boolean(data.aset_barang_id)
+            : Boolean(data.aset_non_alkes_id || data.nama_barang.trim());
     const canProceedStep2 = Boolean(data.aset_ruang_id);
     const canSubmit = canProceedStep1 && canProceedStep2 && !processing;
 
@@ -284,6 +304,7 @@ export default function AsetCreate({
             aset_merk_id: d.aset_merk_id ? Number(d.aset_merk_id) : null,
             aset_produsen_id: d.aset_produsen_id ? Number(d.aset_produsen_id) : null,
             aset_aspak_alat_id: d.aset_aspak_alat_id ? Number(d.aset_aspak_alat_id) : null,
+            aset_non_alkes_id: d.aset_non_alkes_id ? Number(d.aset_non_alkes_id) : null,
             tahun_registrasi: Number(d.tahun_registrasi),
             tahun_produksi: d.tahun_produksi ? Number(d.tahun_produksi) : null,
             tahun_mulai_operasi: d.tahun_mulai_operasi ? Number(d.tahun_mulai_operasi) : null,
@@ -436,6 +457,20 @@ export default function AsetCreate({
                                 ) : (
                                     <div className="space-y-4">
                                         <div className="space-y-2">
+                                            <Label htmlFor="aset_non_alkes_id">Katalog non-alkes</Label>
+                                            <NonAlkesLeafSearchSelect
+                                                inputId="aset_non_alkes_id"
+                                                value={selectedNonAlkes}
+                                                onChange={onNonAlkesSelect}
+                                                hasError={Boolean(errors.aset_non_alkes_id)}
+                                            />
+                                            <InputError message={errors.aset_non_alkes_id} />
+                                            <p className="text-xs text-muted-foreground">
+                                                Pilih item paling bawah (leaf) agar nama seragam. Folder induk tidak bisa dipilih.
+                                            </p>
+                                        </div>
+
+                                        <div className="space-y-2">
                                             <Label htmlFor="nama_barang">
                                                 Nama barang <span className="text-destructive">*</span>
                                             </Label>
@@ -443,7 +478,7 @@ export default function AsetCreate({
                                                 id="nama_barang"
                                                 value={data.nama_barang}
                                                 onChange={(e) => setData('nama_barang', e.target.value)}
-                                                placeholder="Contoh: Laptop Dell Latitude 5420"
+                                                placeholder="Otomatis dari katalog, atau ketik manual"
                                                 className="h-10"
                                             />
                                             <InputError message={errors.nama_barang} />
@@ -763,11 +798,29 @@ export default function AsetCreate({
                                         </Field>
                                         <Field>
                                             <Label htmlFor="umur_ekonomis_bulan">Umur ekonomis (bulan)</Label>
-                                            <Input id="umur_ekonomis_bulan" value={data.umur_ekonomis_bulan} onChange={(e) => setData('umur_ekonomis_bulan', e.target.value)} className="h-10" />
+                                            <Input
+                                                id="umur_ekonomis_bulan"
+                                                value={data.umur_ekonomis_bulan}
+                                                onChange={(e) => setData('umur_ekonomis_bulan', e.target.value)}
+                                                placeholder="Kosong = default pengaturan"
+                                                className="h-10"
+                                            />
+                                            <p className="text-[11px] text-muted-foreground">
+                                                Default global di{' '}
+                                                <Link href="/aset/pengaturan-penyusutan" className="underline">
+                                                    Pengaturan Penyusutan
+                                                </Link>
+                                            </p>
                                         </Field>
                                         <Field>
                                             <Label htmlFor="nilai_residu">Nilai residu (Rp)</Label>
-                                            <Input id="nilai_residu" value={data.nilai_residu} onChange={(e) => setData('nilai_residu', e.target.value)} className="h-10" />
+                                            <Input
+                                                id="nilai_residu"
+                                                value={data.nilai_residu}
+                                                onChange={(e) => setData('nilai_residu', e.target.value)}
+                                                placeholder="Kosong = % default × harga"
+                                                className="h-10"
+                                            />
                                         </Field>
                                     </CollapsibleContent>
                                 </Collapsible>

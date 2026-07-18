@@ -8,13 +8,14 @@ use App\Models\AsetDistributor;
 use App\Models\AsetJenis;
 use App\Models\AsetKategori;
 use App\Models\AsetMerk;
+use App\Models\AsetNonAlkes;
 use App\Models\AsetProdusen;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
 class ImportAsetMasterCommand extends Command
 {
-    protected $signature = 'aset:import-master {file : Path CSV} {--tipe= : kategori|jenis|merk|produsen|distributor|barang|aspak}';
+    protected $signature = 'aset:import-master {file : Path CSV} {--tipe= : kategori|jenis|merk|produsen|distributor|barang|aspak|non_alkes}';
 
     protected $description = 'Import master aset portal dari CSV';
 
@@ -45,7 +46,8 @@ class ImportAsetMasterCommand extends Command
                 'distributor' => $this->importDistributor($rows),
                 'barang' => $this->importBarang($rows),
                 'aspak' => $this->importAspak($rows),
-                default => throw new \InvalidArgumentException('Tipe tidak dikenal. Gunakan: kategori|jenis|merk|produsen|distributor|barang|aspak'),
+                'non_alkes' => $this->importNonAlkes($rows),
+                default => throw new \InvalidArgumentException('Tipe tidak dikenal. Gunakan: kategori|jenis|merk|produsen|distributor|barang|aspak|non_alkes'),
             };
         });
 
@@ -238,6 +240,67 @@ class ImportAsetMasterCommand extends Command
 
             AsetAspakAlat::query()
                 ->where('id_alat_aspak', $row['id_alat_aspak'])
+                ->update(['parent_id' => $parentId]);
+        }
+
+        return $n;
+    }
+
+    /**
+     * CSV kolom (kompatibel dump m_non_alkes):
+     * id_alat,alat_name,alat_code,parent_id,alat_ket,level,sinonim,kode,deleted,alat_path
+     *
+     * @param  array<int, array<string, string>>  $rows
+     */
+    private function importNonAlkes(array $rows): int
+    {
+        $n = 0;
+
+        foreach ($rows as $row) {
+            $idAlat = $row['id_alat'] ?? '';
+            if ($idAlat === '') {
+                continue;
+            }
+
+            $kode = $row['kode'] ?? $row['alat_code'] ?? null;
+            $deleted = in_array($row['deleted'] ?? '0', ['1', 'true', 'yes'], true);
+
+            AsetNonAlkes::query()->updateOrCreate(
+                ['id_alat' => $idAlat],
+                array_filter([
+                    'nama_alat' => $row['alat_name'] ?? $row['nama_alat'] ?? '',
+                    'alat_code' => $row['alat_code'] ?? $kode,
+                    'kode' => $kode,
+                    'level' => filled($row['level'] ?? '') ? (int) $row['level'] : 1,
+                    'alat_path' => $row['alat_path'] ?? null,
+                    'alat_ket' => $row['alat_ket'] ?? null,
+                    'sinonim' => $row['sinonim'] ?? null,
+                    'deleted' => $deleted,
+                ], fn ($v) => $v !== null),
+            );
+            $n++;
+        }
+
+        foreach ($rows as $row) {
+            $idAlat = $row['id_alat'] ?? '';
+            if ($idAlat === '') {
+                continue;
+            }
+
+            $parentKey = $row['parent_id'] ?? '';
+            if ($parentKey === '' || $parentKey === '0') {
+                AsetNonAlkes::query()->where('id_alat', $idAlat)->update(['parent_id' => null]);
+
+                continue;
+            }
+
+            $parentId = AsetNonAlkes::query()->where('id_alat', $parentKey)->value('id');
+            if ($parentId === null) {
+                continue;
+            }
+
+            AsetNonAlkes::query()
+                ->where('id_alat', $idAlat)
                 ->update(['parent_id' => $parentId]);
         }
 

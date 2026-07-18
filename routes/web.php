@@ -5,10 +5,12 @@ use App\Http\Controllers\Api\DashboardAnalyticsController;
 use App\Http\Controllers\Api\DashboardNotificationController;
 use App\Http\Controllers\Api\DashboardTextAnalyticsController;
 use App\Http\Controllers\AsetController;
+use App\Http\Controllers\AsetDokumenController;
 use App\Http\Controllers\AsetFotoController;
 use App\Http\Controllers\AsetMasterController;
 use App\Http\Controllers\AsetMutasiLokasiController;
 use App\Http\Controllers\AsetMutasiLokasiPrintController;
+use App\Http\Controllers\AsetNonAlkesController;
 use App\Http\Controllers\AsetPeminjamanController;
 use App\Http\Controllers\AsetPeminjamanPrintController;
 use App\Http\Controllers\AsetPublicController;
@@ -38,6 +40,7 @@ use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RequesterReportController;
+use App\Http\Controllers\Settings\AsetPenyusutanSettingsController;
 use App\Http\Controllers\SimmutuDashboardController;
 use App\Http\Controllers\SimmutuDepartmentRecapController;
 use App\Http\Controllers\SimmutuUnitKerjaController;
@@ -198,9 +201,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('aset/master/{tipe}', [AsetMasterController::class, 'store'])
         ->whereIn('tipe', ['kategori', 'jenis', 'merk', 'produsen', 'distributor'])
         ->name('aset.master.store');
+    Route::get('aset/master/non-alkes/search', [AsetMasterController::class, 'searchNonAlkes'])
+        ->name('aset.master.non-alkes.search');
+    Route::get('aset/master/non-alkes', [AsetNonAlkesController::class, 'index'])
+        ->name('aset.master.non-alkes.index');
+    Route::get('aset/pengaturan-penyusutan', [AsetPenyusutanSettingsController::class, 'edit'])
+        ->name('aset.pengaturan-penyusutan.edit');
+    Route::put('aset/pengaturan-penyusutan', [AsetPenyusutanSettingsController::class, 'update'])
+        ->name('aset.pengaturan-penyusutan.update');
 
     Route::post('aset/{aset}/foto', [AsetFotoController::class, 'store'])->name('aset.foto.store');
     Route::delete('aset/{aset}/foto/{foto}', [AsetFotoController::class, 'destroy'])->name('aset.foto.destroy');
+    Route::post('aset/{aset}/dokumen', [AsetDokumenController::class, 'store'])->name('aset.dokumen.store');
+    Route::get('aset/{aset}/dokumen/{dokumen}/unduh', [AsetDokumenController::class, 'unduh'])->name('aset.dokumen.unduh');
+    Route::delete('aset/{aset}/dokumen/{dokumen}', [AsetDokumenController::class, 'destroy'])->name('aset.dokumen.destroy');
     Route::post('aset/{aset}/verifikasi', [AsetController::class, 'verifikasi'])->name('aset.verifikasi');
     Route::get('aset/{aset}/label-print', [AsetController::class, 'labelPrint'])->name('aset.label-print');
     Route::get('aset/{aset}/foto-sumber', [AsetFotoController::class, 'showSumber'])->name('aset.foto-sumber');

@@ -22,6 +22,7 @@ class AsetBarang extends Model
         'aset_merk_id',
         'aset_produsen_id',
         'aset_aspak_alat_id',
+        'aset_non_alkes_id',
         'kode_produsen',
         'id_merk',
         'id_kategori',
@@ -81,9 +82,19 @@ class AsetBarang extends Model
         return $this->belongsTo(AsetAspakAlat::class, 'aset_aspak_alat_id');
     }
 
+    public function nonAlkes(): BelongsTo
+    {
+        return $this->belongsTo(AsetNonAlkes::class, 'aset_non_alkes_id');
+    }
+
     public function aset(): HasMany
     {
         return $this->hasMany(Aset::class, 'aset_barang_id');
+    }
+
+    public function dokumen(): HasMany
+    {
+        return $this->hasMany(AsetDokumen::class, 'aset_barang_id');
     }
 
     public static function hitungUlangJumlah(int $barangId): void

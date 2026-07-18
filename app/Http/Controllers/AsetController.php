@@ -8,6 +8,7 @@ use App\Models\Aset;
 use App\Models\AsetAspakAlat;
 use App\Models\AsetBarang;
 use App\Models\AsetDistributor;
+use App\Models\AsetDokumen;
 use App\Models\AsetJenis;
 use App\Models\AsetKategori;
 use App\Models\AsetMerk;
@@ -16,7 +17,9 @@ use App\Models\AsetRuang;
 use App\Models\Ticket;
 use App\Services\Inventaris\BuatAsetBatch;
 use App\Services\Inventaris\GeneratorKodeAset;
+use App\Services\Inventaris\HitungPenyusutanAset;
 use App\Services\Inventaris\PemetaanStatusAset;
+use App\Services\Inventaris\PengaturanPenyusutanAset;
 use App\Services\InventarisQrCodeGenerator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -116,6 +119,7 @@ class AsetController extends Controller
     {
         return Inertia::render('aset/create', [
             ...$this->masterFormOptions(),
+            'penyusutanDefaults' => app(PengaturanPenyusutanAset::class)->all(),
             'barang' => AsetBarang::query()
                 ->with(['merk', 'jenis', 'kategori', 'produsen'])
                 ->orderBy('nama_barang')
@@ -178,7 +182,18 @@ class AsetController extends Controller
 
     public function show(Aset $aset): Response
     {
-        $aset->load(['barang.merk', 'barang.jenis', 'barang.kategori', 'barang.produsen', 'barang.aspak', 'ruang', 'distributor', 'foto', 'riwayat' => fn ($q) => $q->latest('created_at')->limit(20)]);
+        $aset->load([
+            'barang.merk',
+            'barang.jenis',
+            'barang.kategori',
+            'barang.produsen',
+            'barang.aspak',
+            'barang.nonAlkes',
+            'ruang',
+            'distributor',
+            'foto',
+            'riwayat' => fn ($q) => $q->latest('created_at')->limit(20),
+        ]);
 
         $tickets = Ticket::query()
             ->with('status:id,name,color')
@@ -200,6 +215,24 @@ class AsetController extends Controller
             ]);
 
         $fotoPortal = $aset->foto->firstWhere('utama', true) ?? $aset->foto->first();
+
+        $pengaturan = app(PengaturanPenyusutanAset::class);
+        $resolved = $pengaturan->resolveUntukAset(
+            $aset->harga,
+            $aset->barang?->umur_ekonomis_bulan,
+            $aset->barang?->nilai_residu,
+            $aset->barang?->kelas_aset,
+        );
+
+        $penyusutan = (new HitungPenyusutanAset)->hitung(
+            $aset->harga,
+            $aset->tanggal_pengadaan,
+            $resolved['umur_bulan'],
+            $resolved['nilai_residu'],
+        );
+        $penyusutan['memakai_default_umur'] = $resolved['memakai_default_umur'];
+        $penyusutan['memakai_default_residu'] = $resolved['memakai_default_residu'];
+        $penyusutan['pengaturan'] = $pengaturan->all();
 
         return Inertia::render('aset/show', [
             'aset' => [
@@ -236,6 +269,8 @@ class AsetController extends Controller
                     'wajib_kalibrasi' => $aset->barang->wajib_kalibrasi,
                     'umur_ekonomis_bulan' => $aset->barang->umur_ekonomis_bulan,
                     'tahun_produksi' => $aset->barang->tahun_produksi,
+                    'tahun_mulai_operasi' => $aset->barang->tahun_mulai_operasi,
+                    'nilai_residu' => $aset->barang->nilai_residu,
                     'no_akl_akd' => $aset->barang->no_akl_akd,
                     'daya_watt' => $aset->barang->daya_watt,
                     'level_teknologi' => $aset->barang->level_teknologi,
@@ -244,6 +279,8 @@ class AsetController extends Controller
                     'nama_kategori' => $aset->barang->kategori?->nama_kategori,
                     'nama_produsen' => $aset->barang->produsen?->nama_produsen,
                     'nama_aspak' => $aset->barang->aspak?->nama_alat,
+                    'nama_non_alkes' => $aset->barang->nonAlkes?->nama_alat,
+                    'kode_non_alkes' => $aset->barang->nonAlkes?->kode,
                 ] : null,
                 'distributor' => $aset->distributor ? [
                     'id' => $aset->distributor->id,
@@ -280,7 +317,42 @@ class AsetController extends Controller
                     'ruang_tujuan' => $row->ruangTujuan?->nama_ruang,
                 ]),
             'ruangOptions' => AsetRuang::query()->orderBy('nama_ruang')->get(['id', 'kode_ruang', 'nama_ruang']),
+            'penyusutan' => $penyusutan,
+            'dokumen' => $this->dokumenUntukShow($aset),
         ]);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function dokumenUntukShow(Aset $aset): array
+    {
+        $unit = AsetDokumen::query()
+            ->where('lingkup', AsetDokumen::LINGKUP_UNIT)
+            ->where('aset_id', $aset->id)
+            ->latest('id')
+            ->get();
+
+        $barang = collect();
+        if ($aset->aset_barang_id) {
+            $barang = AsetDokumen::query()
+                ->where('lingkup', AsetDokumen::LINGKUP_BARANG)
+                ->where('aset_barang_id', $aset->aset_barang_id)
+                ->latest('id')
+                ->get();
+        }
+
+        return $unit->concat($barang)->map(fn (AsetDokumen $d) => [
+            'id' => $d->id,
+            'judul' => $d->judul,
+            'tipe' => $d->tipe,
+            'tipe_label' => $d->labelTipe(),
+            'lingkup' => $d->lingkup,
+            'nama_asli' => $d->nama_asli,
+            'ukuran' => $d->ukuran,
+            'created_at' => $d->created_at?->toDateTimeString(),
+            'unduh_url' => route('aset.dokumen.unduh', [$aset, $d]),
+        ])->values()->all();
     }
 
     public function edit(Aset $aset): Response
@@ -312,6 +384,7 @@ class AsetController extends Controller
                 'aset_merk_id' => $aset->barang?->aset_merk_id,
                 'aset_produsen_id' => $aset->barang?->aset_produsen_id,
                 'aset_aspak_alat_id' => $aset->barang?->aset_aspak_alat_id,
+                'aset_non_alkes_id' => $aset->barang?->aset_non_alkes_id,
                 'no_akl_akd' => $aset->barang?->no_akl_akd,
                 'daya_watt' => $aset->barang?->daya_watt,
                 'level_teknologi' => $aset->barang?->level_teknologi,
@@ -325,6 +398,7 @@ class AsetController extends Controller
                 ->orderBy('nama_barang')
                 ->limit(500)
                 ->get(['id', 'kode_barang', 'nama_barang', 'kelas_aset', 'aset_merk_id', 'aset_jenis_id', 'aset_kategori_id', 'aset_produsen_id']),
+            'penyusutanDefaults' => app(PengaturanPenyusutanAset::class)->all(),
         ]);
     }
 
@@ -351,21 +425,29 @@ class AsetController extends Controller
         ]);
 
         if ($aset->aset_barang_id) {
+            $resolved = app(PengaturanPenyusutanAset::class)->resolveUntukAset(
+                $v['harga'] ?? $aset->harga,
+                isset($v['umur_ekonomis_bulan']) ? (int) $v['umur_ekonomis_bulan'] : null,
+                $v['nilai_residu'] ?? null,
+                $v['kelas_aset'] ?? null,
+            );
+
             AsetBarang::query()->whereKey($aset->aset_barang_id)->update([
                 'kelas_aset' => $v['kelas_aset'] ?? null,
                 'wajib_kalibrasi' => array_key_exists('wajib_kalibrasi', $v) ? (bool) $v['wajib_kalibrasi'] : false,
-                'umur_ekonomis_bulan' => $v['umur_ekonomis_bulan'] ?? null,
+                'umur_ekonomis_bulan' => $resolved['umur_bulan'],
                 'aset_kategori_id' => $v['aset_kategori_id'] ?? null,
                 'aset_jenis_id' => $v['aset_jenis_id'] ?? null,
                 'aset_merk_id' => $v['aset_merk_id'] ?? null,
                 'aset_produsen_id' => $v['aset_produsen_id'] ?? null,
                 'aset_aspak_alat_id' => $v['aset_aspak_alat_id'] ?? null,
+                'aset_non_alkes_id' => $v['aset_non_alkes_id'] ?? null,
                 'no_akl_akd' => $v['no_akl_akd'] ?? null,
                 'daya_watt' => $v['daya_watt'] ?? null,
                 'level_teknologi' => $v['level_teknologi'] ?? null,
                 'tahun_produksi' => $v['tahun_produksi'] ?? null,
                 'tahun_mulai_operasi' => $v['tahun_mulai_operasi'] ?? null,
-                'nilai_residu' => $v['nilai_residu'] ?? null,
+                'nilai_residu' => $resolved['nilai_residu'],
             ]);
         }
 

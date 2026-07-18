@@ -78,6 +78,11 @@ class Aset extends Model
         return $this->hasMany(AsetFoto::class, 'aset_id');
     }
 
+    public function dokumen(): HasMany
+    {
+        return $this->hasMany(AsetDokumen::class, 'aset_id');
+    }
+
     public function fotoUtama(): HasOne
     {
         return $this->hasOne(AsetFoto::class, 'aset_id')->where('utama', true);

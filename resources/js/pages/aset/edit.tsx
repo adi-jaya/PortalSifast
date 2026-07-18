@@ -78,6 +78,12 @@ type Props = {
     produsen: MasterOpt[];
     distributor: MasterOpt[];
     aspak: MasterOpt[];
+    penyusutanDefaults?: {
+        residu_persen_default: number;
+        umur_bulan_medis: number;
+        umur_bulan_non_medis: number;
+        umur_bulan_default: number;
+    };
 };
 
 function toOptions(items: { id: number; label: string; description?: string }[]): SearchSelectOption[] {
@@ -98,6 +104,7 @@ export default function AsetEdit({
     produsen,
     distributor,
     aspak,
+    penyusutanDefaults,
 }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: dashboard().url },
@@ -398,6 +405,76 @@ export default function AsetEdit({
                         <div className="space-y-2">
                             <Label htmlFor="daya_watt">Daya (Watt)</Label>
                             <Input id="daya_watt" value={data.daya_watt} onChange={(e) => setData('daya_watt', e.target.value)} className="h-10" />
+                        </div>
+                    </div>
+                </section>
+
+                <section className="space-y-4 rounded-xl border border-border/80 bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div>
+                            <h2 className="text-sm font-semibold tracking-tight">Penyusutan (override)</h2>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                Kosongkan untuk memakai default global. Atur default di{' '}
+                                <Link href="/aset/pengaturan-penyusutan" className="text-teal-700 underline dark:text-teal-400">
+                                    Pengaturan Penyusutan
+                                </Link>
+                                .
+                            </p>
+                        </div>
+                    </div>
+                    {penyusutanDefaults && (
+                        <p className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                            Default saat ini: residu {penyusutanDefaults.residu_persen_default}% · umur medis{' '}
+                            {penyusutanDefaults.umur_bulan_medis} bln · non-medis {penyusutanDefaults.umur_bulan_non_medis} bln ·
+                            umum {penyusutanDefaults.umur_bulan_default} bln
+                        </p>
+                    )}
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                            <Label htmlFor="umur_ekonomis_bulan">Umur manfaat (bulan)</Label>
+                            <Input
+                                id="umur_ekonomis_bulan"
+                                value={data.umur_ekonomis_bulan}
+                                onChange={(e) => setData('umur_ekonomis_bulan', e.target.value)}
+                                placeholder="Kosong = pakai default"
+                                className="h-10"
+                            />
+                            <InputError message={errors.umur_ekonomis_bulan} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="nilai_residu">Nilai residu (Rp)</Label>
+                            <Input
+                                id="nilai_residu"
+                                value={data.nilai_residu}
+                                onChange={(e) => setData('nilai_residu', e.target.value)}
+                                placeholder="Kosong = % default × harga"
+                                className="h-10"
+                            />
+                            <InputError message={errors.nilai_residu} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="tahun_produksi">Tahun produksi</Label>
+                            <Input
+                                id="tahun_produksi"
+                                value={data.tahun_produksi}
+                                onChange={(e) => setData('tahun_produksi', e.target.value)}
+                                className="h-10"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Level teknologi</Label>
+                            <Select
+                                value={data.level_teknologi || '__none__'}
+                                onValueChange={(v) => setData('level_teknologi', v === '__none__' ? '' : v)}
+                            >
+                                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="__none__">Belum diisi</SelectItem>
+                                    <SelectItem value="low">Rendah</SelectItem>
+                                    <SelectItem value="medium">Sedang</SelectItem>
+                                    <SelectItem value="high">Tinggi</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
                 </section>

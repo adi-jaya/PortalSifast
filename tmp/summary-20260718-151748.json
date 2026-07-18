@@ -1,0 +1,4 @@
+{
+  "summary": "User konfirmasi hanya leaf yang dipilih sebagai barang, dan menunjukkan skema sumber m_non_alkes (id_alat, parent_id, level, alat_path). Dikonfirmasi feasible: mirror pola aset_aspak_alat, parent=folder, leaf=level 3 dipilih ke aset_barang; CSV nanti disesuaikan user.",
+  "current_status": "Desain katalog non-alkes disepakati secara konsep; implementasi menunggu file CSV / perintah build (tabel + import + select di form aset)."
+}

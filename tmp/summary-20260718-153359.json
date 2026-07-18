@@ -1,0 +1,4 @@
+{
+  "summary": "User minta menu master non-alkes + merapikan sidebar Inventaris (SIMRS read-only vs portal write). Mengikuti brainstorming: eksplorasi sidebar dulu, belum implementasi sampai desain disetujui.",
+  "current_status": "Brainstorming navigasi Inventaris dimulai; katalog non-alkes backend sudah ada tanpa halaman master menu."
+}
