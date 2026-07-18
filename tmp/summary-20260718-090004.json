@@ -1,0 +1,4 @@
+{
+  "summary": "User bertanya halaman mana untuk scan barcode/QR. Dijawab: QR label mengarah ke /q/{kode_aset} (publik, info lapangan); riwayat lengkap (peminjaman/mutasi/tiket) di /aset/{kode_aset} setelah login.",
+  "current_status": "Fitur peminjaman/mutasi jalan. Scan QR publik vs detail portal sudah dijelaskan ke user."
+}

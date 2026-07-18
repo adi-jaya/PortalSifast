@@ -95,7 +95,7 @@ export default function MutuIndicatorsCreate({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Tambah Indikator Mutu" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <Heading title="Tambah Indikator Mutu" description="Definisi numerator, denominator, dan pemetaan unit." />
 
                 {categories.length === 0 ? (

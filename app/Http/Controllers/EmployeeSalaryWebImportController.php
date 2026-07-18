@@ -10,11 +10,13 @@ use App\Models\User;
 use App\Services\EmployeeSalaryImportService;
 use App\Services\FcmNotificationService;
 use App\Support\PayrollCsvMapper;
+use App\Support\PayrollCsvTemplate;
 use App\Support\PayrollSlipMath;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Response as ResponseFacade;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -158,6 +160,16 @@ class EmployeeSalaryWebImportController extends Controller
         $sortDir = $request->string('dir')->toString() === 'asc' ? 'asc' : 'desc';
         $perPage = in_array($request->integer('per_page'), [25, 50, 100], true) ? $request->integer('per_page') : 25;
 
+        if ($period === '') {
+            $latestPeriodStart = EmployeeSalary::query()
+                ->orderByDesc('period_start')
+                ->value('period_start');
+
+            if ($latestPeriodStart !== null) {
+                $period = CarbonImmutable::parse($latestPeriodStart)->format('Y-m');
+            }
+        }
+
         $allowedSorts = ['period_start', 'simrs_nik', 'employee_name', 'unit', 'penerimaan', 'pajak', 'zakat'];
 
         $applyFilters = function ($query) use ($period, $q, $unit) {
@@ -245,7 +257,19 @@ class EmployeeSalaryWebImportController extends Controller
             }
         }
 
-        $salaries = $query->paginate($perPage)->withQueryString();
+        $salaries = $query->paginate($perPage)->withQueryString()->through(
+            fn (EmployeeSalary $salary) => [
+                'id' => $salary->id,
+                'period_start' => $salary->period_start?->toDateString(),
+                'period_label' => $salary->period_start?->translatedFormat('F Y'),
+                'simrs_nik' => $salary->simrs_nik,
+                'employee_name' => $salary->employee_name,
+                'unit' => $salary->unit,
+                'penerimaan' => $salary->penerimaan,
+                'pajak' => $salary->pajak,
+                'zakat' => $salary->zakat,
+            ],
+        );
 
         return Inertia::render('payroll/index', [
             'salaries' => $salaries,
@@ -424,7 +448,37 @@ class EmployeeSalaryWebImportController extends Controller
             abort(403, 'Hanya admin dan staff yang dapat mengimpor gaji.');
         }
 
-        return Inertia::render('payroll/import');
+        return Inertia::render('payroll/import', [
+            'templateUrl' => route('payroll.import.template'),
+        ]);
+    }
+
+    public function importTemplate(): StreamedResponse
+    {
+        $user = request()->user();
+        if (! $user?->canAccessPayroll()) {
+            abort(403, 'Hanya admin dan staff yang dapat mengimpor gaji.');
+        }
+
+        $headers = PayrollCsvTemplate::headers();
+        $rows = PayrollCsvTemplate::exampleRows();
+
+        return ResponseFacade::streamDownload(function () use ($headers, $rows): void {
+            $handle = fopen('php://output', 'w');
+            if ($handle === false) {
+                return;
+            }
+
+            fwrite($handle, "\xEF\xBB\xBF");
+            fputcsv($handle, $headers, PayrollCsvTemplate::DELIMITER);
+            foreach ($rows as $row) {
+                fputcsv($handle, $row, PayrollCsvTemplate::DELIMITER);
+            }
+
+            fclose($handle);
+        }, PayrollCsvTemplate::FILENAME, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
     }
 
     public function importHistory(Request $request): Response
@@ -936,6 +990,39 @@ class EmployeeSalaryWebImportController extends Controller
         return redirect()
             ->route('payroll.index')
             ->with('success', 'Data gaji berhasil dihapus.');
+    }
+
+    public function employeeHistorySearch(Request $request): Response|RedirectResponse
+    {
+        $user = $request->user();
+        if (! $user?->canAccessPayroll()) {
+            abort(403, 'Hanya admin dan staff yang dapat melihat gaji.');
+        }
+
+        $nik = trim((string) $request->query('nik', ''));
+        if ($nik !== '') {
+            return redirect()->route('payroll.employee.show', ['nik' => $nik]);
+        }
+
+        $recentEmployees = EmployeeSalary::query()
+            ->select('simrs_nik', 'employee_name', 'unit')
+            ->whereNotNull('simrs_nik')
+            ->where('simrs_nik', '!=', '')
+            ->orderByDesc('period_start')
+            ->orderByDesc('id')
+            ->get()
+            ->unique('simrs_nik')
+            ->take(20)
+            ->values()
+            ->map(fn (EmployeeSalary $salary) => [
+                'nik' => $salary->simrs_nik,
+                'name' => $salary->employee_name,
+                'unit' => $salary->unit,
+            ]);
+
+        return Inertia::render('payroll/employee-history-search', [
+            'recentEmployees' => $recentEmployees,
+        ]);
     }
 
     public function employeeHistory(Request $request, string $nik): Response

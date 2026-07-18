@@ -40,6 +40,7 @@ type Props = {
     departments: Department[];
     canManagePayrollAccess: boolean;
     canManageMutuAccess: boolean;
+    canManageWebOfficialAccess: boolean;
 };
 
 export default function UsersCreate({
@@ -47,6 +48,7 @@ export default function UsersCreate({
     departments,
     canManagePayrollAccess,
     canManageMutuAccess,
+    canManageWebOfficialAccess,
 }: Props) {
     const { data, setData, post, processing, errors, transform } = useForm({
         simrs_nik: '',
@@ -61,6 +63,7 @@ export default function UsersCreate({
         can_manage_mutu: false,
         can_input_mutu: false,
         can_view_mutu_dashboard: false,
+        can_manage_web_official: false,
     });
 
     transform((raw) => ({
@@ -93,7 +96,7 @@ export default function UsersCreate({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Tambah User" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <Heading
                     title="Tambah User"
                     description="Buat user baru dari data pegawai SIMRS atau manual"
@@ -306,6 +309,28 @@ export default function UsersCreate({
                             <InputError message={errors.can_manage_mutu} />
                             <InputError message={errors.can_input_mutu} />
                             <InputError message={errors.can_view_mutu_dashboard} />
+                        </div>
+                    )}
+
+                    {canManageWebOfficialAccess && (
+                        <div className="grid gap-2 rounded-lg border border-border p-4">
+                            <div className="flex items-center gap-3">
+                                <Checkbox
+                                    id="can_manage_web_official"
+                                    checked={Boolean(data.can_manage_web_official)}
+                                    onCheckedChange={(checked) =>
+                                        setData('can_manage_web_official', checked === true)
+                                    }
+                                />
+                                <Label htmlFor="can_manage_web_official" className="cursor-pointer">
+                                    Izinkan akses Website Official untuk user ini
+                                </Label>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                Role admin otomatis punya akses. Flag ini untuk staff yang ditugaskan mengelola konten
+                                website. Hanya admin yang dapat memberi/mencabut flag ini.
+                            </p>
+                            <InputError message={errors.can_manage_web_official} />
                         </div>
                     )}
 

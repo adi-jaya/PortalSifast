@@ -4,6 +4,16 @@ use App\Http\Controllers\Api\DashboardActivityController;
 use App\Http\Controllers\Api\DashboardAnalyticsController;
 use App\Http\Controllers\Api\DashboardNotificationController;
 use App\Http\Controllers\Api\DashboardTextAnalyticsController;
+use App\Http\Controllers\AsetController;
+use App\Http\Controllers\AsetFotoController;
+use App\Http\Controllers\AsetMasterController;
+use App\Http\Controllers\AsetMutasiLokasiController;
+use App\Http\Controllers\AsetMutasiLokasiPrintController;
+use App\Http\Controllers\AsetPeminjamanController;
+use App\Http\Controllers\AsetPeminjamanPrintController;
+use App\Http\Controllers\AsetPublicController;
+use App\Http\Controllers\AsetSinkronController;
+use App\Http\Controllers\AuditAsetController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\DailyActivityReportController;
 use App\Http\Controllers\DashboardController;
@@ -15,6 +25,12 @@ use App\Http\Controllers\Integrations\SikatInboundSsoController;
 use App\Http\Controllers\Integrations\SikatSsoRedirectController;
 use App\Http\Controllers\InventarisBarangController;
 use App\Http\Controllers\InventarisController;
+use App\Http\Controllers\InventarisGambarController;
+use App\Http\Controllers\InventarisJenisController;
+use App\Http\Controllers\InventarisKategoriController;
+use App\Http\Controllers\InventarisMerkController;
+use App\Http\Controllers\InventarisProdusenController;
+use App\Http\Controllers\InventarisRuangController;
 use App\Http\Controllers\MutuCategoryController;
 use App\Http\Controllers\MutuIndicatorController;
 use App\Http\Controllers\MutuRealisationController;
@@ -26,6 +42,8 @@ use App\Http\Controllers\SimmutuDashboardController;
 use App\Http\Controllers\SimmutuDepartmentRecapController;
 use App\Http\Controllers\SimmutuUnitKerjaController;
 use App\Http\Controllers\SlaReportController;
+use App\Http\Controllers\Tatanaskah\DokumenController;
+use App\Http\Controllers\Tatanaskah\PegawaiSearchController;
 use App\Http\Controllers\TechnicianReportController;
 use App\Http\Controllers\TechnicianReportPrintController;
 use App\Http\Controllers\TicketAttachmentController;
@@ -41,17 +59,24 @@ use App\Http\Controllers\TicketVendorCostController;
 use App\Http\Controllers\UserOnlineController;
 use App\Http\Controllers\UserPresenceController;
 use App\Http\Controllers\UsersController;
+use App\Http\Controllers\WebOfficial\WebOfficialArticleWebController;
+use App\Http\Controllers\WebOfficial\WebOfficialDashboardController;
+use App\Http\Controllers\WebOfficial\WebOfficialExternalRssWebController;
+use App\Http\Controllers\WebOfficial\WebOfficialFeedbackWebController;
+use App\Http\Controllers\WebOfficial\WebOfficialInstagramWebController;
+use App\Http\Controllers\WebOfficial\WebOfficialPartnerWebController;
+use App\Http\Controllers\WebOfficial\WebOfficialPolyclinicWebController;
+use App\Http\Controllers\WebOfficial\WebOfficialPromoWebController;
+use App\Http\Controllers\WebOfficial\WebOfficialRoomWebController;
 use App\Http\Controllers\WorkNoteController;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
-use Laravel\Fortify\Features;
 
-Route::get('/', function () {
-    return Inertia::render('welcome', [
-        'canRegister' => Features::enabled(Features::registration()),
-    ]);
-})->name('home');
+Route::redirect('/login', '/');
+
+// Scan QR aset — publik, tanpa login
+Route::get('q/{aset}', [AsetPublicController::class, 'show'])->name('aset.public.show');
+Route::get('q/{aset}/foto', [AsetPublicController::class, 'foto'])->name('aset.public.foto');
 
 Route::get('dashboard', DashboardController::class)
     ->middleware(['auth', 'verified'])
@@ -103,11 +128,83 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Staff Mobile - Panic Button Acceptance
     Route::get('panic-staff', [EmergencyReportWebController::class, 'staff'])->name('emergency-reports.staff');
 
-    // Inventaris CRUD
-    Route::resource('inventaris', InventarisController::class)->parameters(['inventaris' => 'inventaris:no_inventaris']);
+    // Inventaris SIMRS (read-only) — write dinonaktifkan, gunakan modul Aset
+    Route::get('inventaris/export', [InventarisController::class, 'export'])->name('inventaris.export');
+    Route::get('inventaris/audit', [InventarisController::class, 'audit'])->name('inventaris.audit');
+    Route::get('inventaris/label-print-batch', [InventarisController::class, 'labelPrintBatch'])->name('inventaris.label-print-batch');
+    Route::get('inventaris/{inventaris}/label-print', [InventarisController::class, 'labelPrint'])->name('inventaris.label-print');
+    Route::get('inventaris/{inventaris}/photo', [InventarisGambarController::class, 'show'])->name('inventaris.photo');
+    Route::resource('inventaris', InventarisController::class)
+        ->only(['index', 'show'])
+        ->parameters(['inventaris' => 'inventaris:no_inventaris']);
 
-    // Inventaris Barang CRUD (Master Barang)
-    Route::resource('inventaris-barang', InventarisBarangController::class)->parameters(['inventaris_barang' => 'barang:kode_barang']);
+    // Inventaris Barang (read-only SIMRS)
+    Route::resource('inventaris-barang', InventarisBarangController::class)
+        ->only(['index', 'show'])
+        ->parameters(['inventaris-barang' => 'barang'])
+        ->where(['barang' => '.*']);
+
+    // Master lookup inventaris (read-only SIMRS)
+    Route::resource('inventaris-ruang', InventarisRuangController::class)
+        ->only(['index'])
+        ->parameters(['inventaris-ruang' => 'ruang']);
+    Route::resource('inventaris-kategori', InventarisKategoriController::class)
+        ->only(['index'])
+        ->parameters(['inventaris-kategori' => 'kategori']);
+    Route::resource('inventaris-jenis', InventarisJenisController::class)
+        ->only(['index'])
+        ->parameters(['inventaris-jenis' => 'jenis']);
+    Route::resource('inventaris-merk', InventarisMerkController::class)
+        ->only(['index'])
+        ->parameters(['inventaris-merk' => 'merk']);
+    Route::resource('inventaris-produsen', InventarisProdusenController::class)
+        ->only(['index'])
+        ->parameters(['inventaris-produsen' => 'produsen']);
+
+    // Aset portal (database utama)
+    Route::get('aset/sinkron', [AsetSinkronController::class, 'index'])->name('aset.sinkron.index');
+    Route::post('aset/sinkron/preview', [AsetSinkronController::class, 'preview'])->name('aset.sinkron.preview');
+    Route::post('aset/sinkron/apply', [AsetSinkronController::class, 'apply'])->name('aset.sinkron.apply');
+
+    Route::get('aset/audit', [AuditAsetController::class, 'index'])->name('aset.audit.index');
+    Route::get('aset/audit/create', [AuditAsetController::class, 'create'])->name('aset.audit.create');
+    Route::post('aset/audit', [AuditAsetController::class, 'store'])->name('aset.audit.store');
+    Route::get('aset/audit/{audit}', [AuditAsetController::class, 'show'])->name('aset.audit.show');
+    Route::post('aset/audit/{audit}/scan', [AuditAsetController::class, 'scan'])->name('aset.audit.scan');
+    Route::post('aset/audit/{audit}/selesai', [AuditAsetController::class, 'selesai'])->name('aset.audit.selesai');
+    Route::post('aset/audit/{audit}/setujui', [AuditAsetController::class, 'setujui'])->name('aset.audit.setujui');
+    Route::patch('aset/audit/{audit}/item/{item}', [AuditAsetController::class, 'updateItem'])->name('aset.audit.item.update');
+    Route::post('aset/audit/{audit}/item/{item}/bukti', [AuditAsetController::class, 'storeBukti'])->name('aset.audit.item.bukti');
+
+    Route::get('aset/created', [AsetController::class, 'created'])->name('aset.created');
+
+    Route::get('aset-peminjaman/search-aset', [AsetPeminjamanController::class, 'searchAset'])->name('aset-peminjaman.search-aset');
+    Route::get('aset-peminjaman/search-pegawai', [AsetPeminjamanController::class, 'searchPegawai'])->name('aset-peminjaman.search-pegawai');
+    Route::get('aset-peminjaman/search-user', [AsetPeminjamanController::class, 'searchUser'])->name('aset-peminjaman.search-user');
+    Route::post('aset-peminjaman/{peminjaman}/kembalikan', [AsetPeminjamanController::class, 'kembalikan'])->name('aset-peminjaman.kembalikan');
+    Route::get('aset-peminjaman/{peminjaman}/print', AsetPeminjamanPrintController::class)->name('aset-peminjaman.print');
+    Route::resource('aset-peminjaman', AsetPeminjamanController::class)
+        ->parameters(['aset-peminjaman' => 'peminjaman'])
+        ->only(['index', 'create', 'store', 'show']);
+
+    Route::get('aset-mutasi-lokasi/search-aset', [AsetMutasiLokasiController::class, 'searchAset'])->name('aset-mutasi-lokasi.search-aset');
+    Route::get('aset-mutasi-lokasi/search-pegawai', [AsetMutasiLokasiController::class, 'searchPegawai'])->name('aset-mutasi-lokasi.search-pegawai');
+    Route::get('aset-mutasi-lokasi/search-user', [AsetMutasiLokasiController::class, 'searchUser'])->name('aset-mutasi-lokasi.search-user');
+    Route::get('aset-mutasi-lokasi/{mutasi}/print', AsetMutasiLokasiPrintController::class)->name('aset-mutasi-lokasi.print');
+    Route::resource('aset-mutasi-lokasi', AsetMutasiLokasiController::class)
+        ->parameters(['aset-mutasi-lokasi' => 'mutasi'])
+        ->only(['index', 'create', 'store', 'show']);
+
+    Route::post('aset/master/{tipe}', [AsetMasterController::class, 'store'])
+        ->whereIn('tipe', ['kategori', 'jenis', 'merk', 'produsen', 'distributor'])
+        ->name('aset.master.store');
+
+    Route::post('aset/{aset}/foto', [AsetFotoController::class, 'store'])->name('aset.foto.store');
+    Route::delete('aset/{aset}/foto/{foto}', [AsetFotoController::class, 'destroy'])->name('aset.foto.destroy');
+    Route::post('aset/{aset}/verifikasi', [AsetController::class, 'verifikasi'])->name('aset.verifikasi');
+    Route::get('aset/{aset}/label-print', [AsetController::class, 'labelPrint'])->name('aset.label-print');
+    Route::get('aset/{aset}/foto-sumber', [AsetFotoController::class, 'showSumber'])->name('aset.foto-sumber');
+    Route::resource('aset', AsetController::class)->parameters(['aset' => 'aset']);
 
     // Rencana / Project (tracking per project)
     Route::resource('projects', ProjectController::class);
@@ -222,11 +319,39 @@ Route::middleware(['auth', 'verified'])->group(function () {
         });
     });
 
+    // Website Official RS — kelola konten berita & kamar inap
+    Route::prefix('web-official')->name('web-official.')->middleware('webofficial.admin')->group(function (): void {
+        Route::get('/', WebOfficialDashboardController::class)->name('dashboard');
+        Route::resource('articles', WebOfficialArticleWebController::class)->except(['show']);
+        Route::resource('rooms', WebOfficialRoomWebController::class)->except(['show']);
+        Route::resource('promosi', WebOfficialPromoWebController::class)->except(['show']);
+        Route::resource('poliklinik', WebOfficialPolyclinicWebController::class)->except(['show']);
+        Route::resource('rekanan', WebOfficialPartnerWebController::class)->except(['show']);
+        Route::resource('kritik-saran', WebOfficialFeedbackWebController::class)->only(['index', 'show', 'update', 'destroy']);
+        Route::get('instagram', [WebOfficialInstagramWebController::class, 'index'])->name('instagram.index');
+        Route::post('instagram/sync', [WebOfficialInstagramWebController::class, 'sync'])->name('instagram.sync');
+        Route::get('berita-eksternal', [WebOfficialExternalRssWebController::class, 'index'])->name('berita-eksternal.index');
+        Route::post('berita-eksternal/sync', [WebOfficialExternalRssWebController::class, 'sync'])->name('berita-eksternal.sync');
+    });
+
+    // Tata Naskah — Naskah Dinas Arahan (Fase 1)
+    Route::prefix('tatanaskah')->name('tatanaskah.')->group(function (): void {
+        Route::get('pegawai/search', PegawaiSearchController::class)->name('pegawai.search');
+        Route::get('dokumen', [DokumenController::class, 'index'])->name('dokumen.index');
+        Route::get('dokumen/create', [DokumenController::class, 'create'])->name('dokumen.create');
+        Route::post('dokumen', [DokumenController::class, 'store'])->name('dokumen.store');
+        Route::get('dokumen/{dokumen}', [DokumenController::class, 'show'])->name('dokumen.show');
+        Route::get('dokumen/{dokumen}/file', [DokumenController::class, 'file'])->name('dokumen.file');
+        Route::post('dokumen/{dokumen}/transition', [DokumenController::class, 'transition'])->name('dokumen.transition');
+        Route::delete('dokumen/{dokumen}', [DokumenController::class, 'destroy'])->name('dokumen.destroy');
+    });
+
     // Payroll / Gaji Karyawan
     Route::middleware('payroll.access')->group(function (): void {
         Route::get('payroll', [EmployeeSalaryWebImportController::class, 'index'])->name('payroll.index');
         Route::get('payroll/dashboard', [EmployeeSalaryWebImportController::class, 'dashboard'])->name('payroll.dashboard');
         Route::get('payroll/import', [EmployeeSalaryWebImportController::class, 'create'])->name('payroll.import');
+        Route::get('payroll/import/template', [EmployeeSalaryWebImportController::class, 'importTemplate'])->name('payroll.import.template');
         Route::post('payroll/import', [EmployeeSalaryWebImportController::class, 'store'])->name('payroll.import.store');
         Route::get('payroll/import-history', [EmployeeSalaryWebImportController::class, 'importHistory'])->name('payroll.import-history');
         Route::get('payroll/import/{payrollImport}/warnings', [EmployeeSalaryWebImportController::class, 'importWarnings'])->name('payroll.import-warnings');
@@ -237,7 +362,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('payroll/bulk-delete', [EmployeeSalaryWebImportController::class, 'bulkDestroy'])->name('payroll.bulk-destroy');
         Route::post('payroll/bulk-email', [EmployeeSalaryWebImportController::class, 'sendBulkEmail'])->name('payroll.bulk-email');
         Route::post('payroll/{employeeSalary}/send-email', [EmployeeSalaryWebImportController::class, 'sendEmail'])->name('payroll.send-email');
-        Route::get('payroll/employee/{nik}', [EmployeeSalaryWebImportController::class, 'employeeHistory'])->name('payroll.employee-history');
+        Route::get('payroll/employee-history', [EmployeeSalaryWebImportController::class, 'employeeHistorySearch'])->name('payroll.employee-history');
+        Route::get('payroll/employee/{nik}', [EmployeeSalaryWebImportController::class, 'employeeHistory'])->name('payroll.employee.show');
         Route::get('payroll/{employeeSalary}', [EmployeeSalaryWebImportController::class, 'show'])->name('payroll.show');
         Route::get('payroll/{employeeSalary}/print', [EmployeeSalaryWebImportController::class, 'print'])->name('payroll.print');
         Route::patch('payroll/{employeeSalary}', [EmployeeSalaryWebImportController::class, 'update'])->name('payroll.update');

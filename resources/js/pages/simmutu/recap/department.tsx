@@ -96,7 +96,7 @@ export default function SimmutuDepartmentRecapPage({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Rekap Mutu per Departemen" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <Heading
                         title="Rekap Mutu per Departemen"

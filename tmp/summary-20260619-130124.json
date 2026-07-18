@@ -1,0 +1,4 @@
+{
+  "summary": "User mengonfirmasi SPO dibuat ulang sepenuhnya dari awal di modul Tata Naskah, bukan coexistence dengan SIKAT. Dokumen diperbarui: batas sistem, §1.4 peta modul, keputusan §12 #14, §13 migrasi arsip; SIKAT /spo akan di-retire; menu sidebar diganti ke Portal setelah go-live.",
+  "current_status": "Keputusan SPO final: 100% Portal Tata Naskah. SIKAT tetap untuk surat/memo/undangan/disposisi saja. Poin diskusi tersisa: strategi migrasi data SPO arsip dari SIKAT ke Portal."
+}

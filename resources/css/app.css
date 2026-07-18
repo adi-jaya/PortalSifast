@@ -2,6 +2,9 @@
 
 @import 'tw-animate-css';
 
+/* AOS — Animate On Scroll */
+@import 'aos/dist/aos.css';
+
 /* Leaflet CSS for Emergency Map */
 @import 'leaflet/dist/leaflet.css';
 
@@ -11,13 +14,15 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-    /* Plus Jakarta Sans — clean, professional, TailAdmin-inspired */
-    --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    /* Geist — clean, modern, tech-professional */
+    --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'Geist Mono', ui-monospace, 'Cascadia Code', monospace;
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
 
+    /* ── Semantic color tokens (mapped to CSS vars) ── */
     --color-background: var(--background);
     --color-foreground: var(--foreground);
 
@@ -61,94 +66,143 @@
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-muted: var(--sidebar-muted);
     --color-sidebar-ring: var(--sidebar-ring);
+
+    /* ── Design palette tokens — Tailwind utilities ── */
+    --color-ink: #111827;
+    --color-ink-muted: #6B7280;
+    --color-ink-subtle: #9CA3AF;
+    --color-canvas: #FFFFFF;
+    --color-surface-1: #F9FAFB;
+    --color-surface-2: #F3F4F6;
+    --color-border-strong: #D1D5DB;
+    --color-primary-light: #E6F6F5;
+    --color-primary-hover: #088A7D;
+
+    /* ── Semantic status colors — use as bg-urgent, text-normal, etc. ── */
+    --color-urgent: var(--urgent);
+    --color-urgent-bg: var(--urgent-bg);
+    --color-warning: var(--warning);
+    --color-warning-bg: var(--warning-bg);
+    --color-normal: var(--normal);
+    --color-normal-bg: var(--normal-bg);
+    --color-follow-up: var(--follow-up);
+    --color-follow-up-bg: var(--follow-up-bg);
+    --color-info: var(--info);
+    --color-info-bg: var(--info-bg);
 }
 
-/* ─── LIGHT THEME — TailAdmin Blue ─────────────────────────────────────────── */
+/* ─── LIGHT THEME ───────────────────────────────────────────────────────────── */
 :root {
-    --background: oklch(0.97 0.01 250);
-    --foreground: oklch(0.20 0.03 250);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.20 0.03 250);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.20 0.03 250);
+    /* Backgrounds */
+    --background: #F9FAFB;
+    --foreground: #111827;
+    --card: #FFFFFF;
+    --card-foreground: #111827;
+    --popover: #FFFFFF;
+    --popover-foreground: #111827;
 
-    /* Primary: TailAdmin blue — clean, professional */
-    --primary: oklch(0.50 0.20 250);
-    --primary-foreground: oklch(1 0 0);
+    /* Primary — medical teal */
+    --primary: #0A9E8F;
+    --primary-foreground: #FFFFFF;
 
-    --secondary: oklch(0.94 0.02 250);
-    --secondary-foreground: oklch(0.35 0.06 250);
-    --muted: oklch(0.94 0.02 250);
-    --muted-foreground: oklch(0.50 0.03 250);
-    --accent: oklch(0.94 0.04 250);
-    --accent-foreground: oklch(0.35 0.06 250);
+    --secondary: #F3F4F6;
+    --secondary-foreground: #111827;
+    --muted: #F3F4F6;
+    --muted-foreground: #6B7280;
+    --accent: #E6F6F5;
+    --accent-foreground: #0A9E8F;
 
-    --destructive: oklch(0.52 0.20 25);
-    --destructive-foreground: oklch(1 0 0);
-    --border: oklch(0.90 0.02 250);
-    --input: oklch(0.90 0.02 250);
-    --ring: oklch(0.50 0.20 250);
+    --destructive: #DC2626;
+    --destructive-foreground: #FFFFFF;
+    --border: #E5E7EB;
+    --input: #E5E7EB;
+    --ring: #0A9E8F;
 
-    /* Charts — blue family */
-    --chart-1: oklch(0.50 0.20 250);
-    --chart-2: oklch(0.55 0.14 210);
-    --chart-3: oklch(0.60 0.14 280);
-    --chart-4: oklch(0.58 0.10 170);
-    --chart-5: oklch(0.52 0.14 330);
+    /* Semantic status colors */
+    --urgent: #DC2626;
+    --urgent-bg: #FEF2F2;
+    --warning: #D97706;
+    --warning-bg: #FFFBEB;
+    --normal: #059669;
+    --normal-bg: #ECFDF5;
+    --follow-up: #7C3AED;
+    --follow-up-bg: #F5F3FF;
+    --info: #0284C7;
+    --info-bg: #F0F9FF;
 
-    /* Sidebar — dark navy, professional */
-    --sidebar: oklch(0.18 0.04 250);
-    --sidebar-foreground: oklch(0.93 0.02 250);
-    --sidebar-primary: oklch(0.55 0.18 250);
-    --sidebar-primary-foreground: oklch(1 0 0);
-    --sidebar-accent: oklch(0.26 0.05 250);
-    --sidebar-accent-foreground: oklch(0.93 0.02 250);
-    --sidebar-border: oklch(0.28 0.04 250);
-    --sidebar-muted: oklch(0.58 0.03 250);
-    --sidebar-ring: oklch(0.55 0.18 250);
+    /* Charts */
+    --chart-1: #0A9E8F;
+    --chart-2: #0284C7;
+    --chart-3: #7C3AED;
+    --chart-4: #059669;
+    --chart-5: #D97706;
+
+    /* Sidebar — dark ink, professional */
+    --sidebar: #111827;
+    --sidebar-foreground: #F9FAFB;
+    --sidebar-primary: #0A9E8F;
+    --sidebar-primary-foreground: #FFFFFF;
+    --sidebar-accent: #1F2937;
+    --sidebar-accent-foreground: #E5E7EB;
+    --sidebar-border: rgba(255, 255, 255, 0.08);
+    --sidebar-muted: #9CA3AF;
+    --sidebar-ring: #0A9E8F;
 
     --radius: 0.5rem;
 }
 
-/* ─── DARK THEME ──────────────────────────────────────────────────────────── */
+/* ─── DARK THEME ────────────────────────────────────────────────────────────── */
 .dark {
-    --background: oklch(0.14 0.03 250);
-    --foreground: oklch(0.94 0.02 250);
-    --card: oklch(0.18 0.04 250);
-    --card-foreground: oklch(0.94 0.02 250);
-    --popover: oklch(0.18 0.04 250);
-    --popover-foreground: oklch(0.94 0.02 250);
+    --background: #111827;
+    --foreground: #F9FAFB;
+    --card: #1F2937;
+    --card-foreground: #F9FAFB;
+    --popover: #1F2937;
+    --popover-foreground: #F9FAFB;
 
-    --primary: oklch(0.60 0.18 250);
-    --primary-foreground: oklch(1 0 0);
-    --secondary: oklch(0.28 0.05 250);
-    --secondary-foreground: oklch(0.90 0.02 250);
-    --muted: oklch(0.28 0.04 250);
-    --muted-foreground: oklch(0.65 0.03 250);
-    --accent: oklch(0.32 0.06 250);
-    --accent-foreground: oklch(0.92 0.02 250);
-    --destructive: oklch(0.55 0.20 25);
-    --destructive-foreground: oklch(1 0 0);
+    --primary: #0A9E8F;
+    --primary-foreground: #FFFFFF;
 
-    --border: oklch(0.30 0.04 250);
-    --input: oklch(0.28 0.03 250);
-    --ring: oklch(0.60 0.18 250);
+    --secondary: #374151;
+    --secondary-foreground: #E5E7EB;
+    --muted: #374151;
+    --muted-foreground: #9CA3AF;
+    --accent: #064E49;
+    --accent-foreground: #6EE7DF;
 
-    --chart-1: oklch(0.60 0.18 250);
-    --chart-2: oklch(0.60 0.12 210);
-    --chart-3: oklch(0.65 0.12 280);
-    --chart-4: oklch(0.62 0.10 170);
-    --chart-5: oklch(0.58 0.12 330);
+    --destructive: #EF4444;
+    --destructive-foreground: #FFFFFF;
+    --border: rgba(255, 255, 255, 0.10);
+    --input: rgba(255, 255, 255, 0.08);
+    --ring: #0A9E8F;
 
-    --sidebar: oklch(0.13 0.03 250);
-    --sidebar-foreground: oklch(0.88 0.02 250);
-    --sidebar-primary: oklch(0.60 0.18 250);
-    --sidebar-primary-foreground: oklch(1 0 0);
-    --sidebar-accent: oklch(0.24 0.05 250);
-    --sidebar-accent-foreground: oklch(0.88 0.02 250);
-    --sidebar-border: oklch(0.26 0.04 250);
-    --sidebar-muted: oklch(0.52 0.03 250);
-    --sidebar-ring: oklch(0.60 0.18 250);
+    --urgent: #EF4444;
+    --urgent-bg: #450A0A;
+    --warning: #F59E0B;
+    --warning-bg: #422006;
+    --normal: #10B981;
+    --normal-bg: #022C22;
+    --follow-up: #8B5CF6;
+    --follow-up-bg: #2E1065;
+    --info: #38BDF8;
+    --info-bg: #082F49;
+
+    --chart-1: #0A9E8F;
+    --chart-2: #38BDF8;
+    --chart-3: #8B5CF6;
+    --chart-4: #10B981;
+    --chart-5: #F59E0B;
+
+    /* Sidebar — deeper ink in dark mode */
+    --sidebar: #0D1117;
+    --sidebar-foreground: #F9FAFB;
+    --sidebar-primary: #0A9E8F;
+    --sidebar-primary-foreground: #FFFFFF;
+    --sidebar-accent: #1F2937;
+    --sidebar-accent-foreground: #E5E7EB;
+    --sidebar-border: rgba(255, 255, 255, 0.06);
+    --sidebar-muted: #6B7280;
+    --sidebar-ring: #0A9E8F;
 }
 
 /* ─── BASE ─────────────────────────────────────────────────────────────────── */
@@ -172,13 +226,13 @@
     }
 }
 
-/* ─── CARD — clean TailAdmin style ─────────────────────────────────────────── */
+/* ─── CARD — clean modern style ─────────────────────────────────────────────── */
 .card-refined {
     @apply rounded-xl border border-border bg-card shadow-sm;
     transition: box-shadow 200ms ease, transform 200ms ease;
 }
 .card-refined:hover {
-    box-shadow: 0 4px 16px oklch(0 0 0 / 0.08);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.10);
     transform: translateY(-1px);
 }
 
@@ -186,7 +240,7 @@
 @layer utilities {
     .scrollbar-thin {
         scrollbar-width: thin;
-        scrollbar-color: oklch(0.80 0.03 250) transparent;
+        scrollbar-color: #D1D5DB transparent;
     }
 }
 
@@ -211,10 +265,59 @@
 .animate-stagger > *:nth-child(5) { animation-delay: 200ms; }
 .animate-stagger > *:nth-child(6) { animation-delay: 240ms; }
 
+/* ─── RESPONSIVE TABLE ──────────────────────────────────────────────────────── */
+.table-responsive {
+    @apply w-full overflow-x-auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive table {
+    @apply min-w-full;
+}
+
+/* ─── PAGE CONTAINER — standardizes inner page layout ───────────────────────── */
+.page-container {
+    @apply flex flex-col gap-4 sm:gap-6;
+}
+
+/* ─── STAT CARD ─────────────────────────────────────────────────────────────── */
+.stat-card {
+    @apply rounded-xl border border-border bg-card p-4 shadow-sm;
+}
+
+/* ─── MODULE CARD — for hub/dashboard grids ─────────────────────────────────── */
+.module-card {
+    @apply relative flex flex-col rounded-xl border border-border bg-card p-5 shadow-sm
+           transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-primary/30;
+}
+
+/* ─── USER AVATAR — sidebar & header initials ────────────────────────────────── */
+.avatar-initials {
+    @apply flex shrink-0 items-center justify-center rounded-full bg-primary font-semibold
+           text-primary-foreground uppercase tracking-wide select-none;
+}
+
+/* ─── FORM SECTION — standardizes form page layout ─────────────────────────── */
+.form-section {
+    @apply rounded-xl border border-border bg-card p-4 sm:p-6 shadow-sm;
+}
+
+/* ─── FILTER BAR — responsive filter row ────────────────────────────────────── */
+.filter-bar {
+    @apply flex flex-wrap gap-2 sm:items-center;
+}
+
 /* ─── RESPONSIVE ────────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
     html, body {
         overflow-x: hidden;
+    }
+
+    /* Ensure tables in cards don't overflow the card */
+    .card-refined .table-responsive,
+    .form-section .table-responsive {
+        margin-inline: -1rem;
+        padding-inline: 1rem;
     }
 }
 
@@ -224,7 +327,8 @@
     .animate-scale-in {
         animation: none !important;
     }
-    .card-refined:hover {
+    .card-refined:hover,
+    .module-card:hover {
         transform: none !important;
     }
 }

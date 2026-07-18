@@ -72,7 +72,11 @@ class TicketPolicy
             return true;
         }
 
-        return $ticket->requester_id === $user->id;
+        if ($ticket->requester_id === $user->id) {
+            return true;
+        }
+
+        return $user->isStaff() && $ticket->dep_id === $user->dep_id;
     }
 
     /**
@@ -80,7 +84,11 @@ class TicketPolicy
      */
     public function delete(User $user, Ticket $ticket): bool
     {
-        return $user->isAdmin();
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        return $ticket->requester_id === $user->id;
     }
 
     /**

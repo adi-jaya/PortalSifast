@@ -1,0 +1,4 @@
+{
+  "summary": "User klarifikasi: bukan UI sidebar taxonomy, melainkan pengelompokan aset agar penamaan seragam. Dijelaskan bahwa itu sudah ditangani aset_kategori/jenis/barang; seragamnya lewat katalog aset_barang; opsional berikutnya UI kelola/gabung nama tanpa tree sidebar.",
+  "current_status": "Klarifikasi kebutuhan taxonomy sebagai standarisasi nama; tidak ada implementasi baru. Model master inventaris sudah mendukung; UI kelola master barang masih opsional."
+}

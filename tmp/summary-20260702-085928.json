@@ -1,0 +1,4 @@
+{
+  "summary": "User confirmed they wanted the CSV template download feature. Implemented PayrollCsvTemplate support class with full header row and two example data rows (semicolon delimiter, UTF-8 BOM), added GET /payroll/import/template route and importTemplate controller method, passed templateUrl to payroll/import page, and added Download Template button matching the tickets import UI pattern. Tests pass for page prop and CSV download.",
+  "current_status": "Payroll import page at /payroll/import now has an Unduh template CSV button that downloads template-import-gaji.csv with the canonical payroll column format. Ready to use after frontend build if needed."
+}

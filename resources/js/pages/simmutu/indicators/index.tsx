@@ -58,7 +58,7 @@ export default function MutuIndicatorsIndex({ indicators, categories, filters }:
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Indikator Mutu" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <Heading title="Profil Indikator" description="Master indikator mutu per kategori." />
                     <div className="flex flex-wrap items-end gap-3">

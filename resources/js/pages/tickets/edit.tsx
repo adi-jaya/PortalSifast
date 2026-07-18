@@ -66,9 +66,11 @@ export default function TicketEdit({ ticket, types, categories, priorities, stat
     ];
 
     const inventarisLabel =
-        ticket.inventaris != null
-            ? `${ticket.inventaris.no_inventaris} - ${ticket.inventaris.barang?.nama_barang ?? ticket.inventaris.kode_barang}`
-            : null;
+        ticket.aset != null
+            ? `${ticket.aset.kode_aset} — ${ticket.aset.barang?.nama_barang ?? ticket.aset.kode_aset}`
+            : ticket.inventaris != null
+              ? `${ticket.inventaris.no_inventaris} - ${ticket.inventaris.barang?.nama_barang ?? ticket.inventaris.kode_barang}`
+              : null;
 
     const { data, setData, patch, processing, errors } = useForm({
         title: ticket.title,
@@ -76,6 +78,7 @@ export default function TicketEdit({ ticket, types, categories, priorities, stat
         ticket_priority_id: String(ticket.ticket_priority_id),
         ticket_status_id: String(ticket.ticket_status_id),
         requester_id: ticket.requester_id,
+        asset_id: ticket.asset_id ?? null,
         asset_no_inventaris: ticket.asset_no_inventaris ?? null,
         tag_ids: (ticket.tags ?? []).map((t) => t.id),
         project_id: ticket.project_id ? String(ticket.project_id) : '_none',
@@ -90,6 +93,7 @@ export default function TicketEdit({ ticket, types, categories, priorities, stat
         patch(`/tickets/${ticket.id}`, {
             transform: (d) => ({
                 ...d,
+                asset_id: d.asset_id || null,
                 asset_no_inventaris: d.asset_no_inventaris || null,
                 tag_ids: Array.isArray(d.tag_ids) ? d.tag_ids : [],
                 requester_id: d.requester_id ?? null,
@@ -106,7 +110,7 @@ export default function TicketEdit({ ticket, types, categories, priorities, stat
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit Tiket ${ticket.ticket_number}`} />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <div className="flex items-start gap-3">
                     <Button variant="ghost" size="icon" asChild>
                         <Link href={`/tickets/${ticket.id}`}>
@@ -316,16 +320,23 @@ export default function TicketEdit({ ticket, types, categories, priorities, stat
 
                     {/* Inventaris / Asset */}
                     <div className="grid gap-2">
-                        <Label htmlFor="asset_no_inventaris">Inventaris / Asset (opsional)</Label>
+                        <Label htmlFor="asset_no_inventaris">Aset / Inventaris (opsional)</Label>
                         <InventarisSearchInput
                             value={data.asset_no_inventaris}
-                            onChange={(v) => setData('asset_no_inventaris', v)}
+                            assetId={data.asset_id}
                             initialLabel={inventarisLabel}
+                            onChange={(selection) => {
+                                setData({
+                                    ...data,
+                                    asset_id: selection?.asset_id ?? null,
+                                    asset_no_inventaris: selection?.asset_no_inventaris ?? null,
+                                });
+                            }}
                         />
                         <p className="text-xs text-muted-foreground">
-                            Untuk tiket IPS: pilih barang inventaris jika tiket terkait alat medis/peralatan.
+                            Cari aset portal atau inventaris SIMRS.
                         </p>
-                        <InputError message={errors.asset_no_inventaris} />
+                        <InputError message={errors.asset_id || errors.asset_no_inventaris} />
                     </div>
 
                     {/* Project / Rencana (opsional) */}

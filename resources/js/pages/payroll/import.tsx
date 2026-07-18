@@ -1,5 +1,5 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { AlertTriangle, ArrowLeft, CheckCircle, History, Upload } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CheckCircle, FileDown, History, Upload } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,7 @@ type Warning = {
 };
 
 type PageProps = {
+    templateUrl: string;
     flash?: {
         success?: string;
         error?: string;
@@ -27,7 +28,7 @@ type PageProps = {
 };
 
 export default function PayrollImport() {
-    const { flash } = usePage<PageProps>().props;
+    const { flash, templateUrl } = usePage<PageProps>().props;
     const { data, setData, post, processing, errors } = useForm({
         period: '',
         file: null as File | null,
@@ -112,6 +113,18 @@ export default function PayrollImport() {
                 )}
 
                 <div className="rounded-xl border bg-card p-6 space-y-6">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Button variant="outline" asChild>
+                            <a href={templateUrl} download>
+                                <FileDown className="mr-2 h-4 w-4" />
+                                Unduh template CSV
+                            </a>
+                        </Button>
+                        <span className="text-sm text-muted-foreground">
+                            Format: delimiter titik koma (;), wajib isi kolom NIK
+                        </span>
+                    </div>
+
                     <form onSubmit={submit} className="space-y-4">
                         <div className="space-y-2">
                             <label className="text-sm font-medium" htmlFor="period">

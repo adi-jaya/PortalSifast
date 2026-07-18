@@ -39,7 +39,7 @@ export function FlashMessage() {
     if (!visible || !message) return null;
 
     return (
-        <div className="fixed top-4 right-4 z-[100] max-w-md animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="fixed top-4 left-4 right-4 z-[100] animate-in fade-in slide-in-from-top-2 duration-300 sm:left-auto sm:max-w-sm">
             <Alert
                 variant={message.type === 'error' ? 'destructive' : 'default'}
                 className={

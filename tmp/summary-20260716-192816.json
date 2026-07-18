@@ -1,0 +1,4 @@
+{
+  "summary": "Tightened QR label margins for Epson LW-600P 24mm and added batch print-by-room: filter ruang on inventaris index then use Cetak semua label ruang ini.",
+  "current_status": "Single and batch inventaris QR labels ready. Batch route inventaris/label-print-batch?id_ruang=... prints up to 300 labels for one room with minimal margins."
+}

@@ -77,6 +77,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Fortify Route Paths
+    |--------------------------------------------------------------------------
+    |
+    | Customize URI paths for Fortify authentication routes. Login is served
+    | at the site root so guests land on portalsifast.../ without /login.
+    |
+    */
+
+    'paths' => [
+        'login' => '/',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Fortify Routes Prefix / Subdomain
     |--------------------------------------------------------------------------
     |

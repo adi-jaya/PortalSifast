@@ -1,0 +1,4 @@
+{
+  "summary": "User minta halaman scan QR (/q/{kode}) menampilkan riwayat mutasi, peminjaman, dan tiket. Sebelum implementasi, diklarifikasi apakah riwayat boleh publik tanpa login atau hanya setelah login (karena sebelumnya riwayat/tiket disembunyikan di halaman publik).",
+  "current_status": "Menunggu keputusan visibility riwayat di public-scan sebelum coding."
+}

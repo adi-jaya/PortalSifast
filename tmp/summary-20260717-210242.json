@@ -1,0 +1,4 @@
+{
+  "summary": "Menghubungkan master aset portal ke fitur tiket yang sudah ada: pencarian aset di form tiket prioritas portal lalu fallback SIMRS, store/update menyimpan asset_id (resolve dua arah dengan asset_no_inventaris), create prefill dari ?asset_id=, detail tiket menampilkan link ke /aset/{kode}, tombol Buat tiket dari aset show & QR scan publik. Pest TicketAsetLinkTest + AsetPublicScanTest lulus; frontend di-build.",
+  "current_status": "Integrasi aset↔tiket selesai dan teruji. Master aset + link tiket siap dipakai; modul mutasi/kalibrasi di plan belum dikerjakan."
+}

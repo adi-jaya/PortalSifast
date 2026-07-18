@@ -40,10 +40,12 @@ type Props = {
         can_manage_mutu?: boolean;
         can_input_mutu?: boolean;
         can_view_mutu_dashboard?: boolean;
+        can_manage_web_official?: boolean;
     };
     departments: Department[];
     canManagePayrollAccess: boolean;
     canManageMutuAccess: boolean;
+    canManageWebOfficialAccess: boolean;
 };
 
 export default function UsersEdit({
@@ -51,6 +53,7 @@ export default function UsersEdit({
     departments,
     canManagePayrollAccess,
     canManageMutuAccess,
+    canManageWebOfficialAccess,
 }: Props) {
     const { data, setData } = useForm({
         name: user.name,
@@ -64,6 +67,7 @@ export default function UsersEdit({
         can_manage_mutu: Boolean(user.can_manage_mutu),
         can_input_mutu: Boolean(user.can_input_mutu),
         can_view_mutu_dashboard: Boolean(user.can_view_mutu_dashboard),
+        can_manage_web_official: Boolean(user.can_manage_web_official),
     });
 
     const pageErrors = (usePage().props as { errors?: Record<string, string | string[]> }).errors ?? {};
@@ -91,6 +95,9 @@ export default function UsersEdit({
             payload.can_input_mutu = Boolean(data.can_input_mutu);
             payload.can_view_mutu_dashboard = Boolean(data.can_view_mutu_dashboard);
         }
+        if (canManageWebOfficialAccess) {
+            payload.can_manage_web_official = Boolean(data.can_manage_web_official);
+        }
         if (data.password) {
             payload.password = data.password;
             payload.password_confirmation = data.password_confirmation;
@@ -105,7 +112,7 @@ export default function UsersEdit({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit User: ${user.name}`} />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <Heading
                     title="Edit User"
                     description="Ubah role dan data user"
@@ -243,6 +250,28 @@ export default function UsersEdit({
                             <InputError message={getError('can_manage_mutu')} />
                             <InputError message={getError('can_input_mutu')} />
                             <InputError message={getError('can_view_mutu_dashboard')} />
+                        </div>
+                    )}
+
+                    {canManageWebOfficialAccess && (
+                        <div className="grid gap-2 rounded-lg border border-border p-4">
+                            <div className="flex items-center gap-3">
+                                <Checkbox
+                                    id="can_manage_web_official"
+                                    checked={Boolean(data.can_manage_web_official)}
+                                    onCheckedChange={(checked) =>
+                                        setData('can_manage_web_official', checked === true)
+                                    }
+                                />
+                                <Label htmlFor="can_manage_web_official" className="cursor-pointer">
+                                    Izinkan akses Website Official untuk user ini
+                                </Label>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                Role admin otomatis punya akses. Flag ini untuk staff yang ditugaskan mengelola konten
+                                website. Hanya admin yang dapat memberi/mencabut flag ini.
+                            </p>
+                            <InputError message={getError('can_manage_web_official')} />
                         </div>
                     )}
 

@@ -1,0 +1,4 @@
+{
+  "summary": "Implementasi upload gambar (POST/DELETE /api/admin/media), logout (POST /api/logout), dan refresh token (POST /api/token/refresh). PANDUAN-INTEGRASI-FRONTEND.md dan webofficiallogin.md diperbarui. 15 Pest tests lulus, storage:link dijalankan.",
+  "current_status": "API web official lengkap termasuk upload media, logout, dan refresh token; panduan frontend siap diserahkan ke tim FE."
+}

@@ -40,6 +40,13 @@ class User extends Authenticatable
         'can_manage_mutu',
         'can_input_mutu',
         'can_view_mutu_dashboard',
+        'can_manage_web_official',
+        'can_buat_dokumen',
+        'can_review_dokumen',
+        'can_approve_dokumen_mutu',
+        'can_tte_dokumen',
+        'can_manage_tatanaskah',
+        'can_konfirmasi_terima_dokumen',
     ];
 
     /**
@@ -69,6 +76,13 @@ class User extends Authenticatable
             'can_manage_mutu' => 'boolean',
             'can_input_mutu' => 'boolean',
             'can_view_mutu_dashboard' => 'boolean',
+            'can_manage_web_official' => 'boolean',
+            'can_buat_dokumen' => 'boolean',
+            'can_review_dokumen' => 'boolean',
+            'can_approve_dokumen_mutu' => 'boolean',
+            'can_tte_dokumen' => 'boolean',
+            'can_manage_tatanaskah' => 'boolean',
+            'can_konfirmasi_terima_dokumen' => 'boolean',
         ];
     }
 
@@ -174,6 +188,35 @@ class User extends Authenticatable
         return $this->isSuperAdmin();
     }
 
+    public function canManageWebOfficial(): bool
+    {
+        return $this->isSuperAdmin()
+            || $this->isAdmin()
+            || (bool) $this->can_manage_web_official;
+    }
+
+    public function canManageWebOfficialAccess(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toApiProfileArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'email' => $this->email,
+            'simrs_nik' => $this->simrs_nik,
+            'phone' => $this->phone,
+            'role' => $this->role,
+            'dep_id' => $this->dep_id,
+            'can_manage_web_official' => $this->canManageWebOfficial(),
+        ];
+    }
+
     public function canAccessSimmutuModule(): bool
     {
         return $this->isSuperAdmin()
@@ -196,6 +239,51 @@ class User extends Authenticatable
     public function canManageMutuAccess(): bool
     {
         return $this->isSuperAdmin();
+    }
+
+    // ==================== TATA NASKAH ====================
+
+    public function canAccessTatanaskahModule(): bool
+    {
+        return $this->isSuperAdmin()
+            || $this->isAdmin()
+            || $this->canManageTatanaskah()
+            || $this->canBuatDokumen()
+            || $this->canReviewDokumenUnit()
+            || $this->canApproveDokumenMutu()
+            || $this->canTteDokumen();
+    }
+
+    public function canManageTatanaskah(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin() || (bool) $this->can_manage_tatanaskah;
+    }
+
+    public function canBuatDokumen(): bool
+    {
+        return $this->canManageTatanaskah() || (bool) $this->can_buat_dokumen || $this->isStaff();
+    }
+
+    public function canReviewDokumenUnit(): bool
+    {
+        return $this->canManageTatanaskah() || (bool) $this->can_review_dokumen;
+    }
+
+    public function canApproveDokumenMutu(): bool
+    {
+        return $this->canManageTatanaskah() || (bool) $this->can_approve_dokumen_mutu;
+    }
+
+    public function canTteDokumen(): bool
+    {
+        return $this->isSuperAdmin() || (bool) $this->can_tte_dokumen || $this->isAdmin();
+    }
+
+    public function isPenandatanganFor(Dokumen $dokumen): bool
+    {
+        return filled($this->simrs_nik)
+            && filled($dokumen->penandatangan_nik)
+            && $this->simrs_nik === $dokumen->penandatangan_nik;
     }
 
     /**

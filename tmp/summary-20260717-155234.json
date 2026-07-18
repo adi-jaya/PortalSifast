@@ -1,0 +1,4 @@
+{
+  "summary": "User clarified the canonical plan doc is docs/master_aset_lengkap_plan.md (not .cursor/plans). Synced that file with the merged plan: Claude ASPAK/regulasi + Cursor feedback (no rak/box/isbn, batch serial partial OK).",
+  "current_status": "docs/master_aset_lengkap_plan.md is now the up-to-date reference. Implementation not started — awaiting explicit go-ahead."
+}

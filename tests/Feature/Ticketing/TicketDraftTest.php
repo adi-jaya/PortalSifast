@@ -275,3 +275,73 @@ it('staff in the same department sees drafts owned by another requester in the d
             fn (Collection $rows) => $rows->contains(fn (array $row) => $row['id'] === $draft->id && $row['is_draft'] === true)
         ));
 });
+
+it('auto publishes draft when staff takes the ticket', function () {
+    Notification::fake();
+
+    $staff = User::factory()->staff('IT')->create();
+    $pemohon = User::factory()->pemohon()->create();
+
+    $assignedStatus = TicketStatus::firstOrCreate(
+        ['slug' => TicketStatus::SLUG_ASSIGNED],
+        ['name' => 'Ditugaskan', 'color' => 'yellow', 'order' => 2, 'is_closed' => false, 'is_active' => true]
+    );
+
+    $draft = Ticket::factory()->create([
+        'ticket_type_id' => $this->type->id,
+        'ticket_category_id' => $this->category->id,
+        'ticket_priority_id' => $this->priority->id,
+        'ticket_status_id' => $this->statusNew->id,
+        'dep_id' => 'IT',
+        'requester_id' => $pemohon->id,
+        'is_draft' => true,
+        'published_at' => null,
+        'response_due_at' => null,
+        'resolution_due_at' => null,
+    ]);
+
+    $this->actingAs($staff)->post("/tickets/{$draft->id}/assign-self")
+        ->assertRedirect("/tickets/{$draft->id}");
+
+    $draft->refresh();
+
+    expect($draft->is_draft)->toBeFalse();
+    expect($draft->published_at)->not->toBeNull();
+    expect($draft->response_due_at)->not->toBeNull();
+    expect($draft->resolution_due_at)->not->toBeNull();
+    expect($draft->assignee_id)->toBe($staff->id);
+    expect($draft->ticket_status_id)->toBe($assignedStatus->id);
+
+    Notification::assertSentTo(
+        $staff,
+        TicketCreatedNotification::class,
+        fn (TicketCreatedNotification $notification) => $notification->kind === 'published'
+    );
+});
+
+it('allows staff in same department to manually publish draft', function () {
+    $staff = User::factory()->staff('IT')->create();
+    $pemohon = User::factory()->pemohon()->create();
+
+    $draft = Ticket::factory()->create([
+        'ticket_type_id' => $this->type->id,
+        'ticket_category_id' => $this->category->id,
+        'ticket_priority_id' => $this->priority->id,
+        'ticket_status_id' => $this->statusNew->id,
+        'dep_id' => 'IT',
+        'requester_id' => $pemohon->id,
+        'assignee_id' => $staff->id,
+        'is_draft' => true,
+        'published_at' => null,
+        'response_due_at' => null,
+        'resolution_due_at' => null,
+    ]);
+
+    $this->actingAs($staff)->post("/tickets/{$draft->id}/publish")
+        ->assertRedirect("/tickets/{$draft->id}");
+
+    $draft->refresh();
+
+    expect($draft->is_draft)->toBeFalse();
+    expect($draft->published_at)->not->toBeNull();
+});

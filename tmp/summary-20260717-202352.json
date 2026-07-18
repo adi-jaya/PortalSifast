@@ -1,0 +1,4 @@
+{
+  "summary": "Audited PortalSifast master aset against master_aset_lengkap_plan.md. Schema/models/batch/create UI largely DONE; gaps are edit UI (still thin), SinkronAsetDariSimrs missing inventaris_suplier distributor upsert, aspak CSV import missing parent_id/alat_path, no inline distributor quick-create, and tests missing sync mock + aspak import.",
+  "current_status": "Master aset core path (tables, BuatAsetBatch, create form, import tipes, most Pest cases) is in place; edit parity and a few sync/import/test items remain open."
+}

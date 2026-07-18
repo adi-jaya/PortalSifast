@@ -82,7 +82,7 @@ export default function DailyActivityReport({
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Aktivitas Harian" />
-            <div className="flex h-full flex-1 flex-col gap-6 p-4">
+            <div className="flex flex-col gap-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight">Aktivitas Harian</h1>

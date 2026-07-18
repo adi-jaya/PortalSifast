@@ -1,0 +1,4 @@
+{
+  "summary": "User asked where to change Remunerasi JKN/Umum display labels (e.g. Juli 2026 to April 2026). Explained labels come from CSV column headers at import via PayrollCsvMapper.formatRemunLabel, stored in employee_salaries.jkn_label and umum_label, displayed via dynamicLabelKey on slip. No UI edit exists yet; options are rename CSV headers before import, bulk SQL/tinker update on label columns, or payroll:reprocess-from-raw after fixing raw_row keys.",
+  "current_status": "Payroll slip labels for JKN/Umum are DB-backed fields editable via CSV reimport or direct DB update. UI edit for jkn_label/umum_label not yet implemented on payroll show page."
+}

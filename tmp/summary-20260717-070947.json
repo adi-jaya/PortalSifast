@@ -1,0 +1,4 @@
+{
+  "summary": "Implemented Phase 2 (Audit Fisik) for hybrid inventaris: portal tables audit_aset/audit_aset_item, multi-user checklist with QR scan, found/missing/wrong-room results, proof photos, complete + supervisor approve with RekonsiliasiAuditAset applying corrections only to portal DB (never SIMRS), UI at /aset/audit, sidebar link, and 5 Pest tests all passing.",
+  "current_status": "Tahap 0–1 done; Tahap 2 audit fisik persisted and tested. Next roadmap: Tahap 3 mutasi/peminjaman. Frontend may need npm run build/dev for new pages."
+}

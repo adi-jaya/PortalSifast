@@ -1,0 +1,4 @@
+{
+  "summary": "User asked if there is UI for admins to set Website Official access. Confirmed UI exists in Users create/edit forms as checkbox 'Izinkan akses Website Official'. Previously only superadmin could see it; extended canManageWebOfficialAccess() to include admin role so hospital admins can assign the flag to staff. Tests updated and passing.",
+  "current_status": "Admins can manage Website Official access via Users → Edit User checkbox. Staff with flag get sidebar menu and full web-official panel access."
+}

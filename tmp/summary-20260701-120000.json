@@ -1,0 +1,4 @@
+{
+  "summary": "Dokumen docs/webofficial/webofficiallogin.md diselaraskan dengan fitur auth yang sudah ada di PortalSifast: POST /api/login (Sanctum opaque token), GET /api/user sebagai profil/cek token, tanpa refresh/logout API, role admin/staff/pemohon/service, CORS via CORS_ALLOWED_ORIGINS, dan penandaan eksplisit bahwa endpoint admin Informasi/Kamar Inap belum tersedia.",
+  "current_status": "Dokumentasi integrasi login web official siap dipakai tim frontend; backend modul admin web official (CRUD informasi/kamar inap) masih perlu dibangun terpisah."
+}

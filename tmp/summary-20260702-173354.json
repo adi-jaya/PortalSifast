@@ -1,0 +1,4 @@
+{
+  "summary": "Implemented a new poliklinik landing-page module using an overlay approach: added local CRUD storage in main DB (`web_official_polyclinics`) linked by `kd_poli` to read-only SIMRS data, created public and admin APIs, added web panel pages and navigation for `/web-official/poliklinik`, integrated doctor schedule-per-poli via `DoctorProfileService::listByPoli`, enabled `poliklinik` media uploads, updated integration docs, and added focused Pest tests for API, web panel, and upload behavior.",
+  "current_status": "Poliklinik CRUD is now available end-to-end (DB model, API routes/controllers/requests, Inertia panel, docs, tests) while keeping SIMRS (`dbsimrs`) strictly read-only; targeted tests pass, formatting and lints are clean."
+}

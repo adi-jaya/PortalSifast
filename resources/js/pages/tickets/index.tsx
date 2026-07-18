@@ -174,7 +174,7 @@ export default function TicketsIndex({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Daftar Tiket" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <Heading
                         title="Daftar Tiket"
@@ -750,7 +750,7 @@ export default function TicketsIndex({
                                                                     </DropdownMenuSubContent>
                                                                 </DropdownMenuSub>
                                                             )}
-                                                            {canDelete && (
+                                                            {ticket.can_delete && (
                                                                 <DropdownMenuItem
                                                                     className="text-destructive focus:text-destructive"
                                                                     onClick={() => {

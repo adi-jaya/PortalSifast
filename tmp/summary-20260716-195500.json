@@ -1,0 +1,4 @@
+{
+  "summary": "Completed read-only architecture map of the inventaris backend: 8 Eloquent models all on dbsimrs, 8 controllers + 2 services, 14 form requests, web routes under auth/verified, 8 Pest feature tests with write-probe skips. Primary DB holds only tickets.asset_no_inventaris (logical FK to dbsimrs.inventaris.no_inventaris). Live schema probed for all inventaris tables. No app-layer read-only guard—writes target SIMRS directly; production DB user currently lacks INSERT/UPDATE/DELETE per tests.",
+  "current_status": "Inventaris module is a full CRUD overlay on legacy SIMRS tables with ticket linking via primary DB; architectural risks documented for long-term read-only dbsimrs constraint."
+}

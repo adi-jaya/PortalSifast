@@ -1,0 +1,4 @@
+{
+  "summary": "User berbagi katalog nomenklatur berhierarki (kode 10.xx/11.xx + ID eksternal) sebagai nama barang standar. Direkomendasikan: leaf jadi aset_barang yang dipilih saat create aset; parent jadi kategori/jenis; bukan ASPAK; import CSV lalu search-select di form.",
+  "current_status": "Ide katalog nama seragam sudah jelas; menunggu konfirmasi user apakah lanjut import + mapping, dan apakah punya file CSV lengkap."
+}

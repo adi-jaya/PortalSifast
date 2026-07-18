@@ -1,0 +1,4 @@
+{
+  "summary": "User feedback: create-aset form too minimal vs SIMRS (missing merk, type, produsen). Explored gap: aset_barang already has kode_produsen/id_merk/id_kategori/id_jenis columns from sync, but create UI/store only captures nama+kelas. Started brainstorming; waiting on one clarifying question about master data source before design/implementation.",
+  "current_status": "Tahap 2 audit done. Enriching asset master fields on create is next UX gap; design pending user choice on local vs SIMRS masters."
+}

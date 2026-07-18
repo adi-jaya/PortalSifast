@@ -1,0 +1,4 @@
+{
+  "summary": "User bertanya apakah perlu bangun modul taxonomy/nomenklatur aset seperti screenshot. Direkomendasikan: belum wajib penuh seperti UI Trilux; fokus dulu pada master yang sudah ada (kategori/jenis/barang + creatable inline); taxonomy full-page boleh tahap berikutnya jika operasi butuh kelola hierarki massal.",
+  "current_status": "Diskusi prioritas taxonomy vs fitur operasional; tidak ada implementasi baru di turn ini."
+}

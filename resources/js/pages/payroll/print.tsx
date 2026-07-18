@@ -5,6 +5,7 @@ import {
     SLIP_SECTIONS,
     computeSlipTotals,
     formatIdrPrint,
+    formatPayrollPeriod,
     getMoneyValue,
     resolveLineLabel,
     type SlipLineDef,
@@ -70,19 +71,7 @@ type Props = {
 };
 
 function formatPeriod(dateString: string | null): string {
-    if (!dateString) {
-        return '-';
-    }
-
-    const match = dateString.match(/^(\d{4})-(\d{2})/);
-    if (match) {
-        const [, year, month] = match;
-        const d = new Date(parseInt(year), parseInt(month) - 1, 1);
-
-        return d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
-    }
-
-    return dateString;
+    return formatPayrollPeriod(dateString, 'long');
 }
 
 function SlipRow({ line, salary, indent = false }: { line: SlipLineDef; salary: SalaryData; indent?: boolean }) {

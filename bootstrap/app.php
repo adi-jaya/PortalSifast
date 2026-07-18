@@ -33,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'simmutu.view' => \App\Http\Middleware\EnsureSimmutuViewAccess::class,
             'simmutu.manage' => \App\Http\Middleware\EnsureSimmutuManageAccess::class,
             'simmutu.input' => \App\Http\Middleware\EnsureSimmutuInputAccess::class,
+            'webofficial.admin' => \App\Http\Middleware\EnsureWebOfficialAdminAccess::class,
         ]);
 
         $middleware->web(append: [

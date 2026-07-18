@@ -1,0 +1,4 @@
+{
+  "summary": "User asked where SQL tuple rows (ASPAK-like nomenclature from Trilux) fit in portal schema. Explained mapping to aset_aspak_alat (regulatory reference), not aset_barang/kategori/jenis; noted field mapping and import path.",
+  "current_status": "Master aset implemented; user preparing nomenklatur import data — ASPAK rows go to aset_aspak_alat via --tipe=aspak (CSV); hierarchical parent_id/alat_path need ordered import or SQL conversion."
+}

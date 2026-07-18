@@ -82,7 +82,7 @@ export default function ReportsIndex({
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Laporan" />
-            <div className="flex h-full flex-1 flex-col gap-6 p-4">
+            <div className="flex flex-col gap-6">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-foreground">
                         Laporan

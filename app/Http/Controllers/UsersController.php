@@ -40,7 +40,20 @@ class UsersController extends Controller
         $users = $query
             ->orderBy('name')
             ->paginate(15)
-            ->withQueryString();
+            ->withQueryString()
+            ->through(fn (User $user): array => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'simrs_nik' => $user->simrs_nik,
+                'source' => $user->source,
+                'role' => $user->role,
+                'dep_id' => $user->dep_id,
+                'created_at' => $user->created_at,
+                'can_manage_web_official' => (bool) $user->can_manage_web_official,
+                'has_web_official_access' => $user->canManageWebOfficial(),
+            ]);
 
         return Inertia::render('users/index', [
             'users' => $users,
@@ -56,6 +69,7 @@ class UsersController extends Controller
     {
         $canManagePayrollAccess = request()->user()?->canManagePayrollAccess() ?? false;
         $canManageMutuAccess = request()->user()?->canManageMutuAccess() ?? false;
+        $canManageWebOfficialAccess = request()->user()?->canManageWebOfficialAccess() ?? false;
 
         $existingUserNiks = User::query()
             ->whereNotNull('simrs_nik')
@@ -108,6 +122,7 @@ class UsersController extends Controller
             'departments' => $departments,
             'canManagePayrollAccess' => $canManagePayrollAccess,
             'canManageMutuAccess' => $canManageMutuAccess,
+            'canManageWebOfficialAccess' => $canManageWebOfficialAccess,
         ]);
     }
 
@@ -115,6 +130,7 @@ class UsersController extends Controller
     {
         $canManagePayrollAccess = $request->user()?->canManagePayrollAccess() ?? false;
         $canManageMutuAccess = $request->user()?->canManageMutuAccess() ?? false;
+        $canManageWebOfficialAccess = $request->user()?->canManageWebOfficialAccess() ?? false;
 
         User::query()->create([
             'name' => $request->validated('name'),
@@ -137,6 +153,9 @@ class UsersController extends Controller
             'can_view_mutu_dashboard' => $canManageMutuAccess
                 ? (bool) $request->boolean('can_view_mutu_dashboard')
                 : false,
+            'can_manage_web_official' => $canManageWebOfficialAccess
+                ? (bool) $request->boolean('can_manage_web_official')
+                : false,
         ]);
 
         return redirect()->route('users.index')->with('success', 'User berhasil ditambahkan.');
@@ -146,6 +165,7 @@ class UsersController extends Controller
     {
         $canManagePayrollAccess = request()->user()?->canManagePayrollAccess() ?? false;
         $canManageMutuAccess = request()->user()?->canManageMutuAccess() ?? false;
+        $canManageWebOfficialAccess = request()->user()?->canManageWebOfficialAccess() ?? false;
 
         try {
             $departments = \App\Models\Departemen::orderBy('nama')->get(['dep_id', 'nama']);
@@ -168,10 +188,12 @@ class UsersController extends Controller
                 'can_manage_mutu',
                 'can_input_mutu',
                 'can_view_mutu_dashboard',
+                'can_manage_web_official',
             ]),
             'departments' => $departments,
             'canManagePayrollAccess' => $canManagePayrollAccess,
             'canManageMutuAccess' => $canManageMutuAccess,
+            'canManageWebOfficialAccess' => $canManageWebOfficialAccess,
         ]);
     }
 
@@ -179,6 +201,7 @@ class UsersController extends Controller
     {
         $canManagePayrollAccess = $request->user()?->canManagePayrollAccess() ?? false;
         $canManageMutuAccess = $request->user()?->canManageMutuAccess() ?? false;
+        $canManageWebOfficialAccess = $request->user()?->canManageWebOfficialAccess() ?? false;
 
         $data = [
             'name' => $request->validated('name'),
@@ -196,6 +219,10 @@ class UsersController extends Controller
             $data['can_manage_mutu'] = (bool) $request->boolean('can_manage_mutu');
             $data['can_input_mutu'] = (bool) $request->boolean('can_input_mutu');
             $data['can_view_mutu_dashboard'] = (bool) $request->boolean('can_view_mutu_dashboard');
+        }
+
+        if ($canManageWebOfficialAccess) {
+            $data['can_manage_web_official'] = (bool) $request->boolean('can_manage_web_official');
         }
 
         if ($request->filled('password')) {

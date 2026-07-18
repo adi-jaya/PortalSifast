@@ -1,0 +1,4 @@
+{
+  "summary": "Implemented all four inventaris plan phases without new tables/columns: stabilized CRUD (dbsimrs validation, enum selects, filters, cross-links, nav), foto upload via inventaris_gambar, master lookup CRUD (ruang/kategori/jenis/merk/produsen), related tickets on inventaris show plus CSV export. Pest tests: 9 passed, 5 skipped because dbsimrs user siakurat lacks INSERT/UPDATE/DELETE on inventaris tables.",
+  "current_status": "Inventaris module feature-complete on Portal side using existing SIMRS schema. Read/filter/export/cross-link/ticket linkage work. Write operations (create/update/delete/photo/master) need DBA to grant write privileges on sik2 inventaris* tables to the Portal DB user."
+}

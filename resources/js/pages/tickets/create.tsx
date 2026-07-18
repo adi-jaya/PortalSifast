@@ -55,6 +55,9 @@ type Props = {
     canSelectRequester: boolean;
     projects?: ProjectOption[];
     initialProjectId?: number | null;
+    initialAssetNoInventaris?: string | null;
+    initialAssetId?: number | null;
+    initialAssetLabel?: string | null;
 };
 
 export default function TicketCreate({
@@ -66,6 +69,9 @@ export default function TicketCreate({
     canSelectRequester = false,
     projects = [],
     initialProjectId = null,
+    initialAssetNoInventaris = null,
+    initialAssetId = null,
+    initialAssetLabel = null,
 }: Props) {
     const { data, setData, post, processing, errors, transform } = useForm({
         ticket_type_id: '',
@@ -75,7 +81,8 @@ export default function TicketCreate({
         title: '',
         description: '',
         related_ticket_id: '',
-        asset_no_inventaris: null as string | null,
+        asset_id: initialAssetId as number | null,
+        asset_no_inventaris: initialAssetNoInventaris,
         tag_ids: [] as number[],
         requester_id: null as number | null,
         created_at: '' as string,
@@ -232,6 +239,7 @@ export default function TicketCreate({
             } else {
                 payload.related_ticket_id = null;
             }
+            payload.asset_id = formData.asset_id || null;
             payload.asset_no_inventaris = formData.asset_no_inventaris || null;
             payload.tag_ids = Array.isArray(formData.tag_ids) ? formData.tag_ids : [];
             payload.new_tag_names = newTags; // Include new tags to be created
@@ -266,7 +274,7 @@ export default function TicketCreate({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Buat Tiket" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <div className="flex items-start gap-3">
                     <Button variant="ghost" size="icon" asChild>
                         <Link href="/tickets">
@@ -542,15 +550,23 @@ export default function TicketCreate({
 
                     {/* Inventaris / Asset */}
                     <div className="grid gap-2">
-                        <Label htmlFor="asset_no_inventaris">Inventaris / Asset (opsional)</Label>
+                        <Label htmlFor="asset_no_inventaris">Aset / Inventaris (opsional)</Label>
                         <InventarisSearchInput
                             value={data.asset_no_inventaris}
-                            onChange={(v) => setData('asset_no_inventaris', v)}
+                            assetId={data.asset_id}
+                            initialLabel={initialAssetLabel}
+                            onChange={(selection) => {
+                                setData({
+                                    ...data,
+                                    asset_id: selection?.asset_id ?? null,
+                                    asset_no_inventaris: selection?.asset_no_inventaris ?? null,
+                                });
+                            }}
                         />
                         <p className="text-xs text-muted-foreground">
-                            Untuk tiket IPS: pilih barang inventaris jika tiket terkait alat medis/peralatan.
+                            Cari aset portal (kode aset / no seri) atau inventaris SIMRS. Preferensi: aset portal.
                         </p>
-                        <InputError message={errors.asset_no_inventaris} />
+                        <InputError message={errors.asset_id || errors.asset_no_inventaris} />
                     </div>
 
                     {/* Description */}

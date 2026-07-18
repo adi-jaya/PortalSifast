@@ -31,6 +31,7 @@ class UpdateUserRequest extends FormRequest
             'can_manage_mutu' => ['nullable', 'boolean'],
             'can_input_mutu' => ['nullable', 'boolean'],
             'can_view_mutu_dashboard' => ['nullable', 'boolean'],
+            'can_manage_web_official' => ['nullable', 'boolean'],
         ];
     }
 

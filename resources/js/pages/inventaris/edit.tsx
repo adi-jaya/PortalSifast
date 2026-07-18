@@ -47,7 +47,7 @@ export default function InventarisEdit({ inventaris, barang, ruang }: Props) {
         { title: 'Edit', href: `/inventaris/${inventaris.no_inventaris}/edit` },
     ];
 
-    const { data, setData, patch, processing, errors } = useForm({
+    const { data, setData, patch, processing, errors, transform } = useForm({
         kode_barang: inventaris.kode_barang,
         asal_barang: inventaris.asal_barang ?? '',
         tgl_pengadaan: inventaris.tgl_pengadaan ?? '',
@@ -60,21 +60,22 @@ export default function InventarisEdit({ inventaris, barang, ruang }: Props) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        patch(`/inventaris/${inventaris.no_inventaris}`, {
-            data: {
-                ...data,
-                tgl_pengadaan: data.tgl_pengadaan || null,
-                harga: data.harga ? parseFloat(data.harga) : null,
-                id_ruang: data.id_ruang === '__none__' ? null : data.id_ruang,
-            },
-        });
+        transform((form) => ({
+            ...form,
+            tgl_pengadaan: form.tgl_pengadaan || null,
+            harga: form.harga ? parseFloat(form.harga) : null,
+            id_ruang: form.id_ruang === '__none__' ? null : form.id_ruang,
+            asal_barang: form.asal_barang || null,
+            status_barang: form.status_barang || null,
+        }));
+        patch(`/inventaris/${inventaris.no_inventaris}`);
     };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit Inventaris ${inventaris.no_inventaris}`} />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <div className="flex items-start gap-3">
                     <Button variant="ghost" size="icon" asChild>
                         <Link href={`/inventaris/${inventaris.no_inventaris}`}>
@@ -144,12 +145,19 @@ export default function InventarisEdit({ inventaris, barang, ruang }: Props) {
 
                     <div className="grid gap-2">
                         <Label htmlFor="asal_barang">Asal Barang</Label>
-                        <Input
-                            id="asal_barang"
-                            value={data.asal_barang}
-                            onChange={(e) => setData('asal_barang', e.target.value)}
-                            maxLength={100}
-                        />
+                        <Select
+                            value={data.asal_barang || undefined}
+                            onValueChange={(v) => setData('asal_barang', v)}
+                        >
+                            <SelectTrigger id="asal_barang">
+                                <SelectValue placeholder="Pilih asal barang..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Beli">Beli</SelectItem>
+                                <SelectItem value="Bantuan">Bantuan</SelectItem>
+                                <SelectItem value="Hibah">Hibah</SelectItem>
+                            </SelectContent>
+                        </Select>
                         <InputError message={errors.asal_barang} />
                     </div>
 
@@ -180,12 +188,21 @@ export default function InventarisEdit({ inventaris, barang, ruang }: Props) {
 
                     <div className="grid gap-2">
                         <Label htmlFor="status_barang">Status Barang</Label>
-                        <Input
-                            id="status_barang"
-                            value={data.status_barang}
-                            onChange={(e) => setData('status_barang', e.target.value)}
-                            maxLength={50}
-                        />
+                        <Select
+                            value={data.status_barang || undefined}
+                            onValueChange={(v) => setData('status_barang', v)}
+                        >
+                            <SelectTrigger id="status_barang">
+                                <SelectValue placeholder="Pilih status barang..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Ada">Ada</SelectItem>
+                                <SelectItem value="Rusak">Rusak</SelectItem>
+                                <SelectItem value="Hilang">Hilang</SelectItem>
+                                <SelectItem value="Perbaikan">Perbaikan</SelectItem>
+                                <SelectItem value="Dipinjam">Dipinjam</SelectItem>
+                            </SelectContent>
+                        </Select>
                         <InputError message={errors.status_barang} />
                     </div>
 
@@ -196,7 +213,7 @@ export default function InventarisEdit({ inventaris, barang, ruang }: Props) {
                                 id="no_rak"
                                 value={data.no_rak}
                                 onChange={(e) => setData('no_rak', e.target.value)}
-                                maxLength={50}
+                                maxLength={3}
                             />
                             <InputError message={errors.no_rak} />
                         </div>
@@ -206,7 +223,7 @@ export default function InventarisEdit({ inventaris, barang, ruang }: Props) {
                                 id="no_box"
                                 value={data.no_box}
                                 onChange={(e) => setData('no_box', e.target.value)}
-                                maxLength={50}
+                                maxLength={3}
                             />
                             <InputError message={errors.no_box} />
                         </div>

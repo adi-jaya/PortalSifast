@@ -1,0 +1,4 @@
+{
+  "summary": "Backend web official diimplementasikan di PortalSifast: migration web_official_articles & web_official_rooms, model/controller/request/middleware, route publik /api/informasi & /api/kamar-inap serta admin /api/admin/*, seeder 6 kamar, 11 Pest tests lulus, dokumentasi diperbarui status implemented.",
+  "current_status": "API web official (auth + informasi + kamar inap) live di PortalSifast; frontend website official bisa integrasi; CORS production domain masih perlu dikonfirmasi di .env jika belum *."
+}

@@ -1,0 +1,4 @@
+{
+  "summary": "Implemented the Web Official promosi module from the promo specification: added the promo migration, model, factory, persister, public and admin API controllers/routes/validation, enabled media uploads to the promosi folder, added Inertia admin pages and sidebar navigation for /web-official/promosi, updated frontend integration docs, and verified the work with focused Pest tests, Pint, and lints.",
+  "current_status": "Promosi is now available in PortalSifast through public API endpoints (/api/promosi, /api/promosi/{slug}), admin API CRUD (/api/admin/promosi), media upload folder support (promosi), and the built-in admin panel at /web-official/promosi; hero promo remains unimplemented and can be handled next."
+}

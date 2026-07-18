@@ -1,0 +1,4 @@
+{
+  "summary": "Halaman scan QR /q/{kode} sekarang menampilkan riwayat peminjaman, mutasi, dan tiket (opsi C): guest lihat nomor/tanggal/status/ruang; nama peminjam/penerima & judul tiket hanya setelah login. UI section riwayat ditambahkan; Pest privacy assertions lulus; frontend di-build.",
+  "current_status": "Public scan terintegrasi dengan riwayat operasional (privacy campur). Siap diuji di lapangan."
+}

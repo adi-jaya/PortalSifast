@@ -10,8 +10,8 @@ export default function AppLogo() {
             <div
                 className="flex aspect-square size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg shadow-sm"
                 style={{
-                    background: 'linear-gradient(135deg, oklch(0.55 0.18 250) 0%, oklch(0.45 0.20 250) 100%)',
-                    boxShadow: '0 1px 4px oklch(0 0 0 / 0.12)',
+                    background: 'linear-gradient(135deg, #0A9E8F 0%, #077a6f 100%)',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
                 }}
             >
                 <AppLogoIcon

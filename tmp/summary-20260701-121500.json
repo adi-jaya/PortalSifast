@@ -1,0 +1,4 @@
+{
+  "summary": "Dokumen docs/webofficial/requestwebsiteofficial.md dibuat sebagai permintaan resmi dari tim frontend website official RS ke backend PortalSifast: modul Informasi dan Kamar Inap (endpoint publik + admin CRUD), upload media, konvensi API (/api/webofficial/), role/permission, CORS, prioritas implementasi, dan checklist backend. Auth mengacu ke webofficiallogin.md yang sudah tersedia.",
+  "current_status": "Request API web official lengkap untuk tim backend; implementasi endpoint CRUD Informasi/Kamar Inap dan upload media masih menunggu pengembangan di PortalSifast."
+}

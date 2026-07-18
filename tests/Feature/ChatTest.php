@@ -8,7 +8,7 @@ uses(RefreshDatabase::class);
 
 it('redirects guest from chat index', function (): void {
     $response = $this->get('/chat');
-    $response->assertRedirect('/login');
+    $response->assertRedirect('/');
 });
 
 it('shows chat index for authenticated user', function (): void {

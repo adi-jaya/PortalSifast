@@ -1,0 +1,4 @@
+{
+  "summary": "User reported payroll index showing Mei 2026 while import-history correctly shows June 2026. Root cause: period_start serialized as UTC ISO (2026-05-31T17:00:00Z for June 1 WIB), and frontend regex parsed month as May. Fixed by sending toDateString + period_label from backend on index, timezone-safe formatPayrollPeriod helper, defaulting index filter to latest period, and aligning print period formatting.",
+  "current_status": "Payroll index now defaults to latest import period (June 2026) and displays period labels consistently with import-history. Run npm run build for frontend changes."
+}

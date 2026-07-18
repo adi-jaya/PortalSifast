@@ -1,0 +1,4 @@
+{
+  "summary": "Mengoptimasi modul jadwal/profil dokter yang berat karena default with_foto=true meng-inline base64 per baris + HTTP fetch sequential. Sekarang default with_foto=false, tambah fotoUrl + GET /api/dokter/{kdDokter}/foto (proxy cache 12 jam), cache list jadwal 10 menit & poliklinik 60 menit, fetch foto paralel saat with_foto=1. 18 tests lulus, dokumentasi diperbarui.",
+  "current_status": "API dokter/jadwal jauh lebih ringan untuk frontend list. Gunakan fotoUrl untuk lazy-load gambar; with_foto=1 hanya jika perlu base64 inline."
+}

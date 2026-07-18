@@ -18,12 +18,14 @@ class InventarisBarangController extends Controller
 {
     public function index(Request $request): Response
     {
-        $q = $request->query('q', '');
+        $q = (string) $request->query('q', '');
+        $idKategori = (string) $request->query('id_kategori', '');
+        $idJenis = (string) $request->query('id_jenis', '');
 
         try {
             $query = InventarisBarang::query()
                 ->with(['produsen', 'merk', 'kategori', 'jenis'])
-                ->when($q, function ($query) use ($q) {
+                ->when($q !== '', function ($query) use ($q) {
                     $search = "%{$q}%";
                     $query->where(function ($q2) use ($search) {
                         $q2->where('kode_barang', 'like', $search)
@@ -32,6 +34,8 @@ class InventarisBarangController extends Controller
                             ->orWhereHas('merk', fn ($m) => $m->where('nama_merk', 'like', $search));
                     });
                 })
+                ->when($idKategori !== '', fn ($query) => $query->where('id_kategori', $idKategori))
+                ->when($idJenis !== '', fn ($query) => $query->where('id_jenis', $idJenis))
                 ->orderBy('nama_barang');
 
             $barang = $query->paginate(20)
@@ -46,32 +50,6 @@ class InventarisBarangController extends Controller
                     'nama_kategori' => $item->kategori?->nama_kategori ?? null,
                     'nama_jenis' => $item->jenis?->nama_jenis ?? null,
                 ]);
-        } catch (\Throwable $e) {
-            $barang = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 20, 1);
-        }
-
-        return Inertia::render('inventaris-barang/index', [
-            'barang' => $barang,
-            'filters' => ['q' => $q],
-        ]);
-    }
-
-    public function create(): Response
-    {
-        try {
-            $produsen = InventarisProdusen::query()
-                ->orderBy('nama_produsen')
-                ->whereNotNull('kode_produsen')
-                ->where('kode_produsen', '!=', '')
-                ->where('kode_produsen', '!=', '-')
-                ->get(['kode_produsen', 'nama_produsen']);
-
-            $merk = InventarisMerk::query()
-                ->orderBy('nama_merk')
-                ->whereNotNull('id_merk')
-                ->where('id_merk', '!=', '')
-                ->where('id_merk', '!=', '-')
-                ->get(['id_merk', 'nama_merk']);
 
             $kategori = InventarisKategori::query()
                 ->orderBy('nama_kategori')
@@ -87,18 +65,26 @@ class InventarisBarangController extends Controller
                 ->where('id_jenis', '!=', '-')
                 ->get(['id_jenis', 'nama_jenis']);
         } catch (\Throwable $e) {
-            $produsen = collect();
-            $merk = collect();
+            $barang = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 20, 1);
             $kategori = collect();
             $jenis = collect();
         }
 
-        return Inertia::render('inventaris-barang/create', [
-            'produsen' => $produsen,
-            'merk' => $merk,
+        return Inertia::render('inventaris-barang/index', [
+            'barang' => $barang,
             'kategori' => $kategori,
             'jenis' => $jenis,
+            'filters' => [
+                'q' => $q,
+                'id_kategori' => $idKategori,
+                'id_jenis' => $idJenis,
+            ],
         ]);
+    }
+
+    public function create(): Response
+    {
+        return Inertia::render('inventaris-barang/create', $this->lookupOptions());
     }
 
     public function store(StoreInventarisBarangRequest $request): RedirectResponse
@@ -126,18 +112,35 @@ class InventarisBarangController extends Controller
     {
         $barang->load(['produsen', 'merk', 'kategori', 'jenis']);
 
+        $units = $barang->inventaris()
+            ->with('ruang')
+            ->orderBy('no_inventaris')
+            ->limit(100)
+            ->get()
+            ->map(fn ($inv) => [
+                'no_inventaris' => $inv->no_inventaris,
+                'status_barang' => $inv->status_barang,
+                'nama_ruang' => $inv->ruang?->nama_ruang,
+            ]);
+
         return Inertia::render('inventaris-barang/show', [
             'barang' => [
                 'kode_barang' => $barang->kode_barang,
                 'nama_barang' => $barang->nama_barang,
                 'jml_barang' => $barang->jml_barang,
+                'kode_produsen' => $barang->kode_produsen,
                 'nama_produsen' => $barang->produsen?->nama_produsen ?? null,
+                'alamat_produsen' => $barang->produsen?->alamat_produsen ?? null,
+                'no_telp_produsen' => $barang->produsen?->no_telp ?? null,
+                'email_produsen' => $barang->produsen?->email ?? null,
+                'website_produsen' => $barang->produsen?->website_produsen ?? null,
                 'nama_merk' => $barang->merk?->nama_merk ?? null,
                 'thn_produksi' => $barang->thn_produksi,
                 'isbn' => $barang->isbn,
                 'nama_kategori' => $barang->kategori?->nama_kategori ?? null,
                 'nama_jenis' => $barang->jenis?->nama_jenis ?? null,
             ],
+            'units' => $units,
         ]);
     }
 
@@ -145,42 +148,7 @@ class InventarisBarangController extends Controller
     {
         $barang->load(['produsen', 'merk', 'kategori', 'jenis']);
 
-        try {
-            $produsen = InventarisProdusen::query()
-                ->orderBy('nama_produsen')
-                ->whereNotNull('kode_produsen')
-                ->where('kode_produsen', '!=', '')
-                ->where('kode_produsen', '!=', '-')
-                ->get(['kode_produsen', 'nama_produsen']);
-
-            $merk = InventarisMerk::query()
-                ->orderBy('nama_merk')
-                ->whereNotNull('id_merk')
-                ->where('id_merk', '!=', '')
-                ->where('id_merk', '!=', '-')
-                ->get(['id_merk', 'nama_merk']);
-
-            $kategori = InventarisKategori::query()
-                ->orderBy('nama_kategori')
-                ->whereNotNull('id_kategori')
-                ->where('id_kategori', '!=', '')
-                ->where('id_kategori', '!=', '-')
-                ->get(['id_kategori', 'nama_kategori']);
-
-            $jenis = InventarisJenis::query()
-                ->orderBy('nama_jenis')
-                ->whereNotNull('id_jenis')
-                ->where('id_jenis', '!=', '')
-                ->where('id_jenis', '!=', '-')
-                ->get(['id_jenis', 'nama_jenis']);
-        } catch (\Throwable $e) {
-            $produsen = collect();
-            $merk = collect();
-            $kategori = collect();
-            $jenis = collect();
-        }
-
-        return Inertia::render('inventaris-barang/edit', [
+        return Inertia::render('inventaris-barang/edit', array_merge($this->lookupOptions(), [
             'barang' => [
                 'kode_barang' => $barang->kode_barang,
                 'nama_barang' => $barang->nama_barang,
@@ -196,11 +164,7 @@ class InventarisBarangController extends Controller
                 'id_jenis' => $barang->id_jenis,
                 'nama_jenis' => $barang->jenis?->nama_jenis ?? null,
             ],
-            'produsen' => $produsen,
-            'merk' => $merk,
-            'kategori' => $kategori,
-            'jenis' => $jenis,
-        ]);
+        ]));
     }
 
     public function update(UpdateInventarisBarangRequest $request, InventarisBarang $barang): RedirectResponse
@@ -219,5 +183,47 @@ class InventarisBarangController extends Controller
         return redirect()
             ->route('inventaris-barang.index')
             ->with('success', 'Barang berhasil dihapus.');
+    }
+
+    /**
+     * @return array{produsen: \Illuminate\Support\Collection, merk: \Illuminate\Support\Collection, kategori: \Illuminate\Support\Collection, jenis: \Illuminate\Support\Collection}
+     */
+    private function lookupOptions(): array
+    {
+        try {
+            return [
+                'produsen' => InventarisProdusen::query()
+                    ->orderBy('nama_produsen')
+                    ->whereNotNull('kode_produsen')
+                    ->where('kode_produsen', '!=', '')
+                    ->where('kode_produsen', '!=', '-')
+                    ->get(['kode_produsen', 'nama_produsen']),
+                'merk' => InventarisMerk::query()
+                    ->orderBy('nama_merk')
+                    ->whereNotNull('id_merk')
+                    ->where('id_merk', '!=', '')
+                    ->where('id_merk', '!=', '-')
+                    ->get(['id_merk', 'nama_merk']),
+                'kategori' => InventarisKategori::query()
+                    ->orderBy('nama_kategori')
+                    ->whereNotNull('id_kategori')
+                    ->where('id_kategori', '!=', '')
+                    ->where('id_kategori', '!=', '-')
+                    ->get(['id_kategori', 'nama_kategori']),
+                'jenis' => InventarisJenis::query()
+                    ->orderBy('nama_jenis')
+                    ->whereNotNull('id_jenis')
+                    ->where('id_jenis', '!=', '')
+                    ->where('id_jenis', '!=', '-')
+                    ->get(['id_jenis', 'nama_jenis']),
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'produsen' => collect(),
+                'merk' => collect(),
+                'kategori' => collect(),
+                'jenis' => collect(),
+            ];
+        }
     }
 }

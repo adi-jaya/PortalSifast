@@ -15,3 +15,11 @@ Schedule::command('panic:check-pending')->everyTwoMinutes();
 
 // Check for overdue tickets and create notifications every 5 minutes
 Schedule::command('notifications:check-overdue')->everyFiveMinutes();
+
+Schedule::command('instagram:sync-feed')
+    ->everyThirtyMinutes()
+    ->when(fn (): bool => (bool) config('services.instagram.enabled'));
+
+Schedule::command('rss:sync-external')
+    ->hourly()
+    ->when(fn (): bool => (bool) config('services.external_rss.enabled'));

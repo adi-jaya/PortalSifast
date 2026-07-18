@@ -1,0 +1,4 @@
+{
+  "summary": "Added inline master creation on aset/create: POST /aset/master/{tipe} for kategori/jenis/merk/produsen with auto kode + dedupe by nama; CreatableSearchSelect (react-select/creatable) on form fields; no need to leave page. Tests pass, frontend rebuilt.",
+  "current_status": "Aset create supports tambah merk/jenis/kategori/produsen langsung dari form barang baru; user hard refresh to use."
+}

@@ -1,0 +1,4 @@
+{
+  "summary": "User memilih status B: siklus_hidup tetap aktif; ketersediaan terpisah (tersedia/dipinjam/dalam_mutasi). Lanjut klarifikasi alur approval vs langsung.",
+  "current_status": "Brainstorming mutasi+peminjaman: keputusan D/C/C/B terkunci; alur approval belum."
+}

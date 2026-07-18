@@ -47,6 +47,7 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import AppLayout from '@/layouts/app-layout';
+import { formatPayrollPeriod } from '@/pages/payroll/payroll-slip-structure';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -57,6 +58,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 type SalaryItem = {
     id: number;
     period_start: string;
+    period_label: string;
     simrs_nik: string;
     employee_name: string | null;
     unit: string | null;
@@ -301,15 +303,8 @@ export default function PayrollIndex({ salaries, filters, summary, comparison }:
         }).format(num);
     };
 
-    const formatPeriod = (dateString: string | null): string => {
-        if (!dateString) return '-';
-        const match = dateString.match(/^(\d{4})-(\d{2})/);
-        if (match) {
-            const [, year, month] = match;
-            const d = new Date(parseInt(year), parseInt(month) - 1, 1);
-            return d.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' });
-        }
-        return dateString;
+    const formatPeriod = (row: SalaryItem): string => {
+        return row.period_label || formatPayrollPeriod(row.period_start);
     };
 
     const isAnomaly = (row: SalaryItem): boolean => {
@@ -367,7 +362,7 @@ export default function PayrollIndex({ salaries, filters, summary, comparison }:
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Payroll - Gaji Karyawan" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <Heading
                         title="Payroll - Gaji Karyawan"
@@ -623,7 +618,7 @@ export default function PayrollIndex({ salaries, filters, summary, comparison }:
                                                         aria-label={`Pilih ${row.employee_name}`}
                                                     />
                                                 </td>
-                                                <td className="px-4 py-3 text-muted-foreground">{formatPeriod(row.period_start)}</td>
+                                                <td className="px-4 py-3 text-muted-foreground">{formatPeriod(row)}</td>
                                                 <td className="px-4 py-3 font-mono text-xs">
                                                     <Link href={`/payroll/${row.id}`} className="hover:underline">
                                                         {row.simrs_nik}

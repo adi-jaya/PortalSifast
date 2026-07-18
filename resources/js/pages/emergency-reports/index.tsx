@@ -259,7 +259,7 @@ export default function EmergencyReportsIndex({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Laporan Darurat" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 {/* Header with stats and view toggle */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <Heading

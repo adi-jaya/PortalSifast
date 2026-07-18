@@ -1,0 +1,4 @@
+{
+  "summary": "Updated ticket delete authorization so requesters (pemohon/staff who created the ticket) can delete their own tickets, not only admins. Changed TicketPolicy::delete, per-ticket can_delete on index, canDelete on show page with Hapus Tiket button, and added/updated Pest tests. All delete-related tests pass.",
+  "current_status": "Ticket deletion is available to admin (any ticket) and to the ticket requester on index, show, and edit pages. UI built; run npm run build if frontend changes are not visible."
+}

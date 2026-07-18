@@ -40,9 +40,9 @@ class Inventaris extends Model
         return $this->belongsTo(InventarisRuang::class, 'id_ruang', 'id_ruang');
     }
 
-    public function gambar()
+    public function gambar(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
-        return $this->hasMany(InventarisGambar::class, 'no_inventaris', 'no_inventaris');
+        return $this->hasOne(InventarisGambar::class, 'no_inventaris', 'no_inventaris');
     }
 
     /**

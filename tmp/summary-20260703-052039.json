@@ -1,0 +1,4 @@
+{
+  "summary": "User asked whether RSS news should be handled on frontend or backend. Explained both RSS directions (export own berita vs import external feeds), recommended backend control with frontend display only, and mapped to existing PortalSifast informasi module pattern.",
+  "current_status": "Berita/informasi already backend-controlled via GET /api/informasi. RSS export or external RSS import not yet implemented; architecture guidance provided."
+}

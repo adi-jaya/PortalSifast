@@ -118,7 +118,7 @@ export default function MutuIndicatorsEdit({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit: ${indicator.title}`} />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <Heading title="Edit Indikator Mutu" description="Perbarui definisi dan pemetaan unit." />
 
                 <form

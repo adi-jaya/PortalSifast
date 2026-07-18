@@ -32,6 +32,7 @@ class StoreTicketRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:10000'],
             'related_ticket_id' => ['nullable', 'integer', Rule::exists('tickets', 'id')],
             'asset_no_inventaris' => ['nullable', 'string', 'max:50'],
+            'asset_id' => ['nullable', 'integer', 'exists:aset,id'],
             'tag_ids' => ['nullable', 'array'],
             'tag_ids.*' => ['integer', Rule::exists('ticket_tags', 'id')->where('is_active', true)],
             'new_tag_names' => ['nullable', 'array'],

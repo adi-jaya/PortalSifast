@@ -74,6 +74,7 @@ type Props = {
     canManageVendorCosts?: boolean;
     canResolveIssue?: boolean;
     canPublish?: boolean;
+    canDelete?: boolean;
 };
 
 function getPriorityColor(color: string): string {
@@ -454,6 +455,7 @@ export default function TicketShow({
     canManageVendorCosts = false,
     canResolveIssue = false,
     canPublish = false,
+    canDelete = false,
 }: Props) {
     const { flash, auth } = usePage<{
         flash: { success?: string; error?: string };
@@ -474,6 +476,7 @@ export default function TicketShow({
     const [showIssueForm, setShowIssueForm] = useState(false);
     const [aiLoading, setAiLoading] = useState(false);
     const [docLoading, setDocLoading] = useState(false);
+    const [showDeleteTicketConfirm, setShowDeleteTicketConfirm] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState<{
         type: 'attachment' | 'vendor_cost' | 'collaborator' | 'sparepart';
         id: number;
@@ -656,7 +659,7 @@ export default function TicketShow({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Tiket ${ticket.ticket_number}`} />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 {/* Header */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex items-start gap-3">
@@ -789,6 +792,16 @@ export default function TicketShow({
                         {canEdit && (
                             <Button asChild>
                                 <Link href={`/tickets/${ticket.id}/edit`}>Edit</Link>
+                            </Button>
+                        )}
+                        {canDelete && (
+                            <Button
+                                type="button"
+                                variant="destructive"
+                                onClick={() => setShowDeleteTicketConfirm(true)}
+                            >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Hapus Tiket
                             </Button>
                         )}
                     </div>
@@ -1914,24 +1927,63 @@ export default function TicketShow({
                             </Card>
                         )}
 
-                        {/* Inventaris / Asset */}
-                        {ticket.inventaris && (
+                        {/* Aset portal / Inventaris SIMRS */}
+                        {(ticket.aset || ticket.inventaris || ticket.asset_no_inventaris) && (
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-base flex items-center gap-2">
                                         <Package className="h-4 w-4" />
-                                        Inventaris
+                                        Aset
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-1">
-                                    <div className="font-mono font-medium">{ticket.inventaris.no_inventaris}</div>
-                                    <div className="text-sm text-muted-foreground">
-                                        {ticket.inventaris.barang?.nama_barang ?? ticket.inventaris.kode_barang}
-                                    </div>
-                                    {ticket.inventaris.ruang?.nama_ruang && (
-                                        <div className="text-xs text-muted-foreground">
-                                            Ruang: {ticket.inventaris.ruang.nama_ruang}
-                                        </div>
+                                    {ticket.aset ? (
+                                        <>
+                                            <Link
+                                                href={`/aset/${ticket.aset.kode_aset}`}
+                                                className="font-mono font-medium text-primary hover:underline"
+                                            >
+                                                {ticket.aset.kode_aset}
+                                            </Link>
+                                            <div className="text-sm text-muted-foreground">
+                                                {ticket.aset.barang?.nama_barang ?? ticket.aset.kode_aset}
+                                            </div>
+                                            {ticket.aset.ruang?.nama_ruang && (
+                                                <div className="text-xs text-muted-foreground">
+                                                    Ruang: {ticket.aset.ruang.nama_ruang}
+                                                </div>
+                                            )}
+                                            {ticket.aset.no_simrs && (
+                                                <div className="text-xs text-muted-foreground">
+                                                    SIMRS:{' '}
+                                                    <Link
+                                                        href={`/inventaris/${ticket.aset.no_simrs}`}
+                                                        className="font-mono text-primary hover:underline"
+                                                    >
+                                                        {ticket.aset.no_simrs}
+                                                    </Link>
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : ticket.inventaris ? (
+                                        <>
+                                            <Link
+                                                href={`/inventaris/${ticket.inventaris.no_inventaris}`}
+                                                className="font-mono font-medium text-primary hover:underline"
+                                            >
+                                                {ticket.inventaris.no_inventaris}
+                                            </Link>
+                                            <div className="text-sm text-muted-foreground">
+                                                {ticket.inventaris.barang?.nama_barang ?? ticket.inventaris.kode_barang}
+                                            </div>
+                                            {ticket.inventaris.ruang?.nama_ruang && (
+                                                <div className="text-xs text-muted-foreground">
+                                                    Ruang: {ticket.inventaris.ruang.nama_ruang}
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <span className="font-mono text-sm">{ticket.asset_no_inventaris}</span>
                                     )}
                                 </CardContent>
                             </Card>
@@ -1939,6 +1991,17 @@ export default function TicketShow({
                     </div>
                 </div>
             </div>
+
+            {canDelete && (
+                <ConfirmDialog
+                    open={showDeleteTicketConfirm}
+                    onOpenChange={setShowDeleteTicketConfirm}
+                    title="Hapus Tiket"
+                    description={`Apakah Anda yakin ingin menghapus tiket ${ticket.ticket_number}? Tindakan ini tidak bisa dibatalkan.`}
+                    confirmLabel="Hapus"
+                    onConfirm={() => router.delete(`/tickets/${ticket.id}`)}
+                />
+            )}
 
             <ConfirmDialog
                 open={!!deleteConfirm}

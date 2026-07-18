@@ -1,0 +1,4 @@
+{
+  "summary": "Riwayat di halaman scan QR diganti dari 3 section bertumpuk menjadi satu panel bertab (Pinjam / Mutasi / Tiket) dengan count pill. Privacy campur tetap sama. Build + Pest public scan lulus.",
+  "current_status": "Public scan pakai tab riwayat; siap diuji dengan hard-refresh."
+}

@@ -1,0 +1,4 @@
+{
+  "summary": "User asked how to integrate Instagram so posts appear on the website, and whether work belongs on frontend or backend. Explained that Instagram feed integration is primarily backend (Graph API token, scheduled sync, cache, own API) with frontend only consuming PortalSifast endpoints; outlined recommended architecture for their Laravel stack and alternatives.",
+  "current_status": "No Instagram module exists yet in PortalSifast. Web Official modules (promosi, poliklinik, etc.) are in place; Instagram integration would be a new backend feature plus frontend display component on the official website."
+}

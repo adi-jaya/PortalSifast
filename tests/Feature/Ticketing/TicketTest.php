@@ -201,7 +201,7 @@ it('shows only own tickets for pemohon', function () {
 
 it('redirects guests to login', function () {
     $response = $this->get('/tickets');
-    $response->assertRedirect('/login');
+    $response->assertRedirect('/');
 });
 
 // ==================== CREATE ====================
@@ -828,7 +828,24 @@ it('allows admin to delete ticket', function () {
     $this->assertDatabaseMissing('tickets', ['id' => $ticket->id]);
 });
 
-it('denies staff from deleting ticket', function () {
+it('allows staff to delete ticket they created as requester', function () {
+    $staff = User::factory()->staff('IT')->create();
+    $ticket = Ticket::factory()->create([
+        'ticket_type_id' => $this->type->id,
+        'ticket_category_id' => $this->category->id,
+        'ticket_priority_id' => $this->priority->id,
+        'ticket_status_id' => $this->statusNew->id,
+        'dep_id' => 'IT',
+        'requester_id' => $staff->id,
+    ]);
+
+    $response = $this->actingAs($staff)->delete("/tickets/{$ticket->id}");
+
+    $response->assertRedirect('/tickets');
+    $this->assertDatabaseMissing('tickets', ['id' => $ticket->id]);
+});
+
+it('denies staff from deleting ticket they did not create', function () {
     $staff = User::factory()->staff('IT')->create();
     $ticket = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
@@ -839,6 +856,39 @@ it('denies staff from deleting ticket', function () {
     ]);
 
     $response = $this->actingAs($staff)->delete("/tickets/{$ticket->id}");
+
+    $response->assertForbidden();
+    $this->assertDatabaseHas('tickets', ['id' => $ticket->id]);
+});
+
+it('allows requester to delete their own ticket', function () {
+    $pemohon = User::factory()->pemohon()->create();
+    $ticket = Ticket::factory()->create([
+        'ticket_type_id' => $this->type->id,
+        'ticket_category_id' => $this->category->id,
+        'ticket_priority_id' => $this->priority->id,
+        'ticket_status_id' => $this->statusNew->id,
+        'requester_id' => $pemohon->id,
+    ]);
+
+    $response = $this->actingAs($pemohon)->delete("/tickets/{$ticket->id}");
+
+    $response->assertRedirect('/tickets');
+    $this->assertDatabaseMissing('tickets', ['id' => $ticket->id]);
+});
+
+it('denies requester from deleting another users ticket', function () {
+    $pemohon = User::factory()->pemohon()->create();
+    $otherPemohon = User::factory()->pemohon()->create();
+    $ticket = Ticket::factory()->create([
+        'ticket_type_id' => $this->type->id,
+        'ticket_category_id' => $this->category->id,
+        'ticket_priority_id' => $this->priority->id,
+        'ticket_status_id' => $this->statusNew->id,
+        'requester_id' => $otherPemohon->id,
+    ]);
+
+    $response = $this->actingAs($pemohon)->delete("/tickets/{$ticket->id}");
 
     $response->assertForbidden();
     $this->assertDatabaseHas('tickets', ['id' => $ticket->id]);

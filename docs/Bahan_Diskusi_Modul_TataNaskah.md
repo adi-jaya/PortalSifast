@@ -9,6 +9,8 @@
 ## Daftar Isi
 
 1. [Ruang Lingkup & Batas Sistem](#1-ruang-lingkup--batas-sistem)
+   - [1.4 Penyesuaian dengan Modul yang Sudah Ada](#14-penyesuaian-dengan-modul-yang-sudah-ada)
+   - [1.5 Alur End-to-End: Upload PDF vs Penomoran](#15-alur-end-to-end-upload-pdf-vs-penomoran)
 2. [Jenis Naskah Resmi RS'ASF](#2-jenis-naskah-resmi-rsasf)
 3. [Anatomi Format Dokumen per Jenis Naskah](#3-anatomi-format-dokumen-per-jenis-naskah)
 4. [Format Penomoran Dokumen](#4-format-penomoran-dokumen)
@@ -18,7 +20,7 @@
 8. [Skema Database Final](#8-skema-database-final)
 9. [Template & Inject Variabel](#9-template--inject-variabel)
 10. [Arsitektur Sistem & Tech Stack](#10-arsitektur-sistem--tech-stack)
-11. [Roadmap Implementasi](#11-roadmap-implementasi)
+11. [Roadmap Implementasi](#11-roadmap-implementasi) — **lihat dokumen bertahap:** [`TATA-NASKAH-FASE-1-NASKAH-DINAS-ARAHAN.md`](./TATA-NASKAH-FASE-1-NASKAH-DINAS-ARAHAN.md)
 12. [Keputusan Teknis yang Sudah Disepakati](#12-keputusan-teknis-yang-sudah-disepakati)
 13. [Poin yang Masih Perlu Keputusan Tim](#13-poin-yang-masih-perlu-keputusan-tim)
 14. [Lampiran C — Stirling-PDF: Endpoint yang Dipakai](#lampiran-c--stirling-pdf-endpoint-yang-dipakai-modul-tata-naskah)
@@ -41,66 +43,208 @@
 
 ### Yang Tetap di SIKAT (Tidak Diduplikasi)
 
-- Surat masuk / surat keluar harian operasional
-- Penomoran surat masuk/keluar
-- SPO yang sudah berjalan di SIKAT (jika ada)
+| Fitur | Keterangan |
+|-------|------------|
+| Surat masuk / surat keluar harian | Operasional, penomoran surat masuk/keluar |
+| **Disposisi** surat masuk | Alur disposisi pegawai — sudah di SIKAT |
+| **Undangan** (undangan rapat/acara) | Sudah di SIKAT — bukan dibangun ulang di Portal |
+| **Memo intern / memo internal** | Sudah di SIKAT — bukan dibangun ulang di Portal |
+| Surat edaran operasional | SSO dari Portal → proses di SIKAT |
+| Cuti / ijin / lembur | SSO ke SIKAT |
+| ~~SPO~~ | **Pindah ke Portal** — dibangun ulang di modul Tata Naskah (SIKAT `/spo` akan di-retire) |
 
-### Batas Tegas
+### Batas Tegas (revisi — disesuaikan realita RS)
 
 ```
-[Portal SIFAST — Modul Tata Naskah]
-  → Dokumen regulasi: PER, SK, INS, SE, SPO, Pedoman, Panduan
-  → Korespondensi resmi Direktur: Surat Biasa, Undangan, Surat Keterangan,
-    Surat Perintah, Surat Tugas, Surat Kuasa, Berita Acara, Pengumuman,
-    Surat Pengantar, Rekomendasi, Memorandum, Sertifikat
+[Portal SIFAST — Modul Tata Naskah]  ← FOKUS BARU
+  → Document control & akreditasi:
+    PER, SK, INS, SE (regulasi Direktur)
+    SPO — DIBUAT ULANG DARI AWAL (versi, revisi, review STARKES, distribusi)
+    Pedoman, Panduan, Clinical Pathway, Program Kerja
+  → Surat resmi tingkat regulasi yang butuh versioning + distribusi + audit trail
 
-[SIKAT — Legacy]
-  → Surat masuk/keluar operasional harian
-  → (Akses dari Portal via SSO link, tidak dibangun ulang)
+[SIKAT — Legacy]  ← SUDAH JALAN, SSO dari Portal
+  → Surat masuk / keluar / edaran harian
+  → Disposisi surat masuk
+  → Undangan
+  → Memo intern
+  → Cuti / ijin / lembur
+  → (SPO TIDAK LAGI di SIKAT setelah modul Portal go-live)
+  → Akses: menu Portal → /integrations/sikat/go?to=...
 ```
+
+---
+
+### 1.4 Penyesuaian dengan Modul yang Sudah Ada
+
+> **Catatan tim:** Dokumen pedoman RS'ASF mencantumkan banyak jenis naskah. **Tidak semua harus dibangun ulang** di modul baru. Yang sudah ada di SIKAT tetap di SIKAT.
+
+#### Peta modul existing vs modul baru
+
+| Jenis / fitur | Sudah ada di | Keputusan modul Tata Naskah | Alasan |
+|---------------|--------------|----------------------------|--------|
+| Surat masuk | SIKAT (SSO) | ❌ **Tidak dibangun** | Operasional harian |
+| Surat keluar | SIKAT (SSO) | ❌ **Tidak dibangun** | Operasional harian |
+| **Disposisi** | SIKAT (surat masuk) | ❌ **Tidak dibangun** | Bagian alur surat masuk |
+| **Undangan** (`UND`, `UND-UNIT`) | SIKAT | ❌ **Tidak dibangun** | Sudah jalan |
+| **Memo intern** (`MEM`) | SIKAT | ❌ **Tidak dibangun** | Sudah jalan |
+| Surat edaran operasional | SIKAT | ❌ **Tidak dibangun** | Beda dengan SE regulasi Direktur |
+| Cuti / ijin / lembur (`CTI`) | SIKAT (SSO) | ❌ **Tidak dibangun** | Modul HR sudah ada |
+| **SPO** | SIKAT (legacy, akan di-retire) | ✅ **Dibangun ulang di Portal** | Satu-satunya sistem SPO ke depan — versioning, revisi, review STARKES |
+| PER, SK, INS, SE | Belum ada sistem khusus | ✅ **Dibangun di Portal** | Inti document control |
+| Pedoman, Panduan, CP, PRK | Belum ada sistem khusus | ✅ **Dibangun di Portal** | Regulasi + distribusi |
+| Surat resmi Direktur (SB, SKU, BA, dll.) | Sebagian di SIKAT | ⚠️ **Evaluasi per jenis** | Default: yang operasional → SIKAT; yang butuh versi/audit → Portal |
+
+#### Yang dihapus dari scope fase 1 (karena sudah ada di SIKAT)
+
+- `MEM` — Memo Intern
+- `UND`, `UND-UNIT` — Undangan
+- `CTI` — Cuti/Izin (sudah di SIKAT)
+- Disposisi (bukan jenis naskah terpisah — fitur di surat masuk SIKAT)
+
+#### SPO — dibuat ulang dari awal (keputusan tim)
+
+> **Keputusan:** Modul SPO di SIKAT **tidak dipakai lagi**. SPO dibangun **100% baru** di Portal Tata Naskah.
+
+```
+[SEBELUMNYA — SIKAT /spo]     → akan di-retire setelah go-live
+[KE DEPAN — Portal Tata Naskah] → satu-satunya sistem SPO resmi:
+                                  - nomor + no. revisi (00, 01, 02)
+                                  - workflow review unit → mutu → TTE Direktur
+                                  - distribusi + konfirmasi terima (STARKES)
+                                  - tanggal review / kadaluarsa
+                                  - arsip versi lengkap
+```
+
+**Implikasi teknis:**
+- Menu SIKAT `SPO` di sidebar Portal (`sikatSuratNav.ts`) **diganti** link ke modul Tata Naskah setelah go-live
+- Data SPO lama di SIKAT perlu **dimigrasi** ke Portal (fase 0) atau diinput ulang — poin operasional, bukan teknis
+- Path SSO `/spo` bisa dihapus dari whitelist `config/sikat.php` setelah transisi selesai
+
+**Poin diskusi tersisa:** Strategi migrasi data SPO arsip dari SIKAT (manual re-upload vs import batch).
+
+---
+
+### 1.5 Alur End-to-End: Upload PDF vs Penomoran
+
+> **Jawaban singkat:** Ya, user **upload PDF** — tapi **nomor resmi BELUM keluar saat upload**. Penomoran terjadi **nanti**, saat dokumen hampir resmi (status `menunggu_tte`).
+
+#### Timeline: kapan apa terjadi?
+
+| Tahap | Status dokumen | Nomor dokumen | File PDF | Apa yang terjadi |
+|-------|----------------|---------------|----------|------------------|
+| 1. Buat draft | `draft` | **Kosong (NULL)** | Belum ada / opsional | User isi judul, jenis (PER/SPO), unit, metadata |
+| 2. Upload PDF | `draft` | **Masih NULL** | `file_asli` tersimpan | User upload PDF dari Word (**tanpa nomor resmi**). Stirling `get-pdf-info` → isi jumlah halaman |
+| 3. Submit review | `review_unit` | **Masih NULL** | `file_asli` | Reviewer unit cek isi |
+| 4. Review mutu | `review_mutu` | **Masih NULL** | `file_asli` | Tim mutu/kesekretariatan cek |
+| 5. **Hampir resmi** | `menunggu_tte` | **✅ BARU DIGENERATE** | `file_bernomor` dibuat | Counter atomic → nomor `RS'ASF/001/...` + tanggal Hijriyah → Stirling **stamp teks** ke PDF |
+| 6. TTE / approve | `menunggu_tte` → `aktif` | Sudah final | `file_final` | Stirling stamp QR + TTD → Direktur setujui |
+| 7. Publish | `aktif` | Tetap sama | `file_final` | Distribusi ke unit + konfirmasi terima |
+| 8. Revisi | versi naik (v2) | **Nomor tetap** | versi baru `file_asli` | Ulangi alur dari draft versi baru |
+
+#### Diagram alur (SPO / PER — regulasi)
+
+```mermaid
+sequenceDiagram
+    participant User as Staf Unit
+    participant Portal as Portal Tata Naskah
+    participant Stirling as Stirling-PDF
+    participant Reviewer as Reviewer / Mutu
+    participant Dir as Direktur
+
+    User->>Portal: Buat draft (judul, jenis SPO, metadata)
+    User->>Portal: Upload PDF (dari Word, tanpa nomor resmi)
+    Portal->>Stirling: get-pdf-info
+    Stirling-->>Portal: jumlah halaman, ukuran
+    Note over Portal: nomor_dokumen = NULL
+
+    User->>Portal: Submit review
+    Portal->>Reviewer: Notifikasi review unit
+    Reviewer->>Portal: Approve → review mutu
+    Reviewer->>Portal: Approve → menunggu_tte
+
+    Note over Portal: 🔢 GENERATE NOMOR di sini (bukan saat upload)
+    Portal->>Portal: DocumentNumberService → RS'ASF/001/SPO/ADM/VI/2026
+    Portal->>Stirling: add-stamp (nomor + tanggal Hijriyah/Masehi)
+    Stirling-->>Portal: file_bernomor
+
+    Portal->>Dir: Notifikasi menunggu TTE
+    Dir->>Portal: Approve
+    Portal->>Stirling: add-stamp (QR + TTD)
+    Stirling-->>Portal: file_final
+    Portal->>Portal: status = aktif, distribusi ke unit
+```
+
+#### FAQ alur (untuk diskusi tim)
+
+**Q: Kenapa nomor tidak saat upload?**  
+A: Supaya nomor hanya keluar untuk dokumen yang **lolos review** — tidak ada nomor "terbuang" untuk draft yang dibatalkan.
+
+**Q: PDF upload harus seperti apa?**  
+A: Export dari Word template RS'ASF — **placeholder nomor boleh kosong** atau tulis "DRAFT". Sistem yang inject nomor resmi via Stirling saat `menunggu_tte`.
+
+**Q: Apakah user ketik nomor manual?**  
+A: **Tidak** (kecuali admin override untuk migrasi arsip lama). Sistem generate otomatis dari counter.
+
+**Q: Kalau dokumen ditolak di review?**  
+A: Kembali ke `draft`, **nomor belum pernah digenerate** — counter tidak naik.
+
+**Q: SPO revisi 01 — nomor berubah?**  
+A: **Tidak.** Nomor dokumen tetap; yang naik `nomor_revisi` (00 → 01) dan `nomor_versi`.
 
 ---
 
 ## 2. Jenis Naskah Resmi RS'ASF
 
-Berdasarkan Lampiran Pedoman Tata Naskah RS'ASF 2026, berikut daftar jenis naskah yang **sudah memiliki template resmi** dan harus didukung sistem:
+Berdasarkan Lampiran Pedoman Tata Naskah RS'ASF 2026. **Kolom "Modul"** menunjukkan apakah jenis ini dibangun di Portal atau tetap di SIKAT (lihat §1.4).
 
-### Kelompok A — Naskah Regulasi (Korporasi/RS)
+### Kelompok A — Naskah Dinas Arahan — ✅ **Fase 1 Dev** (modul Portal)
 
-| Kode | Nama Lengkap | Level Penandatangan | TTE Wajib | Berlaku Setelah |
-|------|--------------|---------------------|-----------|-----------------|
-| `PER` | Peraturan Direktur | Direktur | Ya | Tanggal ditetapkan |
-| `SK` | Keputusan Direktur | Direktur | Ya | Tanggal ditetapkan |
-| `INS` | Instruksi Direktur | Direktur | Ya | Tanggal ditetapkan |
-| `SE` | Surat Edaran Direktur | Direktur | Ya | Tanggal ditetapkan |
-| `SPO` | Standar Prosedur Operasional | Direktur | Ya | Tanggal terbit |
-| `PDM` | Pedoman | Direktur | Ya | Tanggal berlaku |
-| `PAN` | Panduan | Direktur | Ya | Tanggal berlaku |
-| `CP` | Clinical Pathway | Direktur | Ya | Tanggal berlaku |
-| `PRK` | Program Kerja | Direktur | Ya | Tanggal berlaku |
+> **Keputusan:** Pengembangan **bertahap** — fase 1 hanya Kelompok A (9 jenis di bawah).
+> Kelompok B dan fitur lanjutan → fase berikutnya. Detail implementasi: [`TATA-NASKAH-FASE-1-NASKAH-DINAS-ARAHAN.md`](./TATA-NASKAH-FASE-1-NASKAH-DINAS-ARAHAN.md)
 
-### Kelompok B — Naskah Korespondensi (Dapat dari Direktur atau Unit)
+| Kode | Nama Lengkap | Level Penandatangan | TTE Wajib | Berlaku Setelah | Prioritas |
+|------|--------------|---------------------|-----------|-----------------|-----------|
+| `SPO` | Standar Prosedur Operasional | Direktur | Ya | Tanggal terbit | **P1** — ganti SIKAT |
+| `PER` | Peraturan Direktur | Direktur | Ya | Tanggal ditetapkan | P2 |
+| `SK` | Keputusan Direktur | Direktur | Ya | Tanggal ditetapkan | P2 |
+| `INS` | Instruksi Direktur | Direktur | Ya | Tanggal ditetapkan | P2 |
+| `SE` | Surat Edaran Direktur | Direktur | Ya | Tanggal ditetapkan | P2 |
+| `PDM` | Pedoman | Direktur | Ya | Tanggal berlaku | P3 |
+| `PAN` | Panduan | Direktur | Ya | Tanggal berlaku | P3 |
+| `CP` | Clinical Pathway | Direktur | Ya | Tanggal berlaku | P3 |
+| `PRK` | Program Kerja | Direktur | Ya | Tanggal berlaku | P3 |
 
-| Kode | Nama Lengkap | Level Penandatangan | TTE Wajib |
-|------|--------------|---------------------|-----------|
-| `SB` | Surat Biasa | Direktur | Opsional |
-| `UND` | Undangan Direktur | Direktur | Tidak |
-| `UND-UNIT` | Undangan Unit | Kabid/Kabag/Kepala Unit | Tidak |
-| `SKT` | Surat Keterangan | Direktur | Tidak |
-| `SPI` | Surat Perintah | Direktur | Tidak |
-| `STD` | Surat Tugas Perjalanan Dinas | Direktur | Tidak |
-| `LPD` | Laporan Perjalanan Dinas | Petugas (diketahui atasan) | Tidak |
-| `SKU` | Surat Kuasa | Direktur | Ya (materai) |
-| `PNG` | Pengumuman | Direktur | Tidak |
-| `SPT` | Surat Pengantar | Direktur | Tidak |
-| `BA` | Berita Acara | Direktur + Pihak II | Tidak |
-| `RKM` | Rekomendasi | Direktur | Tidak |
-| `MEM` | Memorandum/Memo Intern | Direktur (multi-level) | Opsional |
-| `SP` | Surat Perjanjian / PKS | Direktur + Pihak II | Ya (materai) |
-| `NTL` | Notulen | Notulis + Pimpinan Rapat | Tidak |
-| `DFH` | Daftar Hadir | — | Tidak |
-| `SRT` | Sertifikat | Direktur + Ketua Panitia | Tidak |
-| `CTI` | Permohonan Cuti/Izin | Atasan langsung + tidak langsung | Tidak |
+### Kelompok B — Naskah Korespondensi — ⏳ **Fase 2+** (belum dibangun)
+
+| Kode | Nama Lengkap | Modul | Catatan |
+|------|--------------|-------|---------|
+| `SB` | Surat Biasa | ⚠️ Evaluasi | Jika operasional harian → SIKAT |
+| `UND` | Undangan Direktur | ❌ SIKAT | Sudah ada — tidak dibangun |
+| `UND-UNIT` | Undangan Unit | ❌ SIKAT | Sudah ada — tidak dibangun |
+| `SKT` | Surat Keterangan | ⚠️ Evaluasi | |
+| `SPI` | Surat Perintah | ⚠️ Evaluasi | |
+| `STD` | Surat Tugas Perjalanan Dinas | ❌ SIKAT / HR | Cek modul existing |
+| `LPD` | Laporan Perjalanan Dinas | ❌ SIKAT / HR | |
+| `SKU` | Surat Kuasa | ⚠️ Evaluasi | |
+| `PNG` | Pengumuman | ⚠️ Evaluasi | |
+| `SPT` | Surat Pengantar | ⚠️ Evaluasi | |
+| `BA` | Berita Acara | ⚠️ Evaluasi | |
+| `RKM` | Rekomendasi | ⚠️ Evaluasi | |
+| `MEM` | Memorandum/Memo Intern | ❌ **SIKAT** | **Sudah ada — tidak dibangun** |
+| `SP` | Surat Perjanjian / PKS | ⚠️ Evaluasi | |
+| `NTL` | Notulen | ⚠️ Evaluasi | |
+| `DFH` | Daftar Hadir | ⚠️ Evaluasi | |
+| `SRT` | Sertifikat | ⚠️ Evaluasi | |
+| `CTI` | Permohonan Cuti/Izin | ❌ **SIKAT** | SSO cuti/ijin sudah ada |
+
+### Kelompok B (legacy — referensi pedoman, level penandatangan)
+
+| Kode | Level Penandatangan | TTE Wajib |
+|------|---------------------|-----------|
+| `SB` | Direktur | Opsional |
+| `SKU` | Direktur | Ya (materai) |
+| `SP` | Direktur + Pihak II | Ya (materai) |
 
 ---
 
@@ -204,46 +348,55 @@ QR Code 4 level: ${qrcode_4}=Koordinator, ${qrcode_3}=Kasubid/Kasubag,
 
 ## 4. Format Penomoran Dokumen
 
-### 4.1 Pola Format (Dari Contoh Nyata di Pedoman)
+### 4.1 Pola Format — Naskah Dinas Arahan (Kelompok A)
 
-Dari contoh undangan yang terdapat di pedoman:
-```
-RS'ASF/…./III.6.AU/A/…/202…
-```
+Format resmi dari pedoman RS'ASF:
 
-Breakdown komponen:
 ```
-RS'ASF / [nomor-urut] / [kode-unit] / [kode-sifat] / [bulan-romawi] / [tahun]
+RS'ASF / [nomor-urut] / [kode-unit-klasifikasi] / [kode-sifat] / [bulan-romawi] / [tahun]
 ```
 
-**Catatan khusus SPO (dari contoh pedoman):**
+**Contoh:**
+```
+RS'ASF/042/III.6.AU/I/VI/2026
+```
+
+| Segmen | Contoh | Keterangan |
+|--------|--------|------------|
+| `RS'ASF` | `RS'ASF` | Kode institusi — tetap |
+| `[nomor-urut]` | `042` | Counter atomic, 3 digit, reset tiap 1 Jan |
+| `[kode-unit-klasifikasi]` | `III.6.AU` | Kode unit hierarkis pedoman (bukan singkat `ADM`) |
+| `[kode-sifat]` | `I` | Kode sifat naskah (master `kode_sifat_naskah`) |
+| `[bulan-romawi]` | `VI` | Bulan ditetapkan |
+| `[tahun]` | `2026` | Tahun 4 digit |
+
+> **Catatan:** Kode jenis (`PER`, `SK`, `SPO`) disimpan di database (`kode_jenis`), **tidak selalu** muncul di string nomor — sesuai pola pedoman dinas arahan.
+
+**Catatan khusus SPO (contoh historis pedoman):**
 ```
 RS'ASF/08/SPO/ADM/I/III/2015
-→ RS'ASF / 08 / SPO / ADM / I (revisi) / III (bulan) / 2015
 ```
+No. revisi SPO (`00`, `01`, `02`) disimpan di `meta_regulasi.nomor_revisi` — konfirmasi Kesekretariatan apakah literal `SPO` wajib di string nomor.
 
-### 4.2 Komponen Format per Jenis
+### 4.2 Komponen Format (referensi)
 
 | Komponen | Keterangan | Contoh |
 |----------|-----------|--------|
-| `RS'ASF` | Kode institusi — tetap | `RS'ASF` |
-| `[nomor-urut]` | Counter per jenis + unit + tahun, 3 digit, auto-reset tiap 1 Jan | `001`, `042` |
-| `[kode-jenis]` | Kode jenis naskah | `PER`, `SK`, `SPO`, `UND` |
-| `[kode-unit]` | Kode departemen/unit (dari `departemen` SIMRS) | `ADM`, `KEP`, `MED` |
-| `[bulan-romawi]` | Bulan ditetapkan dalam angka Romawi | `I`, `III`, `XII` |
+| `[nomor-urut]` | Counter per unit klasifikasi + tahun | `001`, `042` |
+| `[kode-unit-klasifikasi]` | Dari master `kode_unit_klasifikasi` | `III.6.AU` |
+| `[kode-sifat]` | Dari master sifat naskah | `A`, `I` |
+| `[bulan-romawi]` | Bulan ditetapkan | `I`, `VI`, `XII` |
 | `[tahun]` | Tahun 4 digit | `2026` |
 
-**Format final yang direkomendasikan:**
+**Template format di `konfigurasi_jenis_dokumen`:**
 ```
-RS'ASF/[NNN]/[JENIS]/[UNIT]/[BR]/[YYYY]
-Contoh: RS'ASF/001/PER/DIR/VI/2026
-         RS'ASF/042/SPO/ADM/III/2026
-         RS'ASF/007/SK/KEP/I/2026
+RS'ASF/[NNN]/[UNIT_KLASIFIKASI]/[SIFAT]/[BR]/[YYYY]
+Contoh hasil: RS'ASF/042/III.6.AU/I/VI/2026
 ```
 
 ### 4.3 Aturan Counter
 
-- Counter scoped per **kode_jenis + dep_id + tahun**
+- Counter scoped per **`kode_unit_klasifikasi + tahun`** (fase 1 — Naskah Dinas Arahan)
 - Increment atomic menggunakan `DB::transaction` + `lockForUpdate()`
 - Reset otomatis setiap 1 Januari
 - Nomor **tidak boleh di-delete** — jika dokumen dibatalkan, nomor tetap ada tapi status `batal`
@@ -823,19 +976,42 @@ Tambahkan flag di tabel `users` (pola existing Portal):
 
 ---
 
-## 11. Roadmap Implementasi
+## 11. Roadmap Implementasi (Ringkas)
+
+> **Dokumen implementasi bertahap lengkap:**
+> [`TATA-NASKAH-FASE-1-NASKAH-DINAS-ARAHAN.md`](./TATA-NASKAH-FASE-1-NASKAH-DINAS-ARAHAN.md)
+
+| Fase | Scope | Status |
+|------|-------|--------|
+| **Fase 1** | Kelompok A — Naskah Dinas Arahan (9 jenis) | 🟡 **Sedang direncanakan** |
+| Fase 2 | TTE cert + QR publik + laporan STARKES | ⏳ Belum |
+| Fase 3 | Kelompok B korespondensi | ⏳ Belum |
+| Fase 4 | AI search + OCR + generator PDF | ⏳ Belum |
+
+### Fase 1 — Sub-fase (ringkas)
+
+| Sub-fase | Isi | Minggu |
+|----------|-----|--------|
+| **1A** | Fondasi DB, penomoran, Stirling, permission | 1–2 |
+| **1B** | **SPO** end-to-end (ganti SIKAT) | 2–3 |
+| **1C** | PER, SK, INS, SE | 3–4 |
+| **1D** | PDM, PAN, CP, PRK + distribusi STARKES | 4–5 |
+| **1E** | Migrasi arsip SPO dari SIKAT | parallel |
 
 ### Fase 0 — Persiapan (1 minggu)
 
 - [ ] Setup role & permission flag di `users`
-- [ ] Seed `konfigurasi_jenis_dokumen` dengan 20+ jenis naskah RS'ASF
-- [ ] Upload template awal (minimal: PER, SK, SPO, Memo Intern, Surat Biasa)
+- [ ] Seed `konfigurasi_jenis_dokumen` — **9 jenis Kelompok A saja**
+- [ ] Master `kode_unit_klasifikasi` (III.6.AU, …) + `kode_sifat_naskah`
+- [ ] Upload template awal (minimal: SPO, PER, SK)
 - [ ] Setup `HijriConverterService` + test akurasi konversi
 - [ ] Setup `DocumentNumberService` + unit test race condition
 - [ ] Verifikasi koneksi Stirling-PDF (`GET /api/v1/info/status`) + simpan API key di `.env`
 - [ ] Uji `add-stamp` via Swagger untuk 2–3 jenis naskah (tentukan koordinat `%`)
 
-### Fase 1 — MVP Document Control (4–5 minggu)
+### Fase 1 — MVP Naskah Dinas Arahan (4–5 minggu)
+
+> Detail checklist per sub-fase: [`TATA-NASKAH-FASE-1-NASKAH-DINAS-ARAHAN.md`](./TATA-NASKAH-FASE-1-NASKAH-DINAS-ARAHAN.md)
 
 - [ ] Migration: semua tabel (dokumen, versi_dokumen, counter, meta, audit, distribusi)
 - [ ] CRUD dokumen + upload file PDF
@@ -877,7 +1053,7 @@ Tambahkan flag di tabel `users` (pola existing Portal):
 |---|-----------|--------|
 | 1 | Penomoran pakai `counter_nomor_dokumen` + transaction + row lock | Anti-duplikat, atomic, scoped per jenis+unit+tahun |
 | 2 | Reuse `departemen` SIMRS (bukan buat `unit_kerja` baru) | Konsisten dengan tiket, SIMRS, payroll |
-| 3 | `META_SURAT` tetap ada tapi scope-nya bukan surat operasional SIKAT | Untuk surat resmi Direktur yang tidak lewat SIKAT |
+| 3 | `META_SURAT` tetap ada tapi **hanya** untuk surat resmi Portal yang tidak ada di SIKAT | Memo/undangan/disposisi tetap SIKAT |
 | 4 | Nomor dokumen **tidak berubah saat revisi** — versi naik, nomor tetap | Referensi di lapangan tidak kacau |
 | 5 | Nomor digenerate saat `menunggu_tte`, bukan saat draft | Nomor hanya keluar untuk dokumen yang akan resmi |
 | 6 | Distribusi + konfirmasi penerimaan masuk **Fase 1** (bukan Fase 2) | Wajib untuk STARKES — surveyor tanya bukti distribusi |
@@ -887,6 +1063,10 @@ Tambahkan flag di tabel `users` (pola existing Portal):
 | 10 | Audit trail tabel terpisah `audit_dokumen` (bukan gabung `ticket_activities`) | Domain berbeda, tapi struktur mirip |
 | 11 | Salam Islami (Assalamu'alaikum, Nashrun Minallah) dikonfigurasi per jenis | Sesuai pedoman RS'ASF, semua dokumen resmi memakai salam |
 | 12 | PDF processing via **Stirling-PDF** REST API (instance internal RS) | Server sudah running v2.13.0; fokus Laravel ke business logic; siap TTE cert & shared signing fase 2+ |
+| 13 | Memo intern, undangan, disposisi, cuti/ijin | **Tidak dibangun** di modul baru — tetap di SIKAT via SSO |
+| 14 | **SPO dibuat ulang 100% di Portal** — SIKAT `/spo` di-retire | Satu sistem SPO resmi |
+| 15 | Pengembangan **bertahap** — fase 1 hanya Kelompok A (9 jenis) | Scope fokus; Kelompok B fase 2+ |
+| 16 | Format penomoran dinas arahan: `RS'ASF/NNN/III.6.AU/I/VI/YYYY` | Sesuai pedoman RS'ASF; bukan format lama dengan kode jenis di nomor |
 
 ---
 
@@ -899,7 +1079,7 @@ Tambahkan flag di tabel `users` (pola existing Portal):
 | 3 | Reset counter per tahun atau per bulan? | A) Per tahun (lebih umum) B) Per bulan | Per tahun, kecuali ada jenis tertentu yang harus per bulan |
 | 4 | Siapa owner template dokumen? | A) Kesekretariatan B) Tim IT C) Admin modul | Rekomendasi: Kesekretariatan buat template, IT setup di sistem |
 | 5 | Nomor boleh di-override admin untuk migrasi? | A) Ya (dengan log) B) Tidak | Ya, tapi wajib log alasan dan siapa yang override |
-| 6 | Apakah SPO di SIKAT akan dipindah ke sistem baru? | A) Migrasi bertahap B) SPO baru saja di sini C) Tidak, SIKAT tetap pegang | Perlu inventaris berapa SPO di SIKAT |
+| 6 | Migrasi data SPO arsip dari SIKAT ke Portal | A) Re-upload manual per dokumen B) Import batch (CSV + PDF) C) Hybrid | Inventaris dulu berapa SPO aktif di SIKAT; tentukan deadline cutover |
 | 7 | Dokumen kadaluarsa: otomatis atau manual? | A) Otomatis setelah tanggal_review lewat B) Manual oleh admin | Rekomendasi: otomatis status `menunggu_review` → jika 30 hari tidak ada aksi → `kadaluarsa` |
 | 8 | Berapa lama dokumen arsip disimpan sebelum bisa dihapus permanen? | A) Tidak pernah dihapus B) 5 tahun C) Sesuai kebijakan | Sesuaikan dengan kepolitikan retensi dokumen RS (cek dengan Kesekretariatan) |
 | 9 | Koordinat inject (nomor, TTD, QR) per jenis naskah — siapa tentukan? | A) Hardcode di config B) Admin atur via `konfigurasi_jenis_dokumen` C) Uji di Swagger Stirling dulu | Rekomendasi: simpan posisi % di master jenis dokumen; uji visual di Swagger UI |
@@ -1098,7 +1278,3 @@ Storage::disk('private')->put($outputPath, $response->body());
 - [ ] Semua developer baca dokumen ini sebelum mulai coding
 
 ---
-
-*Dokumen ini dibuat berdasarkan: Lampiran Pedoman Tata Naskah RS'ASF 2026 (sumber primer), Bahan Diskusi Tim Internal Portal SIFAST, dan analisis teknis Claude AI. Versi 1.0 — Juni 2026.*
-
-*Revisi dokumen ini harus melalui persetujuan: Lead Developer + Kesekretariatan RS'ASF.*

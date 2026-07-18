@@ -1,0 +1,4 @@
+{
+  "summary": "User Dr Hud bertanya lokasi tanda tangan. Dijelaskan bahwa TTE visual belum ada — persetujuan via tombol Setujui & Aktifkan di detail dokumen menunggu_tte. Dokumen 'IHT Coba Lagi' sudah menunggu NIK 13.20.04.2007 (Dr Hud). UX diperbaiki: banner 'menunggu persetujuan Anda' di index, filter menunggu_saya, section 'Tanda Tangan & Persetujuan' di show untuk penandatangan.",
+  "current_status": "Dr Hud login → Tata Naskah → banner 1 dokumen → buka IHT Coba Lagi → Setujui & Aktifkan. Stamp gambar TTD ke PDF masih backlog."
+}

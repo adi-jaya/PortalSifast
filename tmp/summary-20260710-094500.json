@@ -1,0 +1,4 @@
+{
+  "summary": "User menanyakan apakah sudah ada dokumentasi pengembang untuk modul Rekanan. Ditemukan bahwa dokumentasi belum lengkap: hanya ada contoh komponen PartnersSection.tsx, belum ada rekanan.md seperti modul lain, dan PANDUAN-INTEGRASI-FRONTEND.md belum memuat modul Rekanan.",
+  "current_status": "Modul Rekanan sudah berfungsi (API + panel admin + contoh React), namun dokumentasi pengembang masih parsial dibanding modul lain seperti promo.md dan kamarinap.md."
+}

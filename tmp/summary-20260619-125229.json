@@ -1,0 +1,4 @@
+{
+  "summary": "User menanyakan apakah dokumen sudah disesuaikan modul existing (memo intern, undangan, disposisi di SIKAT; SPO boleh dibangun ulang) dan bingung alur upload vs penomoran. Dokumen diperbarui: §1.4 peta modul existing vs baru, §1.5 timeline upload vs penomoran + diagram mermaid, scope §2 dikoreksi (MEM/UND/disposisi/CTI keluar), keputusan §12 #13-14. Dijelaskan: upload PDF di draft tanpa nomor; nomor generate saat menunggu_tte lalu Stirling stamp.",
+  "current_status": "Masterplan Tata Naskah selaras modul existing. Fokus Portal: PER/SK/INS/SE/SPO baru/regulasi. SIKAT: surat harian, memo, undangan, disposisi. Alur fase 1: draft+upload PDF → review → generate nomor → stamp → TTE → aktif+distribusi."
+}

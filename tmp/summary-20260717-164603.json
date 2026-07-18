@@ -1,0 +1,4 @@
+{
+  "summary": "Redesigned /aset/create UI: 3-step wizard (Barang → Penempatan → Tambahan), mode toggle existing vs new barang, React Select (SearchSelect) for barang/ruang/master/ASPAK with search, progressive disclosure for serials and regulasi, sticky footer with Simpan cepat from step 2. Built frontend; aset tests pass.",
+  "current_status": "Aset create page UX overhauled for simplicity; user should hard refresh live site to see changes."
+}

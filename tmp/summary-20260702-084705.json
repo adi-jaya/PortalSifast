@@ -1,0 +1,4 @@
+{
+  "summary": "User asked about the fixed CSV table format for payroll salary upload. Explained that the system auto-detects delimiter (; preferred), normalizes headers (spaces to underscores, case-insensitive), requires NIK per row, and maps columns via PayrollCsvMapper. Provided full downloadable CSV template with header row and one example data row matching the documented payroll export format.",
+  "current_status": "Payroll import module is functional with CSV upload at /payroll/import. No template file existed in the repo; user was given the canonical CSV template inline based on api-documentation.md and PayrollCsvMapper column mappings."
+}

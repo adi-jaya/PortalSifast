@@ -38,6 +38,7 @@ class UpdateTicketRequest extends FormRequest
             'description' => ['sometimes', 'nullable', 'string', 'max:10000'],
             'due_date' => ['sometimes', 'nullable', 'date', 'after_or_equal:today'],
             'asset_no_inventaris' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'asset_id' => ['sometimes', 'nullable', 'integer', 'exists:aset,id'],
             'tag_ids' => ['sometimes', 'nullable', 'array'],
             'tag_ids.*' => ['integer', Rule::exists('ticket_tags', 'id')->where('is_active', true)],
             'project_id' => ['sometimes', 'nullable', 'integer', Rule::exists('projects', 'id')],

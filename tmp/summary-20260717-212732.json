@@ -1,0 +1,4 @@
+{
+  "summary": "User memilih peran serah-terima C: cukup peminjam; penyerah/penerima = user login otomatis. Lanjut klarifikasi status aset saat dipinjam.",
+  "current_status": "Brainstorming mutasi+peminjaman: scope D, aktor C, peran C; status aset belum dikunci."
+}

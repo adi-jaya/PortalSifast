@@ -1,0 +1,4 @@
+{
+  "summary": "Added public QR scan page at /q/{kode_aset} without login; shows field-safe asset info (identity, location, status, serial, calibration flag, photo) and hides price/history. Label print now encodes public URL. Pest coverage added; frontend built.",
+  "current_status": "QR scan works for guests; reprint labels to update old QR that still pointed to auth-only /aset/{kode}."
+}

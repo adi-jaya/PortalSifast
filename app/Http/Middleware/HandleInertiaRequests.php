@@ -53,12 +53,22 @@ class HandleInertiaRequests extends Middleware
                 'sikat' => [
                     'enabled' => filled(config('services.sikat.sso_secret')),
                 ],
+                'tatanaskah' => [
+                    'can_view' => $request->user()?->canAccessTatanaskahModule() ?? false,
+                    'can_manage' => $request->user()?->canManageTatanaskah() ?? false,
+                    'can_buat' => $request->user()?->canBuatDokumen() ?? false,
+                ],
+                'web_official' => [
+                    'can_manage' => $request->user()?->canManageWebOfficial() ?? false,
+                    'can_manage_user_flags' => $request->user()?->canManageWebOfficialAccess() ?? false,
+                ],
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'flash' => [
                 'syncSuccess' => $request->session()->get('syncSuccess'),
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error'),
+                'sinkron_preview' => $request->session()->get('sinkron_preview'),
             ],
             'errors' => $request->session()->get('errors')?->getBag('default')->getMessages(),
         ];

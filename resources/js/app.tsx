@@ -1,30 +1,16 @@
 import { createInertiaApp } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import AOS from 'aos';
 import '../css/app.css';
 import { initializeTheme } from './hooks/use-appearance';
 import { initializeColorTheme } from './hooks/use-color-theme';
 import './echo.js';
 import { configureEcho } from '@laravel/echo-react';
 
-// ─── Google Fonts: Plus Jakarta Sans ──────────────────────────────────────────
-const fonts = document.createElement('link');
-fonts.rel = 'preconnect';
-fonts.href = 'https://fonts.googleapis.com';
-document.head.appendChild(fonts);
-
-const fontsGstatic = document.createElement('link');
-fontsGstatic.rel = 'preconnect';
-fontsGstatic.href = 'https://fonts.gstatic.com';
-fontsGstatic.crossOrigin = 'anonymous';
-document.head.appendChild(fontsGstatic);
-
-const fontsSheet = document.createElement('link');
-fontsSheet.rel = 'stylesheet';
-fontsSheet.href =
-    'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap';
-document.head.appendChild(fontsSheet);
+// Font is loaded via Blade template head (Geist — see resources/views/app.blade.php)
 
 configureEcho({
     broadcaster: 'reverb',
@@ -57,7 +43,7 @@ createInertiaApp({
         );
     },
     progress: {
-        color: '#4361ee',
+        color: '#0A9E8F',
     },
 });
 
@@ -65,3 +51,18 @@ createInertiaApp({
 initializeTheme();
 // Initialize color theme customizer...
 initializeColorTheme();
+
+// ─── AOS — Animate On Scroll ──────────────────────────────────────────────────
+AOS.init({
+    duration: 400,
+    easing: 'ease-out-cubic',
+    once: true,
+    offset: 40,
+    delay: 0,
+    disable: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+});
+
+// Re-run AOS after each Inertia page navigation
+router.on('finish', () => {
+    AOS.refresh();
+});

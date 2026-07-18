@@ -1,0 +1,4 @@
+{
+  "summary": "Fixed aset create crash: no_seri_list became a function because setData(field, updater) is invalid in Inertia—changed to setData(fullFormCallback) and Array.isArray guards. Rebuilt frontend. Payroll 404 is separate sidebar bug (/payroll/employee-history vs /payroll/employee/{nik}).",
+  "current_status": "Aset create page should load; user needs hard refresh after build. Payroll sidebar link still broken if they want that fixed next."
+}

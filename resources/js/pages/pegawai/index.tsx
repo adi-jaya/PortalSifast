@@ -39,7 +39,7 @@ export default function PegawaiIndex({ pegawai }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Daftar Pegawai" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <Heading
                     title="Daftar Pegawai"
                     description="Pegawai aktif dari SIMRS (Dokter & Petugas)"

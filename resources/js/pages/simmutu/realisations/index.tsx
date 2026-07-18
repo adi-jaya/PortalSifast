@@ -114,7 +114,7 @@ export default function MutuRealisationsIndex({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Rekap Mutu — SIMMUTU" />
 
-            <div className="flex h-full flex-1 flex-col gap-6 p-4 pb-10">
+            <div className="flex flex-col gap-6 pb-10">
                 {/* Hero / branding */}
                 <div className="relative overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/[0.08] via-card to-emerald-500/[0.06] shadow-sm">
                     <div className="pointer-events-none absolute -right-16 -top-16 size-56 rounded-full bg-primary/10 blur-3xl" />

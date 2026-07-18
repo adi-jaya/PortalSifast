@@ -12,7 +12,6 @@ export const sikatSuratNavItems: SikatSuratNavItem[] = [
     { id: 'surat-masuk', label: 'Surat Masuk', to: '/surat_masuk' },
     { id: 'surat-keluar', label: 'Surat Keluar', to: '/surat_keluar' },
     { id: 'surat-edaran', label: 'Surat Edaran', to: '/surat_edaran' },
-    { id: 'spo', label: 'SPO', to: '/spo' },
 ];
 
 export const sikatSuratCutiNavItems: SikatSuratNavItem[] = [

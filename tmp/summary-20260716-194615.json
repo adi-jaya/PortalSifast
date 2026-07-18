@@ -1,0 +1,4 @@
+{
+  "summary": "Diagnosed inventaris photo 404s: many inventaris_gambar rows point to files that no longer exist on SIMRS (remote HTTP 404). Fixed proxy to return a soft 200 1×1 PNG with X-Inventaris-Photo: missing instead of aborting 404, moved photo routes before the resource, URL-encode path segments, and updated catalog/audit thumbs to treat 1×1 as empty-state. Tests passed.",
+  "current_status": "Photo console 404s should be gone after refresh; missing SIMRS files show 'No photo' placeholder. Real photos that still exist on SIMRS continue to load. Frontend may need npm run build/dev."
+}

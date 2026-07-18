@@ -1,0 +1,4 @@
+{
+  "summary": "Fixed HTTP 500 error caused by file permission issue. Root cause: web server runs as 'www' user but storage/framework/views/, storage/framework/cache/, storage/framework/sessions/, storage/logs/, and bootstrap/cache/ directories only had write permission for 'replikasi' owner (775), not for 'www' (others). Fixed by chmod o+w on those directories (now 777). Also ran php artisan view:clear to force fresh Blade compilation. Laravel boots cleanly after fix.",
+  "current_status": "Site is running again. All storage directories have correct 777 permissions for multi-user web server setup. Geist font, new color palette, split-screen login, AOS, and all web-official modules are active."
+}

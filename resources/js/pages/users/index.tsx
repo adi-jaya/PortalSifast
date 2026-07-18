@@ -3,6 +3,7 @@ import { Search, X } from 'lucide-react';
 import { useState, useCallback } from 'react';
 import { EmptyState } from '@/components/empty-state';
 import Heading from '@/components/heading';
+import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +33,8 @@ type UserItem = {
     role: string;
     dep_id: string | null;
     created_at: string;
+    can_manage_web_official: boolean;
+    has_web_official_access: boolean;
 };
 
 type PaginatedUsers = {
@@ -83,7 +86,7 @@ export default function UsersIndex({ users, filters }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Daftar User" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <Heading
                         title="Daftar User"
@@ -166,6 +169,9 @@ export default function UsersIndex({ users, filters }: Props) {
                                         Role
                                     </th>
                                     <th className="px-4 py-3 font-medium">
+                                        Website Official
+                                    </th>
+                                    <th className="px-4 py-3 font-medium">
                                         Dep
                                     </th>
                                     <th className="px-4 py-3 font-medium">
@@ -179,7 +185,7 @@ export default function UsersIndex({ users, filters }: Props) {
                             <tbody>
                                 {users.data.length === 0 ? (
                                     <tr>
-                                        <td colSpan={8} className="p-0">
+                                        <td colSpan={9} className="p-0">
                                             <EmptyState
                                                 title="Belum ada user"
                                                 description="Tambahkan user baru untuk mengakses aplikasi."
@@ -222,6 +228,20 @@ export default function UsersIndex({ users, filters }: Props) {
                                                 >
                                                     {user.role}
                                                 </Badge>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {user.has_web_official_access ? (
+                                                    <StatusBadge
+                                                        tone={user.role === 'admin' ? 'primary' : 'normal'}
+                                                        label={
+                                                            user.role === 'admin'
+                                                                ? 'Admin'
+                                                                : 'Staff'
+                                                        }
+                                                    />
+                                                ) : (
+                                                    <span className="text-muted-foreground">–</span>
+                                                )}
                                             </td>
                                             <td className="px-4 py-3 text-muted-foreground">
                                                 {user.dep_id ?? '–'}

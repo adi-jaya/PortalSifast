@@ -1,0 +1,4 @@
+{
+  "summary": "Root cause: resource route aset-peminjaman pakai param {aset_peminjaman} sementara controller expect $peminjaman → model kosong (id null, semua –). Fixed parameters mapping; UI show peminjaman/mutasi diperhalus; print template diperbaiki; Pest show+print ditambah. Build + tests dijalankan.",
+  "current_status": "Bug detail/print peminjaman diperbaiki. User perlu hard-refresh / buka ulang detail peminjaman yang valid."
+}

@@ -1,0 +1,4 @@
+{
+  "summary": "Continued Instagram integration: added admin panel at /web-official/instagram (status cards, sync button, post preview grid), sidebar nav + dashboard cards, Meta setup guide (instagram-setup-meta.md), example React component for external website frontend, web routes/controller, tests (2 passing), docs updates, and frontend build.",
+  "current_status": "Instagram module complete end-to-end: public API, admin API, artisan sync, scheduler, PortalSifast admin UI, setup docs, and frontend example. Pending: Meta credentials in production .env and first sync."
+}

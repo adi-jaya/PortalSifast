@@ -1,0 +1,4 @@
+{
+  "summary": "Fixed inventaris show 500: Ticket query used wrong column status_id; corrected to ticket_status_id so related tickets load without SQL error.",
+  "current_status": "Inventaris show page should load again for assets like I000000006. Write ops to SIMRS still depend on DB grants."
+}

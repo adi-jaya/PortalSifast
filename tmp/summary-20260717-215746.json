@@ -1,0 +1,4 @@
+{
+  "summary": "Inline execution plan mutasi+peminjaman selesai di branch feat/aset-mutasi-peminjaman: migrasi status_ketersediaan + 2 tabel, services, HTTP/UI peminjaman & mutasi, cetak bukti, sidebar, link di aset show. 10 Pest tests hijau, npm build OK.",
+  "current_status": "Fitur peminjaman & mutasi lokasi siap dipakai di branch feat/aset-mutasi-peminjaman. Belum di-commit/merge ke main."
+}

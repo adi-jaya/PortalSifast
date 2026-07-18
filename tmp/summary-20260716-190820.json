@@ -1,0 +1,4 @@
+{
+  "summary": "Redesigned inventaris index as a marketplace-style catalog grid with lazy-loaded thumbnails via authenticated /inventaris/{id}/photo proxy, status chips, price, room, and card actions.",
+  "current_status": "Inventaris list now looks like a product catalog. Thumbnails stream through Portal so SIMRS IP stays hidden. Run npm run build/dev if UI assets need refresh."
+}

@@ -1,0 +1,4 @@
+{
+  "summary": "Workflow Tata Naskah direvisi sesuai permintaan user: Review Unit/Mutu dihapus dari alur utama. Sekarang Draft → Ajukan ke Direktur (menunggu_tte, nomor keluar) → Aktif (Sekretaris setujui via can_tte_dokumen). UI show/create/index diperbarui, policy disesuaikan, dokumen legacy review_unit tetap bisa loncat ke menunggu_tte. Test dan build lulus.",
+  "current_status": "Alur baru aktif di production setelah build. Dokumen 'COBA ABSEN' (review_unit) bisa langsung diajukan ke Direktur dari halaman detail. Sekretaris perlu flag can_tte_dokumen untuk setujui."
+}

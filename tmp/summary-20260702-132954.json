@@ -1,0 +1,4 @@
+{
+  "summary": "User meminta review docs hero-promo.md, promo.md, dan PANDUAN tanpa membuat ulang yang sudah ada. Ditemukan: modul promosi & hero-promo belum diimplementasi (hanya spesifikasi); informasi/kamar/dokter/jadwal sudah ada; upload media ada tapi folder masih terbatas informasi/kamar-inap; kategori Promo di informasi legacy perlu dipisah. PANDUAN sudah menandai status benar. Link promosi.md di PANDUAN broken (file sebenarnya promo.md).",
+  "current_status": "Backend website official siap untuk informasi, kamar, jadwal & profil dokter. Promosi + hero promo menunggu implementasi sesuai spesifikasi docs; tidak ada duplikasi kode yang perlu dihindari kecuali jangan pakai modul informasi untuk promo baru."
+}

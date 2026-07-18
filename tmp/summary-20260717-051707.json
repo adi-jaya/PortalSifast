@@ -1,0 +1,4 @@
+{
+  "summary": "Implemented inventaris Phase 0–1: Indonesian portal tables (aset*), SIMRS writes disabled, GeneratorKodeAset INV-{ruang}-{tahun}-{####}, SinkronAsetDariSimrs preview/apply, foto portal, Aset UI (index/show/create/edit/sinkron/verifikasi), sidebar links, and Pest coverage (25 passed, 2 skipped).",
+  "current_status": "Tahap 0–1 complete. Next for users: run Sinkron SIMRS from /aset/sinkron, verify drafts, upload photos. Frontend needs npm run build/dev. Later phases: audit, mutasi, kalibrasi, depresiasi."
+}

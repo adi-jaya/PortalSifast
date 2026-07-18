@@ -1,0 +1,4 @@
+{
+  "summary": "Menyelesaikan implementasi Fase 1A/1B modul Tata Naskah: migrasi dan seeder dijalankan, halaman Inertia (index/create/show), menu sidebar & mobile nav, perbaikan akses staff via canAccessTatanaskahModule, PDF inline viewer, 6 test lulus, frontend di-build. Master data jenis/unit/sifat sudah di-seed ke database produksi.",
+  "current_status": "Modul Tata Naskah (Naskah Dinas Arahan) siap dipakai untuk SPO end-to-end: buat draft → upload PDF → workflow review → nomor digenerate di menunggu_tte. Langkah berikutnya: konfigurasi STIRLING_PDF_URL/API_KEY di .env, set flag permission user (review/TTE), dan uji manual di browser."
+}
