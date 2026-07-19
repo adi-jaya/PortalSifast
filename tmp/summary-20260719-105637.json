@@ -1,0 +1,4 @@
+﻿{
+  "summary": "Memperbaiki field kosong agent: WMI Windows untuk manufacturer/model/motherboard/BIOS/domain/username, pemilihan MAC/IP non-virtual (skip Tailscale), heartbeat Laravel kini menyimpan mac/hardware/agent_version. Rebuild 0.2.0 di dist/; binary root terkunci karena agent masih running.",
+  "current_status": "Kode siap. User perlu stop agent lama, jalankan dist/rs-agent.exe 0.2.0, deploy perubahan HeartbeatController ke production, lalu refresh UI monitoring."
+}

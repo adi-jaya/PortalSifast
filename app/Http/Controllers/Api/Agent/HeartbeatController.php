@@ -28,16 +28,38 @@ class HeartbeatController extends Controller
             'uptime_seconds' => $validated['uptime_seconds'] ?? $device->uptime_seconds,
         ];
 
-        if (array_key_exists('hostname', $validated) && $validated['hostname'] !== null) {
-            $updates['hostname'] = $validated['hostname'];
+        foreach (['hostname', 'computer_name', 'ip_address', 'mac_address', 'agent_version'] as $field) {
+            if (array_key_exists($field, $validated) && $validated[$field] !== null && $validated[$field] !== '') {
+                $updates[$field] = $validated[$field];
+            }
         }
 
-        if (array_key_exists('ip_address', $validated) && $validated['ip_address'] !== null) {
-            $updates['ip_address'] = $validated['ip_address'];
-        }
-
-        // Fast path: one UPDATE + one INSERT (no hardware rewrite).
         MonitoredDevice::query()->whereKey($device->id)->update($updates);
+
+        $hardware = $validated['hardware'] ?? null;
+        if (is_array($hardware) && $hardware !== []) {
+            $hardwareUpdates = [];
+            foreach ([
+                'manufacturer',
+                'model',
+                'serial_number',
+                'motherboard',
+                'bios',
+                'domain',
+                'username',
+            ] as $field) {
+                if (array_key_exists($field, $hardware) && $hardware[$field] !== null && $hardware[$field] !== '') {
+                    $hardwareUpdates[$field] = $hardware[$field];
+                }
+            }
+
+            if ($hardwareUpdates !== []) {
+                $device->hardware()->updateOrCreate(
+                    ['monitored_device_id' => $device->id],
+                    $hardwareUpdates
+                );
+            }
+        }
 
         DeviceMetricSample::query()->create([
             'monitored_device_id' => $device->id,

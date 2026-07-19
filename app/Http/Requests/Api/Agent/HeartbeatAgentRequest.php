@@ -23,7 +23,18 @@ class HeartbeatAgentRequest extends FormRequest
             'disk_percent' => ['required', 'numeric', 'min:0', 'max:100'],
             'uptime_seconds' => ['nullable', 'integer', 'min:0'],
             'hostname' => ['nullable', 'string', 'max:255'],
+            'computer_name' => ['nullable', 'string', 'max:255'],
             'ip_address' => ['nullable', 'string', 'max:45'],
+            'mac_address' => ['nullable', 'string', 'max:64'],
+            'agent_version' => ['nullable', 'string', 'max:32'],
+            'hardware' => ['nullable', 'array'],
+            'hardware.manufacturer' => ['nullable', 'string', 'max:255'],
+            'hardware.model' => ['nullable', 'string', 'max:255'],
+            'hardware.serial_number' => ['nullable', 'string', 'max:255'],
+            'hardware.motherboard' => ['nullable', 'string', 'max:255'],
+            'hardware.bios' => ['nullable', 'string', 'max:255'],
+            'hardware.domain' => ['nullable', 'string', 'max:255'],
+            'hardware.username' => ['nullable', 'string', 'max:255'],
         ];
     }
 

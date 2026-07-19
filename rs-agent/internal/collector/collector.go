@@ -5,6 +5,7 @@ import (
 	"net"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/shirou/gopsutil/v4/cpu"
@@ -80,7 +81,6 @@ func Collect(deviceUUID, agentVersion string) (Snapshot, error) {
 
 	usage, err := disk.Usage("/")
 	if err != nil {
-		// Windows-friendly fallback; ignore if both fail later.
 		usage, err = disk.Usage("C:\\")
 		if err != nil {
 			return Snapshot{}, fmt.Errorf("disk: %w", err)
@@ -90,16 +90,27 @@ func Collect(deviceUUID, agentVersion string) (Snapshot, error) {
 	ip, mac := primaryNet()
 	tz, _ := time.Now().Zone()
 	boot := time.Unix(int64(info.BootTime), 0)
+	hwExtra := platformHardware()
 
 	cpuPct := 0.0
 	if len(cpuPercents) > 0 {
 		cpuPct = cpuPercents[0]
 	}
 
+	username := currentUsername()
+	if username == "" {
+		username = hwExtra.Username
+	}
+
+	serial := strings.TrimSpace(hwExtra.SerialNumber)
+	if serial == "" {
+		serial = info.HostID
+	}
+
 	return Snapshot{
 		UUID:         deviceUUID,
 		Hostname:     hostname,
-		ComputerName: hostname,
+		ComputerName: firstNonEmpty(hwExtra.ComputerName, hostname),
 		IPAddress:    ip,
 		MACAddress:   mac,
 		AgentVersion: agentVersion,
@@ -111,10 +122,15 @@ func Collect(deviceUUID, agentVersion string) (Snapshot, error) {
 			CPUCores:     cores,
 			RAMTotalMB:   vm.Total / (1024 * 1024),
 			DiskTotalGB:  usage.Total / (1024 * 1024 * 1024),
+			Manufacturer: hwExtra.Manufacturer,
+			Model:        hwExtra.Model,
+			SerialNumber: serial,
+			Motherboard:  hwExtra.Motherboard,
+			BIOS:         hwExtra.BIOS,
 			BootTime:     boot,
 			Timezone:     tz,
-			Username:     currentUsername(),
-			SerialNumber: info.HostID,
+			Domain:       hwExtra.Domain,
+			Username:     username,
 		},
 		Metrics: Metrics{
 			CPUPercent:    cpuPct,
@@ -125,14 +141,40 @@ func Collect(deviceUUID, agentVersion string) (Snapshot, error) {
 	}, nil
 }
 
+type platformHW struct {
+	Manufacturer string
+	Model        string
+	SerialNumber string
+	Motherboard  string
+	BIOS         string
+	Domain       string
+	Username     string
+	ComputerName string
+}
+
 func currentUsername() string {
-	if u := os.Getenv("USERNAME"); u != "" {
+	if u := strings.TrimSpace(os.Getenv("USERNAME")); u != "" {
 		return u
 	}
-	return os.Getenv("USER")
+	return strings.TrimSpace(os.Getenv("USER"))
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if strings.TrimSpace(v) != "" {
+			return strings.TrimSpace(v)
+		}
+	}
+	return ""
 }
 
 func primaryNet() (ip, mac string) {
+	type candidate struct {
+		ip, mac string
+		score   int
+	}
+	var best *candidate
+
 	ifaces, err := net.Interfaces()
 	if err != nil {
 		return "", ""
@@ -142,28 +184,68 @@ func primaryNet() (ip, mac string) {
 		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
 			continue
 		}
+		name := strings.ToLower(iface.Name)
+		if isVirtualIface(name) {
+			continue
+		}
+		macStr := iface.HardwareAddr.String()
+		if macStr == "" || macStr == "00:00:00:00:00:00" {
+			continue
+		}
+
 		addrs, err := iface.Addrs()
 		if err != nil {
 			continue
 		}
 		for _, addr := range addrs {
-			var candidate net.IP
+			var candidateIP net.IP
 			switch v := addr.(type) {
 			case *net.IPNet:
-				candidate = v.IP
+				candidateIP = v.IP
 			case *net.IPAddr:
-				candidate = v.IP
+				candidateIP = v.IP
 			}
-			if candidate == nil || candidate.IsLoopback() {
+			if candidateIP == nil || candidateIP.IsLoopback() {
 				continue
 			}
-			candidate = candidate.To4()
-			if candidate == nil {
+			v4 := candidateIP.To4()
+			if v4 == nil {
 				continue
 			}
-			return candidate.String(), iface.HardwareAddr.String()
+			score := 10
+			if isCGNAT(v4) {
+				score = 1 // Tailscale / carrier-grade NAT — keep as fallback only
+			}
+			c := candidate{ip: v4.String(), mac: macStr, score: score}
+			if best == nil || c.score > best.score {
+				best = &c
+			}
 		}
 	}
 
-	return "", ""
+	if best == nil {
+		return "", ""
+	}
+	return best.ip, best.mac
+}
+
+func isVirtualIface(name string) bool {
+	needles := []string{
+		"tailscale", "nordlynx", "wireguard", "wsl", "vethernet",
+		"hyper-v", "virtualbox", "vmware", "docker", "br-", "veth",
+	}
+	for _, n := range needles {
+		if strings.Contains(name, n) {
+			return true
+		}
+	}
+	return false
+}
+
+func isCGNAT(ip net.IP) bool {
+	// 100.64.0.0/10 — often Tailscale / CGNAT
+	if ip[0] != 100 {
+		return false
+	}
+	return ip[1] >= 64 && ip[1] <= 127
 }

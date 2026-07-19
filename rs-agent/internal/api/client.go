@@ -118,7 +118,19 @@ func (c *Client) Heartbeat(apiKey string, snap collector.Snapshot) (requestID st
 		"disk_percent":   snap.Metrics.DiskPercent,
 		"uptime_seconds": snap.Metrics.UptimeSeconds,
 		"hostname":       snap.Hostname,
+		"computer_name":  snap.ComputerName,
 		"ip_address":     snap.IPAddress,
+		"mac_address":    snap.MACAddress,
+		"agent_version":  snap.AgentVersion,
+		"hardware": map[string]any{
+			"manufacturer":  snap.Hardware.Manufacturer,
+			"model":         snap.Hardware.Model,
+			"serial_number": snap.Hardware.SerialNumber,
+			"motherboard":   snap.Hardware.Motherboard,
+			"bios":          snap.Hardware.BIOS,
+			"domain":        snap.Hardware.Domain,
+			"username":      snap.Hardware.Username,
+		},
 	}
 
 	var body heartbeatResponse
