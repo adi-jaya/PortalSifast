@@ -34,9 +34,9 @@ type registerResponse struct {
 type heartbeatResponse struct {
 	Success bool `json:"success"`
 	Data    struct {
-		Status      string `json:"status"`
-		LastSeenAt  string `json:"last_seen_at"`
-		RequestID   string `json:"request_id"`
+		Status     string `json:"status"`
+		LastSeenAt string `json:"last_seen_at"`
+		RequestID  string `json:"request_id"`
 	} `json:"data"`
 	Error *struct {
 		Code      string `json:"code"`

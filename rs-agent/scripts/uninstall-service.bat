@@ -1,18 +1,9 @@
 @echo off
 setlocal
-:: Stop + uninstall PortalSifast RS Agent Windows Service (Administrator).
+:: Jalankan sebagai Administrator.
+:: Hapus total data: uninstall-service.bat -PurgeData
 
-set "ROOT=%~dp0.."
-for %%I in ("%ROOT%") do set "ROOT=%%~fI"
-set "EXE=%ROOT%\rs-agent.exe"
-set "CFG=%ROOT%\configs\config.json"
-
-if not exist "%EXE%" (
-  echo ERROR: %EXE% not found.
-  exit /b 1
-)
-
-"%EXE%" -config "%CFG%" -service stop 2>nul
-"%EXE%" -config "%CFG%" -service uninstall
-echo Uninstall attempted.
+cd /d "%~dp0"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0uninstall-service.ps1" %*
+if errorlevel 1 exit /b 1
 endlocal

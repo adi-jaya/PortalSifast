@@ -113,7 +113,7 @@ func Collect(deviceUUID, agentVersion string) (Snapshot, error) {
 			DiskTotalGB:  usage.Total / (1024 * 1024 * 1024),
 			BootTime:     boot,
 			Timezone:     tz,
-			Username:     os.Getenv("USER"),
+			Username:     currentUsername(),
 			SerialNumber: info.HostID,
 		},
 		Metrics: Metrics{
@@ -123,6 +123,13 @@ func Collect(deviceUUID, agentVersion string) (Snapshot, error) {
 			UptimeSeconds: info.Uptime,
 		},
 	}, nil
+}
+
+func currentUsername() string {
+	if u := os.Getenv("USERNAME"); u != "" {
+		return u
+	}
+	return os.Getenv("USER")
 }
 
 func primaryNet() (ip, mac string) {

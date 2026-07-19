@@ -1,63 +1,98 @@
-# RS Agent (Phase 1 + Ops)
+# RS Agent — PortalSifast
 
-Lightweight Go agent for PortalSifast monitoring.
+Agent ringan (Go) untuk monitoring perangkat. Mengirim register + heartbeat (CPU/RAM/Disk) ke portal Laravel.
 
-- Contract: [`../docs/monorepo/rs-agent-phase1.md`](../docs/monorepo/rs-agent-phase1.md)
-- Production + Windows Service: [`../docs/monorepo/rs-agent-ops.md`](../docs/monorepo/rs-agent-ops.md)
+## Alur singkat
 
-## Features
+1. Build agent di PC develop.
+2. Install sebagai **Windows Service** di PC client (Administrator).
+3. Agent otomatis daftar ke server dan muncul di UI `/monitoring`.
 
-- Register device + heartbeat (CPU / RAM / Disk)
-- Daily JSON logs (`logs/YYYY-MM-DD.log`)
-- Windows/Linux service via `-service install|start|stop|restart|status|uninstall`
+> Enrollment key bersama hanya untuk **pilot**. Sebelum distribusi ke 200+ PC, ganti ke sistem token rollout yang bisa dibatasi/dicabut.
 
-## NFR
+## Build (PC develop)
 
-| Target | Value |
-|--------|-------|
-| RAM | < 50 MB |
-| Idle CPU | < 2% |
-| Interval | 30s default |
-
-## Build
-
-```bash
-cd rs-agent
-cp configs/config.example.json configs/config.json
-# edit server + enrollment_key
-go mod tidy
-go build -o rs-agent.exe ./cmd/rs-agent   # Windows
-# go build -o rs-agent ./cmd/rs-agent    # Linux
+```powershell
+cd c:\laragon\www\PortalSifast\rs-agent
+.\scripts\build.ps1
 ```
 
-## Run (console)
+Hasil:
+- `dist\rs-agent.exe`
+- paket `dist\PortalSifast-Agent\` (binary + skrip + contoh config)
 
-```bat
-rs-agent.exe -config configs\config.json
+## Install di PC client (Administrator)
+
+```powershell
+cd ...\PortalSifast-Agent
+$env:AGENT_ENROLLMENT_KEY = "ISI_KEY_DARI_SERVER_PRODUCTION"
+.\scripts\install-service.ps1
 ```
 
-## Run (Windows Service — Admin)
+Atau:
 
-Cara mudah: `scripts\install-service.bat` (Run as administrator).
-
-Manual:
-
-```bat
-rs-agent.exe -config C:\full\path\rs-agent\configs\config.json -service install
-rs-agent.exe -config C:\full\path\rs-agent\configs\config.json -service start
+```powershell
+.\scripts\install-service.ps1 -EnrollmentKey "ISI_KEY_DARI_SERVER_PRODUCTION"
 ```
 
-Uninstall: `scripts\uninstall-service.bat`
+Lokasi production:
+- Binary: `C:\Program Files\PortalSifast Agent\rs-agent.exe`
+- Config: `C:\ProgramData\PortalSifast Agent\config.json`
+- Log: `C:\ProgramData\PortalSifast Agent\logs\`
 
-## Debugging
+Service name: `PortalSifastAgent` (auto-start + restart jika crash).
 
-- Agent: `rs-agent/logs/YYYY-MM-DD.log`
-- Laravel: `storage/logs/agent-YYYY-MM-DD.log`
-- Correlate with `request_id`
+### Migrasi config mesin develop (opsional)
 
-## Libraries
+```powershell
+.\scripts\install-service.ps1 -MigrateFrom "C:\laragon\www\PortalSifast\rs-agent\configs\config.json"
+```
 
-- `gopsutil` — metrics
-- `resty` — HTTP
-- `zerolog` — logs
-- `kardianos/service` — Windows/Linux service
+Jangan bagikan `configs\config.json` development ke banyak PC — UUID/API key-nya unik per mesin.
+
+## Cek status
+
+```powershell
+Get-Service PortalSifastAgent
+& "C:\Program Files\PortalSifast Agent\rs-agent.exe" -config "C:\ProgramData\PortalSifast Agent\config.json" -service status
+Get-Content "C:\ProgramData\PortalSifast Agent\logs\$(Get-Date -Format yyyy-MM-dd).log" -Tail 20
+```
+
+Lalu buka portal → **Monitoring**.
+
+## Upgrade
+
+Jalankan lagi `install-service.ps1` dengan binary baru. Config ProgramData (uuid/api_key) dipertahankan.
+
+## Uninstall
+
+```powershell
+.\scripts\uninstall-service.ps1
+```
+
+Hapus total data:
+
+```powershell
+.\scripts\uninstall-service.ps1 -PurgeData
+```
+
+## Mode console (debug)
+
+```powershell
+.\dist\rs-agent.exe -config configs\config.json
+```
+
+Stop: `Ctrl+C`.
+
+## Flag
+
+| Flag | Keterangan |
+|------|------------|
+| `-config` | Path `config.json` |
+| `-service install\|start\|stop\|restart\|status\|uninstall` | Kontrol Windows Service |
+
+## Catatan keamanan
+
+- `enrollment_key` dihapus dari config setelah registrasi berhasil.
+- Jangan commit `configs/config.json` (sudah di-gitignore).
+- Pastikan `AGENT_ENROLLMENT_KEY` di server production **bukan** placeholder `change-me-agent-enrollment`.
