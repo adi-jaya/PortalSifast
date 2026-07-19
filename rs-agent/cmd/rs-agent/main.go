@@ -10,7 +10,7 @@ import (
 )
 
 // Set via: go build -ldflags "-X main.version=0.2.0"
-var version = "0.2.0-dev"
+var version = "0.2.1-dev"
 
 func main() {
 	configPath := flag.String("config", "configs/config.json", "path to config.json")

@@ -29,6 +29,24 @@ it('accepts heartbeat with a valid device api key', function () {
             'domain' => 'WORKGROUP',
             'username' => 'W11OKY\\admin',
         ],
+        'critical_software' => [
+            ['id' => 'synology_drive', 'name' => 'Synology Drive', 'status' => 'running', 'detail' => 'service'],
+            ['id' => 'anydesk', 'name' => 'AnyDesk', 'status' => 'installed'],
+            ['id' => 'radmin_server', 'name' => 'Radmin Server', 'status' => 'missing'],
+        ],
+        'usb' => [
+            'ports_total' => 8,
+            'ports_used' => 3,
+            'ports_empty' => 5,
+            'removable_storage_count' => 0,
+            'has_removable_storage' => false,
+            'printer_count' => 1,
+            'estimated' => true,
+            'note' => 'estimasi',
+            'devices' => [
+                ['name' => 'HP Printer', 'kind' => 'printer', 'device_id' => 'USB001'],
+            ],
+        ],
     ]);
 
     $response
@@ -47,6 +65,9 @@ it('accepts heartbeat with a valid device api key', function () {
         ->and($device->agent_version)->toBe('0.2.0')
         ->and($device->hardware?->manufacturer)->toBe('Dell Inc.')
         ->and($device->hardware?->username)->toBe('W11OKY\\admin')
+        ->and($device->critical_software[0]['status'] ?? null)->toBe('running')
+        ->and($device->usb_inventory['ports_empty'] ?? null)->toBe(5)
+        ->and($device->usb_inventory['has_removable_storage'] ?? null)->toBeFalse()
         ->and(DeviceMetricSample::query()->where('monitored_device_id', $device->id)->count())->toBe(1);
 });
 

@@ -15,14 +15,16 @@ import (
 )
 
 type Snapshot struct {
-	UUID         string
-	Hostname     string
-	ComputerName string
-	IPAddress    string
-	MACAddress   string
-	AgentVersion string
-	Hardware     Hardware
-	Metrics      Metrics
+	UUID             string
+	Hostname         string
+	ComputerName     string
+	IPAddress        string
+	MACAddress       string
+	AgentVersion     string
+	Hardware         Hardware
+	Metrics          Metrics
+	CriticalSoftware []CriticalSoftware
+	USB              USBInventory
 }
 
 type Hardware struct {
@@ -138,6 +140,8 @@ func Collect(deviceUUID, agentVersion string) (Snapshot, error) {
 			DiskPercent:   usage.UsedPercent,
 			UptimeSeconds: info.Uptime,
 		},
+		CriticalSoftware: collectCriticalSoftware(),
+		USB:              collectUSBInventory(),
 	}, nil
 }
 

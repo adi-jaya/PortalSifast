@@ -52,8 +52,35 @@ type Device = {
     last_ram_percent: string | number | null;
     last_disk_percent: string | number | null;
     uptime_seconds: number | null;
+    critical_software: CriticalSoftware[] | null;
+    usb_inventory: UsbInventory | null;
     hardware: Hardware | null;
     aset: { id: number; kode_aset: string; no_seri: string | null } | null;
+};
+
+type CriticalSoftware = {
+    id: string;
+    name: string;
+    status: 'running' | 'installed' | 'missing';
+    detail?: string | null;
+};
+
+type UsbDevice = {
+    name: string;
+    kind: 'storage' | 'printer' | 'hub' | 'hid' | 'other';
+    device_id?: string | null;
+};
+
+type UsbInventory = {
+    ports_total: number;
+    ports_used: number;
+    ports_empty: number;
+    removable_storage_count: number;
+    has_removable_storage: boolean;
+    printer_count: number;
+    estimated: boolean;
+    note?: string | null;
+    devices: UsbDevice[];
 };
 
 type Props = {
@@ -198,6 +225,108 @@ export default function MonitoringShow({ device, recentSamples }: Props) {
                             }
                         />
                     </dl>
+                </section>
+
+                <section className="rounded-lg border p-4">
+                    <h2 className="text-sm font-semibold">Software kritis</h2>
+                    <p className="mt-1 text-xs text-muted-foreground">Tools remote / sync yang biasanya dibutuhkan untuk dukungan jarak jauh.</p>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                        {(device.critical_software ?? []).length === 0 ? (
+                            <p className="text-sm text-muted-foreground sm:col-span-3">Belum ada data (butuh agent terbaru).</p>
+                        ) : (
+                            (device.critical_software ?? []).map((item) => (
+                                <div key={item.id} className="rounded-lg border px-3 py-2">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="text-sm font-medium">{item.name}</span>
+                                        <Badge
+                                            variant="outline"
+                                            className={cn(
+                                                'capitalize',
+                                                item.status === 'running'
+                                                    ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                                                    : item.status === 'installed'
+                                                      ? 'border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-200'
+                                                      : 'border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300',
+                                            )}
+                                        >
+                                            {item.status}
+                                        </Badge>
+                                    </div>
+                                    {item.detail ? <p className="mt-1 truncate text-xs text-muted-foreground">{item.detail}</p> : null}
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </section>
+
+                <section className="rounded-lg border p-4">
+                    <h2 className="text-sm font-semibold">USB</h2>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                        Port kosong/terpakai adalah estimasi. Flashdisk ditandai terpisah dari printer.
+                    </p>
+                    {device.usb_inventory ? (
+                        <>
+                            <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                <Field label="Port total (estimasi)" value={dash(device.usb_inventory.ports_total)} />
+                                <Field label="Port terpakai" value={dash(device.usb_inventory.ports_used)} />
+                                <Field label="Port kosong (estimasi)" value={dash(device.usb_inventory.ports_empty)} />
+                                <Field label="Printer USB" value={dash(device.usb_inventory.printer_count)} />
+                            </dl>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                                {device.usb_inventory.has_removable_storage ? (
+                                    <Badge
+                                        variant="outline"
+                                        className="border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300"
+                                    >
+                                        Flashdisk/storage terdeteksi ({device.usb_inventory.removable_storage_count})
+                                    </Badge>
+                                ) : (
+                                    <Badge
+                                        variant="outline"
+                                        className="border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                                    >
+                                        Tidak ada flashdisk
+                                    </Badge>
+                                )}
+                                {device.usb_inventory.estimated ? (
+                                    <Badge variant="secondary">Estimasi</Badge>
+                                ) : null}
+                            </div>
+                            {device.usb_inventory.note ? (
+                                <p className="mt-2 text-xs text-muted-foreground">{device.usb_inventory.note}</p>
+                            ) : null}
+                            <div className="mt-4 overflow-x-auto">
+                                <table className="w-full min-w-[420px] text-left text-sm">
+                                    <thead className="border-b text-xs uppercase tracking-wide text-muted-foreground">
+                                        <tr>
+                                            <th className="py-2 pr-3 font-medium">Perangkat</th>
+                                            <th className="py-2 font-medium">Jenis</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {(device.usb_inventory.devices ?? []).length === 0 ? (
+                                            <tr>
+                                                <td colSpan={2} className="py-4 text-muted-foreground">
+                                                    Tidak ada perangkat USB non-hub terdeteksi.
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            (device.usb_inventory.devices ?? [])
+                                                .filter((d) => d.kind !== 'hub')
+                                                .map((d, idx) => (
+                                                    <tr key={`${d.device_id ?? d.name}-${idx}`} className="border-b last:border-0">
+                                                        <td className="py-2 pr-3">{d.name}</td>
+                                                        <td className="py-2 capitalize">{d.kind}</td>
+                                                    </tr>
+                                                ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </>
+                    ) : (
+                        <p className="mt-2 text-sm text-muted-foreground">Belum ada data USB (butuh agent terbaru).</p>
+                    )}
                 </section>
 
                 <section className="rounded-lg border p-4">

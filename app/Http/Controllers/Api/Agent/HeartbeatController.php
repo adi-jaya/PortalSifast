@@ -34,6 +34,14 @@ class HeartbeatController extends Controller
             }
         }
 
+        if (array_key_exists('critical_software', $validated)) {
+            $updates['critical_software'] = $validated['critical_software'];
+        }
+
+        if (array_key_exists('usb', $validated) && is_array($validated['usb'])) {
+            $updates['usb_inventory'] = $validated['usb'];
+        }
+
         MonitoredDevice::query()->whereKey($device->id)->update($updates);
 
         $hardware = $validated['hardware'] ?? null;

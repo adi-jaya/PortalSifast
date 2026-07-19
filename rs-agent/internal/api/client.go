@@ -86,6 +86,8 @@ func (c *Client) Register(enrollmentKey string, snap collector.Snapshot) (apiKey
 			"domain":        snap.Hardware.Domain,
 			"username":      snap.Hardware.Username,
 		},
+		"critical_software": criticalSoftwarePayload(snap),
+		"usb":               usbPayload(snap),
 	}
 
 	var body registerResponse
@@ -131,6 +133,8 @@ func (c *Client) Heartbeat(apiKey string, snap collector.Snapshot) (requestID st
 			"domain":        snap.Hardware.Domain,
 			"username":      snap.Hardware.Username,
 		},
+		"critical_software": criticalSoftwarePayload(snap),
+		"usb":               usbPayload(snap),
 	}
 
 	var body heartbeatResponse
@@ -155,4 +159,39 @@ func (c *Client) Heartbeat(apiKey string, snap collector.Snapshot) (requestID st
 	}
 
 	return body.Data.RequestID, nil
+}
+
+func criticalSoftwarePayload(snap collector.Snapshot) []map[string]any {
+	out := make([]map[string]any, 0, len(snap.CriticalSoftware))
+	for _, s := range snap.CriticalSoftware {
+		out = append(out, map[string]any{
+			"id":     s.ID,
+			"name":   s.Name,
+			"status": s.Status,
+			"detail": s.Detail,
+		})
+	}
+	return out
+}
+
+func usbPayload(snap collector.Snapshot) map[string]any {
+	devices := make([]map[string]any, 0, len(snap.USB.Devices))
+	for _, d := range snap.USB.Devices {
+		devices = append(devices, map[string]any{
+			"name":      d.Name,
+			"kind":      d.Kind,
+			"device_id": d.DeviceID,
+		})
+	}
+	return map[string]any{
+		"ports_total":             snap.USB.PortsTotal,
+		"ports_used":              snap.USB.PortsUsed,
+		"ports_empty":             snap.USB.PortsEmpty,
+		"removable_storage_count": snap.USB.RemovableStorageCount,
+		"has_removable_storage":   snap.USB.HasRemovableStorage,
+		"printer_count":           snap.USB.PrinterCount,
+		"estimated":               snap.USB.Estimated,
+		"note":                    snap.USB.Note,
+		"devices":                 devices,
+	}
 }

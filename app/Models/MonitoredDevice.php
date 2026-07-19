@@ -32,6 +32,8 @@ class MonitoredDevice extends Model
         'last_ram_percent',
         'last_disk_percent',
         'uptime_seconds',
+        'critical_software',
+        'usb_inventory',
         'aset_id',
     ];
 
@@ -43,6 +45,8 @@ class MonitoredDevice extends Model
             'last_ram_percent' => 'decimal:2',
             'last_disk_percent' => 'decimal:2',
             'uptime_seconds' => 'integer',
+            'critical_software' => 'array',
+            'usb_inventory' => 'array',
         ];
     }
 

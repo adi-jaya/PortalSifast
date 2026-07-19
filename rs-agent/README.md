@@ -1,38 +1,63 @@
 # RS Agent — PortalSifast
 
-Agent ringan (Go) untuk monitoring perangkat. Mengirim register + heartbeat (CPU/RAM/Disk) ke portal Laravel.
+Agent ringan (Go) untuk monitoring perangkat. Mengirim register + heartbeat ke portal Laravel.
 
-## Alur singkat
+## Alur singkat (1 klik)
 
-1. Build agent di PC develop.
-2. Install sebagai **Windows Service** di PC client (Administrator).
-3. Agent otomatis daftar ke server dan muncul di UI `/monitoring`.
+1. Download `PortalSifast-Agent-Setup.exe` dari **GitHub Releases** (repo private), atau build lokal.
+2. Di PC client: double-click → izinkan **UAC**.
+3. Selesai. Agent jalan sebagai Windows Service (tanpa terminal, tanpa icon tray).
+4. Cek di portal `/monitoring`.
 
-> Enrollment key bersama hanya untuk **pilot**. Sebelum distribusi ke 200+ PC, ganti ke sistem token rollout yang bisa dibatasi/dicabut.
+> Enrollment key tertanam saat build (dari `.env` / GitHub Secret). Repo harus **private**.
 
-## Build (PC develop)
+## Terminal / tray?
+
+- **Tidak ada terminal** yang tetap terbuka.
+- **Tidak ada icon tray** (bukan seperti AnyDesk/Radmin).
+- Status dicek di portal atau `services.msc` → PortalSifast RS Agent.
+
+## Build lokal (otomatis baca key)
+
+Pastikan di `.env` Laravel (folder project) ada:
+
+```env
+AGENT_ENROLLMENT_KEY=isi-key-production-yang-kuat
+APP_URL=https://portalsifast.rsaisyiyahsitifatimah.com
+```
+
+Lalu:
 
 ```powershell
 cd c:\laragon\www\PortalSifast\rs-agent
-.\scripts\build.ps1
+.\scripts\build-installer.ps1
 ```
 
 Hasil:
-- `dist\rs-agent.exe`
-- paket `dist\PortalSifast-Agent\` (binary + skrip + contoh config)
+- `dist\PortalSifast-Agent-Setup.exe` — 1x klik (UAC saja, tanpa ketik key)
+- `dist\PortalSifast-Agent-Setup-0.2.1.zip` — untuk dibagikan / di-upload ke Releases
 
-## Install di PC client (Administrator)
+## GitHub Releases (repo private)
 
-```powershell
-cd ...\PortalSifast-Agent
-$env:AGENT_ENROLLMENT_KEY = "ISI_KEY_DARI_SERVER_PRODUCTION"
-.\scripts\install-service.ps1
+1. Di GitHub → **Settings → Secrets and variables → Actions**, buat:
+   - `AGENT_ENROLLMENT_KEY` = key production
+   - `AGENT_SERVER_URL` = `https://portalsifast.rsaisyiyahsitifatimah.com` (opsional)
+2. Push tag:
+
+```bash
+git tag rs-agent-v0.2.1
+git push origin rs-agent-v0.2.1
 ```
 
-Atau:
+3. Buka repo → **Releases** → download `PortalSifast-Agent-Setup.exe` atau `.zip`
+
+Atau jalankan manual: **Actions → release-rs-agent → Run workflow**.
+
+## Install manual (tanpa Setup.exe)
 
 ```powershell
-.\scripts\install-service.ps1 -EnrollmentKey "ISI_KEY_DARI_SERVER_PRODUCTION"
+.\scripts\build.ps1
+.\scripts\install-service.ps1 -EnrollmentKey "KEY_PRODUCTION"
 ```
 
 Lokasi production:
@@ -40,39 +65,15 @@ Lokasi production:
 - Config: `C:\ProgramData\PortalSifast Agent\config.json`
 - Log: `C:\ProgramData\PortalSifast Agent\logs\`
 
-Service name: `PortalSifastAgent` (auto-start + restart jika crash).
-
-### Migrasi config mesin develop (opsional)
-
-```powershell
-.\scripts\install-service.ps1 -MigrateFrom "C:\laragon\www\PortalSifast\rs-agent\configs\config.json"
-```
-
-Jangan bagikan `configs\config.json` development ke banyak PC — UUID/API key-nya unik per mesin.
-
-## Cek status
-
-```powershell
-Get-Service PortalSifastAgent
-& "C:\Program Files\PortalSifast Agent\rs-agent.exe" -config "C:\ProgramData\PortalSifast Agent\config.json" -service status
-Get-Content "C:\ProgramData\PortalSifast Agent\logs\$(Get-Date -Format yyyy-MM-dd).log" -Tail 20
-```
-
-Lalu buka portal → **Monitoring**.
-
-## Upgrade
-
-Jalankan lagi `install-service.ps1` dengan binary baru. Config ProgramData (uuid/api_key) dipertahankan.
+Service: `PortalSifastAgent` (auto-start + restart jika crash).
 
 ## Uninstall
 
+Control Panel → Uninstall "PortalSifast Agent", atau:
+
 ```powershell
 .\scripts\uninstall-service.ps1
-```
-
-Hapus total data:
-
-```powershell
+# hapus total data:
 .\scripts\uninstall-service.ps1 -PurgeData
 ```
 
@@ -83,16 +84,3 @@ Hapus total data:
 ```
 
 Stop: `Ctrl+C`.
-
-## Flag
-
-| Flag | Keterangan |
-|------|------------|
-| `-config` | Path `config.json` |
-| `-service install\|start\|stop\|restart\|status\|uninstall` | Kontrol Windows Service |
-
-## Catatan keamanan
-
-- `enrollment_key` dihapus dari config setelah registrasi berhasil.
-- Jangan commit `configs/config.json` (sudah di-gitignore).
-- Pastikan `AGENT_ENROLLMENT_KEY` di server production **bukan** placeholder `change-me-agent-enrollment`.
