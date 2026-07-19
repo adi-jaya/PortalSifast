@@ -12,8 +12,10 @@ class MonitoringDeviceController extends Controller
     public function index(Request $request): Response
     {
         $query = MonitoredDevice::query()
-            ->with('hardware:id,monitored_device_id,os,os_version,serial_number')
-            ->latest('last_seen_at');
+            ->with([
+                'hardware:id,monitored_device_id,os,os_version,serial_number',
+                'aset:id,kode_aset,no_seri',
+            ]);
 
         if ($search = trim((string) $request->string('q'))) {
             $query->where(function ($builder) use ($search): void {
@@ -31,19 +33,40 @@ class MonitoringDeviceController extends Controller
             }
         }
 
+        $sort = $request->string('sort')->toString();
+        match ($sort) {
+            'cpu' => $query->orderByDesc('last_cpu_percent'),
+            'ram' => $query->orderByDesc('last_ram_percent'),
+            'disk' => $query->orderByDesc('last_disk_percent'),
+            'hostname' => $query->orderBy('hostname'),
+            default => $query->latest('last_seen_at'),
+        };
+
         $devices = $query->paginate(20)->withQueryString();
+
+        $stats = [
+            'total' => MonitoredDevice::query()->count(),
+            'online' => MonitoredDevice::query()->where('status', MonitoredDevice::STATUS_ONLINE)->count(),
+            'offline' => MonitoredDevice::query()->where('status', MonitoredDevice::STATUS_OFFLINE)->count(),
+            'high_load' => MonitoredDevice::query()
+                ->where('status', MonitoredDevice::STATUS_ONLINE)
+                ->where(function ($builder): void {
+                    $builder
+                        ->where('last_cpu_percent', '>=', 90)
+                        ->orWhere('last_ram_percent', '>=', 90)
+                        ->orWhere('last_disk_percent', '>=', 90);
+                })
+                ->count(),
+        ];
 
         return Inertia::render('monitoring/index', [
             'devices' => $devices,
             'filters' => [
                 'q' => $request->string('q')->toString(),
                 'status' => $request->string('status')->toString(),
+                'sort' => $sort,
             ],
-            'stats' => [
-                'total' => MonitoredDevice::query()->count(),
-                'online' => MonitoredDevice::query()->where('status', MonitoredDevice::STATUS_ONLINE)->count(),
-                'offline' => MonitoredDevice::query()->where('status', MonitoredDevice::STATUS_OFFLINE)->count(),
-            ],
+            'stats' => $stats,
         ]);
     }
 
@@ -56,7 +79,7 @@ class MonitoringDeviceController extends Controller
 
         $recentSamples = $device->metricSamples()
             ->orderByDesc('collected_at')
-            ->limit(20)
+            ->limit(40)
             ->get([
                 'id',
                 'cpu_percent',

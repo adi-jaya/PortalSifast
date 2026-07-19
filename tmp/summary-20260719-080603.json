@@ -1,0 +1,4 @@
+{
+  "summary": "Created docs/monorepo/rs-agent-manual-checklist.md listing all manual tasks (server env, scheduler owned by user, Windows build/config/console test/offline test/service install, security, Phase 1 gate) before Phase 2. Linked from softwaremonitoring.md, rs-agent-phase1.md, and rs-agent-ops.md.",
+  "current_status": "Phase 1 code ready. User has a printable/manual checklist gate before Phase 2; waiting for them to complete ops on server+Windows then choose one Phase 2 item."
+}

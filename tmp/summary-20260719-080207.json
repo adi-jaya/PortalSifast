@@ -1,0 +1,4 @@
+{
+  "summary": "User owns Laravel scheduler; removed the crontab previously installed for replikasi. Continued B: hardened Windows service (wait on stop, StartType automatic, status command), added install/uninstall .bat scripts, updated rs-agent-ops.md so scheduler is documented as admin-owned.",
+  "current_status": "Scheduler left to user. Windows service packaging ready (v0.1.2). User should rebuild rs-agent.exe, point config to production, test console, then run scripts/install-service.bat as Admin."
+}

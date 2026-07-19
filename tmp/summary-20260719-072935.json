@@ -1,0 +1,4 @@
+{
+  "summary": "Notified user that the earlier hung scheduler-discovery shell was aborted; PortalSifast had no schedule:work process, and cron for schedule:run was already installed as the fix.",
+  "current_status": "Ops A+B complete. Scheduler cron active. User still needs to rebuild Windows agent and point config to production."
+}

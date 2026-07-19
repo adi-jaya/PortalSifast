@@ -1,8 +1,12 @@
-import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
+import { Head, Link, router, usePoll } from '@inertiajs/react';
+import { ArrowLeft, RefreshCw } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { MetricBar } from '@/components/monitoring/metric-bar';
+import { MetricSparkline } from '@/components/monitoring/metric-sparkline';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
+import { formatRelativeId, formatUptime } from '@/lib/monitoring';
 import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
@@ -65,15 +69,7 @@ function dash(value: string | number | null | undefined): string {
     return String(value);
 }
 
-function formatPercent(value: string | number | null): string {
-    if (value === null || value === undefined || value === '') {
-        return '–';
-    }
-
-    return `${Number(value).toFixed(1)}%`;
-}
-
-function Field({ label, value }: { label: string; value: string }) {
+function Field({ label, value }: { label: string; value: ReactNode }) {
     return (
         <div>
             <dt className="text-xs text-muted-foreground">{label}</dt>
@@ -89,6 +85,10 @@ export default function MonitoringShow({ device, recentSamples }: Props) {
         { title: 'Monitoring', href: '/monitoring' },
         { title, href: `/monitoring/${device.id}` },
     ];
+
+    usePoll(30000, {
+        only: ['device', 'recentSamples'],
+    });
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -112,7 +112,7 @@ export default function MonitoringShow({ device, recentSamples }: Props) {
                                     'capitalize',
                                     device.status === 'online'
                                         ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-                                        : 'text-muted-foreground',
+                                        : 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200',
                                 )}
                             >
                                 {device.status}
@@ -120,29 +120,53 @@ export default function MonitoringShow({ device, recentSamples }: Props) {
                             {device.agent_version ? (
                                 <Badge variant="secondary">Agent {device.agent_version}</Badge>
                             ) : null}
+                            <span className="self-center text-xs text-muted-foreground">
+                                Last seen {formatRelativeId(device.last_seen_at)}
+                            </span>
                         </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-3 text-center">
-                        <div className="rounded-lg border px-4 py-3">
-                            <div className="text-xs text-muted-foreground">CPU</div>
-                            <div className="mt-1 text-lg font-semibold tabular-nums">
-                                {formatPercent(device.last_cpu_percent)}
+                    <div className="flex flex-col items-end gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => router.reload({ only: ['device', 'recentSamples'] })}
+                        >
+                            <RefreshCw className="size-3.5" />
+                            Refresh
+                        </Button>
+                        <div className="grid w-full min-w-[260px] gap-2 sm:min-w-[320px]">
+                            <div className="rounded-lg border px-3 py-2">
+                                <MetricBar label="CPU" value={device.last_cpu_percent} />
                             </div>
-                        </div>
-                        <div className="rounded-lg border px-4 py-3">
-                            <div className="text-xs text-muted-foreground">RAM</div>
-                            <div className="mt-1 text-lg font-semibold tabular-nums">
-                                {formatPercent(device.last_ram_percent)}
+                            <div className="rounded-lg border px-3 py-2">
+                                <MetricBar label="RAM" value={device.last_ram_percent} />
                             </div>
-                        </div>
-                        <div className="rounded-lg border px-4 py-3">
-                            <div className="text-xs text-muted-foreground">Disk</div>
-                            <div className="mt-1 text-lg font-semibold tabular-nums">
-                                {formatPercent(device.last_disk_percent)}
+                            <div className="rounded-lg border px-3 py-2">
+                                <MetricBar label="Disk" value={device.last_disk_percent} />
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <section className="rounded-lg border p-4">
+                    <h2 className="text-sm font-semibold">Tren singkat (sample terbaru)</h2>
+                    <p className="mt-1 text-xs text-muted-foreground">Kiri = lebih lama · Kanan = terbaru · Warna: hijau &lt;70%, amber ≥70%, merah ≥90%</p>
+                    <div className="mt-4 grid gap-4 md:grid-cols-3">
+                        <div>
+                            <div className="mb-1 text-xs font-medium text-muted-foreground">CPU</div>
+                            <MetricSparkline samples={recentSamples} metric="cpu_percent" />
+                        </div>
+                        <div>
+                            <div className="mb-1 text-xs font-medium text-muted-foreground">RAM</div>
+                            <MetricSparkline samples={recentSamples} metric="ram_percent" />
+                        </div>
+                        <div>
+                            <div className="mb-1 text-xs font-medium text-muted-foreground">Disk</div>
+                            <MetricSparkline samples={recentSamples} metric="disk_percent" />
+                        </div>
+                    </div>
+                </section>
 
                 <section className="rounded-lg border p-4">
                     <h2 className="text-sm font-semibold">Identitas</h2>
@@ -155,14 +179,23 @@ export default function MonitoringShow({ device, recentSamples }: Props) {
                             label="Last seen"
                             value={
                                 device.last_seen_at
-                                    ? new Date(device.last_seen_at).toLocaleString('id-ID')
+                                    ? `${formatRelativeId(device.last_seen_at)} · ${new Date(device.last_seen_at).toLocaleString('id-ID')}`
                                     : '–'
                             }
                         />
-                        <Field label="Uptime (detik)" value={dash(device.uptime_seconds)} />
+                        <Field label="Uptime" value={formatUptime(device.uptime_seconds)} />
                         <Field
                             label="Aset terkait"
-                            value={device.aset ? `${device.aset.kode_aset}` : '–'}
+                            value={
+                                device.aset ? (
+                                    <Link href={`/aset/${device.aset.kode_aset}`} className="font-medium underline-offset-2 hover:underline">
+                                        {device.aset.kode_aset}
+                                        {device.aset.no_seri ? ` · SN ${device.aset.no_seri}` : ''}
+                                    </Link>
+                                ) : (
+                                    '–'
+                                )
+                            }
                         />
                     </dl>
                 </section>
@@ -211,14 +244,20 @@ export default function MonitoringShow({ device, recentSamples }: Props) {
                                         </td>
                                     </tr>
                                 ) : (
-                                    recentSamples.map((sample) => (
+                                    recentSamples.slice(0, 20).map((sample) => (
                                         <tr key={sample.id} className="border-b last:border-0">
                                             <td className="py-2 pr-3 text-muted-foreground">
                                                 {new Date(sample.collected_at).toLocaleString('id-ID')}
                                             </td>
-                                            <td className="py-2 pr-3 tabular-nums">{formatPercent(sample.cpu_percent)}</td>
-                                            <td className="py-2 pr-3 tabular-nums">{formatPercent(sample.ram_percent)}</td>
-                                            <td className="py-2 tabular-nums">{formatPercent(sample.disk_percent)}</td>
+                                            <td className="py-2 pr-3">
+                                                <MetricBar value={sample.cpu_percent} />
+                                            </td>
+                                            <td className="py-2 pr-3">
+                                                <MetricBar value={sample.ram_percent} />
+                                            </td>
+                                            <td className="py-2">
+                                                <MetricBar value={sample.disk_percent} />
+                                            </td>
                                         </tr>
                                     ))
                                 )}

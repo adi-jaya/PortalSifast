@@ -1,16 +1,15 @@
-# RS Agent (Phase 1)
+# RS Agent (Phase 1 + Ops)
 
 Lightweight Go agent for PortalSifast monitoring.
 
-Canonical contract: [`../docs/monorepo/rs-agent-phase1.md`](../docs/monorepo/rs-agent-phase1.md)
+- Contract: [`../docs/monorepo/rs-agent-phase1.md`](../docs/monorepo/rs-agent-phase1.md)
+- Production + Windows Service: [`../docs/monorepo/rs-agent-ops.md`](../docs/monorepo/rs-agent-ops.md)
 
-## Phase 1 only
+## Features
 
-- Register device
-- Heartbeat (CPU / RAM / Disk)
+- Register device + heartbeat (CPU / RAM / Disk)
 - Daily JSON logs (`logs/YYYY-MM-DD.log`)
-
-No auto-update, remote jobs, Windows/systemd installer, or offline buffer.
+- Windows/Linux service via `-service install|start|stop|restart|status|uninstall`
 
 ## NFR
 
@@ -19,42 +18,46 @@ No auto-update, remote jobs, Windows/systemd installer, or offline buffer.
 | RAM | < 50 MB |
 | Idle CPU | < 2% |
 | Interval | 30s default |
-| Server heartbeat | ≤ 200 ms (Laravel side) |
 
-## Setup
-
-1. Copy config:
-
-```bash
-cp configs/config.example.json configs/config.json
-```
-
-2. Set `server` and `enrollment_key` (must match Laravel `AGENT_ENROLLMENT_KEY`).
-
-3. Build (requires Go 1.22+):
+## Build
 
 ```bash
 cd rs-agent
+cp configs/config.example.json configs/config.json
+# edit server + enrollment_key
 go mod tidy
-go build -o rs-agent ./cmd/rs-agent
+go build -o rs-agent.exe ./cmd/rs-agent   # Windows
+# go build -o rs-agent ./cmd/rs-agent    # Linux
 ```
 
-4. Run:
+## Run (console)
 
-```bash
-./rs-agent -config configs/config.json
+```bat
+rs-agent.exe -config configs\config.json
 ```
 
-On first run the agent registers, stores `api_key` + `uuid` in `config.json`, then heartbeats every `interval` seconds.
+## Run (Windows Service — Admin)
+
+Cara mudah: `scripts\install-service.bat` (Run as administrator).
+
+Manual:
+
+```bat
+rs-agent.exe -config C:\full\path\rs-agent\configs\config.json -service install
+rs-agent.exe -config C:\full\path\rs-agent\configs\config.json -service start
+```
+
+Uninstall: `scripts\uninstall-service.bat`
 
 ## Debugging
 
-- Agent logs: `rs-agent/logs/YYYY-MM-DD.log`
-- Laravel logs: `storage/logs/agent-YYYY-MM-DD.log`
-- Correlate with `request_id` in both logs and API error JSON
+- Agent: `rs-agent/logs/YYYY-MM-DD.log`
+- Laravel: `storage/logs/agent-YYYY-MM-DD.log`
+- Correlate with `request_id`
 
 ## Libraries
 
 - `gopsutil` — metrics
-- `resty` — HTTP client (reused)
-- `zerolog` — structured logging
+- `resty` — HTTP
+- `zerolog` — logs
+- `kardianos/service` — Windows/Linux service

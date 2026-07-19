@@ -1,0 +1,4 @@
+{
+  "summary": "User confirmed agent runs successfully on Windows with repeating heartbeat ok logs. Confirmed this is healthy Phase 1 behavior; noted their config points to http://127.0.0.1:8000 so dashboard is on local Laravel, not production unless server URL is changed.",
+  "current_status": "Phase 1 end-to-end verified on user Windows machine (register+heartbeat). Next optional: open /monitoring on the same Laravel that receives traffic, then pilot more hosts or point agent at production APP_URL."
+}

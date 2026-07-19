@@ -1,6 +1,6 @@
 {
-  "server": "https://portalsifast.example.com",
-  "enrollment_key": "change-me-agent-enrollment",
+  "server": "https://portalsifast.rsaisyiyahsitifatimah.com",
+  "enrollment_key": "PASTE_AGENT_ENROLLMENT_KEY_FROM_SERVER_ENV",
   "api_key": "",
   "interval": 30,
   "log_level": "info",

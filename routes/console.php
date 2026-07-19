@@ -25,3 +25,5 @@ Schedule::command('rss:sync-external')
     ->when(fn (): bool => (bool) config('services.external_rss.enabled'));
 
 Schedule::command('monitoring:mark-offline')->everyMinute();
+
+Schedule::command('monitoring:prune-metric-samples')->dailyAt('02:15');
