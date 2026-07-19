@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\MonitoredDevice;
 use App\Services\Agent\AgentApiKeyService;
+use App\Support\AgentLog;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -44,7 +45,7 @@ class AuthenticateAgent
         );
 
         if ($device === null) {
-            Log::channel('agent')->warning('Agent authentication failed', [
+            AgentLog::warning('Agent authentication failed', [
                 'request_id' => $requestId,
                 'api_key_prefix' => $prefix,
             ]);

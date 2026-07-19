@@ -3,8 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Models\MonitoredDevice;
+use App\Support\AgentLog;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Log;
 
 class MarkMonitoredDevicesOfflineCommand extends Command
 {
@@ -27,7 +27,7 @@ class MarkMonitoredDevicesOfflineCommand extends Command
             ->update(['status' => MonitoredDevice::STATUS_OFFLINE]);
 
         if ($updated > 0) {
-            Log::channel('agent')->info('Marked monitored devices offline', [
+            AgentLog::info('Marked monitored devices offline', [
                 'count' => $updated,
                 'threshold_minutes' => $minutes,
             ]);

@@ -7,6 +7,7 @@ use App\Http\Requests\Api\Agent\RegisterAgentRequest;
 use App\Models\Aset;
 use App\Models\MonitoredDevice;
 use App\Services\Agent\AgentApiKeyService;
+use App\Support\AgentLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -27,7 +28,7 @@ class RegisterController extends Controller
         ]);
 
         if (! hash_equals((string) config('agent.enrollment_key'), (string) $request->validated('enrollment_key'))) {
-            Log::channel('agent')->warning('Agent register rejected: invalid enrollment key', [
+            AgentLog::warning('Agent register rejected: invalid enrollment key', [
                 'request_id' => $requestId,
             ]);
 
@@ -88,7 +89,7 @@ class RegisterController extends Controller
             return $device;
         });
 
-        Log::channel('agent')->info('Agent registered', [
+        AgentLog::info('Agent registered', [
             'request_id' => $requestId,
             'device_id' => $device->id,
             'device_uuid' => $device->uuid,

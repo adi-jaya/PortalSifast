@@ -1,0 +1,4 @@
+{
+  "summary": "Diagnosed heartbeat 500 as Monolog Permission denied on storage/logs/agent-*.log (owned by replikasi, PHP-FPM is www). Fixed with chmod 666 on agent log + AgentLog fail-safe wrapper so logging never fails the API. Tests still pass.",
+  "current_status": "Heartbeat 500 root cause fixed on server. User should restart rs-agent; expect heartbeat ok. Optionally align enrollment_key in config.json with production .env for future re-register."
+}

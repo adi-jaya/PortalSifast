@@ -1,0 +1,4 @@
+{
+  "summary": "Confirmed HeartbeatController was overwritten: newer hardware-update logic remained but AgentLog fix was lost (back to Log::channel). Merged both—kept identity/hardware updates and restored AgentLog::debug. Heartbeat tests passed (2).",
+  "current_status": "HeartbeatController correctly merged. AgentLog still required to prevent 500 on log permission issues. User does not need to paste the old 1-66 snippet."
+}

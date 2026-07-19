@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\Models\DeviceMetricSample;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Log;
 
 class PruneDeviceMetricSamplesCommand extends Command
 {
@@ -43,7 +42,7 @@ class PruneDeviceMetricSamplesCommand extends Command
         } while ($ids->count() === $chunk);
 
         if ($deleted > 0) {
-            Log::channel('agent')->info('Pruned device metric samples', [
+            AgentLog::info('Pruned device metric samples', [
                 'deleted' => $deleted,
                 'retention_days' => $days,
                 'threshold' => $threshold->toIso8601String(),

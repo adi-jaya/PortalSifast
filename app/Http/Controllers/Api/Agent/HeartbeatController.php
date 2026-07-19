@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Agent\HeartbeatAgentRequest;
 use App\Models\DeviceMetricSample;
 use App\Models\MonitoredDevice;
+use App\Support\AgentLog;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Log;
 
 class HeartbeatController extends Controller
 {
@@ -70,7 +70,7 @@ class HeartbeatController extends Controller
             'collected_at' => $collectedAt,
         ]);
 
-        Log::channel('agent')->debug('Agent heartbeat accepted', [
+        AgentLog::debug('Agent heartbeat accepted', [
             'request_id' => $requestId,
             'device_uuid' => $device->uuid,
         ]);
