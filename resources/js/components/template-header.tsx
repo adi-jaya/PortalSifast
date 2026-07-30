@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { LogOut, Menu } from 'lucide-react';
+import { IconWell } from '@/components/icon-well';
 import { logout } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
 import type { SharedData } from '@/types';
@@ -29,17 +30,17 @@ export function TemplateHeader({ breadcrumbs = [], onMenuClick }: Props) {
     const initials = user?.name ? getInitials(user.name) : '?';
 
     return (
-        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-background/80 px-4 py-3 backdrop-blur-sm md:px-6">
+        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-card/90 px-4 py-3 backdrop-blur-md md:px-6">
             {/* Left — mobile menu + page title */}
             <div className="flex min-w-0 flex-1 items-center gap-3">
                 {onMenuClick && (
                     <button
                         type="button"
                         onClick={onMenuClick}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted transition-colors hover:bg-muted/80 md:hidden"
+                        className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl transition-colors duration-200 hover:opacity-90 md:hidden"
                         aria-label="Buka menu"
                     >
-                        <Menu className="h-4 w-4 text-muted-foreground" />
+                        <IconWell icon={Menu} size="md" variant="brand" />
                     </button>
                 )}
 
@@ -58,12 +59,12 @@ export function TemplateHeader({ breadcrumbs = [], onMenuClick }: Props) {
                                     {i < breadcrumbs.length - 1 ? (
                                         <Link
                                             href={crumb.href}
-                                            className="truncate max-w-[120px] transition-colors hover:text-foreground"
+                                            className="max-w-[120px] truncate transition-colors duration-200 hover:text-foreground"
                                         >
                                             {crumb.title}
                                         </Link>
                                     ) : (
-                                        <span className="truncate max-w-[160px] font-medium text-foreground/80">
+                                        <span className="max-w-[160px] truncate font-medium text-foreground/80">
                                             {crumb.title}
                                         </span>
                                     )}
@@ -80,11 +81,11 @@ export function TemplateHeader({ breadcrumbs = [], onMenuClick }: Props) {
                     href={logout()}
                     as="button"
                     method="post"
-                    className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                    className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl transition-opacity duration-200 hover:opacity-90"
                     title="Logout"
                     aria-label="Logout"
                 >
-                    <LogOut className="h-4 w-4" />
+                    <IconWell icon={LogOut} size="md" variant="danger" />
                 </Link>
 
                 <div

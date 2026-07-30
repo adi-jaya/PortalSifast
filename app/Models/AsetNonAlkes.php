@@ -17,6 +17,7 @@ class AsetNonAlkes extends Model
         'alat_code',
         'kode',
         'parent_id',
+        'aset_kategori_id',
         'level',
         'alat_path',
         'alat_ket',
@@ -40,6 +41,11 @@ class AsetNonAlkes extends Model
     public function children(): HasMany
     {
         return $this->hasMany(self::class, 'parent_id');
+    }
+
+    public function kategori(): BelongsTo
+    {
+        return $this->belongsTo(AsetKategori::class, 'aset_kategori_id');
     }
 
     public function barang(): HasMany
@@ -89,5 +95,50 @@ class AsetNonAlkes extends Model
         }
 
         return ! $this->children()->where('deleted', false)->exists();
+    }
+
+    /**
+     * Kategori efektif: milik node ini, atau ancestor terdekat yang punya aset_kategori_id.
+     */
+    public function resolvedKategoriId(): ?int
+    {
+        $node = $this->resolvedKategoriNode();
+
+        return $node?->aset_kategori_id ? (int) $node->aset_kategori_id : null;
+    }
+
+    public function resolvedKategoriNama(): ?string
+    {
+        $node = $this->resolvedKategoriNode();
+        if ($node === null) {
+            return null;
+        }
+
+        if ($node->relationLoaded('kategori')) {
+            return $node->kategori?->nama_kategori;
+        }
+
+        return AsetKategori::query()->whereKey($node->aset_kategori_id)->value('nama_kategori');
+    }
+
+    private function resolvedKategoriNode(): ?self
+    {
+        $node = $this;
+        $guard = 0;
+
+        while ($node !== null && $guard < 20) {
+            if ($node->aset_kategori_id) {
+                return $node;
+            }
+
+            if (! $node->relationLoaded('parent')) {
+                $node->load('parent');
+            }
+
+            $node = $node->parent;
+            $guard++;
+        }
+
+        return null;
     }
 }

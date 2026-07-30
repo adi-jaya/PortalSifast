@@ -1,0 +1,4 @@
+{
+  "summary": "User asked for a manual INSERT example for non-alkes master. Provided SQL for aset_non_alkes (not m_non_alkes): two-pass insert because parent_id FK points to local id, not id_alat. Included sample hierarchy rows and UPDATE joins to wire parents.",
+  "current_status": "No code changes; user will execute SQL manually against aset_non_alkes."
+}

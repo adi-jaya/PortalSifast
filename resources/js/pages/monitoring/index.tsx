@@ -1,5 +1,5 @@
 import { Head, Link, router, usePoll } from '@inertiajs/react';
-import { Activity, AlertTriangle, RefreshCw, Search, X } from 'lucide-react';
+import { Activity, AlertTriangle, Link2, RefreshCw, Search, Settings2, Unlink, X } from 'lucide-react';
 import { FormEvent, useState } from 'react';
 import { MetricBar } from '@/components/monitoring/metric-bar';
 import { Badge } from '@/components/ui/badge';
@@ -51,12 +51,14 @@ type Props = {
         q?: string;
         status?: string;
         sort?: string;
+        aset_link?: string;
     };
     stats: {
         total: number;
         online: number;
         offline: number;
         high_load: number;
+        unlinked: number;
     };
 };
 
@@ -69,14 +71,16 @@ export default function MonitoringIndex({ devices, filters, stats }: Props) {
     const [q, setQ] = useState(filters.q ?? '');
     const [status, setStatus] = useState(filters.status || 'all');
     const [sort, setSort] = useState(filters.sort || 'last_seen');
+    const [asetLink, setAsetLink] = useState(filters.aset_link || 'all');
 
     usePoll(30000, {
         only: ['devices', 'stats'],
     });
 
-    function applyFilters(next?: { status?: string; sort?: string }) {
+    function applyFilters(next?: { status?: string; sort?: string; aset_link?: string }) {
         const nextStatus = next?.status ?? status;
         const nextSort = next?.sort ?? sort;
+        const nextAsetLink = next?.aset_link ?? asetLink;
 
         router.get(
             '/monitoring',
@@ -84,6 +88,7 @@ export default function MonitoringIndex({ devices, filters, stats }: Props) {
                 q: q || undefined,
                 status: nextStatus === 'all' ? undefined : nextStatus,
                 sort: nextSort === 'last_seen' ? undefined : nextSort,
+                aset_link: nextAsetLink === 'all' ? undefined : nextAsetLink,
             },
             { preserveState: true, preserveScroll: true },
         );
@@ -98,38 +103,54 @@ export default function MonitoringIndex({ devices, filters, stats }: Props) {
         setQ('');
         setStatus('all');
         setSort('last_seen');
+        setAsetLink('all');
         router.get('/monitoring', {}, { preserveState: true });
     }
 
-    const hasFilters = Boolean(filters.q || filters.status || filters.sort);
+    const hasFilters = Boolean(filters.q || filters.status || filters.sort || filters.aset_link);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Monitoring" />
 
-            <div className="flex flex-col gap-6 p-4 md:p-6">
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                    <div>
-                        <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
-                            <Activity className="size-5 text-muted-foreground" />
-                            Monitoring Perangkat
+            <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 p-4 md:p-6">
+                <header className="flex flex-col gap-4 border-b border-border/70 pb-5 sm:flex-row sm:items-end sm:justify-between">
+                    <div className="min-w-0">
+                        <p className="mb-1 text-[11px] font-medium tracking-[0.18em] text-teal-700 uppercase dark:text-teal-400">
+                            Operasional IT
+                        </p>
+                        <h1 className="flex items-center gap-2 text-[1.65rem] leading-tight font-semibold tracking-tight sm:text-[1.75rem]">
+                            <Activity className="size-6 text-teal-700 dark:text-teal-400" />
+                            Monitoring perangkat
                         </h1>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            Status online/offline dan metrik CPU, RAM, Disk dari RS Agent. Auto-refresh 30 detik.
+                        <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                            Status live dari RS Agent. Hubungkan ke inventaris agar hardware dan aset satu alur kerja.
                         </p>
                     </div>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => router.reload({ only: ['devices', 'stats'] })}
-                    >
-                        <RefreshCw className="size-3.5" />
-                        Refresh
-                    </Button>
-                </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="outline" className="gap-1.5 font-normal">
+                            <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />
+                            Live · 30 detik
+                        </Badge>
+                        <Button type="button" variant="outline" size="sm" asChild>
+                            <Link href="/monitoring/pengaturan-kategori">
+                                <Settings2 className="size-3.5" />
+                                Kategori monitor
+                            </Link>
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => router.reload({ only: ['devices', 'stats'] })}
+                        >
+                            <RefreshCw className="size-3.5" />
+                            Refresh
+                        </Button>
+                    </div>
+                </header>
 
-                {(stats.offline > 0 || stats.high_load > 0) && (
+                {(stats.offline > 0 || stats.high_load > 0 || stats.unlinked > 0) && (
                     <div className="flex flex-wrap gap-2">
                         {stats.offline > 0 ? (
                             <button
@@ -138,11 +159,11 @@ export default function MonitoringIndex({ devices, filters, stats }: Props) {
                                     setStatus('offline');
                                     applyFilters({ status: 'offline' });
                                 }}
-                                className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-left text-sm text-amber-900 dark:text-amber-200"
+                                className="flex cursor-pointer items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-left text-sm text-amber-900 transition-colors hover:bg-amber-500/15 dark:text-amber-200"
                             >
                                 <AlertTriangle className="size-4 shrink-0" />
                                 <span>
-                                    <strong>{stats.offline}</strong> perangkat offline — klik untuk filter
+                                    <strong>{stats.offline}</strong> offline — filter
                                 </span>
                             </button>
                         ) : null}
@@ -150,9 +171,24 @@ export default function MonitoringIndex({ devices, filters, stats }: Props) {
                             <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-800 dark:text-red-200">
                                 <AlertTriangle className="size-4 shrink-0" />
                                 <span>
-                                    <strong>{stats.high_load}</strong> online dengan beban ≥ 90% (CPU/RAM/Disk)
+                                    <strong>{stats.high_load}</strong> beban ≥ 90%
                                 </span>
                             </div>
+                        ) : null}
+                        {stats.unlinked > 0 ? (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setAsetLink('unlinked');
+                                    applyFilters({ aset_link: 'unlinked' });
+                                }}
+                                className="flex cursor-pointer items-center gap-2 rounded-lg border border-border/80 bg-muted/40 px-3 py-2 text-left text-sm transition-colors hover:bg-muted/60"
+                            >
+                                <Unlink className="size-4 shrink-0 text-muted-foreground" />
+                                <span>
+                                    <strong>{stats.unlinked}</strong> belum terhubung inventaris
+                                </span>
+                            </button>
                         ) : null}
                     </div>
                 )}
@@ -179,14 +215,15 @@ export default function MonitoringIndex({ devices, filters, stats }: Props) {
                                 applyFilters({ status: next });
                             }}
                             className={cn(
-                                'rounded-lg border px-3 py-2.5 text-left transition-colors',
+                                'rounded-xl border px-3 py-2.5 text-left transition-colors',
                                 status === (stat.key === 'all' ? 'all' : stat.key)
-                                    ? 'border-foreground/20 bg-muted/60'
-                                    : 'hover:bg-muted/40',
+                                    ? 'border-teal-700/30 bg-teal-50/80 dark:border-teal-500/30 dark:bg-teal-950/30'
+                                    : 'border-border/80 bg-card hover:bg-muted/40',
                                 stat.key === 'high' && 'cursor-default',
+                                stat.key !== 'high' && 'cursor-pointer',
                             )}
                         >
-                            <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                            <div className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
                                 {stat.label}
                             </div>
                             <div
@@ -203,143 +240,192 @@ export default function MonitoringIndex({ devices, filters, stats }: Props) {
                     ))}
                 </div>
 
-                <form onSubmit={submit} className="flex flex-wrap items-center gap-2">
-                    <div className="relative min-w-[220px] flex-1">
-                        <Search className="absolute top-2.5 left-2.5 size-4 text-muted-foreground" />
+                <form
+                    onSubmit={submit}
+                    className="flex flex-col gap-2 rounded-xl border border-border/80 bg-card p-3 shadow-[0_1px_2px_rgba(0,0,0,0.03)] lg:flex-row lg:items-center"
+                >
+                    <div className="relative min-w-0 flex-1">
+                        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={q}
                             onChange={(event) => setQ(event.target.value)}
                             placeholder="Cari hostname, IP, UUID…"
-                            className="pl-8"
+                            className="h-10 pl-9"
                         />
                     </div>
-                    <Select
-                        value={status}
-                        onValueChange={(value) => {
-                            setStatus(value);
-                            applyFilters({ status: value });
-                        }}
-                    >
-                        <SelectTrigger className="w-[140px]">
-                            <SelectValue placeholder="Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Semua</SelectItem>
-                            <SelectItem value="online">Online</SelectItem>
-                            <SelectItem value="offline">Offline</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <Select
-                        value={sort}
-                        onValueChange={(value) => {
-                            setSort(value);
-                            applyFilters({ sort: value });
-                        }}
-                    >
-                        <SelectTrigger className="w-[160px]">
-                            <SelectValue placeholder="Urutkan" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="last_seen">Last seen</SelectItem>
-                            <SelectItem value="hostname">Hostname</SelectItem>
-                            <SelectItem value="cpu">CPU tertinggi</SelectItem>
-                            <SelectItem value="ram">RAM tertinggi</SelectItem>
-                            <SelectItem value="disk">Disk tertinggi</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <Button type="submit" variant="secondary">
-                        Cari
-                    </Button>
-                    {hasFilters ? (
-                        <Button type="button" variant="ghost" size="icon" onClick={clearFilters} title="Reset filter">
-                            <X className="size-4" />
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:flex">
+                        <Select
+                            value={status}
+                            onValueChange={(value) => {
+                                setStatus(value);
+                                applyFilters({ status: value });
+                            }}
+                        >
+                            <SelectTrigger className="h-10 lg:w-[130px]">
+                                <SelectValue placeholder="Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Semua status</SelectItem>
+                                <SelectItem value="online">Online</SelectItem>
+                                <SelectItem value="offline">Offline</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Select
+                            value={asetLink}
+                            onValueChange={(value) => {
+                                setAsetLink(value);
+                                applyFilters({ aset_link: value });
+                            }}
+                        >
+                            <SelectTrigger className="h-10 lg:w-[160px]">
+                                <SelectValue placeholder="Aset" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Semua tautan</SelectItem>
+                                <SelectItem value="linked">Terhubung aset</SelectItem>
+                                <SelectItem value="unlinked">Belum terhubung</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Select
+                            value={sort}
+                            onValueChange={(value) => {
+                                setSort(value);
+                                applyFilters({ sort: value });
+                            }}
+                        >
+                            <SelectTrigger className="col-span-2 h-10 sm:col-span-1 lg:w-[150px]">
+                                <SelectValue placeholder="Urutkan" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="last_seen">Last seen</SelectItem>
+                                <SelectItem value="hostname">Hostname</SelectItem>
+                                <SelectItem value="cpu">CPU tertinggi</SelectItem>
+                                <SelectItem value="ram">RAM tertinggi</SelectItem>
+                                <SelectItem value="disk">Disk tertinggi</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex gap-2">
+                        <Button type="submit" size="sm" className="h-10 bg-teal-700 hover:bg-teal-800">
+                            Cari
                         </Button>
-                    ) : null}
+                        {hasFilters ? (
+                            <Button type="button" variant="ghost" size="icon" className="h-10 w-10" onClick={clearFilters} title="Reset filter">
+                                <X className="size-4" />
+                            </Button>
+                        ) : null}
+                    </div>
                 </form>
 
-                <div className="overflow-x-auto rounded-lg border">
-                    <table className="w-full min-w-[860px] text-left text-sm">
-                        <thead className="border-b bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-                            <tr>
-                                <th className="px-3 py-2 font-medium">Perangkat</th>
-                                <th className="px-3 py-2 font-medium">Status</th>
-                                <th className="px-3 py-2 font-medium">CPU</th>
-                                <th className="px-3 py-2 font-medium">RAM</th>
-                                <th className="px-3 py-2 font-medium">Disk</th>
-                                <th className="px-3 py-2 font-medium">Last seen</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {devices.data.length === 0 ? (
-                                <tr>
-                                    <td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">
-                                        Belum ada perangkat terdaftar.
-                                    </td>
-                                </tr>
-                            ) : (
-                                devices.data.map((device) => (
-                                    <tr key={device.id} className="border-b last:border-0 hover:bg-muted/30">
-                                        <td className="px-3 py-2.5">
-                                            <Link
-                                                href={`/monitoring/${device.id}`}
-                                                prefetch
-                                                className="font-medium text-foreground hover:underline"
-                                            >
-                                                {device.hostname || device.computer_name || device.uuid}
-                                            </Link>
-                                            <div className="mt-0.5 text-xs text-muted-foreground">
-                                                {device.ip_address || '—'}
-                                                {device.hardware?.os ? ` · ${device.hardware.os}` : ''}
-                                                {device.aset ? (
-                                                    <>
-                                                        {' · '}
-                                                        <Link
-                                                            href={`/aset/${device.aset.kode_aset}`}
-                                                            className="text-foreground/80 underline-offset-2 hover:underline"
-                                                            onClick={(e) => e.stopPropagation()}
-                                                        >
-                                                            {device.aset.kode_aset}
-                                                        </Link>
-                                                    </>
-                                                ) : null}
-                                            </div>
-                                        </td>
-                                        <td className="px-3 py-2.5">
-                                            <Badge
-                                                variant="outline"
-                                                className={cn(
-                                                    'capitalize',
-                                                    device.status === 'online'
-                                                        ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-                                                        : 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200',
-                                                )}
-                                            >
-                                                {device.status}
-                                            </Badge>
-                                        </td>
-                                        <td className="px-3 py-2.5">
-                                            <MetricBar value={device.last_cpu_percent} />
-                                        </td>
-                                        <td className="px-3 py-2.5">
-                                            <MetricBar value={device.last_ram_percent} />
-                                        </td>
-                                        <td className="px-3 py-2.5">
-                                            <MetricBar value={device.last_disk_percent} />
-                                        </td>
-                                        <td className="px-3 py-2.5">
-                                            <div className="text-sm">{formatRelativeId(device.last_seen_at)}</div>
-                                            <div className="text-[11px] text-muted-foreground">
-                                                {device.last_seen_at
-                                                    ? new Date(device.last_seen_at).toLocaleString('id-ID')
-                                                    : '–'}
-                                            </div>
-                                        </td>
+                {devices.data.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border/80 px-6 py-14 text-center">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                            <Activity className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                        <div>
+                            <p className="font-medium">
+                                {hasFilters ? 'Tidak ada perangkat cocok filter' : 'Belum ada perangkat terdaftar'}
+                            </p>
+                            <p className="mt-1 max-w-md text-sm text-muted-foreground">
+                                {hasFilters
+                                    ? 'Reset filter atau ubah kata kunci pencarian.'
+                                    : 'Pasang RS Agent di PC, lalu daftar dengan enrollment key. Setelah online, hubungkan ke inventaris dari detail perangkat.'}
+                            </p>
+                        </div>
+                        {hasFilters ? (
+                            <Button type="button" variant="outline" size="sm" onClick={clearFilters}>
+                                Reset filter
+                            </Button>
+                        ) : null}
+                    </div>
+                ) : (
+                    <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+                        <div className="overflow-x-auto">
+                            <table className="w-full min-w-[920px] text-left text-sm">
+                                <thead className="border-b border-border/60 bg-muted/30 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                                    <tr>
+                                        <th className="px-4 py-2.5">Perangkat</th>
+                                        <th className="px-3 py-2.5">Status</th>
+                                        <th className="px-3 py-2.5">Inventaris</th>
+                                        <th className="px-3 py-2.5">CPU</th>
+                                        <th className="px-3 py-2.5">RAM</th>
+                                        <th className="px-3 py-2.5">Disk</th>
+                                        <th className="px-4 py-2.5">Last seen</th>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                                </thead>
+                                <tbody className="divide-y divide-border/60">
+                                    {devices.data.map((device) => (
+                                        <tr key={device.id} className="transition-colors hover:bg-muted/35">
+                                            <td className="px-4 py-3">
+                                                <Link
+                                                    href={`/monitoring/${device.id}`}
+                                                    prefetch
+                                                    className="font-semibold tracking-tight text-foreground hover:text-teal-800 dark:hover:text-teal-300"
+                                                >
+                                                    {device.hostname || device.computer_name || device.uuid}
+                                                </Link>
+                                                <div className="mt-0.5 text-xs text-muted-foreground">
+                                                    {device.ip_address || '—'}
+                                                    {device.hardware?.os ? ` · ${device.hardware.os}` : ''}
+                                                </div>
+                                            </td>
+                                            <td className="px-3 py-3">
+                                                <Badge
+                                                    variant="outline"
+                                                    className={cn(
+                                                        'capitalize',
+                                                        device.status === 'online'
+                                                            ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                                                            : 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200',
+                                                    )}
+                                                >
+                                                    {device.status}
+                                                </Badge>
+                                            </td>
+                                            <td className="px-3 py-3">
+                                                {device.aset ? (
+                                                    <Link
+                                                        href={`/aset/${device.aset.kode_aset}`}
+                                                        className="inline-flex items-center gap-1 text-sm font-medium underline-offset-2 hover:underline"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        <Link2 className="size-3.5 text-teal-700 dark:text-teal-400" />
+                                                        {device.aset.kode_aset}
+                                                    </Link>
+                                                ) : (
+                                                    <Link
+                                                        href={`/monitoring/${device.id}`}
+                                                        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                                                    >
+                                                        <Unlink className="size-3.5" />
+                                                        Hubungkan
+                                                    </Link>
+                                                )}
+                                            </td>
+                                            <td className="px-3 py-3">
+                                                <MetricBar value={device.last_cpu_percent} />
+                                            </td>
+                                            <td className="px-3 py-3">
+                                                <MetricBar value={device.last_ram_percent} />
+                                            </td>
+                                            <td className="px-3 py-3">
+                                                <MetricBar value={device.last_disk_percent} />
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="text-sm">{formatRelativeId(device.last_seen_at)}</div>
+                                                <div className="text-[11px] text-muted-foreground">
+                                                    {device.last_seen_at
+                                                        ? new Date(device.last_seen_at).toLocaleString('id-ID')
+                                                        : '–'}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
 
                 {devices.links.length > 3 ? (
                     <div className="flex flex-wrap gap-1">

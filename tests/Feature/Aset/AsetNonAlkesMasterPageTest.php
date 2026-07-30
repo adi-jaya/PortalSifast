@@ -30,6 +30,7 @@ it('renders katalog non-alkes master page', function () {
         ->assertInertia(fn ($page) => $page
             ->component('aset/master-non-alkes/index')
             ->has('items.data', 2)
+            ->has('kategoriOptions')
             ->where('stats.total', 2)
             ->where('stats.leaf', 1));
 });

@@ -19,6 +19,15 @@ Authorization: Bearer {token}
 Accept: application/json
 ```
 
+**Auth yang dipakai dokumen ini (app kepegawaian / slip gaji):**
+
+| Cara | Token | NIK |
+|------|--------|-----|
+| **Utama (disarankan di sini)** | Bearer **token service** (`VITE_PORTALSIFAST_API_TOKEN` / token long-lived) | **Wajib** kirim `?nik=` (atau header `X-Sifast-Nik`) |
+| Alternatif | Bearer hasil **`POST /api/login`** (user yang punya `simrs_nik`) | Bisa dari profil user; tetap boleh kirim `?nik=` |
+
+Ini **bukan** login payroll terpisah. Detail: [api-documentation.md](./api-documentation.md) bagian Autentikasi + Payroll.
+
 **NIK pegawai** (sama pola dengan modul tiket):
 - Query: `?nik=76.01.08.2012` atau `?simrs_nik=...`
 - Atau header: `X-Sifast-Nik: 76.01.08.2012`

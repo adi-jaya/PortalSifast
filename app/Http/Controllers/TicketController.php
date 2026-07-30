@@ -12,6 +12,7 @@ use App\Models\Project;
 use App\Models\Ticket;
 use App\Models\TicketActivity;
 use App\Models\TicketCategory;
+use App\Models\TicketComment;
 use App\Models\TicketPriority;
 use App\Models\TicketSlaRule;
 use App\Models\TicketStatus;
@@ -152,53 +153,60 @@ class TicketController extends Controller
             $query->whereHas('status', fn ($q) => $q->where('is_closed', false));
         }
 
-        if ($request->filled('status')) {
-            $query->where('ticket_status_id', $request->status);
+        $statusId = $this->ticketFilterScalar($request, 'status');
+        if ($statusId !== null) {
+            $query->where('ticket_status_id', $statusId);
         }
 
-        if ($request->filled('priority')) {
-            $query->where('ticket_priority_id', $request->priority);
+        $priorityId = $this->ticketFilterScalar($request, 'priority');
+        if ($priorityId !== null) {
+            $query->where('ticket_priority_id', $priorityId);
         }
 
-        if ($request->filled('department') && $user->isAdmin()) {
-            $query->where('dep_id', $request->department);
+        $department = $this->ticketFilterScalar($request, 'department');
+        if ($department !== null && $user->isAdmin()) {
+            $query->where('dep_id', $department);
         }
 
-        if ($request->filled('assignee')) {
-            if ($request->assignee === 'unassigned') {
+        $assignee = $this->ticketFilterScalar($request, 'assignee');
+        if ($assignee !== null) {
+            if ($assignee === 'unassigned') {
                 $query->whereNull('assignee_id');
-            } elseif ($request->assignee === 'me') {
+            } elseif ($assignee === 'me') {
                 $query->where('assignee_id', $user->id);
-            } elseif ($request->assignee === 'my_group') {
+            } elseif ($assignee === 'my_group') {
                 $groupIds = \App\Models\TicketGroup::whereHas('members', fn ($q) => $q->where('user_id', $user->id))->pluck('id');
                 $query->whereIn('ticket_group_id', $groupIds)->whereNull('assignee_id');
             } else {
-                $query->where('assignee_id', $request->assignee);
+                $query->where('assignee_id', $assignee);
             }
         }
 
-        if ($request->filled('search')) {
-            $search = $request->search;
+        $search = $this->ticketFilterScalar($request, 'search');
+        if ($search !== null) {
             $query->where(function ($q) use ($search) {
                 $q->where('ticket_number', 'like', "%{$search}%")
                     ->orWhere('title', 'like', "%{$search}%");
             });
         }
 
-        if ($request->filled('tag')) {
-            $query->whereHas('tags', fn ($q) => $q->where('ticket_tags.id', $request->tag));
+        $tagId = $this->ticketFilterScalar($request, 'tag');
+        if ($tagId !== null) {
+            $query->whereHas('tags', fn ($q) => $q->where('ticket_tags.id', $tagId));
         }
 
-        if ($request->filled('category')) {
-            $query->where('ticket_category_id', $request->category);
+        $categoryId = $this->ticketFilterScalar($request, 'category');
+        if ($categoryId !== null) {
+            $query->where('ticket_category_id', $categoryId);
         }
 
-        if ($request->filled('subcategory')) {
-            $query->where('ticket_subcategory_id', $request->subcategory);
+        $subcategoryId = $this->ticketFilterScalar($request, 'subcategory');
+        if ($subcategoryId !== null) {
+            $query->where('ticket_subcategory_id', $subcategoryId);
         }
 
-        if ($request->filled('project')) {
-            $projectVal = $request->project;
+        $projectVal = $this->ticketFilterScalar($request, 'project');
+        if ($projectVal !== null) {
             if ($projectVal === '0' || $projectVal === '__none__') {
                 $query->whereNull('project_id');
             } else {
@@ -206,11 +214,25 @@ class TicketController extends Controller
             }
         }
 
-        if ($request->filled('created_from') && $request->filled('created_to')) {
+        $createdFrom = $this->ticketFilterDate($request, 'created_from');
+        $createdTo = $this->ticketFilterDate($request, 'created_to');
+        if ($createdFrom !== null && $createdTo !== null) {
             $query->whereBetween('created_at', [
-                $request->date('created_from')->startOfDay(),
-                $request->date('created_to')->endOfDay(),
+                $createdFrom->copy()->startOfDay()->format('Y-m-d H:i:s'),
+                $createdTo->copy()->endOfDay()->format('Y-m-d H:i:s'),
             ]);
+        } elseif ($createdFrom !== null) {
+            $query->where(
+                'created_at',
+                '>=',
+                $createdFrom->copy()->startOfDay()->format('Y-m-d H:i:s')
+            );
+        } elseif ($createdTo !== null) {
+            $query->where(
+                'created_at',
+                '<=',
+                $createdTo->copy()->endOfDay()->format('Y-m-d H:i:s')
+            );
         } else {
             if ($request->filled('from')) {
                 $query->whereDate('created_at', '>=', $request->from);
@@ -220,17 +242,57 @@ class TicketController extends Controller
             }
         }
 
-        if ($request->filled('closed_from') && $request->filled('closed_to')) {
+        $closedFrom = $this->ticketFilterDate($request, 'closed_from');
+        $closedTo = $this->ticketFilterDate($request, 'closed_to');
+        if ($closedFrom !== null && $closedTo !== null) {
             $query->whereNotNull('closed_at')
                 ->whereBetween('closed_at', [
-                    $request->date('closed_from')->startOfDay(),
-                    $request->date('closed_to')->endOfDay(),
+                    $closedFrom->copy()->startOfDay()->format('Y-m-d H:i:s'),
+                    $closedTo->copy()->endOfDay()->format('Y-m-d H:i:s'),
                 ]);
         }
 
         if ($request->boolean('resolved_only')) {
             $query->whereNotNull('resolved_at');
         }
+    }
+
+    /**
+     * Parse tanggal filter tiket (abaikan nilai sampah seperti "null").
+     */
+    private function ticketFilterDate(Request $request, string $key): ?Carbon
+    {
+        $raw = $this->ticketFilterScalar($request, $key);
+        if ($raw === null) {
+            return null;
+        }
+
+        try {
+            return $request->date($key)->timezone(config('app.timezone'));
+        } catch (\Throwable) {
+            try {
+                return Carbon::parse($raw, config('app.timezone'));
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+    }
+
+    /**
+     * Ambil nilai filter skalar; abaikan string kosong / sampah dari query URL.
+     */
+    private function ticketFilterScalar(Request $request, string $key): ?string
+    {
+        if (! $request->filled($key)) {
+            return null;
+        }
+
+        $raw = trim((string) $request->input($key));
+        if ($raw === '' || in_array($raw, ['null', 'undefined', '__all__'], true)) {
+            return null;
+        }
+
+        return $raw;
     }
 
     /**
@@ -243,6 +305,71 @@ class TicketController extends Controller
         }
 
         return $ticket->openIssues->pluck('title')->filter()->implode(' | ');
+    }
+
+    /**
+     * Normalisasi teks panjang untuk sel CSV (notebook / LLM-friendly).
+     */
+    private function sanitizeCsvText(?string $text): string
+    {
+        if ($text === null || $text === '') {
+            return '';
+        }
+
+        $plain = html_entity_decode(strip_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        if (! mb_check_encoding($plain, 'UTF-8')) {
+            $plain = mb_convert_encoding($plain, 'UTF-8', 'UTF-8');
+        }
+        $plain = preg_replace("/[ \t]+/u", ' ', $plain) ?? $plain;
+        $plain = preg_replace("/\R{3,}/u", "\n\n", $plain) ?? $plain;
+
+        return trim($plain);
+    }
+
+    /**
+     * 5 komentar terbaru, diurutkan kronologis (lama → baru) untuk analisa.
+     *
+     * @param  \Illuminate\Support\Collection<int, TicketComment>  $commentsNewestFirst
+     */
+    private function formatRecentCommentsForCsvExport(\Illuminate\Support\Collection $commentsNewestFirst): string
+    {
+        if ($commentsNewestFirst->isEmpty()) {
+            return '';
+        }
+
+        return $commentsNewestFirst
+            ->take(5)
+            ->sortBy([
+                ['created_at', 'asc'],
+                ['id', 'asc'],
+            ])
+            ->values()
+            ->map(function (TicketComment $comment, int $index): string {
+                $flags = [];
+                if ($comment->is_internal) {
+                    $flags[] = 'internal';
+                }
+                if ($comment->is_resolution) {
+                    $flags[] = 'resolusi';
+                }
+                if ($flags === []) {
+                    $flags[] = 'publik';
+                }
+
+                $when = $comment->created_at?->format('Y-m-d H:i') ?? '-';
+                $who = $comment->user?->name ?? 'Sistem';
+                $body = $this->sanitizeCsvText($comment->body);
+
+                return sprintf(
+                    '%d) [%s | %s | %s] %s',
+                    $index + 1,
+                    $when,
+                    $who,
+                    implode(',', $flags),
+                    $body
+                );
+            })
+            ->implode("\n");
     }
 
     /**
@@ -1278,13 +1405,19 @@ class TicketController extends Controller
             fputcsv($handle, [
                 'No. Tiket',
                 'Judul',
+                'Deskripsi',
                 'Tipe',
                 'Kategori',
                 'Subkategori',
                 'Prioritas',
                 'Status',
                 'Masalah (terbuka)',
-                'Rencana',
+                'Ide rencana',
+                'Alat/peralatan',
+                'Estimasi anggaran',
+                'Catatan anggaran',
+                'No. Inventaris Aset',
+                'Rencana (project)',
                 'Departemen',
                 'Pemohon',
                 'Unit (pemohon)',
@@ -1293,20 +1426,45 @@ class TicketController extends Controller
                 'Dibuat',
                 'Ditutup',
                 'Lama penyelesaian',
+                'Jumlah komentar',
+                'Komentar terbaru (5)',
             ]);
 
-            $query->orderBy('created_at', 'desc')->chunk(100, function ($tickets) use ($handle) {
-                $this->addRequesterDepartemenToTickets($tickets);
-                foreach ($tickets as $t) {
+            $tickets = $query
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
+                ->get();
+
+            $this->addRequesterDepartemenToTickets($tickets);
+
+            $commentsByTicketId = TicketComment::query()
+                ->with(['user:id,name'])
+                ->whereIn('ticket_id', $tickets->pluck('id'))
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
+                ->get()
+                ->groupBy('ticket_id');
+
+            foreach ($tickets as $t) {
+                try {
+                    /** @var \Illuminate\Support\Collection<int, TicketComment> $ticketComments */
+                    $ticketComments = $commentsByTicketId->get($t->id, collect());
+
                     fputcsv($handle, [
                         $t->ticket_number,
                         $t->title,
+                        $this->sanitizeCsvText($t->description),
                         $t->type?->name ?? '',
                         $t->category?->name ?? '',
                         $t->subcategory?->name ?? '',
                         $t->priority?->name ?? '',
                         $t->status?->name ?? '',
                         $this->formatOpenIssuesForCsvExport($t),
+                        $this->sanitizeCsvText($t->plan_ideas),
+                        $this->sanitizeCsvText($t->plan_tools),
+                        $t->budget_estimate ?? '',
+                        $this->sanitizeCsvText($t->budget_notes),
+                        $t->asset_no_inventaris ?? '',
                         $t->project?->name ?? '',
                         $t->dep_id,
                         $t->requester?->name ?? '',
@@ -1316,9 +1474,18 @@ class TicketController extends Controller
                         $t->created_at?->format('Y-m-d H:i') ?? '',
                         $t->closed_at?->format('Y-m-d H:i') ?? '',
                         TicketResolutionDuration::format($t->created_at, $t->closed_at) ?? '',
+                        $ticketComments->count(),
+                        $this->formatRecentCommentsForCsvExport($ticketComments),
+                    ]);
+                } catch (\Throwable $e) {
+                    report($e);
+                    fputcsv($handle, [
+                        $t->ticket_number ?? '',
+                        $t->title ?? '',
+                        '[ERROR export baris: '.$e->getMessage().']',
                     ]);
                 }
-            });
+            }
 
             fclose($handle);
         }, $filename, [

@@ -1,0 +1,4 @@
+{
+  "summary": "Clarified 'detail alat' split: shared barang fields (merk/tipe/kategori/harga/distributor/foto) vs per-unit fields (ruang + no_seri). Confirmed 2 units can share same barang with different serials — already in design via no_seri_list per unit row.",
+  "current_status": "Create-flow redesign brainstorming; user clarifying field groups before approving design. Multi-ruang option A chosen; awaiting confirmation on detail field list then design OK."
+}

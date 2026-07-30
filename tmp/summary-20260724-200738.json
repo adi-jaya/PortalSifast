@@ -1,0 +1,4 @@
+{
+  "summary": "Investigated the /aset 500: root cause was Flysystem UnableToCreateDirectory for storage/app/public/aset — PHP-FPM runs as www but that folder did not exist and parent was not writable by www (upload foto on create). Created storage/app/public/aset with 777 and made storage/app/public writable so uploads can proceed. Echo initialized is unrelated websocket noise.",
+  "current_status": "Permission fix applied without sudo; user should retry create (with or without foto). Ideal permanent fix when sudo available: chown www:www on storage upload dirs."
+}

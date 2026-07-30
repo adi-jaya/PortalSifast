@@ -1,0 +1,4 @@
+{
+  "summary": "User feedback: create form order wrong — detail (merk/tipe) should come before jumlah/lokasi; jumlah>1 should allow different lokasi per unit. Confirmed backend currently supports only one aset_ruang_id for whole batch. Brainstorming reorder + multi-ruang; asking one clarifying question before design.",
+  "current_status": "Progressive create exists but field order and single-ruang batch conflict with Lenovo 2-room case. Awaiting user clarification on multi-ruang UX before redesign/implement."
+}

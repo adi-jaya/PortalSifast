@@ -1,0 +1,4 @@
+{
+  "summary": "Fixed sidebar scroll reset on Inertia navigation: persist nav scrollTop and expanded modules in sessionStorage, restore on remount, and keep active item in view with scrollIntoView(nearest).",
+  "current_status": "Sidebar UX bug addressed; rebuild done. User should hard-refresh and verify Master Jenis/Master Ruang navigation keeps scroll position."
+}

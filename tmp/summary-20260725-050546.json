@@ -1,0 +1,4 @@
+{
+  "summary": "User chose preview-then-confirm (C). Presenting 3 implementation approaches for unit inventaris CSV import UI; recommending lightweight preview+confirm without full payroll-style history/rollback in v1.",
+  "current_status": "Brainstorming approaches for aset unit CSV import; awaiting approach choice."
+}

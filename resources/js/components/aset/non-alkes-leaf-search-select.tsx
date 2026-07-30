@@ -1,5 +1,5 @@
 import AsyncSelect from 'react-select/async';
-import type { SingleValue } from 'react-select';
+import type { SingleValue, StylesConfig } from 'react-select';
 import { cn } from '@/lib/utils';
 
 export type NonAlkesOption = {
@@ -9,6 +9,11 @@ export type NonAlkesOption = {
     id_alat: string;
     nama_alat: string;
     kode: string | null;
+    aset_kategori_id: number | null;
+};
+
+const menuPortalStyles: StylesConfig<NonAlkesOption, false> = {
+    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
 };
 
 type Props = {
@@ -37,6 +42,7 @@ async function fetchNonAlkesLeaves(inputValue: string): Promise<NonAlkesOption[]
         id_alat: string;
         nama_alat: string;
         kode: string | null;
+        aset_kategori_id: number | null;
         label: string;
     }>;
 
@@ -47,6 +53,7 @@ async function fetchNonAlkesLeaves(inputValue: string): Promise<NonAlkesOption[]
         id_alat: item.id_alat,
         nama_alat: item.nama_alat,
         kode: item.kode,
+        aset_kategori_id: item.aset_kategori_id,
     }));
 }
 
@@ -82,6 +89,9 @@ export function NonAlkesLeafSearchSelect({
                     </span>
                 </div>
             )}
+            menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+            menuPosition="fixed"
+            styles={menuPortalStyles}
             className={cn('text-sm', className)}
             classNames={{
                 control: () =>
@@ -89,7 +99,7 @@ export function NonAlkesLeafSearchSelect({
                         '!min-h-10 !rounded-md !border-input !bg-background !shadow-xs hover:!border-input',
                         hasError && '!border-destructive',
                     ),
-                menu: () => '!z-50 !rounded-md !border !bg-popover !text-popover-foreground !shadow-md',
+                menu: () => '!z-[9999] !rounded-md !border !bg-popover !text-popover-foreground !shadow-md',
                 option: ({ isFocused, isSelected }) =>
                     cn(
                         '!cursor-pointer !text-sm',

@@ -1,0 +1,4 @@
+{
+  "summary": "Made data tables more colorful: blue brand gradient header with primary text, zebra striping (sky-50), blue hover tint, and soft primary border/shadow so header and body contrast clearly without going back to violet.",
+  "current_status": "Soft Shell tables now use fresh-blue header + striped rows. Assets rebuilt; SoftShellRedesignTest passing. User should hard-refresh to see the color update."
+}

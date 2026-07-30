@@ -358,7 +358,7 @@ export default function SimmutuDashboard({
                 </div>
 
                 {/* Recent entries table */}
-                <div className="rounded-2xl border border-border/80 bg-card shadow-sm">
+                <div className="data-table">
                     <div className="flex items-center justify-between border-b px-4 py-3">
                         <div>
                             <h2 className="text-sm font-semibold">Entri terbaru</h2>

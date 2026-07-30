@@ -1,0 +1,4 @@
+{
+  "summary": "Shipped Kesehatan Infrastruktur phase-1 dashboard at /infrastruktur: summary cards, Tianji monitors with live status + period uptime + events, RS Agent device block, secondary CSV exports retained, old /laporan-tianji redirects. Spec saved; 8 Pest tests passed.",
+  "current_status": "Phase 1 dashboard live in code. Phase 2 (combined CSV + print) still pending. User should run npm run build/dev to see UI."
+}

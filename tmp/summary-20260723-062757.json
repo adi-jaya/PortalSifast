@@ -1,0 +1,4 @@
+{
+  "summary": "Implemented Patroli Security v1 end-to-end from the approved spec: migrations/models, can_access_patroli role (payroll-style), template checklist CRUD, assign template to aset_ruang + QR label, check-in scan/store with item snapshots, period reports + CSV, sidebar/mobile nav, Pest tests (10 passed), Pint, and npm run build.",
+  "current_status": "Patroli Security module is live in codebase after migrate+build. Superadmin can grant Akses Patroli on user edit; petugas can manage templates/titik, scan QR, and pull weekly–yearly reports."
+}

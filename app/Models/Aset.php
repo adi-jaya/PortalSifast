@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Services\Agent\PengaturanMonitorableKategori;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -128,5 +130,43 @@ class Aset extends Model
     public function mutasiLokasi(): HasMany
     {
         return $this->hasMany(AsetMutasiLokasi::class, 'aset_id');
+    }
+
+    public function monitoredDevice(): HasOne
+    {
+        return $this->hasOne(MonitoredDevice::class, 'aset_id');
+    }
+
+    /**
+     * Aset yang boleh dihubungkan ke perangkat monitoring (PC/laptop/dll).
+     *
+     * @param  Builder<Aset>  $query
+     * @return Builder<Aset>
+     */
+    public function scopeMonitorableForAgent(Builder $query): Builder
+    {
+        $codes = app(PengaturanMonitorableKategori::class)->codes();
+
+        if ($codes === []) {
+            return $query->whereRaw('0 = 1');
+        }
+
+        return $query->whereHas('barang', function (Builder $barang) use ($codes): void {
+            $barang->where(function (Builder $inner) use ($codes): void {
+                $inner
+                    ->whereIn('id_kategori', $codes)
+                    ->orWhereHas('kategori', function (Builder $kategori) use ($codes): void {
+                        $kategori->whereIn('kode_kategori', $codes);
+                    });
+            });
+        });
+    }
+
+    public function isMonitorableForAgent(): bool
+    {
+        return static::query()
+            ->monitorableForAgent()
+            ->whereKey($this->id)
+            ->exists();
     }
 }

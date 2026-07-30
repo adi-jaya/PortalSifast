@@ -1,0 +1,4 @@
+{
+  "summary": "Diagnosed monitoring stuck-online bug: W11OKY last_seen 2026-07-19 but status online because Laravel scheduler never ran (no crontab for PortalSifast). Ran monitoring:mark-offline (1 device → offline), installed every-minute schedule:run cron, and added MarkStaleDevicesOffline safety net on monitoring/infrastruktur page loads. 16 related tests passed.",
+  "current_status": "Device should show offline on /monitoring refresh. Scheduler cron installed for replikasi user; page-load sync covers future cron gaps."
+}

@@ -10,7 +10,7 @@ import { initializeColorTheme } from './hooks/use-color-theme';
 import './echo.js';
 import { configureEcho } from '@laravel/echo-react';
 
-// Font is loaded via Blade template head (Geist — see resources/views/app.blade.php)
+// Font is loaded via Blade template head (Inter — see resources/views/app.blade.php)
 
 configureEcho({
     broadcaster: 'reverb',

@@ -1,5 +1,5 @@
 import CreatableSelect from 'react-select/creatable';
-import type { SingleValue } from 'react-select';
+import type { SingleValue, StylesConfig } from 'react-select';
 import { cn } from '@/lib/utils';
 import type { SearchSelectOption } from '@/components/search-select';
 
@@ -13,6 +13,10 @@ type Props = {
     hasError?: boolean;
     inputId?: string;
     isCreating?: boolean;
+};
+
+const menuPortalStyles: StylesConfig<SearchSelectOption, false> = {
+    menuPortal: (base) => ({ ...base, zIndex: 9999 }),
 };
 
 export function CreatableSearchSelect({
@@ -57,6 +61,18 @@ export function CreatableSearchSelect({
                     <span className="text-sm">{option.label}</span>
                 )
             }
+            filterOption={(option, rawInput) => {
+                const q = rawInput.trim().toLowerCase();
+                if (!q) {
+                    return true;
+                }
+                const haystack = `${option.label} ${option.data.description ?? ''}`.toLowerCase();
+
+                return haystack.includes(q);
+            }}
+            menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+            menuPosition="fixed"
+            styles={menuPortalStyles}
             className="text-sm"
             classNames={{
                 control: () =>
@@ -64,7 +80,7 @@ export function CreatableSearchSelect({
                         '!min-h-10 !rounded-md !border-input !bg-background !shadow-xs hover:!border-input',
                         hasError && '!border-destructive',
                     ),
-                menu: () => '!z-50 !rounded-md !border !bg-popover !text-popover-foreground !shadow-md',
+                menu: () => '!z-[9999] !rounded-md !border !bg-popover !text-popover-foreground !shadow-md',
                 option: ({ isFocused, isSelected }) =>
                     cn(
                         '!cursor-pointer !text-sm',

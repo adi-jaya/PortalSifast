@@ -1,0 +1,4 @@
+{
+  "summary": "Checked migration 2026_07_19_042355_add_inventory_columns_to_monitored_devices_table: file exists and status is Ran (batch 50). Already migrated.",
+  "current_status": "Inventory columns migration already applied on production DB; no migrate needed for that file."
+}

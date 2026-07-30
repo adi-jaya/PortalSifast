@@ -28,6 +28,7 @@ type MasterOpt = {
     nama_distributor?: string;
     nama_alat?: string;
     kode?: string;
+    aset_merk_id?: number | null;
 };
 
 type BarangOpt = {
@@ -159,10 +160,18 @@ export default function AsetEdit({
         () => toOptions(kategoriList.map((k) => ({ id: k.id, label: k.nama_kategori ?? '' }))),
         [kategoriList],
     );
-    const jenisOptions = useMemo(
-        () => toOptions(jenisList.map((j) => ({ id: j.id, label: j.nama_jenis ?? '' }))),
-        [jenisList],
-    );
+    const jenisOptions = useMemo(() => {
+        const merkId = data.aset_merk_id ? Number(data.aset_merk_id) : null;
+        const filtered = jenisList.filter((j) => {
+            if (!merkId) {
+                return true;
+            }
+
+            return j.aset_merk_id == null || j.aset_merk_id === merkId;
+        });
+
+        return toOptions(filtered.map((j) => ({ id: j.id, label: j.nama_jenis ?? '' })));
+    }, [jenisList, data.aset_merk_id]);
     const merkOptions = useMemo(
         () => toOptions(merkList.map((m) => ({ id: m.id, label: m.nama_merk ?? '' }))),
         [merkList],
@@ -183,14 +192,23 @@ export default function AsetEdit({
     const createMaster = useCallback(async (tipe: AsetMasterTipe, nama: string): Promise<SearchSelectOption | null> => {
         setCreatingMaster(tipe);
         try {
-            const result = await quickCreateAsetMaster(tipe, nama);
+            const merkId = data.aset_merk_id ? Number(data.aset_merk_id) : null;
+            const result = await quickCreateAsetMaster(
+                tipe,
+                nama,
+                tipe === 'jenis' ? { aset_merk_id: merkId } : {},
+            );
             if (!result) return null;
             const option = { value: String(result.item.id), label: result.item.nama, description: result.item.kode };
             const { id, nama: namaVal, kode } = result.item;
             if (tipe === 'kategori') {
                 setKategoriList((prev) => (prev.some((x) => x.id === id) ? prev : [...prev, { id, nama_kategori: namaVal }]));
             } else if (tipe === 'jenis') {
-                setJenisList((prev) => (prev.some((x) => x.id === id) ? prev : [...prev, { id, nama_jenis: namaVal }]));
+                setJenisList((prev) =>
+                    prev.some((x) => x.id === id)
+                        ? prev
+                        : [...prev, { id, nama_jenis: namaVal, aset_merk_id: result.item.aset_merk_id ?? merkId }],
+                );
             } else if (tipe === 'merk') {
                 setMerkList((prev) => (prev.some((x) => x.id === id) ? prev : [...prev, { id, nama_merk: namaVal }]));
             } else if (tipe === 'produsen') {
@@ -204,7 +222,26 @@ export default function AsetEdit({
         } finally {
             setCreatingMaster(null);
         }
-    }, []);
+    }, [data.aset_merk_id]);
+
+    const onMerkChange = (value: string) => {
+        setData((d) => {
+            const currentJenis = jenisList.find((j) => String(j.id) === d.aset_jenis_id);
+            const merkNum = value ? Number(value) : null;
+            const jenisOk =
+                !d.aset_jenis_id ||
+                !merkNum ||
+                !currentJenis ||
+                currentJenis.aset_merk_id == null ||
+                currentJenis.aset_merk_id === merkNum;
+
+            return {
+                ...d,
+                aset_merk_id: value,
+                aset_jenis_id: jenisOk ? d.aset_jenis_id : '',
+            };
+        });
+    };
 
     const submit = (e: FormEvent) => {
         e.preventDefault();
@@ -371,8 +408,8 @@ export default function AsetEdit({
                     </p>
                     <div className="grid gap-4 sm:grid-cols-2">
                         <CreatableField label="Kategori" options={kategoriOptions} value={data.aset_kategori_id} onChange={(v) => setData('aset_kategori_id', v)} onCreate={(n) => createMaster('kategori', n)} isCreating={creatingMaster === 'kategori'} />
+                        <CreatableField label="Merk" options={merkOptions} value={data.aset_merk_id} onChange={onMerkChange} onCreate={(n) => createMaster('merk', n)} isCreating={creatingMaster === 'merk'} />
                         <CreatableField label="Tipe / jenis" options={jenisOptions} value={data.aset_jenis_id} onChange={(v) => setData('aset_jenis_id', v)} onCreate={(n) => createMaster('jenis', n)} isCreating={creatingMaster === 'jenis'} />
-                        <CreatableField label="Merk" options={merkOptions} value={data.aset_merk_id} onChange={(v) => setData('aset_merk_id', v)} onCreate={(n) => createMaster('merk', n)} isCreating={creatingMaster === 'merk'} />
                         <CreatableField label="Produsen" options={produsenOptions} value={data.aset_produsen_id} onChange={(v) => setData('aset_produsen_id', v)} onCreate={(n) => createMaster('produsen', n)} isCreating={creatingMaster === 'produsen'} />
                         <div className="space-y-2">
                             <Label>Kelas</Label>

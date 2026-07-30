@@ -1,0 +1,4 @@
+{
+  "summary": "Implemented Soft Shell data table system from the user's spec: CSS .data-table (16px radius, 52px header, 56px rows, hover 150ms), shared components (DataTable, Toolbar, Search, Pagination, Skeleton, RowActionButton), restyled badge/status-badge/empty-state/checkbox/ui-table, migrated ~17 list pages off violet headers, fully refactored users/index as reference. SoftShellRedesignTest 7 passed; npm build OK.",
+  "current_status": "Fresh blue + Inter Soft Shell is live with a new data-table design system applied to major list pages. Remaining pages can adopt .data-table + shared components incrementally."
+}

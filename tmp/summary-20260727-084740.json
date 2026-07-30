@@ -1,0 +1,4 @@
+{
+  "summary": "Implemented Patroli Area→Ruang master (separate from inventaris), clean cutover of check-ins to patroli_ruang_id, UI/API/laporan updates, and Pest suite (18 passed). Code review Important items fixed: unique kode, edit/aktif ruang, Select copies nama only, per_template in laporan/CSV.",
+  "current_status": "Patroli Area+Ruang shipped in codebase and migrated on MySQL. Frontend may need npm run build; mobile apps must switch to patroli_ruang_id. Old QR labels need reprint."
+}

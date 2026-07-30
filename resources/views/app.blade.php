@@ -22,11 +22,11 @@
         {{-- Inline style to set the HTML background color — matches app.css palette --}}
         <style>
             html {
-                background: #F9FAFB;
+                background: #F8FAFC;
             }
 
             html.dark {
-                background: #111827;
+                background: #0F172A;
             }
         </style>
 
@@ -40,10 +40,10 @@
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
         <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
-        {{-- Geist — clean, modern, professional sans-serif --}}
+        {{-- Inter — primary typeface --}}
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800&display=swap" rel="stylesheet">
 
         {{-- Reverb/WebSocket config from Laravel (avoids Vite env not expanding .env vars) --}}
         @if(config('broadcasting.default') === 'reverb')

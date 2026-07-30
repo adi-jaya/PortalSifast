@@ -18,21 +18,22 @@ export function EmptyState({
 }: Props) {
     return (
         <div
+            data-empty-state
             className={cn(
-                'flex flex-col items-center justify-center rounded-xl border border-dashed border-border/80 bg-muted/30 py-12 px-6 text-center',
+                'flex flex-col items-center justify-center px-6 py-12 text-center',
                 className
             )}
         >
-            <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                {icon ?? <Inbox className="size-7" />}
+            <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-gray-50 text-muted-foreground dark:bg-muted">
+                {icon ?? <Inbox className="size-8" />}
             </div>
-            <h3 className="text-sm font-medium text-foreground">{title}</h3>
+            <h3 className="text-base font-semibold text-foreground">{title}</h3>
             {description && (
-                <p className="mt-1 max-w-xs text-sm text-muted-foreground">
+                <p className="mt-1 max-w-sm text-sm font-normal text-muted-foreground">
                     {description}
                 </p>
             )}
-            {action && <div className="mt-4">{action}</div>}
+            {action && <div className="mt-5">{action}</div>}
         </div>
     );
 }

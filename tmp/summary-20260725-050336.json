@@ -1,0 +1,4 @@
+{
+  "summary": "User chose C: CSV import for both unit inventaris and master catalogs, prioritizing unit inventaris first. Next clarifying question focuses on CSV row shape (one row per unit vs batch).",
+  "current_status": "Brainstorming aset CSV import UI; awaiting answer on row granularity."
+}

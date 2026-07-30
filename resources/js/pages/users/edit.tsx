@@ -37,6 +37,7 @@ type Props = {
         role: string;
         dep_id: string | null;
         can_access_payroll?: boolean;
+        can_access_patroli?: boolean;
         can_manage_mutu?: boolean;
         can_input_mutu?: boolean;
         can_view_mutu_dashboard?: boolean;
@@ -44,6 +45,7 @@ type Props = {
     };
     departments: Department[];
     canManagePayrollAccess: boolean;
+    canManagePatroliAccess: boolean;
     canManageMutuAccess: boolean;
     canManageWebOfficialAccess: boolean;
 };
@@ -52,6 +54,7 @@ export default function UsersEdit({
     user,
     departments,
     canManagePayrollAccess,
+    canManagePatroliAccess,
     canManageMutuAccess,
     canManageWebOfficialAccess,
 }: Props) {
@@ -64,6 +67,7 @@ export default function UsersEdit({
         role: user.role,
         dep_id: user.dep_id || '__none__',
         can_access_payroll: Boolean(user.can_access_payroll),
+        can_access_patroli: Boolean(user.can_access_patroli),
         can_manage_mutu: Boolean(user.can_manage_mutu),
         can_input_mutu: Boolean(user.can_input_mutu),
         can_view_mutu_dashboard: Boolean(user.can_view_mutu_dashboard),
@@ -89,6 +93,9 @@ export default function UsersEdit({
         };
         if (canManagePayrollAccess) {
             payload.can_access_payroll = Boolean(data.can_access_payroll);
+        }
+        if (canManagePatroliAccess) {
+            payload.can_access_patroli = Boolean(data.can_access_patroli);
         }
         if (canManageMutuAccess) {
             payload.can_manage_mutu = Boolean(data.can_manage_mutu);
@@ -206,6 +213,25 @@ export default function UsersEdit({
                                 Hanya superadmin yang dapat memberi/mencabut akses payroll.
                             </p>
                             <InputError message={getError('can_access_payroll')} />
+                        </div>
+                    )}
+
+                    {canManagePatroliAccess && (
+                        <div className="grid gap-2 rounded-lg border border-border p-4">
+                            <div className="flex items-center gap-3">
+                                <Checkbox
+                                    id="can_access_patroli"
+                                    checked={Boolean(data.can_access_patroli)}
+                                    onCheckedChange={(checked) => setData('can_access_patroli', checked === true)}
+                                />
+                                <Label htmlFor="can_access_patroli" className="cursor-pointer">
+                                    Izinkan akses Patroli untuk user ini
+                                </Label>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                Hanya superadmin yang dapat memberi/mencabut akses patroli.
+                            </p>
+                            <InputError message={getError('can_access_patroli')} />
                         </div>
                     )}
 

@@ -57,6 +57,7 @@ it('creates batch of 3 units with partial serial', function () {
             'jumlah_unit' => 3,
             'no_seri_list' => ['SN-A', 'SN-B', ''],
             'harga' => 10000000,
+            'kelas_aset' => 'non_medis',
         ])
         ->assertRedirect();
 
@@ -66,6 +67,59 @@ it('creates batch of 3 units with partial serial', function () {
         ->and(Aset::query()->whereNotNull('no_seri')->count())->toBe(2)
         ->and(Aset::query()->pluck('kode_aset')->sort()->values()->all())
         ->toBe(['INV-IT01-2026-0001', 'INV-IT01-2026-0002', 'INV-IT01-2026-0003']);
+});
+
+it('creates batch with different ruang and serial per unit', function () {
+    $user = User::factory()->create();
+    $igd = AsetRuang::query()->create(['kode_ruang' => 'IGD01', 'nama_ruang' => 'IGD']);
+    $poli = AsetRuang::query()->create(['kode_ruang' => 'POL01', 'nama_ruang' => 'Poli']);
+    $merk = AsetMerk::query()->create(['kode_merk' => 'LEN', 'nama_merk' => 'Lenovo']);
+    $jenis = AsetJenis::query()->create(['kode_jenis' => 'ID3', 'nama_jenis' => 'Ideapad 3']);
+
+    actingAs($user)
+        ->post('/aset', [
+            'nama_barang' => 'Lenovo Ideapad 3',
+            'aset_merk_id' => $merk->id,
+            'aset_jenis_id' => $jenis->id,
+            'aset_ruang_id_list' => [$igd->id, $poli->id],
+            'tahun_registrasi' => 2026,
+            'jumlah_unit' => 2,
+            'no_seri_list' => ['SN-IGD-01', 'SN-POL-01'],
+            'harga' => 6000000,
+            'kelas_aset' => 'non_medis',
+            'asal_barang' => 'Beli',
+        ])
+        ->assertRedirect();
+
+    $asets = Aset::query()->with('barang')->orderBy('id')->get();
+
+    expect($asets)->toHaveCount(2)
+        ->and(AsetBarang::query()->count())->toBe(1)
+        ->and($asets[0]->aset_ruang_id)->toBe($igd->id)
+        ->and($asets[0]->no_seri)->toBe('SN-IGD-01')
+        ->and($asets[0]->kode_aset)->toBe('INV-IGD01-2026-0001')
+        ->and($asets[1]->aset_ruang_id)->toBe($poli->id)
+        ->and($asets[1]->no_seri)->toBe('SN-POL-01')
+        ->and($asets[1]->kode_aset)->toBe('INV-POL01-2026-0001')
+        ->and($asets[0]->aset_barang_id)->toBe($asets[1]->aset_barang_id)
+        ->and($asets[0]->barang?->nama_barang)->toBe('Lenovo Ideapad 3');
+});
+
+it('rejects create when ruang list is shorter than jumlah unit', function () {
+    $user = User::factory()->create();
+    $ruang = AsetRuang::query()->create(['kode_ruang' => 'IT01', 'nama_ruang' => 'IT']);
+
+    actingAs($user)
+        ->from('/aset/create')
+        ->post('/aset', [
+            'nama_barang' => 'Monitor',
+            'aset_ruang_id_list' => [$ruang->id],
+            'tahun_registrasi' => 2026,
+            'jumlah_unit' => 2,
+            'kelas_aset' => 'non_medis',
+        ])
+        ->assertRedirect('/aset/create')
+        ->assertSessionHasErrors('aset_ruang_id_list');
 });
 
 it('rejects duplicate serial across asets', function () {

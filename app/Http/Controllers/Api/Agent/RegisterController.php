@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api\Agent;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Agent\RegisterAgentRequest;
-use App\Models\Aset;
 use App\Models\MonitoredDevice;
 use App\Services\Agent\AgentApiKeyService;
 use App\Support\AgentLog;
@@ -60,7 +59,7 @@ class RegisterController extends Controller
                     'agent_version' => $validated['agent_version'] ?? null,
                     'status' => MonitoredDevice::STATUS_ONLINE,
                     'last_seen_at' => now(),
-                    'aset_id' => $this->resolveAsetId($hardware['serial_number'] ?? null),
+                    // aset_id: manual link only (Phase 2.3) — do not auto-match serial
                 ]
             );
 
@@ -104,16 +103,5 @@ class RegisterController extends Controller
                 'request_id' => $requestId,
             ],
         ], 201);
-    }
-
-    private function resolveAsetId(?string $serialNumber): ?int
-    {
-        if ($serialNumber === null || $serialNumber === '') {
-            return null;
-        }
-
-        return Aset::query()
-            ->where('no_seri', $serialNumber)
-            ->value('id');
     }
 }

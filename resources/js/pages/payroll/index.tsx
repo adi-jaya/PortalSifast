@@ -556,11 +556,11 @@ export default function PayrollIndex({ salaries, filters, summary, comparison }:
                     </div>
                 )}
 
-                <div className="rounded-2xl border border-border/80 bg-card shadow-sm">
-                    <div className="overflow-x-auto">
+                <div className="data-table">
+                    <div className="data-table-scroll">
                         <table className="w-full text-left text-sm">
                             <thead>
-                                <tr className="border-b bg-gradient-to-r from-emerald-500/10 via-sky-500/10 to-violet-500/10 dark:from-emerald-500/20 dark:via-sky-500/20 dark:to-violet-500/20">
+                                <tr className="border-b">
                                     <th className="w-10 px-4 py-3">
                                         <Checkbox
                                             checked={allSelected}

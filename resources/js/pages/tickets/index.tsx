@@ -197,13 +197,32 @@ export default function TicketsIndex({
                             <>
                                 <Button variant="outline" asChild>
                                     <a
-                                        href={`/tickets/export?${new URLSearchParams(
-                                            Object.fromEntries(
-                                                Object.entries(filters).filter(
-                                                    ([, v]) => v !== undefined && v !== ''
-                                                )
-                                            ) as Record<string, string>
-                                        )}`}
+                                        href={`/tickets/export${typeof window !== 'undefined' ? window.location.search : ''}`}
+                                        onClick={(e) => {
+                                            // Pastikan query filter sama persis dengan yang sedang aktif di URL.
+                                            e.preventDefault();
+                                            const params = new URLSearchParams();
+                                            Object.entries(filters).forEach(([key, value]) => {
+                                                if (
+                                                    value === undefined ||
+                                                    value === null ||
+                                                    value === '' ||
+                                                    value === 'null' ||
+                                                    value === 'undefined' ||
+                                                    value === '__all__'
+                                                ) {
+                                                    return;
+                                                }
+                                                params.set(key, String(value));
+                                            });
+                                            // Fallback ke query browser bila props kosong tapi URL punya filter.
+                                            const query =
+                                                params.toString() ||
+                                                window.location.search.replace(/^\?/, '');
+                                            window.location.assign(
+                                                query ? `/tickets/export?${query}` : '/tickets/export',
+                                            );
+                                        }}
                                     >
                                         <Download className="mr-2 h-4 w-4" />
                                         Ekspor CSV
@@ -478,11 +497,11 @@ export default function TicketsIndex({
                 )}
 
                 {/* Tickets Table */}
-                <div className="rounded-2xl border border-border/80 bg-card shadow-sm">
-                    <div className="overflow-x-auto">
+                <div className="data-table">
+                    <div className="data-table-scroll">
                         <table className="w-full text-left text-sm">
                             <thead>
-                                <tr className="border-b bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 dark:from-violet-500/20 dark:to-fuchsia-500/20">
+                                <tr className="border-b">
                                     <th className="px-4 py-3 font-medium">No. Tiket</th>
                                     <th className="px-4 py-3 font-medium">Judul</th>
                                     <th className="px-4 py-3 font-medium">Prioritas</th>

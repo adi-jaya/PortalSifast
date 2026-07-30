@@ -10,6 +10,10 @@ use App\Http\Controllers\Api\FcmController;
 use App\Http\Controllers\Api\LoginController;
 use App\Http\Controllers\Api\OfficerAuthController;
 use App\Http\Controllers\Api\OfficerLocationController;
+use App\Http\Controllers\Api\Patroli\PatroliCheckinController as ApiPatroliCheckinController;
+use App\Http\Controllers\Api\Patroli\PatroliLaporanController as ApiPatroliLaporanController;
+use App\Http\Controllers\Api\Patroli\PatroliMeController;
+use App\Http\Controllers\Api\Patroli\PatroliTitikController as ApiPatroliTitikController;
 use App\Http\Controllers\Api\SimmutuApiController;
 use App\Http\Controllers\Api\TelegramWebhookController;
 use App\Http\Controllers\Api\WebOfficial\DoctorProfileController;
@@ -269,6 +273,37 @@ Route::post('/login', LoginController::class);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [ApiAuthSessionController::class, 'logout']);
     Route::post('/token/refresh', [ApiAuthSessionController::class, 'refresh']);
+});
+
+// Patroli Security (mobile) — pola sama payroll/tiket: Sanctum + NIK
+Route::prefix('sifast/patroli')->middleware('auth:sanctum')->group(function (): void {
+    Route::get('/me', PatroliMeController::class);
+
+    Route::get('/titik', [ApiPatroliTitikController::class, 'index']);
+    Route::post('/resolve-qr', [ApiPatroliTitikController::class, 'resolveQr']);
+    Route::get('/scan/{ruang}', [ApiPatroliTitikController::class, 'scanForm']);
+    Route::get('/scan-by-kode/{kodeRuang}', [ApiPatroliTitikController::class, 'scanByKode']);
+
+    Route::get('/checkin', [ApiPatroliCheckinController::class, 'index']);
+    Route::post('/checkin', [ApiPatroliCheckinController::class, 'store']);
+    Route::get('/checkin/{checkin}', [ApiPatroliCheckinController::class, 'show']);
+
+    Route::get('/laporan', [ApiPatroliLaporanController::class, 'index']);
+    Route::get('/laporan/export', [ApiPatroliLaporanController::class, 'export']);
+});
+
+// Alias lama /api/patroli → sama handler (kompat sementara)
+Route::prefix('patroli')->middleware('auth:sanctum')->group(function (): void {
+    Route::get('/me', PatroliMeController::class);
+    Route::get('/titik', [ApiPatroliTitikController::class, 'index']);
+    Route::post('/resolve-qr', [ApiPatroliTitikController::class, 'resolveQr']);
+    Route::get('/scan/{ruang}', [ApiPatroliTitikController::class, 'scanForm']);
+    Route::get('/scan-by-kode/{kodeRuang}', [ApiPatroliTitikController::class, 'scanByKode']);
+    Route::get('/checkin', [ApiPatroliCheckinController::class, 'index']);
+    Route::post('/checkin', [ApiPatroliCheckinController::class, 'store']);
+    Route::get('/checkin/{checkin}', [ApiPatroliCheckinController::class, 'show']);
+    Route::get('/laporan', [ApiPatroliLaporanController::class, 'index']);
+    Route::get('/laporan/export', [ApiPatroliLaporanController::class, 'export']);
 });
 
 // Officer login (tanpa auth — mengembalikan token)

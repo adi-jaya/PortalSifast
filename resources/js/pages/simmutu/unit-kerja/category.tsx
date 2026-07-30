@@ -120,8 +120,8 @@ export default function SimmutuUnitKerjaCategory({ dep, category, indicators, su
                     </Card>
                 </div>
 
-                <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
-                    <div className="overflow-x-auto">
+                <div className="data-table">
+                    <div className="data-table-scroll">
                         <table className="w-full text-left text-sm">
                             <thead>
                                 <tr className="border-b bg-muted/50">

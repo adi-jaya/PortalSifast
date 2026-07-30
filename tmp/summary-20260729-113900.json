@@ -1,0 +1,4 @@
+{
+  "summary": "Wrote approved Tianji CSV laporan design to docs/superpowers/specs/2026-07-29-tianji-laporan-csv-design.md (live OpenAPI bridge, sidebar page, dual CSV, max 31 days, Pest). Self-review found no blockers; asked user to review the spec before implementation planning.",
+  "current_status": "Design spec drafted and awaiting user file review. No implementation yet; next step after approval is writing-plans then build."
+}

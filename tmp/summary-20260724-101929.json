@@ -1,0 +1,4 @@
+{
+  "summary": "User asked if aspak_new_alat INSERT can be used as-is for portal. Explained no: target is aset_aspak_alat with different columns and parent_id must resolve to local ids. Provided a copy-paste 2-pass SQL example from their sample rows (parents 1549/1550 + leaves).",
+  "current_status": "ASPAK create/import flow is live; user can seed via manual SQL 2-pass or artisan CSV import."
+}

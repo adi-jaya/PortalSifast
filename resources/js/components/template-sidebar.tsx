@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    Activity,
     AlertTriangle,
     ArrowLeftRight,
     BadgeCheck,
@@ -12,6 +13,7 @@ import {
     FolderCog,
     FolderKanban,
     HandCoins,
+    HeartPulse,
     LayoutDashboard,
     LayoutGrid,
     ListFilter,
@@ -22,7 +24,10 @@ import {
     PlusCircle,
     RefreshCw,
     Settings,
+    Settings2,
+    Server,
     Shapes,
+    Shield,
     Tags,
     UserCircle,
     Users,
@@ -31,8 +36,9 @@ import {
     BarChart3,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { NavModuleItemLink } from '@/components/nav-module-item-link';
+import { IconWell } from '@/components/icon-well';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { buildSikatNavGroup } from '@/lib/build-sikat-nav-group';
 import { buildSimmutuNavGroup } from '@/lib/build-simmutu-nav-group';
@@ -41,8 +47,24 @@ import { buildWebOfficialNavGroup } from '@/lib/build-web-official-nav-group';
 import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes';
 
-const APP_NAME = 'Portal RS Aisyiyah Siti Fatimah';
-const APP_SUBTITLE = 'Panel Admin';
+const APP_NAME = 'Portal Sifast';
+const APP_SUBTITLE = 'RS Aisyiyah Siti Fatimah';
+const SIDEBAR_NAV_SCROLL_KEY = 'portal.sidebar.navScroll';
+const SIDEBAR_EXPANDED_KEY = 'portal.sidebar.expandedModules';
+
+function readExpandedModules(): Record<string, boolean> {
+    try {
+        const raw = sessionStorage.getItem(SIDEBAR_EXPANDED_KEY);
+        if (!raw) {
+            return {};
+        }
+        const parsed = JSON.parse(raw) as unknown;
+
+        return parsed && typeof parsed === 'object' ? (parsed as Record<string, boolean>) : {};
+    } catch {
+        return {};
+    }
+}
 
 type NavItem = {
     id: string;
@@ -64,6 +86,7 @@ type NavGroup = {
 type SharedPageProps = {
     permissions?: {
         can_access_payroll?: boolean;
+        can_access_patroli?: boolean;
         simmutu?: {
             can_view?: boolean;
             can_manage?: boolean;
@@ -262,6 +285,75 @@ const moduleGroups: NavGroup[] = [
         ],
     },
     {
+        id: 'patroli',
+        label: 'Patroli',
+        icon: Shield,
+        items: [
+            {
+                id: 'patroli-checkin',
+                label: 'Check-in',
+                href: '/patroli/checkin',
+                icon: ClipboardCheck,
+                isActive: (path) => path === '/patroli/checkin' || /^\/patroli\/checkin\/\d+/.test(path) || path.startsWith('/patroli/scan/'),
+            },
+            {
+                id: 'patroli-laporan',
+                label: 'Laporan',
+                href: '/patroli/laporan',
+                icon: BarChart3,
+                isActive: (path) => path.startsWith('/patroli/laporan'),
+            },
+            {
+                id: 'patroli-templates',
+                label: 'Template',
+                href: '/patroli/templates',
+                icon: ListTodo,
+                isActive: (path) => path.startsWith('/patroli/templates'),
+            },
+            {
+                id: 'patroli-area',
+                label: 'Area & Ruang',
+                href: '/patroli/area',
+                icon: MapPin,
+                isActive: (path) => path.startsWith('/patroli/area') || path.startsWith('/patroli/titik'),
+            },
+        ],
+    },
+    {
+        id: 'monitoring',
+        label: 'Monitoring',
+        icon: Activity,
+        hint: 'RS Agent + Tianji',
+        items: [
+            {
+                id: 'monitoring-list',
+                label: 'Perangkat',
+                href: '/monitoring',
+                icon: Activity,
+                isActive: (path) =>
+                    path === '/monitoring' ||
+                    (/^\/monitoring\/\d+/.test(path) && !path.startsWith('/monitoring/pengaturan')),
+            },
+            {
+                id: 'monitoring-kategori',
+                label: 'Kategori Monitor',
+                href: '/monitoring/pengaturan-kategori',
+                icon: Settings2,
+                isActive: (path) => path.startsWith('/monitoring/pengaturan-kategori'),
+            },
+            {
+                id: 'infrastruktur',
+                label: 'Kesehatan Infrastruktur',
+                href: '/infrastruktur',
+                icon: Server,
+                isActive: (path) =>
+                    path === '/infrastruktur' ||
+                    path.startsWith('/infrastruktur') ||
+                    path.startsWith('/laporan-tianji'),
+            },
+        ],
+    },
+    {
         id: 'inventaris',
         label: 'Inventaris Portal',
         icon: Boxes,
@@ -301,11 +393,39 @@ const moduleGroups: NavGroup[] = [
                 isActive: (path) => path.startsWith('/aset/audit'),
             },
             {
+                id: 'aset-master-kategori',
+                label: 'Master Kategori',
+                href: '/aset/master/kategori',
+                icon: FolderKanban,
+                isActive: (path) => path.startsWith('/aset/master/kategori'),
+            },
+            {
+                id: 'aset-master-jenis',
+                label: 'Master Jenis',
+                href: '/aset/master/jenis',
+                icon: Shapes,
+                isActive: (path) => path.startsWith('/aset/master/jenis'),
+            },
+            {
+                id: 'aset-master-ruang',
+                label: 'Master Ruang',
+                href: '/aset/master/ruang',
+                icon: MapPin,
+                isActive: (path) => path.startsWith('/aset/master/ruang'),
+            },
+            {
                 id: 'aset-non-alkes',
                 label: 'Katalog Non-Alkes',
                 href: '/aset/master/non-alkes',
                 icon: Tags,
                 isActive: (path) => path.startsWith('/aset/master/non-alkes'),
+            },
+            {
+                id: 'aset-aspak',
+                label: 'Katalog ASPAK',
+                href: '/aset/master/aspak',
+                icon: HeartPulse,
+                isActive: (path) => path.startsWith('/aset/master/aspak'),
             },
             {
                 id: 'aset-penyusutan',
@@ -386,8 +506,17 @@ export function TemplateSidebar() {
     const { isCurrentUrl, currentUrl } = useCurrentUrl();
     const { permissions } = usePage<SharedPageProps>().props;
     const canAccessPayroll = Boolean(permissions?.can_access_payroll);
+    const canAccessPatroli = Boolean(permissions?.can_access_patroli);
     const visibleModuleGroups = useMemo(() => {
-        const base = moduleGroups.filter((group) => group.id !== 'payroll' || canAccessPayroll);
+        const base = moduleGroups.filter((group) => {
+            if (group.id === 'payroll') {
+                return canAccessPayroll;
+            }
+            if (group.id === 'patroli') {
+                return canAccessPatroli;
+            }
+            return true;
+        });
         const sikatGroup = buildSikatNavGroup(permissions?.sikat?.enabled);
         if (sikatGroup) {
             base.push(sikatGroup);
@@ -405,7 +534,7 @@ export function TemplateSidebar() {
             base.push(webOfficialGroup);
         }
         return base;
-    }, [canAccessPayroll, permissions?.simmutu, permissions?.sikat?.enabled, permissions?.tatanaskah?.can_view, permissions?.web_official]);
+    }, [canAccessPayroll, canAccessPatroli, permissions?.simmutu, permissions?.sikat?.enabled, permissions?.tatanaskah?.can_view, permissions?.web_official]);
     const activeModuleIds = useMemo(
         () =>
             visibleModuleGroups
@@ -413,28 +542,72 @@ export function TemplateSidebar() {
                 .map((group) => group.id),
         [currentUrl, visibleModuleGroups],
     );
-    const [expandedModuleIds, setExpandedModuleIds] = useState<Record<string, boolean>>({});
+    const [expandedModuleIds, setExpandedModuleIds] = useState<Record<string, boolean>>(readExpandedModules);
+    const navRef = useRef<HTMLElement>(null);
 
     function toggleModule(moduleId: string): void {
-        setExpandedModuleIds((prev) => ({
-            ...prev,
-            [moduleId]: !(prev[moduleId] ?? activeModuleIds.includes(moduleId)),
-        }));
+        setExpandedModuleIds((prev) => {
+            const next = {
+                ...prev,
+                [moduleId]: !(prev[moduleId] ?? activeModuleIds.includes(moduleId)),
+            };
+            try {
+                sessionStorage.setItem(SIDEBAR_EXPANDED_KEY, JSON.stringify(next));
+            } catch {
+                // ignore quota / private mode
+            }
+
+            return next;
+        });
     }
+
+    useEffect(() => {
+        const el = navRef.current;
+        if (!el) {
+            return;
+        }
+
+        const onScroll = (): void => {
+            try {
+                sessionStorage.setItem(SIDEBAR_NAV_SCROLL_KEY, String(el.scrollTop));
+            } catch {
+                // ignore
+            }
+        };
+
+        el.addEventListener('scroll', onScroll, { passive: true });
+
+        return () => el.removeEventListener('scroll', onScroll);
+    }, []);
+
+    useLayoutEffect(() => {
+        const el = navRef.current;
+        if (!el) {
+            return;
+        }
+
+        const saved = Number(sessionStorage.getItem(SIDEBAR_NAV_SCROLL_KEY) ?? '0');
+        if (Number.isFinite(saved) && saved > 0) {
+            el.scrollTop = saved;
+        }
+
+        const active = el.querySelector<HTMLElement>('[data-sidebar-active="true"]');
+        active?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }, [currentUrl]);
 
     return (
         <aside className="fixed left-0 top-0 z-30 hidden h-screen w-64 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:flex">
-            <div className="border-b border-sidebar-border p-6">
+            <div className="border-b border-sidebar-border px-5 py-5">
                 <Link
                     href={dashboard()}
                     prefetch
-                    className="flex items-center gap-3"
+                    className="flex items-center gap-3 rounded-xl outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-sidebar-ring"
                 >
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary">
-                        <LayoutDashboard className="h-5 w-5 text-sidebar-primary-foreground" />
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
+                        <LayoutDashboard className="h-5 w-5 text-primary" strokeWidth={2} />
                     </div>
                     <div className="min-w-0">
-                        <h1 className="truncate text-sm font-semibold text-sidebar-primary-foreground">
+                        <h1 className="truncate text-sm font-semibold text-sidebar-foreground">
                             {APP_NAME}
                         </h1>
                         <p className="truncate text-[11px] text-sidebar-muted">
@@ -444,7 +617,7 @@ export function TemplateSidebar() {
                 </Link>
             </div>
 
-            <nav className="flex-1 space-y-6 overflow-y-auto p-4">
+            <nav ref={navRef} className="flex-1 space-y-6 overflow-y-auto p-3 scrollbar-thin">
                 <div className="space-y-1">
                     <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-sidebar-muted">
                         Menu Utama
@@ -456,14 +629,19 @@ export function TemplateSidebar() {
                                 key={item.id}
                                 href={item.href}
                                 prefetch
+                                data-sidebar-active={isActive ? 'true' : undefined}
                                 className={cn(
-                                    'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors',
+                                    'flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-xl px-2.5 py-2.5 text-sm transition-colors duration-200',
                                     isActive
-                                        ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground'
-                                        : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
+                                        ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-sm'
+                                        : 'text-sidebar-foreground/90 hover:bg-white/15 hover:text-sidebar-foreground',
                                 )}
                             >
-                                <item.icon className="h-4 w-4 shrink-0" />
+                                <IconWell
+                                    icon={item.icon}
+                                    size="sm"
+                                    variant={isActive ? 'sidebar-active' : 'sidebar'}
+                                />
                                 {item.label}
                             </Link>
                         );
@@ -484,13 +662,17 @@ export function TemplateSidebar() {
                                     type="button"
                                     onClick={() => toggleModule(group.id)}
                                     className={cn(
-                                        'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors',
+                                        'flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-xl px-2.5 py-2.5 text-left text-sm transition-colors duration-200',
                                         hasActiveChild
-                                            ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground'
-                                            : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
+                                            ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-sm'
+                                            : 'text-sidebar-foreground/90 hover:bg-white/15 hover:text-sidebar-foreground',
                                     )}
                                 >
-                                    <group.icon className="h-4 w-4 shrink-0" />
+                                    <IconWell
+                                        icon={group.icon}
+                                        size="sm"
+                                        variant={hasActiveChild ? 'sidebar-active' : 'sidebar'}
+                                    />
                                     <span className="min-w-0 flex-1">
                                         <span className="block truncate">{group.label}</span>
                                         {group.hint ? (
@@ -501,14 +683,15 @@ export function TemplateSidebar() {
                                     </span>
                                     <ChevronDown
                                         className={cn(
-                                            'h-4 w-4 shrink-0 transition-transform',
+                                            'h-4 w-4 shrink-0 transition-transform duration-200',
                                             isExpanded ? 'rotate-180' : '',
                                         )}
+                                        strokeWidth={2}
                                     />
                                 </button>
 
                                 {isExpanded && (
-                                    <div className="space-y-1 pl-4">
+                                    <div className="space-y-1 pl-3">
                                         {group.items.map((item) => {
                                             const isItemActive = item.isActive(currentUrl);
                                             return (
@@ -538,14 +721,19 @@ export function TemplateSidebar() {
                             key={item.id}
                             href={item.href}
                             prefetch
+                            data-sidebar-active={isCurrentUrl(item.href) ? 'true' : undefined}
                             className={cn(
-                                'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors',
+                                'flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-xl px-2.5 py-2.5 text-sm transition-colors duration-200',
                                 isCurrentUrl(item.href)
-                                    ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground'
-                                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
+                                    ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-sm'
+                                    : 'text-sidebar-foreground/90 hover:bg-white/15 hover:text-sidebar-foreground',
                             )}
                         >
-                            <item.icon className="h-4 w-4 shrink-0" />
+                            <IconWell
+                                icon={item.icon}
+                                size="sm"
+                                variant={isCurrentUrl(item.href) ? 'sidebar-active' : 'sidebar'}
+                            />
                             {item.label}
                         </Link>
                     ))}

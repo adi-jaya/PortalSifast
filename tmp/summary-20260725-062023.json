@@ -1,0 +1,4 @@
+{
+  "summary": "User chose C (hybrid): export/import buttons on each master page; simple ruang master page to add. Next question: import mode (upsert direct vs preview-confirm).",
+  "current_status": "Brainstorming master CSV export/import UI; awaiting import-mode preference."
+}

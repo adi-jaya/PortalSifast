@@ -148,8 +148,8 @@ export default function WebOfficialKritikSaranIndex({
                     </Select>
                 </div>
 
-                <div className="rounded-2xl border border-border/80 bg-card shadow-sm">
-                    <div className="overflow-x-auto">
+                <div className="data-table">
+                    <div className="data-table-scroll">
                         <table className="w-full text-left text-sm">
                             <thead>
                                 <tr className="border-b bg-muted/40">

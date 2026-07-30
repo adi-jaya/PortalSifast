@@ -88,6 +88,13 @@ return [
         ],
     ],
 
+    'tianji' => [
+        'base_url' => env('TIANJI_BASE_URL'),
+        'api_key' => env('TIANJI_API_KEY'),
+        'workspace_id' => env('TIANJI_WORKSPACE_ID'),
+        'timeout' => (int) env('TIANJI_TIMEOUT', 30),
+    ],
+
     'stirling_pdf' => [
         'url' => env('STIRLING_PDF_URL'),
         'api_key' => env('STIRLING_PDF_API_KEY'),

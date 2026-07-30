@@ -1,0 +1,4 @@
+{
+  "summary": "Added 3 new CSV exports for monthly data harvesting: (1) uptime harian per monitor per hari from publicSummary, (2) log gangguan/events, (3) RS Agent devices with avg metrics. No PDF/laporan formatting — raw data for user to reshape. All 11 Pest tests passed. UI updated with export buttons on both Tianji and Agent blocks.",
+  "current_status": "Kesehatan Infrastruktur page at /infrastruktur now has 5 CSV exports: ringkasan, uptime harian, gangguan, detail check, and RS Agent. User should npm run build to see UI updates."
+}

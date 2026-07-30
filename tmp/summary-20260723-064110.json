@@ -1,0 +1,4 @@
+{
+  "summary": "Added Sanctum JSON API for Patroli mobile (/api/patroli/*): me, titik, resolve-qr, scan, checkin, laporan/export; documented in docs/api/patroli-security-mobile.md; can_access_patroli included in login profile; 3 API Pest tests passed.",
+  "current_status": "Patroli web module + mobile API and docs are ready. Mobile apps should use Bearer token from POST /api/login and follow docs/api/patroli-security-mobile.md."
+}

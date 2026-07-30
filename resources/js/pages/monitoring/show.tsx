@@ -1,6 +1,7 @@
-import { Head, Link, router, usePoll } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePoll } from '@inertiajs/react';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
+import { AssetLinkPicker } from '@/components/monitoring/asset-link-picker';
 import { MetricBar } from '@/components/monitoring/metric-bar';
 import { MetricSparkline } from '@/components/monitoring/metric-sparkline';
 import { Badge } from '@/components/ui/badge';
@@ -83,10 +84,18 @@ type UsbInventory = {
     devices: UsbDevice[];
 };
 
+type LinkableAsset = {
+    id: number;
+    label: string;
+};
+
 type Props = {
     device: Device;
     recentSamples: Sample[];
+    linkableAssets: LinkableAsset[];
 };
+
+const NONE_ASET = '__none__';
 
 function dash(value: string | number | null | undefined): string {
     if (value === null || value === undefined || value === '') {
@@ -105,7 +114,19 @@ function Field({ label, value }: { label: string; value: ReactNode }) {
     );
 }
 
-export default function MonitoringShow({ device, recentSamples }: Props) {
+function Panel({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
+    return (
+        <section className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+            <div className="border-b border-border/60 bg-muted/30 px-4 py-3">
+                <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
+                {hint ? <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p> : null}
+            </div>
+            <div className="p-4">{children}</div>
+        </section>
+    );
+}
+
+export default function MonitoringShow({ device, recentSamples, linkableAssets }: Props) {
     const title = device.hostname || device.computer_name || device.uuid;
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: dashboard().url },
@@ -113,26 +134,43 @@ export default function MonitoringShow({ device, recentSamples }: Props) {
         { title, href: `/monitoring/${device.id}` },
     ];
 
-    usePoll(30000, {
-        only: ['device', 'recentSamples'],
+    const { data, setData, patch, processing, errors, recentlySuccessful } = useForm<{
+        aset_id: number | null;
+    }>({
+        aset_id: device.aset?.id ?? null,
     });
+
+    useEffect(() => {
+        setData('aset_id', device.aset?.id ?? null);
+    }, [device.aset?.id, setData]);
+
+    usePoll(30000, {
+        only: ['device', 'recentSamples', 'linkableAssets'],
+    });
+
+    const submitAset = () => {
+        patch(`/monitoring/${device.id}/aset`, { preserveScroll: true });
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Monitoring · ${title}`} />
 
-            <div className="flex flex-col gap-6 p-4 md:p-6">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
+            <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 p-4 md:p-6">
+                <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border/70 pb-5">
+                    <div className="min-w-0">
                         <Button variant="ghost" size="sm" asChild className="-ml-2 mb-2">
                             <Link href="/monitoring">
                                 <ArrowLeft className="size-4" />
                                 Kembali
                             </Link>
                         </Button>
-                        <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
+                        <p className="text-[11px] font-medium tracking-[0.16em] text-teal-700 uppercase dark:text-teal-400">
+                            Detail perangkat
+                        </p>
+                        <h1 className="mt-1 text-xl font-semibold tracking-tight sm:text-2xl">{title}</h1>
                         <p className="mt-1 font-mono text-xs text-muted-foreground">{device.uuid}</p>
-                        <div className="mt-2 flex flex-wrap gap-2">
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
                             <Badge
                                 variant="outline"
                                 className={cn(
@@ -147,39 +185,46 @@ export default function MonitoringShow({ device, recentSamples }: Props) {
                             {device.agent_version ? (
                                 <Badge variant="secondary">Agent {device.agent_version}</Badge>
                             ) : null}
-                            <span className="self-center text-xs text-muted-foreground">
-                                Last seen {formatRelativeId(device.last_seen_at)}
+                            <span className="text-xs text-muted-foreground">
+                                Last seen {formatRelativeId(device.last_seen_at)} · Uptime {formatUptime(device.uptime_seconds)}
                             </span>
                         </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
+                    <div className="flex w-full flex-col gap-2 sm:w-auto sm:min-w-[280px]">
                         <Button
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => router.reload({ only: ['device', 'recentSamples'] })}
+                            className="self-end"
+                            onClick={() => router.reload({ only: ['device', 'recentSamples', 'linkableAssets'] })}
                         >
                             <RefreshCw className="size-3.5" />
                             Refresh
                         </Button>
-                        <div className="grid w-full min-w-[260px] gap-2 sm:min-w-[320px]">
-                            <div className="rounded-lg border px-3 py-2">
-                                <MetricBar label="CPU" value={device.last_cpu_percent} />
-                            </div>
-                            <div className="rounded-lg border px-3 py-2">
-                                <MetricBar label="RAM" value={device.last_ram_percent} />
-                            </div>
-                            <div className="rounded-lg border px-3 py-2">
-                                <MetricBar label="Disk" value={device.last_disk_percent} />
-                            </div>
+                        <div className="grid gap-2 rounded-xl border border-border/80 bg-card p-3">
+                            <MetricBar label="CPU" value={device.last_cpu_percent} />
+                            <MetricBar label="RAM" value={device.last_ram_percent} />
+                            <MetricBar label="Disk" value={device.last_disk_percent} />
                         </div>
                     </div>
-                </div>
+                </header>
 
-                <section className="rounded-lg border p-4">
-                    <h2 className="text-sm font-semibold">Tren singkat (sample terbaru)</h2>
-                    <p className="mt-1 text-xs text-muted-foreground">Kiri = lebih lama · Kanan = terbaru · Warna: hijau &lt;70%, amber ≥70%, merah ≥90%</p>
-                    <div className="mt-4 grid gap-4 md:grid-cols-3">
+                <AssetLinkPicker
+                    linkedAset={device.aset}
+                    options={linkableAssets}
+                    value={data.aset_id}
+                    onChange={(asetId) => setData('aset_id', asetId)}
+                    onSubmit={submitAset}
+                    processing={processing}
+                    error={errors.aset_id}
+                    recentlySuccessful={recentlySuccessful}
+                />
+
+                <Panel
+                    title="Tren singkat"
+                    hint="Kiri = lebih lama · Kanan = terbaru · Hijau &lt;70% · Amber ≥70% · Merah ≥90%"
+                >
+                    <div className="grid gap-4 md:grid-cols-3">
                         <div>
                             <div className="mb-1 text-xs font-medium text-muted-foreground">CPU</div>
                             <MetricSparkline samples={recentSamples} metric="cpu_percent" />
@@ -193,11 +238,10 @@ export default function MonitoringShow({ device, recentSamples }: Props) {
                             <MetricSparkline samples={recentSamples} metric="disk_percent" />
                         </div>
                     </div>
-                </section>
+                </Panel>
 
-                <section className="rounded-lg border p-4">
-                    <h2 className="text-sm font-semibold">Identitas</h2>
-                    <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <Panel title="Identitas">
+                    <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         <Field label="Hostname" value={dash(device.hostname)} />
                         <Field label="Computer name" value={dash(device.computer_name)} />
                         <Field label="IP" value={dash(device.ip_address)} />
@@ -211,31 +255,16 @@ export default function MonitoringShow({ device, recentSamples }: Props) {
                             }
                         />
                         <Field label="Uptime" value={formatUptime(device.uptime_seconds)} />
-                        <Field
-                            label="Aset terkait"
-                            value={
-                                device.aset ? (
-                                    <Link href={`/aset/${device.aset.kode_aset}`} className="font-medium underline-offset-2 hover:underline">
-                                        {device.aset.kode_aset}
-                                        {device.aset.no_seri ? ` · SN ${device.aset.no_seri}` : ''}
-                                    </Link>
-                                ) : (
-                                    '–'
-                                )
-                            }
-                        />
                     </dl>
-                </section>
+                </Panel>
 
-                <section className="rounded-lg border p-4">
-                    <h2 className="text-sm font-semibold">Software kritis</h2>
-                    <p className="mt-1 text-xs text-muted-foreground">Tools remote / sync yang biasanya dibutuhkan untuk dukungan jarak jauh.</p>
-                    <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                <Panel title="Software kritis" hint="Tools remote / sync untuk dukungan jarak jauh.">
+                    <div className="grid gap-2 sm:grid-cols-3">
                         {(device.critical_software ?? []).length === 0 ? (
                             <p className="text-sm text-muted-foreground sm:col-span-3">Belum ada data (butuh agent terbaru).</p>
                         ) : (
                             (device.critical_software ?? []).map((item) => (
-                                <div key={item.id} className="rounded-lg border px-3 py-2">
+                                <div key={item.id} className="rounded-lg border border-border/70 px-3 py-2">
                                     <div className="flex items-center justify-between gap-2">
                                         <span className="text-sm font-medium">{item.name}</span>
                                         <Badge
@@ -257,16 +286,12 @@ export default function MonitoringShow({ device, recentSamples }: Props) {
                             ))
                         )}
                     </div>
-                </section>
+                </Panel>
 
-                <section className="rounded-lg border p-4">
-                    <h2 className="text-sm font-semibold">USB</h2>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                        Port kosong/terpakai adalah estimasi. Flashdisk ditandai terpisah dari printer.
-                    </p>
+                <Panel title="USB" hint="Port kosong/terpakai adalah estimasi. Flashdisk ditandai terpisah dari printer.">
                     {device.usb_inventory ? (
                         <>
-                            <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                            <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                                 <Field label="Port total (estimasi)" value={dash(device.usb_inventory.ports_total)} />
                                 <Field label="Port terpakai" value={dash(device.usb_inventory.ports_used)} />
                                 <Field label="Port kosong (estimasi)" value={dash(device.usb_inventory.ports_empty)} />
@@ -288,9 +313,7 @@ export default function MonitoringShow({ device, recentSamples }: Props) {
                                         Tidak ada flashdisk
                                     </Badge>
                                 )}
-                                {device.usb_inventory.estimated ? (
-                                    <Badge variant="secondary">Estimasi</Badge>
-                                ) : null}
+                                {device.usb_inventory.estimated ? <Badge variant="secondary">Estimasi</Badge> : null}
                             </div>
                             {device.usb_inventory.note ? (
                                 <p className="mt-2 text-xs text-muted-foreground">{device.usb_inventory.note}</p>
@@ -325,14 +348,13 @@ export default function MonitoringShow({ device, recentSamples }: Props) {
                             </div>
                         </>
                     ) : (
-                        <p className="mt-2 text-sm text-muted-foreground">Belum ada data USB (butuh agent terbaru).</p>
+                        <p className="text-sm text-muted-foreground">Belum ada data USB (butuh agent terbaru).</p>
                     )}
-                </section>
+                </Panel>
 
-                <section className="rounded-lg border p-4">
-                    <h2 className="text-sm font-semibold">Hardware</h2>
+                <Panel title="Hardware">
                     {device.hardware ? (
-                        <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                             <Field label="OS" value={`${dash(device.hardware.os)} ${dash(device.hardware.os_version)}`.trim()} />
                             <Field label="Arch" value={dash(device.hardware.architecture)} />
                             <Field label="CPU" value={dash(device.hardware.cpu_model)} />
@@ -349,13 +371,12 @@ export default function MonitoringShow({ device, recentSamples }: Props) {
                             <Field label="Username" value={dash(device.hardware.username)} />
                         </dl>
                     ) : (
-                        <p className="mt-2 text-sm text-muted-foreground">Belum ada data hardware.</p>
+                        <p className="text-sm text-muted-foreground">Belum ada data hardware.</p>
                     )}
-                </section>
+                </Panel>
 
-                <section className="rounded-lg border p-4">
-                    <h2 className="text-sm font-semibold">Sample terbaru</h2>
-                    <div className="mt-3 overflow-x-auto">
+                <Panel title="Sample terbaru">
+                    <div className="overflow-x-auto">
                         <table className="w-full min-w-[480px] text-left text-sm">
                             <thead className="border-b text-xs uppercase tracking-wide text-muted-foreground">
                                 <tr>
@@ -393,7 +414,7 @@ export default function MonitoringShow({ device, recentSamples }: Props) {
                             </tbody>
                         </table>
                     </div>
-                </section>
+                </Panel>
             </div>
         </AppLayout>
     );

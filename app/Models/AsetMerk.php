@@ -27,4 +27,9 @@ class AsetMerk extends Model
     {
         return $this->hasMany(AsetBarang::class, 'aset_merk_id');
     }
+
+    public function jenis(): HasMany
+    {
+        return $this->hasMany(AsetJenis::class, 'aset_merk_id');
+    }
 }

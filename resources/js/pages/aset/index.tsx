@@ -1,5 +1,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
+    Activity,
     Box,
     ClipboardCheck,
     ImageOff,
@@ -8,6 +9,7 @@ import {
     RefreshCw,
     Search,
     Ticket,
+    Upload,
 } from 'lucide-react';
 import { FormEvent, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -43,6 +45,11 @@ type AsetRow = {
     tahun_registrasi: number | null;
     photo_src: string | null;
     open_tickets: number;
+    monitoring?: {
+        device_id: number;
+        status: string;
+        hostname: string | null;
+    } | null;
 };
 
 type Props = {
@@ -61,6 +68,7 @@ type Props = {
         kelas_aset?: string;
         siklus_hidup?: string;
         aset_ruang_id?: number | null;
+        monitoring?: string;
     };
     stats: {
         total: number;
@@ -68,6 +76,7 @@ type Props = {
         aktif: number;
         medis: number;
         non_medis: number;
+        dimonitor?: number;
     };
 };
 
@@ -109,6 +118,7 @@ export default function AsetIndex({ asets, ruang, filters, stats }: Props) {
     const [ruangId, setRuangId] = useState(
         filters.aset_ruang_id ? String(filters.aset_ruang_id) : '__all__',
     );
+    const [monitoring, setMonitoring] = useState(filters.monitoring || '__all__');
 
     const apply = (overrides: Record<string, string | undefined> = {}) => {
         router.get(
@@ -118,6 +128,7 @@ export default function AsetIndex({ asets, ruang, filters, stats }: Props) {
                 kelas_aset: kelas === '__all__' ? undefined : kelas,
                 siklus_hidup: siklus === '__all__' ? undefined : siklus,
                 aset_ruang_id: ruangId === '__all__' ? undefined : ruangId,
+                monitoring: monitoring === '__all__' ? undefined : monitoring,
                 ...overrides,
             },
             { preserveState: true, preserveScroll: true },
@@ -149,6 +160,12 @@ export default function AsetIndex({ asets, ruang, filters, stats }: Props) {
                     </div>
                     <div className="flex flex-wrap gap-2">
                         <Button variant="outline" size="sm" asChild>
+                            <Link href="/aset/import">
+                                <Upload className="mr-1.5 h-3.5 w-3.5" />
+                                Import CSV
+                            </Link>
+                        </Button>
+                        <Button variant="outline" size="sm" asChild>
                             <Link href="/aset/audit">
                                 <ClipboardCheck className="mr-1.5 h-3.5 w-3.5" />
                                 Audit
@@ -176,13 +193,14 @@ export default function AsetIndex({ asets, ruang, filters, stats }: Props) {
                 )}
 
                 {/* Stats — compact strip */}
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
                     {[
                         { label: 'Total', value: stats.total, accent: true },
                         { label: 'Aktif', value: stats.aktif },
                         { label: 'Draf', value: stats.draf },
                         { label: 'Medis', value: stats.medis },
                         { label: 'Non-medis', value: stats.non_medis },
+                        { label: 'Dimonitor', value: stats.dimonitor ?? 0 },
                     ].map((stat) => (
                         <div
                             key={stat.label}
@@ -217,7 +235,7 @@ export default function AsetIndex({ asets, ruang, filters, stats }: Props) {
                             className="h-10 pl-9"
                         />
                     </div>
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:flex lg:w-auto">
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:flex lg:w-auto">
                         <Select
                             value={kelas}
                             onValueChange={(v) => {
@@ -257,7 +275,7 @@ export default function AsetIndex({ asets, ruang, filters, stats }: Props) {
                                 apply({ aset_ruang_id: v === '__all__' ? undefined : v });
                             }}
                         >
-                            <SelectTrigger className="col-span-2 h-10 sm:col-span-1 lg:w-44">
+                            <SelectTrigger className="h-10 lg:w-44">
                                 <SelectValue placeholder="Ruang" />
                             </SelectTrigger>
                             <SelectContent>
@@ -267,6 +285,22 @@ export default function AsetIndex({ asets, ruang, filters, stats }: Props) {
                                         {r.nama_ruang}
                                     </SelectItem>
                                 ))}
+                            </SelectContent>
+                        </Select>
+                        <Select
+                            value={monitoring}
+                            onValueChange={(v) => {
+                                setMonitoring(v);
+                                apply({ monitoring: v === '__all__' ? undefined : v });
+                            }}
+                        >
+                            <SelectTrigger className="h-10 lg:w-40">
+                                <SelectValue placeholder="Monitoring" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="__all__">Semua monitoring</SelectItem>
+                                <SelectItem value="dimonitor">Dimonitor</SelectItem>
+                                <SelectItem value="tidak">Tidak dimonitor</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -361,6 +395,20 @@ export default function AsetIndex({ asets, ruang, filters, stats }: Props) {
                                                     {item.open_tickets}
                                                 </Badge>
                                             )}
+                                            {item.monitoring ? (
+                                                <Badge
+                                                    variant="outline"
+                                                    className={cn(
+                                                        'rounded-md px-1.5 py-0 text-[10px] capitalize',
+                                                        item.monitoring.status === 'online'
+                                                            ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                                                            : 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200',
+                                                    )}
+                                                >
+                                                    <Activity className="mr-0.5 h-2.5 w-2.5" />
+                                                    {item.monitoring.status}
+                                                </Badge>
+                                            ) : null}
                                         </div>
 
                                         {/* Aksi hint */}

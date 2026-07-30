@@ -1,0 +1,4 @@
+{
+  "summary": "Confirmed user's crontab for PortalSifast schedule:run is correctly configured; monitoring:mark-offline runs every minute via that scheduler.",
+  "current_status": "Cron OK. Offline marking should auto-run every minute; UI safety net also syncs on /monitoring page load."
+}

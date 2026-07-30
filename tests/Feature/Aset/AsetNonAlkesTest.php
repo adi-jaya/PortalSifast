@@ -103,6 +103,7 @@ it('creates aset from non_alkes leaf and rejects parent folder', function () {
 
     actingAs($user)
         ->post('/aset', [
+            'kelas_aset' => 'non_medis',
             'aset_non_alkes_id' => $folder->id,
             'aset_ruang_id' => $ruang->id,
             'tahun_registrasi' => 2026,
@@ -114,6 +115,7 @@ it('creates aset from non_alkes leaf and rejects parent folder', function () {
 
     actingAs($user)
         ->post('/aset', [
+            'kelas_aset' => 'non_medis',
             'aset_non_alkes_id' => $leaf->id,
             'aset_ruang_id' => $ruang->id,
             'tahun_registrasi' => 2026,

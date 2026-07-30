@@ -45,11 +45,11 @@ export default function PegawaiIndex({ pegawai }: Props) {
                     description="Pegawai aktif dari SIMRS (Dokter & Petugas)"
                 />
 
-                <div className="rounded-2xl border border-border/80 bg-card shadow-sm">
-                    <div className="overflow-x-auto">
+                <div className="data-table">
+                    <div className="data-table-scroll">
                         <table className="w-full text-left text-sm">
                             <thead>
-                                <tr className="border-b bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 dark:from-violet-500/20 dark:to-fuchsia-500/20">
+                                <tr className="border-b">
                                     <th className="px-4 py-3 font-medium">
                                         NIK
                                     </th>

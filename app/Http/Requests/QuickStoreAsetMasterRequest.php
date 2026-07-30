@@ -18,6 +18,7 @@ class QuickStoreAsetMasterRequest extends FormRequest
     {
         return [
             'nama' => ['required', 'string', 'min:2', 'max:120'],
+            'aset_merk_id' => ['nullable', 'integer', 'exists:aset_merk,id'],
         ];
     }
 
@@ -29,6 +30,7 @@ class QuickStoreAsetMasterRequest extends FormRequest
         return [
             'nama.required' => 'Nama wajib diisi.',
             'nama.min' => 'Nama minimal 2 karakter.',
+            'aset_merk_id.exists' => 'Merk tidak ditemukan.',
         ];
     }
 }

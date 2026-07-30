@@ -1,0 +1,4 @@
+{
+  "summary": "User chose strict catalog IDs (A): kode_aspak or kode_non_alkes + kelas_aset required. Next question: how ruang is matched in CSV.",
+  "current_status": "Brainstorming aset unit CSV import; awaiting ruang matching preference."
+}

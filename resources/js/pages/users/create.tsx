@@ -39,6 +39,7 @@ type Props = {
     availablePegawai: PegawaiOption[];
     departments: Department[];
     canManagePayrollAccess: boolean;
+    canManagePatroliAccess: boolean;
     canManageMutuAccess: boolean;
     canManageWebOfficialAccess: boolean;
 };
@@ -47,6 +48,7 @@ export default function UsersCreate({
     availablePegawai,
     departments,
     canManagePayrollAccess,
+    canManagePatroliAccess,
     canManageMutuAccess,
     canManageWebOfficialAccess,
 }: Props) {
@@ -60,6 +62,7 @@ export default function UsersCreate({
         role: 'pemohon',
         dep_id: '__none__',
         can_access_payroll: false,
+        can_access_patroli: false,
         can_manage_mutu: false,
         can_input_mutu: false,
         can_view_mutu_dashboard: false,
@@ -265,6 +268,25 @@ export default function UsersCreate({
                                 Hanya superadmin yang dapat memberi/mencabut akses payroll.
                             </p>
                             <InputError message={errors.can_access_payroll} />
+                        </div>
+                    )}
+
+                    {canManagePatroliAccess && (
+                        <div className="grid gap-2 rounded-lg border border-border p-4">
+                            <div className="flex items-center gap-3">
+                                <Checkbox
+                                    id="can_access_patroli"
+                                    checked={Boolean(data.can_access_patroli)}
+                                    onCheckedChange={(checked) => setData('can_access_patroli', checked === true)}
+                                />
+                                <Label htmlFor="can_access_patroli" className="cursor-pointer">
+                                    Izinkan akses Patroli untuk user ini
+                                </Label>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                Hanya superadmin yang dapat memberi/mencabut akses patroli.
+                            </p>
+                            <InputError message={errors.can_access_patroli} />
                         </div>
                     )}
 

@@ -1,0 +1,4 @@
+{
+  "summary": "Explored MonitoredDevice↔Aset linkage: aset_id is set only on agent register via hardware.serial_number matching aset.no_seri; heartbeat never updates aset_id. IT vs furniture is distinguished by aset_barang.id_kategori (KI005/KI012/KI016/etc.), not kelas_aset (almost always null in DB). Migration 2026_07_19_042355 only added critical_software and usb_inventory JSON columns. Recommended monitorable filter: id_kategori in KI005, KI012, KI016, MINIPC, TAB (optionally KI011); avoid Furniture/Kendaraan/perabot.",
+  "current_status": "Read-only exploration complete; no code changes. Live DB has 1 monitored device (aset_id null), ~194 IT-kategori asets, only 2 asets with no_seri filled."
+}

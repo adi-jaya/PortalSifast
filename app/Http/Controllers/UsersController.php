@@ -68,6 +68,7 @@ class UsersController extends Controller
     public function create(): Response
     {
         $canManagePayrollAccess = request()->user()?->canManagePayrollAccess() ?? false;
+        $canManagePatroliAccess = request()->user()?->canManagePatroliAccess() ?? false;
         $canManageMutuAccess = request()->user()?->canManageMutuAccess() ?? false;
         $canManageWebOfficialAccess = request()->user()?->canManageWebOfficialAccess() ?? false;
 
@@ -121,6 +122,7 @@ class UsersController extends Controller
             'availablePegawai' => $availablePegawai,
             'departments' => $departments,
             'canManagePayrollAccess' => $canManagePayrollAccess,
+            'canManagePatroliAccess' => $canManagePatroliAccess,
             'canManageMutuAccess' => $canManageMutuAccess,
             'canManageWebOfficialAccess' => $canManageWebOfficialAccess,
         ]);
@@ -129,6 +131,7 @@ class UsersController extends Controller
     public function store(StoreUserRequest $request): RedirectResponse
     {
         $canManagePayrollAccess = $request->user()?->canManagePayrollAccess() ?? false;
+        $canManagePatroliAccess = $request->user()?->canManagePatroliAccess() ?? false;
         $canManageMutuAccess = $request->user()?->canManageMutuAccess() ?? false;
         $canManageWebOfficialAccess = $request->user()?->canManageWebOfficialAccess() ?? false;
 
@@ -143,6 +146,9 @@ class UsersController extends Controller
             'dep_id' => $request->validated('dep_id') ?: null,
             'can_access_payroll' => $canManagePayrollAccess
                 ? (bool) $request->boolean('can_access_payroll')
+                : false,
+            'can_access_patroli' => $canManagePatroliAccess
+                ? (bool) $request->boolean('can_access_patroli')
                 : false,
             'can_manage_mutu' => $canManageMutuAccess
                 ? (bool) $request->boolean('can_manage_mutu')
@@ -164,6 +170,7 @@ class UsersController extends Controller
     public function edit(User $user): Response
     {
         $canManagePayrollAccess = request()->user()?->canManagePayrollAccess() ?? false;
+        $canManagePatroliAccess = request()->user()?->canManagePatroliAccess() ?? false;
         $canManageMutuAccess = request()->user()?->canManageMutuAccess() ?? false;
         $canManageWebOfficialAccess = request()->user()?->canManageWebOfficialAccess() ?? false;
 
@@ -185,6 +192,7 @@ class UsersController extends Controller
                 'role',
                 'dep_id',
                 'can_access_payroll',
+                'can_access_patroli',
                 'can_manage_mutu',
                 'can_input_mutu',
                 'can_view_mutu_dashboard',
@@ -192,6 +200,7 @@ class UsersController extends Controller
             ]),
             'departments' => $departments,
             'canManagePayrollAccess' => $canManagePayrollAccess,
+            'canManagePatroliAccess' => $canManagePatroliAccess,
             'canManageMutuAccess' => $canManageMutuAccess,
             'canManageWebOfficialAccess' => $canManageWebOfficialAccess,
         ]);
@@ -200,6 +209,7 @@ class UsersController extends Controller
     public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
         $canManagePayrollAccess = $request->user()?->canManagePayrollAccess() ?? false;
+        $canManagePatroliAccess = $request->user()?->canManagePatroliAccess() ?? false;
         $canManageMutuAccess = $request->user()?->canManageMutuAccess() ?? false;
         $canManageWebOfficialAccess = $request->user()?->canManageWebOfficialAccess() ?? false;
 
@@ -213,6 +223,10 @@ class UsersController extends Controller
 
         if ($canManagePayrollAccess) {
             $data['can_access_payroll'] = (bool) $request->boolean('can_access_payroll');
+        }
+
+        if ($canManagePatroliAccess) {
+            $data['can_access_patroli'] = (bool) $request->boolean('can_access_patroli');
         }
 
         if ($canManageMutuAccess) {

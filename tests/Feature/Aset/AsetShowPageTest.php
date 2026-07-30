@@ -57,5 +57,8 @@ it('renders aset show with trilux-style detail props', function () {
             ->where('penyusutan.penyusutan_per_bulan', 99000)
             ->has('tickets')
             ->has('peminjamanRiwayat')
-            ->has('mutasiRiwayat'));
+            ->has('mutasiRiwayat')
+            ->where('monitoring', null)
+            ->has('canLinkMonitoring')
+            ->has('linkableDevices'));
 });

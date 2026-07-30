@@ -1,0 +1,4 @@
+{
+  "summary": "Corrected docs/api/patroli-security-mobile.md for frontend: clarified items[].id to patroli_template_item_id mapping, completed response schemas for me/titik/resolve/checkin/list/laporan, renumbered sections, kept katalog titik notes and web-only CRUD boundaries.",
+  "current_status": "Patroli mobile API docs aligned with payroll-style completeness for frontend integration."
+}

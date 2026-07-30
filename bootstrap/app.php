@@ -30,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'officer' => \App\Http\Middleware\EnsureUserIsOfficer::class,
             'payroll.access' => \App\Http\Middleware\EnsurePayrollAccess::class,
+            'patroli.access' => \App\Http\Middleware\EnsurePatroliAccess::class,
             'simmutu.view' => \App\Http\Middleware\EnsureSimmutuViewAccess::class,
             'simmutu.manage' => \App\Http\Middleware\EnsureSimmutuManageAccess::class,
             'simmutu.input' => \App\Http\Middleware\EnsureSimmutuInputAccess::class,

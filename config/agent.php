@@ -30,4 +30,21 @@ return [
 
     'metric_retention_days' => (int) env('AGENT_METRIC_RETENTION_DAYS', 7),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Monitorable asset categories (Phase 2.3)
+    |--------------------------------------------------------------------------
+    |
+    | Default allowlist for inventaris ↔ agent linking. Override via UI at
+    | /monitoring/pengaturan-kategori (stored in aset_pengaturan).
+    |
+    */
+
+    'monitorable_kategori_codes' => [
+        'KI005',  // Komputer (termasuk laptop/notebook)
+        'KI012',  // Personal Computer
+        'MINIPC', // Mini PC
+        'TAB',    // Tablet
+    ],
+
 ];

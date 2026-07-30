@@ -44,6 +44,8 @@ class HandleInertiaRequests extends Middleware
             'permissions' => [
                 'can_access_payroll' => $request->user()?->canAccessPayroll() ?? false,
                 'can_manage_payroll_access' => $request->user()?->canManagePayrollAccess() ?? false,
+                'can_access_patroli' => $request->user()?->canAccessPatroli() ?? false,
+                'can_manage_patroli_access' => $request->user()?->canManagePatroliAccess() ?? false,
                 'simmutu' => [
                     'can_view' => $request->user()?->canAccessSimmutuModule() ?? false,
                     'can_manage' => $request->user()?->canManageMutu() ?? false,

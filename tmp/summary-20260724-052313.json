@@ -1,0 +1,4 @@
+{
+  "summary": "Clarified that mobile apps use a single login POST /api/login. Updated api-documentation.md with an auth map, stripped duplicate login from patroli docs (link to main auth), and added cross-notes on payroll + panic docs so officer login is not confused with the main app login.",
+  "current_status": "Auth documentation is aligned: one primary login for app modules; module docs only cover their own endpoints."
+}

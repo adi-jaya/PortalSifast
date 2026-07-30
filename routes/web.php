@@ -4,16 +4,22 @@ use App\Http\Controllers\Api\DashboardActivityController;
 use App\Http\Controllers\Api\DashboardAnalyticsController;
 use App\Http\Controllers\Api\DashboardNotificationController;
 use App\Http\Controllers\Api\DashboardTextAnalyticsController;
+use App\Http\Controllers\AsetAspakController;
 use App\Http\Controllers\AsetController;
 use App\Http\Controllers\AsetDokumenController;
 use App\Http\Controllers\AsetFotoController;
+use App\Http\Controllers\AsetImportController;
+use App\Http\Controllers\AsetJenisController;
+use App\Http\Controllers\AsetKategoriController;
 use App\Http\Controllers\AsetMasterController;
+use App\Http\Controllers\AsetMasterCsvController;
 use App\Http\Controllers\AsetMutasiLokasiController;
 use App\Http\Controllers\AsetMutasiLokasiPrintController;
 use App\Http\Controllers\AsetNonAlkesController;
 use App\Http\Controllers\AsetPeminjamanController;
 use App\Http\Controllers\AsetPeminjamanPrintController;
 use App\Http\Controllers\AsetPublicController;
+use App\Http\Controllers\AsetRuangController;
 use App\Http\Controllers\AsetSinkronController;
 use App\Http\Controllers\AuditAsetController;
 use App\Http\Controllers\ChatController;
@@ -37,11 +43,16 @@ use App\Http\Controllers\MonitoringDeviceController;
 use App\Http\Controllers\MutuCategoryController;
 use App\Http\Controllers\MutuIndicatorController;
 use App\Http\Controllers\MutuRealisationController;
+use App\Http\Controllers\PatroliAreaController;
+use App\Http\Controllers\PatroliCheckinController;
+use App\Http\Controllers\PatroliLaporanController;
+use App\Http\Controllers\PatroliTemplateController;
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RequesterReportController;
 use App\Http\Controllers\Settings\AsetPenyusutanSettingsController;
+use App\Http\Controllers\Settings\MonitoringKategoriSettingsController;
 use App\Http\Controllers\SimmutuDashboardController;
 use App\Http\Controllers\SimmutuDepartmentRecapController;
 use App\Http\Controllers\SimmutuUnitKerjaController;
@@ -50,6 +61,7 @@ use App\Http\Controllers\Tatanaskah\DokumenController;
 use App\Http\Controllers\Tatanaskah\PegawaiSearchController;
 use App\Http\Controllers\TechnicianReportController;
 use App\Http\Controllers\TechnicianReportPrintController;
+use App\Http\Controllers\TianjiLaporanController;
 use App\Http\Controllers\TicketAttachmentController;
 use App\Http\Controllers\TicketCollaboratorController;
 use App\Http\Controllers\TicketCommentController;
@@ -182,6 +194,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('aset/created', [AsetController::class, 'created'])->name('aset.created');
 
+    Route::get('aset/import', [AsetImportController::class, 'create'])->name('aset.import');
+    Route::get('aset/import/template', [AsetImportController::class, 'template'])->name('aset.import.template');
+    Route::post('aset/import/preview', [AsetImportController::class, 'preview'])->name('aset.import.preview');
+    Route::post('aset/import', [AsetImportController::class, 'store'])->name('aset.import.store');
+    Route::delete('aset/import/preview', [AsetImportController::class, 'clear'])->name('aset.import.clear');
+
     Route::get('aset-peminjaman/search-aset', [AsetPeminjamanController::class, 'searchAset'])->name('aset-peminjaman.search-aset');
     Route::get('aset-peminjaman/search-pegawai', [AsetPeminjamanController::class, 'searchPegawai'])->name('aset-peminjaman.search-pegawai');
     Route::get('aset-peminjaman/search-user', [AsetPeminjamanController::class, 'searchUser'])->name('aset-peminjaman.search-user');
@@ -206,6 +224,33 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('aset.master.non-alkes.search');
     Route::get('aset/master/non-alkes', [AsetNonAlkesController::class, 'index'])
         ->name('aset.master.non-alkes.index');
+    Route::patch('aset/master/non-alkes/{nonAlkes}/kategori', [AsetNonAlkesController::class, 'updateKategori'])
+        ->name('aset.master.non-alkes.kategori');
+    Route::get('aset/master/aspak/search', [AsetMasterController::class, 'searchAspak'])
+        ->name('aset.master.aspak.search');
+    Route::get('aset/master/aspak', [AsetAspakController::class, 'index'])
+        ->name('aset.master.aspak.index');
+    Route::get('aset/master/ruang', [AsetRuangController::class, 'index'])
+        ->name('aset.master.ruang.index');
+    Route::get('aset/master/{tipe}/csv/template', [AsetMasterCsvController::class, 'template'])
+        ->whereIn('tipe', ['ruang', 'aspak', 'non_alkes'])
+        ->name('aset.master.csv.template');
+    Route::get('aset/master/{tipe}/csv/export', [AsetMasterCsvController::class, 'export'])
+        ->whereIn('tipe', ['ruang', 'aspak', 'non_alkes'])
+        ->name('aset.master.csv.export');
+    Route::post('aset/master/{tipe}/csv/import', [AsetMasterCsvController::class, 'import'])
+        ->whereIn('tipe', ['ruang', 'aspak', 'non_alkes'])
+        ->name('aset.master.csv.import');
+    Route::get('aset/master/jenis', [AsetJenisController::class, 'index'])
+        ->name('aset.master.jenis.index');
+    Route::patch('aset/master/jenis/{jenis}/merk', [AsetJenisController::class, 'updateMerk'])
+        ->name('aset.master.jenis.merk');
+    Route::get('aset/master/kategori', [AsetKategoriController::class, 'index'])
+        ->name('aset.master.kategori.index');
+    Route::post('aset/master/kategori/{kategori}/merge', [AsetKategoriController::class, 'merge'])
+        ->name('aset.master.kategori.merge');
+    Route::patch('aset/master/non-alkes/{nonAlkes}/nama', [AsetNonAlkesController::class, 'updateNama'])
+        ->name('aset.master.non-alkes.nama');
     Route::get('aset/pengaturan-penyusutan', [AsetPenyusutanSettingsController::class, 'edit'])
         ->name('aset.pengaturan-penyusutan.edit');
     Route::put('aset/pengaturan-penyusutan', [AsetPenyusutanSettingsController::class, 'update'])
@@ -217,12 +262,33 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('aset/{aset}/dokumen/{dokumen}/unduh', [AsetDokumenController::class, 'unduh'])->name('aset.dokumen.unduh');
     Route::delete('aset/{aset}/dokumen/{dokumen}', [AsetDokumenController::class, 'destroy'])->name('aset.dokumen.destroy');
     Route::post('aset/{aset}/verifikasi', [AsetController::class, 'verifikasi'])->name('aset.verifikasi');
+    Route::patch('aset/{aset}/monitoring', [AsetController::class, 'updateMonitoring'])
+        ->name('aset.monitoring.update');
     Route::get('aset/{aset}/label-print', [AsetController::class, 'labelPrint'])->name('aset.label-print');
     Route::get('aset/{aset}/foto-sumber', [AsetFotoController::class, 'showSumber'])->name('aset.foto-sumber');
     Route::resource('aset', AsetController::class)->parameters(['aset' => 'aset']);
 
     Route::get('monitoring', [MonitoringDeviceController::class, 'index'])->name('monitoring.index');
+    Route::get('monitoring/pengaturan-kategori', [MonitoringKategoriSettingsController::class, 'edit'])
+        ->name('monitoring.pengaturan-kategori.edit');
+    Route::put('monitoring/pengaturan-kategori', [MonitoringKategoriSettingsController::class, 'update'])
+        ->name('monitoring.pengaturan-kategori.update');
     Route::get('monitoring/{device}', [MonitoringDeviceController::class, 'show'])->name('monitoring.show');
+    Route::patch('monitoring/{device}/aset', [MonitoringDeviceController::class, 'updateAset'])
+        ->name('monitoring.aset.update');
+
+    Route::get('infrastruktur', [TianjiLaporanController::class, 'index'])->name('infrastruktur.index');
+    Route::redirect('laporan-tianji', '/infrastruktur');
+    Route::get('laporan-tianji/export/ringkasan', [TianjiLaporanController::class, 'exportRingkasan'])
+        ->name('laporan-tianji.export.ringkasan');
+    Route::get('laporan-tianji/export/harian', [TianjiLaporanController::class, 'exportHarian'])
+        ->name('laporan-tianji.export.harian');
+    Route::get('laporan-tianji/export/gangguan', [TianjiLaporanController::class, 'exportGangguan'])
+        ->name('laporan-tianji.export.gangguan');
+    Route::get('laporan-tianji/export/agent', [TianjiLaporanController::class, 'exportAgent'])
+        ->name('laporan-tianji.export.agent');
+    Route::get('laporan-tianji/export/detail', [TianjiLaporanController::class, 'exportDetail'])
+        ->name('laporan-tianji.export.detail');
 
     // Rencana / Project (tracking per project)
     Route::resource('projects', ProjectController::class);
@@ -386,6 +452,35 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('payroll/{employeeSalary}/print', [EmployeeSalaryWebImportController::class, 'print'])->name('payroll.print');
         Route::patch('payroll/{employeeSalary}', [EmployeeSalaryWebImportController::class, 'update'])->name('payroll.update');
         Route::delete('payroll/{employeeSalary}', [EmployeeSalaryWebImportController::class, 'destroy'])->name('payroll.destroy');
+    });
+
+    // Patroli Security
+    Route::middleware('patroli.access')->prefix('patroli')->name('patroli.')->group(function (): void {
+        Route::get('checkin', [PatroliCheckinController::class, 'index'])->name('checkin.index');
+        Route::get('scan/{ruang}', [PatroliCheckinController::class, 'scan'])->name('scan');
+        Route::post('checkin', [PatroliCheckinController::class, 'store'])->name('checkin.store');
+        Route::get('checkin/{checkin}', [PatroliCheckinController::class, 'show'])->name('checkin.show');
+
+        Route::get('laporan', [PatroliLaporanController::class, 'index'])->name('laporan.index');
+        Route::get('laporan/export', [PatroliLaporanController::class, 'export'])->name('laporan.export');
+
+        Route::get('templates', [PatroliTemplateController::class, 'index'])->name('templates.index');
+        Route::get('templates/create', [PatroliTemplateController::class, 'create'])->name('templates.create');
+        Route::post('templates', [PatroliTemplateController::class, 'store'])->name('templates.store');
+        Route::get('templates/{template}/edit', [PatroliTemplateController::class, 'edit'])->name('templates.edit');
+        Route::put('templates/{template}', [PatroliTemplateController::class, 'update'])->name('templates.update');
+
+        Route::get('area', [PatroliAreaController::class, 'index'])->name('area.index');
+        Route::get('area/create', [PatroliAreaController::class, 'create'])->name('area.create');
+        Route::post('area', [PatroliAreaController::class, 'store'])->name('area.store');
+        Route::get('area/{area}', [PatroliAreaController::class, 'show'])->name('area.show');
+        Route::put('area/{area}', [PatroliAreaController::class, 'update'])->name('area.update');
+        Route::post('area/{area}/ruang', [PatroliAreaController::class, 'storeRuang'])->name('area.ruang.store');
+        Route::put('area/{area}/ruang/{ruang}', [PatroliAreaController::class, 'updateRuang'])->name('area.ruang.update');
+        Route::delete('area/{area}/ruang/{ruang}', [PatroliAreaController::class, 'destroyRuang'])->name('area.ruang.destroy');
+        Route::get('area/{area}/ruang/{ruang}/label', [PatroliAreaController::class, 'labelPrint'])->name('area.ruang.label');
+
+        Route::redirect('titik', '/patroli/area');
     });
 });
 

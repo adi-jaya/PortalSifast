@@ -1,0 +1,4 @@
+{
+  "summary": "User asked if selecting a non-alkes catalog leaf can auto-set kategori. Explained current behavior: only nama_barang + kelas_aset=non_medis auto-fill; kategori stays manual because aset_non_alkes has no link to aset_kategori (unlike master barang which stores aset_kategori_id). Asked which mapping rule they want before implementing.",
+  "current_status": "Non-alkes master imported and browsable; create-aset flow does not auto-assign kategori from non-alkes hierarchy yet."
+}

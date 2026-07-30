@@ -1,12 +1,16 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Search, X } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import { Pencil, X } from 'lucide-react';
+import { useCallback, useState } from 'react';
+
+import { DataTablePagination } from '@/components/data-table-pagination';
+import { DataTableSearch } from '@/components/data-table-search';
+import { DataTableToolbar } from '@/components/data-table-toolbar';
 import { EmptyState } from '@/components/empty-state';
 import Heading from '@/components/heading';
+import { RowActionButton } from '@/components/row-action-button';
 import { StatusBadge } from '@/components/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
     Select,
     SelectContent,
@@ -65,10 +69,10 @@ export default function UsersIndex({ users, filters }: Props) {
             router.get(
                 '/users',
                 { ...filters, ...newFilters },
-                { preserveState: true, replace: true }
+                { preserveState: true, replace: true },
             );
         },
-        [filters]
+        [filters],
     );
 
     const handleSearch = (e: React.FormEvent) => {
@@ -82,6 +86,7 @@ export default function UsersIndex({ users, filters }: Props) {
     };
 
     const hasActiveFilters = !!(filters.search || filters.role || filters.dep_id);
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Daftar User" />
@@ -92,25 +97,19 @@ export default function UsersIndex({ users, filters }: Props) {
                         title="Daftar User"
                         description="Semua user yang dapat mengakses aplikasi"
                     />
-                    <Button asChild>
+                    <Button asChild className="btn-text-md">
                         <Link href="/users/create">Tambah User</Link>
                     </Button>
                 </div>
 
-                {/* Search & Filter Bar */}
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <form onSubmit={handleSearch} className="flex flex-1 gap-2">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                                type="search"
-                                placeholder="Cari nama, email, atau NIK..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                className="pl-10"
-                            />
-                        </div>
-                        <Button type="submit" variant="secondary">
+                <DataTableToolbar>
+                    <form onSubmit={handleSearch} className="flex min-w-0 flex-1 gap-2">
+                        <DataTableSearch
+                            placeholder="Cari nama, email, atau NIK..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                        <Button type="submit" variant="secondary" className="btn-text-md h-11">
                             Cari
                         </Button>
                     </form>
@@ -118,7 +117,7 @@ export default function UsersIndex({ users, filters }: Props) {
                         value={filters.role || '_all'}
                         onValueChange={(v) => applyFilters({ role: v === '_all' ? '' : v })}
                     >
-                        <SelectTrigger className="w-[140px]">
+                        <SelectTrigger className="h-11 w-[140px] rounded-xl">
                             <SelectValue placeholder="Semua Role" />
                         </SelectTrigger>
                         <SelectContent>
@@ -132,7 +131,7 @@ export default function UsersIndex({ users, filters }: Props) {
                         value={filters.dep_id || '_all'}
                         onValueChange={(v) => applyFilters({ dep_id: v === '_all' ? '' : v })}
                     >
-                        <SelectTrigger className="w-[140px]">
+                        <SelectTrigger className="h-11 w-[140px] rounded-xl">
                             <SelectValue placeholder="Semua Dept" />
                         </SelectTrigger>
                         <SelectContent>
@@ -142,128 +141,99 @@ export default function UsersIndex({ users, filters }: Props) {
                         </SelectContent>
                     </Select>
                     {hasActiveFilters && (
-                        <Button variant="ghost" size="icon" onClick={clearFilters}>
-                            <X className="h-4 w-4" />
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-11 rounded-[10px]"
+                            onClick={clearFilters}
+                            aria-label="Reset filter"
+                        >
+                            <X className="size-4" />
                         </Button>
                     )}
-                </div>
+                </DataTableToolbar>
 
-                <div className="rounded-2xl border border-border/80 bg-card shadow-sm">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
+                <div className="data-table">
+                    <div className="data-table-scroll">
+                        <table>
                             <thead>
-                                <tr className="border-b bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 dark:from-violet-500/20 dark:to-fuchsia-500/20">
-                                    <th className="px-4 py-3 font-medium">
-                                        Nama
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        NIK
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Email
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        No. HP
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Role
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Website Official
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Dep
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Sumber
-                                    </th>
-                                    <th className="px-4 py-3 font-medium">
-                                        Aksi
-                                    </th>
+                                <tr>
+                                    <th>Nama</th>
+                                    <th className="col-secondary">NIK</th>
+                                    <th>Email</th>
+                                    <th className="col-secondary">No. HP</th>
+                                    <th>Role</th>
+                                    <th className="col-secondary">Website Official</th>
+                                    <th className="col-secondary">Dep</th>
+                                    <th className="col-secondary">Sumber</th>
+                                    <th className="cell-action">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {users.data.length === 0 ? (
                                     <tr>
-                                        <td colSpan={9} className="p-0">
+                                        <td colSpan={9} className="cell-empty">
                                             <EmptyState
                                                 title="Belum ada user"
                                                 description="Tambahkan user baru untuk mengakses aplikasi."
                                                 action={
-                                                    <Link href="/users/create">
-                                                        <Button>Tambah User</Button>
-                                                    </Link>
+                                                    <Button asChild>
+                                                        <Link href="/users/create">Tambah User</Link>
+                                                    </Button>
                                                 }
                                             />
                                         </td>
                                     </tr>
                                 ) : (
                                     users.data.map((user) => (
-                                        <tr
-                                            key={user.id}
-                                            className="border-b last:border-0"
-                                        >
-                                            <td className="px-4 py-3 font-medium">
-                                                {user.name}
-                                            </td>
-                                            <td className="px-4 py-3 text-muted-foreground">
-                                                {user.simrs_nik ?? '–'}
-                                            </td>
-                                            <td className="px-4 py-3 text-muted-foreground">
-                                                {user.email}
-                                            </td>
-                                            <td className="px-4 py-3 text-muted-foreground">
-                                                {user.phone ?? '–'}
-                                            </td>
-                                            <td className="px-4 py-3">
+                                        <tr key={user.id}>
+                                            <td className="!font-medium">{user.name}</td>
+                                            <td className="col-secondary">{user.simrs_nik ?? '–'}</td>
+                                            <td>{user.email}</td>
+                                            <td className="col-secondary">{user.phone ?? '–'}</td>
+                                            <td className="cell-badge">
                                                 <Badge
-                                                    variant="outline"
-                                                    className={
+                                                    variant={
                                                         user.role === 'admin'
-                                                            ? 'border-amber-400/60 bg-amber-500/15 text-amber-700 dark:border-amber-500/50 dark:bg-amber-500/25 dark:text-amber-300'
+                                                            ? 'warning'
                                                             : user.role === 'staff'
-                                                              ? 'border-blue-400/60 bg-blue-500/15 text-blue-700 dark:border-blue-500/50 dark:bg-blue-500/25 dark:text-blue-300'
-                                                              : 'border-slate-400/60 bg-slate-500/10 text-slate-700 dark:border-slate-500/50 dark:bg-slate-500/20 dark:text-slate-300'
+                                                              ? 'info'
+                                                              : 'neutral'
                                                     }
                                                 >
                                                     {user.role}
                                                 </Badge>
                                             </td>
-                                            <td className="px-4 py-3">
+                                            <td className="col-secondary cell-badge">
                                                 {user.has_web_official_access ? (
                                                     <StatusBadge
-                                                        tone={user.role === 'admin' ? 'primary' : 'normal'}
+                                                        tone={
+                                                            user.role === 'admin' ? 'primary' : 'normal'
+                                                        }
                                                         label={
-                                                            user.role === 'admin'
-                                                                ? 'Admin'
-                                                                : 'Staff'
+                                                            user.role === 'admin' ? 'Admin' : 'Staff'
                                                         }
                                                     />
                                                 ) : (
                                                     <span className="text-muted-foreground">–</span>
                                                 )}
                                             </td>
-                                            <td className="px-4 py-3 text-muted-foreground">
-                                                {user.dep_id ?? '–'}
-                                            </td>
-                                            <td className="px-4 py-3">
+                                            <td className="col-secondary">{user.dep_id ?? '–'}</td>
+                                            <td className="col-secondary cell-badge">
                                                 <Badge
-                                                    variant="outline"
-                                                    className={
-                                                        user.source === 'simrs'
-                                                            ? 'border-violet-400/60 bg-violet-500/15 text-violet-700 dark:border-violet-500/50 dark:bg-violet-500/25 dark:text-violet-300'
-                                                            : 'border-slate-400/60 bg-slate-500/10 text-slate-700 dark:border-slate-500/50 dark:bg-slate-500/20 dark:text-slate-300'
+                                                    variant={
+                                                        user.source === 'simrs' ? 'follow-up' : 'neutral'
                                                     }
                                                 >
                                                     {user.source ?? 'manual'}
                                                 </Badge>
                                             </td>
-                                            <td className="px-4 py-3">
-                                                <Button size="sm" variant="outline" asChild>
+                                            <td className="cell-action">
+                                                <RowActionButton asChild aria-label={`Edit ${user.name}`}>
                                                     <Link href={`/users/${user.id}/edit`}>
-                                                        Edit
+                                                        <Pencil />
                                                     </Link>
-                                                </Button>
+                                                </RowActionButton>
                                             </td>
                                         </tr>
                                     ))
@@ -272,48 +242,11 @@ export default function UsersIndex({ users, filters }: Props) {
                         </table>
                     </div>
 
-                    {users.last_page > 1 && (
-                        <div className="flex flex-wrap items-center justify-center gap-2 border-t px-4 py-3">
-                            {users.links.map((link, i) => (
-                                <span key={i}>
-                                    {link.url ? (
-                                        <Button
-                                            size="sm"
-                                            variant={
-                                                link.active
-                                                    ? 'default'
-                                                    : 'outline'
-                                            }
-                                            asChild
-                                        >
-                                            <Link
-                                                href={link.url}
-                                                preserveState
-                                            >
-                                                <span
-                                                    dangerouslySetInnerHTML={{
-                                                        __html: link.label,
-                                                    }}
-                                                />
-                                            </Link>
-                                        </Button>
-                                    ) : (
-                                        <span
-                                            className="inline-flex size-8 items-center justify-center text-muted-foreground"
-                                            dangerouslySetInnerHTML={{
-                                                __html: link.label,
-                                            }}
-                                        />
-                                    )}
-                                </span>
-                            ))}
-                        </div>
-                    )}
+                    {users.last_page > 1 && <DataTablePagination links={users.links} />}
                 </div>
 
                 <p className="text-sm text-muted-foreground">
-                    Total: {users.total} user
-                    {users.total !== 1 ? 's' : ''}
+                    Total: {users.total} user{users.total !== 1 ? 's' : ''}
                 </p>
             </div>
         </AppLayout>

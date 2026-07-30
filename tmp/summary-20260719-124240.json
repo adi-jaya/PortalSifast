@@ -1,0 +1,4 @@
+{
+  "summary": "Implemented approved Scope C UI integration: polished monitoring index/show (live badge, inventaris column, aset_link filter, searchable AssetLinkPicker), two-way aset show monitoring card, aset index Dimonitor badge/filter/stats. Spec+plan written; 13 related Pest tests passed.",
+  "current_status": "Monitoring↔aset UX Scope C is in code. User should run npm run build to see frontend changes. Next optional Phase 2: software inventory / auto-update / remote jobs."
+}

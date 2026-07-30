@@ -1,0 +1,4 @@
+{
+  "summary": "Implemented Option A: master page to assign Merk → Jenis at /aset/master/jenis, mirroring the non-alkes kategori pattern. Added AsetJenisController (index + PATCH merk), UpdateAsetJenisMerkRequest, Inertia page with search/filter/unassigned toggle, sidebar link, CSV import support for optional kode_merk column, and 5 passing Pest tests.",
+  "current_status": "Aset create flow (medis/non-medis), auto-kategori non-alkes, merk→jenis cascade in forms, and master jenis assignment page are complete. User should run npm run build for frontend deploy. Next optional items: Option B (merk/tipe on medis flow) or 'barang sudah ada' mode."
+}

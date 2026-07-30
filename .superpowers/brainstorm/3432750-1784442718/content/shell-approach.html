@@ -1,0 +1,61 @@
+<h2>Bagaimana shell-nya di-restyle?</h2>
+<p class="subtitle">Sudah locked: Shell+Theme · Soft Neutral + Teal accent. Pilih pendekatan implementasi.</p>
+
+<div class="options">
+  <div class="option" data-choice="tokens-only" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Tokens only</h3>
+      <p>Update <code>app.css</code> (warna, radius, shadow). Sidebar/header struktur sama. Paling cepat, “fresh” terbatas.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="tokens-shell" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Tokens + Shell chrome (recommended)</h3>
+      <p>Tokens baru + restyle sidebar (light/soft), header, mobile nav, auth layout, welcome. Struktur navigasi tetap. Feel EmviUI paling kuat di cakupan A.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="tokens-shell-ui" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Tokens + Shell + shadcn polish</h3>
+      <p>Plus haluskan Button, Card, Input, Badge (radius/spacing). Modul ikut terlihat lebih modern otomatis. Sedikit lebih banyak file (~30–40).</p>
+    </div>
+  </div>
+</div>
+
+<div class="split" style="margin-top:24px">
+  <div class="mockup">
+    <div class="mockup-header">Sekarang (kira-kira)</div>
+    <div class="mockup-body" style="display:flex;min-height:140px;padding:0;overflow:hidden">
+      <div style="width:28%;background:#111827;color:#9CA3AF;padding:10px;font-size:11px">
+        <div style="color:#fff;font-weight:600;margin-bottom:8px">Portal</div>
+        <div style="background:#0A9E8F;color:#fff;padding:4px 6px;border-radius:4px;margin-bottom:4px">Dashboard</div>
+        <div style="padding:4px 6px">Tickets</div>
+        <div style="padding:4px 6px">Aset</div>
+      </div>
+      <div style="flex:1;background:#F9FAFB;padding:10px">
+        <div style="height:20px;background:#fff;border:1px solid #E5E7EB;border-radius:4px;margin-bottom:8px"></div>
+        <div style="height:60px;background:#fff;border:1px solid #E5E7EB;border-radius:6px"></div>
+      </div>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">Target Emvi-ish (B/C)</div>
+    <div class="mockup-body" style="display:flex;min-height:140px;padding:0;overflow:hidden">
+      <div style="width:28%;background:#FAFAF9;border-right:1px solid #E2E8F0;color:#64748B;padding:10px;font-size:11px">
+        <div style="color:#0F172A;font-weight:600;margin-bottom:8px">Portal Sifast</div>
+        <div style="background:#CCFBF1;color:#0F766E;padding:4px 6px;border-radius:8px;margin-bottom:4px;font-weight:500">Dashboard</div>
+        <div style="padding:4px 6px;border-radius:8px">Tickets</div>
+        <div style="padding:4px 6px;border-radius:8px">Aset</div>
+      </div>
+      <div style="flex:1;background:#F8FAFC;padding:10px">
+        <div style="height:20px;background:transparent;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+          <div style="height:8px;width:40%;background:#E2E8F0;border-radius:4px"></div>
+        </div>
+        <div style="height:60px;background:#fff;border:1px solid #E2E8F0;border-radius:12px;box-shadow:0 1px 2px rgba(15,23,42,.04)"></div>
+      </div>
+    </div>
+  </div>
+</div>

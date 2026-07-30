@@ -1,0 +1,4 @@
+{
+  "summary": "User locked option B (copy name only, no aset_ruang FK). Presented three architecture approaches for Area→Ruang→Template with recommendation of Approach 1 (template per ruang, area as grouping).",
+  "current_status": "Brainstorming Patroli Area hierarchy; decisions locked: separate tables, clean cutover, no FK to inventaris. Awaiting approach choice before full design sections."
+}

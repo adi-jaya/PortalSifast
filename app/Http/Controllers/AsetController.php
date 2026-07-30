@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Monitoring\LinkAsetMonitoredDeviceRequest;
 use App\Http\Requests\StoreAsetRequest;
 use App\Http\Requests\VerifikasiAsetRequest;
 use App\Models\Aset;
@@ -14,6 +15,7 @@ use App\Models\AsetKategori;
 use App\Models\AsetMerk;
 use App\Models\AsetProdusen;
 use App\Models\AsetRuang;
+use App\Models\MonitoredDevice;
 use App\Models\Ticket;
 use App\Services\Inventaris\BuatAsetBatch;
 use App\Services\Inventaris\GeneratorKodeAset;
@@ -36,9 +38,16 @@ class AsetController extends Controller
         $kelas = (string) $request->query('kelas_aset', '');
         $siklus = (string) $request->query('siklus_hidup', '');
         $ruangId = $request->integer('aset_ruang_id') ?: null;
+        $monitoring = (string) $request->query('monitoring', '');
 
         $asets = Aset::query()
-            ->with(['barang.merk', 'barang.jenis', 'ruang', 'fotoUtama'])
+            ->with([
+                'barang.merk',
+                'barang.jenis',
+                'ruang',
+                'fotoUtama',
+                'monitoredDevice:id,aset_id,hostname,computer_name,status,last_seen_at',
+            ])
             ->when($q !== '', function ($query) use ($q) {
                 $search = "%{$q}%";
                 $query->where(function ($q2) use ($search) {
@@ -52,6 +61,8 @@ class AsetController extends Controller
             })
             ->when($siklus !== '', fn ($query) => $query->where('siklus_hidup', $siklus))
             ->when($ruangId, fn ($query) => $query->where('aset_ruang_id', $ruangId))
+            ->when($monitoring === 'dimonitor', fn ($query) => $query->whereHas('monitoredDevice'))
+            ->when($monitoring === 'tidak', fn ($query) => $query->whereDoesntHave('monitoredDevice'))
             ->orderByDesc('id')
             ->paginate(20)
             ->withQueryString();
@@ -92,6 +103,12 @@ class AsetController extends Controller
                         ? asset('storage/'.$fotoPortal)
                         : ($aset->path_foto_sumber ? route('aset.foto-sumber', $aset) : null),
                     'open_tickets' => (int) ($openTickets[$aset->id] ?? 0),
+                    'monitoring' => $aset->monitoredDevice ? [
+                        'device_id' => $aset->monitoredDevice->id,
+                        'status' => $aset->monitoredDevice->status,
+                        'hostname' => $aset->monitoredDevice->hostname
+                            ?: $aset->monitoredDevice->computer_name,
+                    ] : null,
                 ];
             })
         );
@@ -104,6 +121,7 @@ class AsetController extends Controller
                 'kelas_aset' => $kelas,
                 'siklus_hidup' => $siklus,
                 'aset_ruang_id' => $ruangId,
+                'monitoring' => $monitoring,
             ],
             'stats' => [
                 'total' => Aset::query()->count(),
@@ -111,6 +129,7 @@ class AsetController extends Controller
                 'aktif' => Aset::query()->where('siklus_hidup', 'aktif')->count(),
                 'medis' => Aset::query()->whereHas('barang', fn ($b) => $b->where('kelas_aset', 'medis'))->count(),
                 'non_medis' => Aset::query()->whereHas('barang', fn ($b) => $b->where('kelas_aset', 'non_medis'))->count(),
+                'dimonitor' => Aset::query()->whereHas('monitoredDevice')->count(),
             ],
         ]);
     }
@@ -120,21 +139,6 @@ class AsetController extends Controller
         return Inertia::render('aset/create', [
             ...$this->masterFormOptions(),
             'penyusutanDefaults' => app(PengaturanPenyusutanAset::class)->all(),
-            'barang' => AsetBarang::query()
-                ->with(['merk', 'jenis', 'kategori', 'produsen'])
-                ->orderBy('nama_barang')
-                ->limit(500)
-                ->get()
-                ->map(fn (AsetBarang $b) => [
-                    'id' => $b->id,
-                    'kode_barang' => $b->kode_barang,
-                    'nama_barang' => $b->nama_barang,
-                    'kelas_aset' => $b->kelas_aset,
-                    'aset_merk_id' => $b->aset_merk_id,
-                    'aset_jenis_id' => $b->aset_jenis_id,
-                    'aset_kategori_id' => $b->aset_kategori_id,
-                    'aset_produsen_id' => $b->aset_produsen_id,
-                ]),
         ]);
     }
 
@@ -319,7 +323,109 @@ class AsetController extends Controller
             'ruangOptions' => AsetRuang::query()->orderBy('nama_ruang')->get(['id', 'kode_ruang', 'nama_ruang']),
             'penyusutan' => $penyusutan,
             'dokumen' => $this->dokumenUntukShow($aset),
+            'monitoring' => $this->monitoringSummaryFor($aset),
+            'canLinkMonitoring' => $aset->isMonitorableForAgent(),
+            'linkableDevices' => $aset->isMonitorableForAgent()
+                ? $this->linkableDevicesFor($aset)
+                : [],
         ]);
+    }
+
+    public function updateMonitoring(LinkAsetMonitoredDeviceRequest $request, Aset $aset): RedirectResponse
+    {
+        $deviceId = $request->validated('monitored_device_id');
+
+        DB::transaction(function () use ($aset, $deviceId): void {
+            MonitoredDevice::query()
+                ->where('aset_id', $aset->id)
+                ->update(['aset_id' => null]);
+
+            if ($deviceId !== null && $deviceId !== '') {
+                MonitoredDevice::query()
+                    ->whereKey((int) $deviceId)
+                    ->update(['aset_id' => $aset->id]);
+            }
+        });
+
+        $linked = $deviceId !== null && $deviceId !== '';
+
+        return redirect()
+            ->route('aset.show', $aset)
+            ->with('success', $linked ? 'Perangkat monitoring berhasil dihubungkan.' : 'Tautan perangkat monitoring dilepas.');
+    }
+
+    /**
+     * @return list<array{id: int, label: string, status: string}>
+     */
+    private function linkableDevicesFor(Aset $aset): array
+    {
+        return MonitoredDevice::query()
+            ->where(function ($query) use ($aset): void {
+                $query
+                    ->whereNull('aset_id')
+                    ->orWhere('aset_id', $aset->id);
+            })
+            ->orderByRaw('CASE WHEN status = ? THEN 0 ELSE 1 END', [MonitoredDevice::STATUS_ONLINE])
+            ->orderBy('hostname')
+            ->limit(200)
+            ->get(['id', 'hostname', 'computer_name', 'ip_address', 'status', 'last_seen_at'])
+            ->map(function (MonitoredDevice $device): array {
+                $parts = array_filter([
+                    $device->hostname ?: $device->computer_name ?: "Device #{$device->id}",
+                    $device->ip_address,
+                    $device->status,
+                ]);
+
+                return [
+                    'id' => $device->id,
+                    'label' => implode(' · ', $parts),
+                    'status' => $device->status,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array{
+     *     device_id: int,
+     *     hostname: string|null,
+     *     status: string,
+     *     last_seen_at: string|null,
+     *     last_cpu_percent: string|float|null,
+     *     last_ram_percent: string|float|null,
+     *     last_disk_percent: string|float|null,
+     *     agent_version: string|null
+     * }|null
+     */
+    private function monitoringSummaryFor(Aset $aset): ?array
+    {
+        $device = $aset->monitoredDevice()->first([
+            'id',
+            'hostname',
+            'computer_name',
+            'status',
+            'last_seen_at',
+            'last_cpu_percent',
+            'last_ram_percent',
+            'last_disk_percent',
+            'agent_version',
+        ]);
+
+        if ($device === null) {
+            return null;
+        }
+
+        return [
+            'device_id' => $device->id,
+            'hostname' => $device->hostname ?: $device->computer_name,
+            'status' => $device->status,
+            'last_seen_at' => $device->last_seen_at?->toIso8601String(),
+            'last_cpu_percent' => $device->last_cpu_percent,
+            'last_ram_percent' => $device->last_ram_percent,
+            'last_disk_percent' => $device->last_disk_percent,
+            'agent_version' => $device->agent_version,
+        ];
     }
 
     /**
@@ -554,7 +660,7 @@ class AsetController extends Controller
         return [
             'ruang' => AsetRuang::query()->orderBy('nama_ruang')->get(['id', 'kode_ruang', 'nama_ruang']),
             'kategori' => AsetKategori::query()->orderBy('nama_kategori')->get(['id', 'kode_kategori', 'nama_kategori']),
-            'jenis' => AsetJenis::query()->orderBy('nama_jenis')->get(['id', 'kode_jenis', 'nama_jenis']),
+            'jenis' => AsetJenis::query()->orderBy('nama_jenis')->get(['id', 'kode_jenis', 'nama_jenis', 'aset_merk_id']),
             'merk' => AsetMerk::query()->orderBy('nama_merk')->get(['id', 'kode_merk', 'nama_merk']),
             'produsen' => AsetProdusen::query()->orderBy('nama_produsen')->get(['id', 'kode_produsen', 'nama_produsen']),
             'distributor' => AsetDistributor::query()->orderBy('nama_distributor')->get(['id', 'kode_distributor', 'nama_distributor']),

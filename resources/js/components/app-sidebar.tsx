@@ -12,6 +12,8 @@ import {
     ListFilter,
     MapPin,
     Package,
+    Server,
+    Settings2,
     Ticket,
     UserCircle,
     Users,
@@ -79,11 +81,6 @@ const mainNavItems: NavItem[] = [
         icon: Package,
     },
     {
-        title: 'Monitoring',
-        href: '/monitoring',
-        icon: Activity,
-    },
-    {
         title: 'Inventaris SIMRS',
         href: '/inventaris',
         icon: Package,
@@ -115,6 +112,24 @@ const mainNavItems: NavItem[] = [
     },
 ];
 
+const monitoringNavItems: NavItem[] = [
+    {
+        title: 'Perangkat',
+        href: '/monitoring',
+        icon: Activity,
+    },
+    {
+        title: 'Kategori Monitor',
+        href: '/monitoring/pengaturan-kategori',
+        icon: Settings2,
+    },
+    {
+        title: 'Kesehatan Infrastruktur',
+        href: '/infrastruktur',
+        icon: Server,
+    },
+];
+
 const settingsNavItems: NavItem[] = [
     {
         title: 'Master Tiket',
@@ -140,6 +155,7 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <NavMain items={mainNavItems} />
+                <NavMain items={monitoringNavItems} label="Monitoring" />
                 <NavMain items={settingsNavItems} label="Pengaturan" />
             </SidebarContent>
 

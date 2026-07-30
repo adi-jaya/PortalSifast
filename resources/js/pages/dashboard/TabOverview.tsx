@@ -49,7 +49,7 @@ const statCards = [
         sublabel: 'Belum selesai',
         value: (p: Props) => p.stats.total_open,
         icon: ListTodo,
-        bgClass: 'bg-primary/10 text-primary',
+        variant: 'brand' as const,
     },
     {
         href: '/tickets?include_closed=1&status=7',
@@ -57,7 +57,7 @@ const statCards = [
         sublabel: 'Bulan ini',
         value: (p: Props) => p.stats.total_closed_month,
         icon: CheckCircle,
-        bgClass: 'bg-primary/10 text-primary',
+        variant: 'brand' as const,
     },
     {
         href: '/tickets?status=6',
@@ -65,7 +65,7 @@ const statCards = [
         sublabel: 'Melewati SLA',
         value: (p: Props) => p.stats.overdue,
         icon: AlertTriangle,
-        bgClass: 'bg-destructive/10 text-destructive',
+        variant: 'danger' as const,
     },
     {
         href: '/tickets?assignee=me',
@@ -73,7 +73,7 @@ const statCards = [
         sublabel: (p: Props) => `${p.stats.unassigned} belum ditugaskan`,
         value: (p: Props) => p.stats.assigned_to_me,
         icon: Clock,
-        bgClass: 'bg-primary/10 text-primary',
+        variant: 'brand' as const,
     },
 ];
 
@@ -86,29 +86,35 @@ export default function TabOverview(props: Props) {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-stagger">
                 {statCards.map((card) => {
                     const Icon = card.icon;
+                    const isDanger = card.variant === 'danger';
+
                     return (
                         <Link
                             key={card.label}
                             href={card.href}
-                            className="group card-refined block rounded-xl border border-border p-5"
+                            className={
+                                isDanger
+                                    ? 'group block rounded-2xl border-0 bg-destructive p-5 text-destructive-foreground shadow-md transition duration-200 hover:-translate-y-0.5 hover:shadow-lg'
+                                    : 'group card-brand block'
+                            }
                         >
                             <div className="mb-3 flex items-center justify-between">
-                                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                <span className="text-xs font-medium uppercase tracking-wide opacity-80">
                                     {card.label}
                                 </span>
-                                <div className={`flex size-8 items-center justify-center rounded-lg ${card.bgClass}`}>
+                                <div className="flex size-8 items-center justify-center rounded-lg bg-white/20">
                                     <Icon className="size-4" />
                                 </div>
                             </div>
-                            <div className="text-3xl font-bold tracking-tight text-foreground">
+                            <div className="text-3xl font-bold tracking-tight">
                                 {card.value(props)}
                             </div>
-                            <div className="mt-1 text-xs text-muted-foreground">
+                            <div className="mt-1 text-xs opacity-80">
                                 {typeof card.sublabel === 'function'
                                     ? card.sublabel(props)
                                     : card.sublabel}
                             </div>
-                            <div className="mt-3 flex items-center gap-1 text-xs font-medium text-primary opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                            <div className="mt-3 flex items-center gap-1 text-xs font-medium opacity-0 transition-opacity duration-150 group-hover:opacity-100">
                                 <span>Lihat</span>
                                 <ArrowRight className="size-3" />
                             </div>

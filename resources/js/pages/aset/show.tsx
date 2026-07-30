@@ -1,7 +1,9 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { ArrowLeft, ArrowLeftRight, Download, HandCoins, QrCode, Ticket, Trash2 } from 'lucide-react';
-import { FormEvent, useRef, type ReactNode } from 'react';
+import { Activity, ArrowLeft, ArrowLeftRight, Download, HandCoins, QrCode, Ticket, Trash2 } from 'lucide-react';
+import { FormEvent, useEffect, useRef, type ReactNode } from 'react';
 import InputError from '@/components/input-error';
+import { DeviceLinkPicker, type LinkableDeviceOption } from '@/components/monitoring/device-link-picker';
+import { MetricBar } from '@/components/monitoring/metric-bar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +18,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
+import { formatRelativeId } from '@/lib/monitoring';
+import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
 
@@ -82,6 +86,18 @@ type Props = {
     ruangOptions: { id: number; kode_ruang: string; nama_ruang: string }[];
     penyusutan?: Penyusutan;
     dokumen?: DokumenRow[];
+    monitoring?: {
+        device_id: number;
+        hostname: string | null;
+        status: 'online' | 'offline' | string;
+        last_seen_at: string | null;
+        last_cpu_percent: string | number | null;
+        last_ram_percent: string | number | null;
+        last_disk_percent: string | number | null;
+        agent_version: string | null;
+    } | null;
+    canLinkMonitoring?: boolean;
+    linkableDevices?: LinkableDeviceOption[];
 };
 
 type DokumenRow = {
@@ -301,6 +317,9 @@ export default function AsetShow({
     ruangOptions,
     penyusutan,
     dokumen = [],
+    monitoring = null,
+    canLinkMonitoring = false,
+    linkableDevices = [],
 }: Props) {
     const tersedia = (aset.status_ketersediaan ?? 'tersedia') === 'tersedia';
     const fileRef = useRef<HTMLInputElement>(null);
@@ -317,6 +336,14 @@ export default function AsetShow({
         lingkup: 'unit',
         judul: '',
     });
+    const deviceLinkForm = useForm<{ monitored_device_id: number | null }>({
+        monitored_device_id: monitoring?.device_id ?? null,
+    });
+
+    useEffect(() => {
+        deviceLinkForm.setData('monitored_device_id', monitoring?.device_id ?? null);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [monitoring?.device_id]);
     const verifikasi = useForm({
         aset_ruang_id: aset.ruang?.id ? String(aset.ruang.id) : '',
         tahun_registrasi: String(aset.tahun_registrasi ?? new Date().getFullYear()),
@@ -412,6 +439,20 @@ export default function AsetShow({
                                 {aset.barang?.kelas_aset ? (
                                     <Badge variant="outline" className="capitalize">{aset.barang.kelas_aset}</Badge>
                                 ) : null}
+                                {monitoring ? (
+                                    <Badge
+                                        variant="outline"
+                                        className={cn(
+                                            'capitalize',
+                                            monitoring.status === 'online'
+                                                ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                                                : 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200',
+                                        )}
+                                    >
+                                        <Activity className="mr-1 size-3" />
+                                        {monitoring.status}
+                                    </Badge>
+                                ) : null}
                             </div>
                         </div>
                     </div>
@@ -456,6 +497,114 @@ export default function AsetShow({
 
                 <div className="grid gap-4 lg:grid-cols-3">
                     <div className="space-y-4 lg:col-span-2">
+                        <Section title="Monitoring perangkat">
+                            {monitoring ? (
+                                <div className="space-y-4">
+                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                        <div>
+                                            <p className="text-sm font-semibold tracking-tight">
+                                                {monitoring.hostname || `Perangkat #${monitoring.device_id}`}
+                                            </p>
+                                            <p className="mt-0.5 text-xs text-muted-foreground">
+                                                Last seen {formatRelativeId(monitoring.last_seen_at)}
+                                                {monitoring.agent_version ? ` · Agent ${monitoring.agent_version}` : ''}
+                                            </p>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            <Badge
+                                                variant="outline"
+                                                className={cn(
+                                                    'capitalize',
+                                                    monitoring.status === 'online'
+                                                        ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                                                        : 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200',
+                                                )}
+                                            >
+                                                {monitoring.status}
+                                            </Badge>
+                                            <Button variant="outline" size="sm" asChild>
+                                                <Link href={`/monitoring/${monitoring.device_id}`}>
+                                                    <Activity className="mr-1.5 size-3.5" />
+                                                    Buka monitoring
+                                                </Link>
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <div className="grid gap-2 sm:grid-cols-3">
+                                        <div className="rounded-lg border border-border/70 px-3 py-2">
+                                            <MetricBar label="CPU" value={monitoring.last_cpu_percent} />
+                                        </div>
+                                        <div className="rounded-lg border border-border/70 px-3 py-2">
+                                            <MetricBar label="RAM" value={monitoring.last_ram_percent} />
+                                        </div>
+                                        <div className="rounded-lg border border-border/70 px-3 py-2">
+                                            <MetricBar label="Disk" value={monitoring.last_disk_percent} />
+                                        </div>
+                                    </div>
+                                    {canLinkMonitoring ? (
+                                        <DeviceLinkPicker
+                                            linkedDeviceId={monitoring.device_id}
+                                            options={linkableDevices}
+                                            value={deviceLinkForm.data.monitored_device_id}
+                                            onChange={(id) => deviceLinkForm.setData('monitored_device_id', id)}
+                                            onSubmit={() =>
+                                                deviceLinkForm.patch(`/aset/${aset.kode_aset}/monitoring`, {
+                                                    preserveScroll: true,
+                                                })
+                                            }
+                                            onUnlink={() => {
+                                                router.patch(
+                                                    `/aset/${aset.kode_aset}/monitoring`,
+                                                    { monitored_device_id: null },
+                                                    { preserveScroll: true },
+                                                );
+                                            }}
+                                            processing={deviceLinkForm.processing}
+                                            error={deviceLinkForm.errors.monitored_device_id}
+                                            recentlySuccessful={deviceLinkForm.recentlySuccessful}
+                                        />
+                                    ) : null}
+                                </div>
+                            ) : canLinkMonitoring ? (
+                                <div className="space-y-3">
+                                    <p className="text-sm text-muted-foreground">
+                                        Belum terhubung ke RS Agent. Pilih perangkat yang sudah register, atau buka daftar
+                                        perangkat yang belum terhubung.
+                                    </p>
+                                    <DeviceLinkPicker
+                                        linkedDeviceId={null}
+                                        options={linkableDevices}
+                                        value={deviceLinkForm.data.monitored_device_id}
+                                        onChange={(id) => deviceLinkForm.setData('monitored_device_id', id)}
+                                        onSubmit={() =>
+                                            deviceLinkForm.patch(`/aset/${aset.kode_aset}/monitoring`, {
+                                                preserveScroll: true,
+                                            })
+                                        }
+                                        processing={deviceLinkForm.processing}
+                                        error={deviceLinkForm.errors.monitored_device_id}
+                                        recentlySuccessful={deviceLinkForm.recentlySuccessful}
+                                        defaultEditing
+                                    />
+                                    <Button variant="ghost" size="sm" asChild className="-ml-2">
+                                        <Link href="/monitoring?aset_link=unlinked">
+                                            Lihat semua perangkat belum terhubung
+                                        </Link>
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    <p className="text-sm text-muted-foreground">
+                                        Kategori aset ini belum diizinkan untuk dimonitor. Centang kategorinya di
+                                        pengaturan, atau perbaiki master barang jika kategorinya salah.
+                                    </p>
+                                    <Button variant="outline" size="sm" asChild>
+                                        <Link href="/monitoring/pengaturan-kategori">Atur kategori monitor</Link>
+                                    </Button>
+                                </div>
+                            )}
+                        </Section>
+
                         <Section title="Identitas">
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <Field label="Nama">{dash(aset.barang?.nama_barang)}</Field>

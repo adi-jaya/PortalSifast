@@ -1,0 +1,4 @@
+{
+  "summary": "Explained how to run monitoring offline marking: one-shot artisan command, permanent cron already installed for schedule:run every minute, and how to verify via crontab/list and UI refresh.",
+  "current_status": "Cron for PortalSifast schedule:run is active under user replikasi; mark-offline currently reports 0 (no stale online devices)."
+}

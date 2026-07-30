@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AsetJenis extends Model
@@ -12,6 +13,7 @@ class AsetJenis extends Model
     protected $fillable = [
         'kode_jenis',
         'nama_jenis',
+        'aset_merk_id',
         'hash_sumber',
         'disinkron_pada',
     ];
@@ -21,6 +23,11 @@ class AsetJenis extends Model
         return [
             'disinkron_pada' => 'datetime',
         ];
+    }
+
+    public function merk(): BelongsTo
+    {
+        return $this->belongsTo(AsetMerk::class, 'aset_merk_id');
     }
 
     public function barang(): HasMany

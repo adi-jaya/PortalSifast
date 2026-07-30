@@ -1,0 +1,4 @@
+{
+  "summary": "Added UI at /monitoring/pengaturan-kategori to configure which inventaris kategori codes may link to RS Agent. Persists via aset_pengaturan + PengaturanMonitorableKategori service (defaults from config). Wired into isMonitorableForAgent; 15 related tests passed.",
+  "current_status": "User can enable KI014 Display (or any kategori) from settings so INV-RI052-2026-0002 can be linked. Needs npm run build for frontend."
+}

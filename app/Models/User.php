@@ -37,6 +37,7 @@ class User extends Authenticatable
         'role',
         'dep_id',
         'can_access_payroll',
+        'can_access_patroli',
         'can_manage_mutu',
         'can_input_mutu',
         'can_view_mutu_dashboard',
@@ -73,6 +74,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
             'can_access_payroll' => 'boolean',
+            'can_access_patroli' => 'boolean',
             'can_manage_mutu' => 'boolean',
             'can_input_mutu' => 'boolean',
             'can_view_mutu_dashboard' => 'boolean',
@@ -188,6 +190,16 @@ class User extends Authenticatable
         return $this->isSuperAdmin();
     }
 
+    public function canAccessPatroli(): bool
+    {
+        return $this->isSuperAdmin() || (bool) $this->can_access_patroli;
+    }
+
+    public function canManagePatroliAccess(): bool
+    {
+        return $this->isSuperAdmin();
+    }
+
     public function canManageWebOfficial(): bool
     {
         return $this->isSuperAdmin()
@@ -214,6 +226,7 @@ class User extends Authenticatable
             'role' => $this->role,
             'dep_id' => $this->dep_id,
             'can_manage_web_official' => $this->canManageWebOfficial(),
+            'can_access_patroli' => $this->canAccessPatroli(),
         ];
     }
 

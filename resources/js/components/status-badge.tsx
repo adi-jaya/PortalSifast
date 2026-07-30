@@ -4,17 +4,17 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 const statusBadgeVariants = cva(
-    'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium whitespace-nowrap',
+    'inline-flex h-6 items-center rounded-full border px-2.5 py-1 text-xs font-semibold whitespace-nowrap',
     {
         variants: {
             tone: {
-                primary: 'border-primary/20 bg-primary-light text-primary',
-                neutral: 'border-border bg-surface-2 text-ink-muted',
-                normal: 'border-normal/20 bg-normal-bg text-normal',
-                warning: 'border-warning/20 bg-warning-bg text-warning',
-                urgent: 'border-urgent/20 bg-urgent-bg text-urgent',
-                info: 'border-info/20 bg-info-bg text-info',
-                'follow-up': 'border-follow-up/20 bg-follow-up-bg text-follow-up',
+                primary: 'border-transparent bg-info-bg text-info',
+                neutral: 'border-transparent bg-gray-100 text-gray-700',
+                normal: 'border-transparent bg-normal-bg text-normal',
+                warning: 'border-transparent bg-warning-bg text-warning',
+                urgent: 'border-transparent bg-urgent-bg text-urgent',
+                info: 'border-transparent bg-info-bg text-info',
+                'follow-up': 'border-transparent bg-follow-up-bg text-follow-up',
             },
         },
         defaultVariants: {

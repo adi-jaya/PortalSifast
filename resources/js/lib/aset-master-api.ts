@@ -6,6 +6,7 @@ export type AsetMasterItem = {
     id: number;
     kode: string;
     nama: string;
+    aset_merk_id?: number | null;
 };
 
 type QuickCreateResponse = {
@@ -16,10 +17,16 @@ type QuickCreateResponse = {
 export async function quickCreateAsetMaster(
     tipe: AsetMasterTipe,
     nama: string,
+    extra: { aset_merk_id?: number | null } = {},
 ): Promise<QuickCreateResponse | null> {
     const trimmed = nama.trim();
     if (trimmed.length < 2) {
         return null;
+    }
+
+    const body: Record<string, unknown> = { nama: trimmed };
+    if (tipe === 'jenis' && extra.aset_merk_id) {
+        body.aset_merk_id = extra.aset_merk_id;
     }
 
     const response = await fetch(`/aset/master/${tipe}`, {
@@ -29,7 +36,7 @@ export async function quickCreateAsetMaster(
             Accept: 'application/json',
             'X-XSRF-TOKEN': getCsrfToken() ?? '',
         },
-        body: JSON.stringify({ nama: trimmed }),
+        body: JSON.stringify(body),
     });
 
     if (!response.ok) {

@@ -3,6 +3,7 @@
 namespace App\Services\Inventaris;
 
 use App\Models\Aset;
+use App\Models\AsetAspakAlat;
 use App\Models\AsetBarang;
 use App\Models\AsetFoto;
 use App\Models\AsetNonAlkes;
@@ -26,9 +27,9 @@ class BuatAsetBatch
     public function buat(array $data, ?User $user = null, ?UploadedFile $foto = null): array
     {
         return DB::transaction(function () use ($data, $user, $foto) {
-            $ruang = AsetRuang::query()->findOrFail($data['aset_ruang_id']);
-            $barangId = $this->resolveBarangId($data);
             $jumlah = max(1, min(50, (int) ($data['jumlah_unit'] ?? 1)));
+            $ruangIds = $this->normalizeRuangIds($data, $jumlah);
+            $barangId = $this->resolveBarangId($data);
             $serials = $this->normalizeSerials($data, $jumlah);
             $status = PemetaanStatusAset::dariInputForm(
                 $data['status_fungsi'] ?? null,
@@ -37,6 +38,7 @@ class BuatAsetBatch
 
             $created = [];
             for ($i = 0; $i < $jumlah; $i++) {
+                $ruang = AsetRuang::query()->findOrFail($ruangIds[$i]);
                 $kode = $this->generator->generate($ruang->kode_ruang, (int) $data['tahun_registrasi']);
 
                 $aset = Aset::query()->create([
@@ -81,6 +83,32 @@ class BuatAsetBatch
 
     /**
      * @param  array<string, mixed>  $data
+     * @return array<int, int>
+     */
+    private function normalizeRuangIds(array $data, int $jumlah): array
+    {
+        $list = $data['aset_ruang_id_list'] ?? [];
+        if (! is_array($list)) {
+            $list = [];
+        }
+
+        $ids = [];
+        for ($i = 0; $i < $jumlah; $i++) {
+            $fromList = $list[$i] ?? null;
+            $id = filled($fromList) ? (int) $fromList : (filled($data['aset_ruang_id'] ?? null) ? (int) $data['aset_ruang_id'] : null);
+            if ($id === null) {
+                throw ValidationException::withMessages([
+                    "aset_ruang_id_list.{$i}" => 'Ruang unit '.($i + 1).' wajib dipilih.',
+                ]);
+            }
+            $ids[] = $id;
+        }
+
+        return $ids;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
      */
     private function resolveBarangId(array $data): int
     {
@@ -89,6 +117,10 @@ class BuatAsetBatch
             $barang->update($this->payloadBarang($data, $barang->kode_barang));
 
             return $barang->id;
+        }
+
+        if (! empty($data['aset_aspak_alat_id'])) {
+            return $this->resolveBarangFromAspak($data);
         }
 
         if (! empty($data['aset_non_alkes_id'])) {
@@ -101,6 +133,64 @@ class BuatAsetBatch
         ));
 
         return $barang->id;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function resolveBarangFromAspak(array $data): int
+    {
+        $aspak = AsetAspakAlat::query()->findOrFail($data['aset_aspak_alat_id']);
+
+        if (! $aspak->isLeaf()) {
+            throw ValidationException::withMessages([
+                'aset_aspak_alat_id' => 'Hanya item katalog ASPAK paling bawah (leaf) yang boleh dipilih.',
+            ]);
+        }
+
+        $kodeBarang = $this->kodeBarangDariAspak($aspak);
+        $namaBarang = filled($data['nama_barang'] ?? null)
+            ? (string) $data['nama_barang']
+            : $aspak->nama_alat;
+
+        $existing = AsetBarang::query()
+            ->where(function ($q) use ($aspak, $kodeBarang) {
+                $q->where('aset_aspak_alat_id', $aspak->id)
+                    ->orWhere('kode_barang', $kodeBarang);
+            })
+            ->first();
+
+        $wajibKalibrasi = array_key_exists('wajib_kalibrasi', $data)
+            ? (bool) $data['wajib_kalibrasi']
+            : (bool) $aspak->wajib_kalibrasi;
+
+        $payload = $this->payloadBarang(
+            array_merge($data, [
+                'nama_barang' => $namaBarang,
+                'aset_aspak_alat_id' => $aspak->id,
+                'kelas_aset' => $data['kelas_aset'] ?? 'medis',
+                'wajib_kalibrasi' => $wajibKalibrasi,
+            ]),
+            $existing?->kode_barang ?? $kodeBarang,
+        );
+
+        if ($existing !== null) {
+            $existing->update($payload);
+
+            return $existing->id;
+        }
+
+        return AsetBarang::query()->create($payload)->id;
+    }
+
+    private function kodeBarangDariAspak(AsetAspakAlat $aspak): string
+    {
+        $kode = $aspak->kode ?: $aspak->alat_code;
+        if (filled($kode) && strlen((string) $kode) <= 20) {
+            return (string) $kode;
+        }
+
+        return 'AP'.substr((string) $aspak->id_alat_aspak, -8);
     }
 
     /**
@@ -133,6 +223,7 @@ class BuatAsetBatch
                 'nama_barang' => $namaBarang,
                 'aset_non_alkes_id' => $nonAlkes->id,
                 'kelas_aset' => $data['kelas_aset'] ?? 'non_medis',
+                'aset_kategori_id' => $data['aset_kategori_id'] ?? $nonAlkes->resolvedKategoriId(),
             ]),
             $existing?->kode_barang ?? $kodeBarang,
         );

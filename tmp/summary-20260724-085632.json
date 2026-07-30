@@ -1,0 +1,4 @@
+{
+  "summary": "User asked for a CSV example for master non-alkes import and whether their m_non_alkes SQL INSERT format is correct. Confirmed it matches ImportAsetMasterCommand (aset:import-master --tipe=non_alkes): columns id_alat,alat_name,alat_code,parent_id,alat_ket,level,sinonim,kode,deleted,alat_path; parent_id 0 becomes null; hierarchy via id_alat of parent.",
+  "current_status": "Katalog Non-Alkes page is read-only browse UI; import is via artisan CSV compatible with m_non_alkes dump. No code changes made."
+}
