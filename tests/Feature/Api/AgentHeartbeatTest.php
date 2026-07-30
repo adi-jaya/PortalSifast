@@ -47,6 +47,11 @@ it('accepts heartbeat with a valid device api key', function () {
                 ['name' => 'HP Printer', 'kind' => 'printer', 'device_id' => 'USB001'],
             ],
         ],
+        'sensors' => [
+            'supported' => false,
+            'note' => 'Sensor suhu ACPI tidak tersedia di perangkat ini.',
+            'readings' => [],
+        ],
     ]);
 
     $response
@@ -68,6 +73,8 @@ it('accepts heartbeat with a valid device api key', function () {
         ->and($device->critical_software[0]['status'] ?? null)->toBe('running')
         ->and($device->usb_inventory['ports_empty'] ?? null)->toBe(5)
         ->and($device->usb_inventory['has_removable_storage'] ?? null)->toBeFalse()
+        ->and($device->sensors['supported'] ?? null)->toBeFalse()
+        ->and($device->sensors['note'] ?? null)->toBe('Sensor suhu ACPI tidak tersedia di perangkat ini.')
         ->and(DeviceMetricSample::query()->where('monitored_device_id', $device->id)->count())->toBe(1);
 });
 

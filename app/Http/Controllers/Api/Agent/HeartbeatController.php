@@ -42,6 +42,10 @@ class HeartbeatController extends Controller
             $updates['usb_inventory'] = $validated['usb'];
         }
 
+        if (array_key_exists('sensors', $validated) && is_array($validated['sensors'])) {
+            $updates['sensors'] = $validated['sensors'];
+        }
+
         MonitoredDevice::query()->whereKey($device->id)->update($updates);
 
         $hardware = $validated['hardware'] ?? null;

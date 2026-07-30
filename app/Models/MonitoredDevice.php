@@ -34,6 +34,7 @@ class MonitoredDevice extends Model
         'uptime_seconds',
         'critical_software',
         'usb_inventory',
+        'sensors',
         'aset_id',
     ];
 
@@ -47,6 +48,7 @@ class MonitoredDevice extends Model
             'uptime_seconds' => 'integer',
             'critical_software' => 'array',
             'usb_inventory' => 'array',
+            'sensors' => 'array',
         ];
     }
 

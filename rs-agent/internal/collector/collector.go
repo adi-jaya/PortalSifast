@@ -25,6 +25,7 @@ type Snapshot struct {
 	Metrics          Metrics
 	CriticalSoftware []CriticalSoftware
 	USB              USBInventory
+	Sensors          Sensors
 }
 
 type Hardware struct {
@@ -142,6 +143,7 @@ func Collect(deviceUUID, agentVersion string) (Snapshot, error) {
 		},
 		CriticalSoftware: collectCriticalSoftware(),
 		USB:              collectUSBInventory(),
+		Sensors:          collectSensors(),
 	}, nil
 }
 

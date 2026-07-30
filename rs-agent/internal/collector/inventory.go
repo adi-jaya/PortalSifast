@@ -1,6 +1,9 @@
 package collector
 
-import "strings"
+import (
+	"math"
+	"strings"
+)
 
 // CriticalSoftware describes presence of remote-access / sync tools.
 type CriticalSoftware struct {
@@ -28,6 +31,27 @@ type USBInventory struct {
 	Estimated             bool        `json:"estimated"`
 	Note                  string      `json:"note,omitempty"`
 	Devices               []USBDevice `json:"devices"`
+}
+
+// SensorReading is one ACPI thermal zone reading (best-effort, Windows-only).
+type SensorReading struct {
+	Name         string  `json:"name"`
+	TemperatureC float64 `json:"temperature_c"`
+}
+
+// Sensors holds best-effort ACPI thermal data. Many OEM boards do not expose
+// MSAcpi_ThermalZoneTemperature via WMI, so Supported=false with empty
+// Readings is common and expected — it is not an agent error.
+type Sensors struct {
+	Supported bool            `json:"supported"`
+	Note      string          `json:"note,omitempty"`
+	Readings  []SensorReading `json:"readings"`
+}
+
+// kelvinTenthsToCelsius converts MSAcpi_ThermalZoneTemperature's raw value
+// (tenths of a degree Kelvin) to Celsius, rounded to one decimal place.
+func kelvinTenthsToCelsius(raw uint32) float64 {
+	return math.Round((float64(raw)/10-273.15)*10) / 10
 }
 
 func classifyUSB(lower, pnpClass string) string {

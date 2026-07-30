@@ -55,6 +55,7 @@ type Device = {
     uptime_seconds: number | null;
     critical_software: CriticalSoftware[] | null;
     usb_inventory: UsbInventory | null;
+    sensors: Sensors | null;
     hardware: Hardware | null;
     aset: { id: number; kode_aset: string; no_seri: string | null } | null;
 };
@@ -84,6 +85,17 @@ type UsbInventory = {
     devices: UsbDevice[];
 };
 
+type SensorReading = {
+    name: string;
+    temperature_c: number;
+};
+
+type Sensors = {
+    supported: boolean;
+    note?: string | null;
+    readings: SensorReading[];
+};
+
 type LinkableAsset = {
     id: number;
     label: string;
@@ -103,6 +115,16 @@ function dash(value: string | number | null | undefined): string {
     }
 
     return String(value);
+}
+
+function temperatureBadgeClass(celsius: number): string {
+    if (celsius >= 80) {
+        return 'border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300';
+    }
+    if (celsius >= 60) {
+        return 'border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-200';
+    }
+    return 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
 }
 
 function Field({ label, value }: { label: string; value: ReactNode }) {
@@ -349,6 +371,29 @@ export default function MonitoringShow({ device, recentSamples, linkableAssets }
                         </>
                     ) : (
                         <p className="text-sm text-muted-foreground">Belum ada data USB (butuh agent terbaru).</p>
+                    )}
+                </Panel>
+
+                <Panel
+                    title="Sensor suhu"
+                    hint="Best-effort via ACPI thermal zone Windows — tidak semua motherboard/laptop mendukungnya."
+                >
+                    {device.sensors?.supported && device.sensors.readings.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                            {device.sensors.readings.map((reading, idx) => (
+                                <Badge
+                                    key={`${reading.name}-${idx}`}
+                                    variant="outline"
+                                    className={cn(temperatureBadgeClass(reading.temperature_c))}
+                                >
+                                    {reading.name}: {reading.temperature_c.toFixed(1)}°C
+                                </Badge>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-muted-foreground">
+                            {device.sensors?.note ?? 'Sensor suhu tidak didukung/belum ada data dari perangkat ini.'}
+                        </p>
                     )}
                 </Panel>
 

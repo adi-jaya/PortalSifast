@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\DeviceMetricSample;
+use App\Support\AgentLog;
 use Illuminate\Console\Command;
 
 class PruneDeviceMetricSamplesCommand extends Command

@@ -28,6 +28,25 @@ func TestLoadDefaults(t *testing.T) {
 	}
 }
 
+func TestLoadStripsUTF8BOM(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.json")
+	payload := append([]byte{0xEF, 0xBB, 0xBF}, []byte(`{"server":"https://example.com"}`)...)
+	if err := os.WriteFile(path, payload, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Server != "https://example.com" {
+		t.Fatalf("server=%q", cfg.Server)
+	}
+}
+
 func TestLoadRequiresServer(t *testing.T) {
 	t.Parallel()
 

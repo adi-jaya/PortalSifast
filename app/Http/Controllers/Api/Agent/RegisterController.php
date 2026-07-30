@@ -57,6 +57,7 @@ class RegisterController extends Controller
                     'api_key_prefix' => $this->apiKeys->prefix($plainKey),
                     'api_key_hash' => $this->apiKeys->hash($plainKey),
                     'agent_version' => $validated['agent_version'] ?? null,
+                    'sensors' => $validated['sensors'] ?? null,
                     'status' => MonitoredDevice::STATUS_ONLINE,
                     'last_seen_at' => now(),
                     // aset_id: manual link only (Phase 2.3) — do not auto-match serial

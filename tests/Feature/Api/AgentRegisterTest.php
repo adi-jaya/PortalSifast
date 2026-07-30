@@ -28,6 +28,12 @@ it('registers a new monitored device and returns an api key', function () {
             'disk_total_gb' => 256,
             'serial_number' => 'SN-TEST-001',
         ],
+        'sensors' => [
+            'supported' => true,
+            'readings' => [
+                ['name' => 'ThermalZone\\_TZ0', 'temperature_c' => 45.5],
+            ],
+        ],
     ]);
 
     $response
@@ -43,7 +49,9 @@ it('registers a new monitored device and returns an api key', function () {
         ->and($device->hostname)->toBe('pc-lab-01')
         ->and($device->hardware)->not->toBeNull()
         ->and($device->hardware->serial_number)->toBe('SN-TEST-001')
-        ->and($device->api_key_prefix)->toHaveLength(8);
+        ->and($device->api_key_prefix)->toHaveLength(8)
+        ->and($device->sensors['supported'] ?? null)->toBeTrue()
+        ->and($device->sensors['readings'][0]['temperature_c'] ?? null)->toBe(45.5);
 });
 
 it('rejects register with invalid enrollment key', function () {

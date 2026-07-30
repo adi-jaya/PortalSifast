@@ -88,6 +88,7 @@ func (c *Client) Register(enrollmentKey string, snap collector.Snapshot) (apiKey
 		},
 		"critical_software": criticalSoftwarePayload(snap),
 		"usb":               usbPayload(snap),
+		"sensors":           sensorsPayload(snap),
 	}
 
 	var body registerResponse
@@ -135,6 +136,7 @@ func (c *Client) Heartbeat(apiKey string, snap collector.Snapshot) (requestID st
 		},
 		"critical_software": criticalSoftwarePayload(snap),
 		"usb":               usbPayload(snap),
+		"sensors":           sensorsPayload(snap),
 	}
 
 	var body heartbeatResponse
@@ -172,6 +174,21 @@ func criticalSoftwarePayload(snap collector.Snapshot) []map[string]any {
 		})
 	}
 	return out
+}
+
+func sensorsPayload(snap collector.Snapshot) map[string]any {
+	readings := make([]map[string]any, 0, len(snap.Sensors.Readings))
+	for _, r := range snap.Sensors.Readings {
+		readings = append(readings, map[string]any{
+			"name":          r.Name,
+			"temperature_c": r.TemperatureC,
+		})
+	}
+	return map[string]any{
+		"supported": snap.Sensors.Supported,
+		"note":      snap.Sensors.Note,
+		"readings":  readings,
+	}
 }
 
 func usbPayload(snap collector.Snapshot) map[string]any {

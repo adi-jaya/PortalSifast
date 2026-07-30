@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/kardianos/service"
 	"github.com/portalsifast/rs-agent/internal/serviceapp"
 )
 
@@ -21,6 +22,27 @@ func main() {
 	if action != "" {
 		if err := runServiceControl(*configPath, action); err != nil {
 			fmt.Fprintf(os.Stderr, "service %s: %v\n", action, err)
+			os.Exit(1)
+		}
+		return
+	}
+
+	prg := &serviceapp.Program{
+		ConfigPath:   *configPath,
+		AgentVersion: version,
+	}
+	s, err := serviceapp.NewService(prg)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "rs-agent: %v\n", err)
+		os.Exit(1)
+	}
+
+	// When launched by Windows SCM (ImagePath = rs-agent.exe -config ...),
+	// we must call s.Run() so StartServiceCtrlDispatcher connects.
+	// Interactive/console sessions use RunConsole instead.
+	if !service.Interactive() {
+		if err := s.Run(); err != nil {
+			fmt.Fprintf(os.Stderr, "rs-agent service: %v\n", err)
 			os.Exit(1)
 		}
 		return

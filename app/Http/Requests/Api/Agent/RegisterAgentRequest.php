@@ -42,6 +42,12 @@ class RegisterAgentRequest extends FormRequest
             'hardware.timezone' => ['nullable', 'string', 'max:64'],
             'hardware.domain' => ['nullable', 'string', 'max:255'],
             'hardware.username' => ['nullable', 'string', 'max:255'],
+            'sensors' => ['nullable', 'array'],
+            'sensors.supported' => ['nullable', 'boolean'],
+            'sensors.note' => ['nullable', 'string', 'max:500'],
+            'sensors.readings' => ['nullable', 'array', 'max:32'],
+            'sensors.readings.*.name' => ['nullable', 'string', 'max:255'],
+            'sensors.readings.*.temperature_c' => ['nullable', 'numeric', 'min:-50', 'max:150'],
         ];
     }
 

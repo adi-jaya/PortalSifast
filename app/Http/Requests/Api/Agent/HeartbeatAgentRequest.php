@@ -53,6 +53,12 @@ class HeartbeatAgentRequest extends FormRequest
             'usb.devices.*.name' => ['nullable', 'string', 'max:255'],
             'usb.devices.*.kind' => ['nullable', 'string', 'in:storage,printer,hub,hid,other'],
             'usb.devices.*.device_id' => ['nullable', 'string', 'max:255'],
+            'sensors' => ['nullable', 'array'],
+            'sensors.supported' => ['nullable', 'boolean'],
+            'sensors.note' => ['nullable', 'string', 'max:500'],
+            'sensors.readings' => ['nullable', 'array', 'max:32'],
+            'sensors.readings.*.name' => ['nullable', 'string', 'max:255'],
+            'sensors.readings.*.temperature_c' => ['nullable', 'numeric', 'min:-50', 'max:150'],
         ];
     }
 

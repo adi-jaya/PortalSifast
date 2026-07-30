@@ -53,7 +53,13 @@ if ($existing -and $existing.Status -ne "Stopped") {
     Stop-Service -Name $ServiceName -Force -ErrorAction SilentlyContinue
 }
 
-Copy-Item -Force -Path $SourceExe -Destination $TargetExe
+$sourceFull = (Resolve-Path -LiteralPath $SourceExe).Path
+$targetFull = $TargetExe
+if ($sourceFull -ne $targetFull) {
+    Copy-Item -Force -Path $SourceExe -Destination $TargetExe
+} else {
+    Write-Host "Binary sudah di $TargetExe; skip copy."
+}
 
 $needEnrollment = $true
 if (Test-Path $TargetConfig) {
@@ -100,7 +106,11 @@ if ($needEnrollment) {
         log_level       = "info"
         uuid            = ""
     }
-    ($fresh | ConvertTo-Json) | Set-Content -Path $TargetConfig -Encoding utf8
+    $json = ($fresh | ConvertTo-Json)
+    # UTF-8 without BOM — Windows PowerShell 5.x "utf8" encoding includes a BOM
+    # that breaks Go's encoding/json parser.
+    $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+    [System.IO.File]::WriteAllText($TargetConfig, $json, $utf8NoBom)
     Write-Host "Config baru ditulis ke $TargetConfig"
 }
 
@@ -134,7 +144,15 @@ if (Test-Path $TargetConfig) {
 }
 
 Write-Host "Menginstal service..."
-& $TargetExe -config $TargetConfig -service uninstall 2>$null
+# Best-effort remove of a previous install; ignore "not installed" errors
+# (PowerShell Stop + native stderr would otherwise abort the script).
+$existingForUninstall = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
+if ($existingForUninstall) {
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    & $TargetExe -config $TargetConfig -service uninstall 2>$null | Out-Null
+    $ErrorActionPreference = $prevEap
+}
 & $TargetExe -config $TargetConfig -service install
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Gagal install service (exit $LASTEXITCODE)."
