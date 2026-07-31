@@ -8,6 +8,7 @@ import {
     formatPayrollPeriod,
     getMoneyValue,
     resolveLineLabel,
+    shouldRenderSlipLine,
     type SlipLineDef,
 } from '@/pages/payroll/payroll-slip-structure';
 
@@ -26,6 +27,7 @@ type SalaryData = {
     tunj_masa_kerja: string | null;
     tunj_kehadiran: string | null;
     tunj_makan: string | null;
+    uses_combined_tunjangan?: boolean;
     fungsional: string | null;
     struktural: string | null;
     operasional: string | null;
@@ -234,7 +236,7 @@ function SectionBlock({
                     {number}. {title}
                 </td>
             </tr>
-            {lines.map((line) => (
+            {lines.filter((line) => shouldRenderSlipLine(line, salary)).map((line) => (
                 <SlipRow key={`${number}-${line.key}`} line={line} salary={salary} indent={number !== '1'} />
             ))}
         </>

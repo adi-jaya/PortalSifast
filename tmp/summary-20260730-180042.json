@@ -1,0 +1,4 @@
+{
+  "summary": "Started brainstorming for tickets IT vs IPS improvement (no implementation yet). Explored current module: ticket.dep_id from category (IT/IPS), admin ?department= filter exists without UI, index 'Departemen' column shows requester SIMRS unit not ticket dep_id — major confusion. Asking user first clarifying question on desired UX depth.",
+  "current_status": "Brainstorming tickets IT/IPS distinction. Awaiting user choice on filter-only vs dual-lane UX vs transfer between departments."
+}

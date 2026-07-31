@@ -187,7 +187,7 @@ export default function DepartmentReport({
                             </div>
                             {departmentsForFilter.length > 1 && (
                                 <div className="grid gap-2">
-                                    <Label htmlFor="dep_id">Departemen</Label>
+                                    <Label htmlFor="dep_id">Penanganan (IT/IPS)</Label>
                                     <Select
                                         value={data.dep_id}
                                         onValueChange={(v) => setData('dep_id', v)}

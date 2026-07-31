@@ -93,6 +93,7 @@ class StoreTicketApiRequest extends FormRequest
     {
         return [
             'nik' => ['required', 'string', 'max:50'],
+            'dep_id' => ['nullable', 'string', Rule::in(['IT', 'IPS'])],
             'ticket_type_id' => ['nullable', 'integer', Rule::exists('ticket_types', 'id')->where('is_active', true)],
             'ticket_category_id' => ['nullable', 'integer', Rule::exists('ticket_categories', 'id')->where('is_active', true)],
             'ticket_subcategory_id' => ['nullable', 'integer', Rule::exists('ticket_subcategories', 'id')->where('is_active', true)],

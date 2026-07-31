@@ -1,0 +1,4 @@
+{
+  "summary": "User reported July payroll CSV format change from finance. Analyzed import id=14 (gajijuni2026.csv, 21 rows imported today). New format merges tunjangan kehadiran/makan/masa kerja into one column, renames lain2_bonus to lain2_jaga_pabrik, adds keterlambatan and ijin deduction columns, removes jumlah_tunjangan/pembulatan/hutang columns. Updated PayrollCsvMapper with resolveTunjanganKmm, resolveLainLain, resolveLainPot; updated slip UI to show combined tunjangan label; added unit test; reprocessed 21 July records from raw_row.",
+  "current_status": "Payroll mapper adapted for July 2026 CSV format. Import id=14 (21 rows) reprocessed and pending approval. User should verify slip breakdown; note file only has 21 employees vs ~194 in prior months—may need full CSV re-upload if incomplete."
+}

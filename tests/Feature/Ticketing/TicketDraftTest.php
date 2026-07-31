@@ -40,6 +40,7 @@ it('stores ticket as draft without SLA dates', function () {
 
     $response = $this->actingAs($requester)->post('/tickets', [
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'title' => 'Draft untuk ide fitur',
@@ -71,6 +72,7 @@ it('sends draft notifications to staff in ticket department', function () {
 
     $this->actingAs($requester)->post('/tickets', [
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'title' => 'Draf dengan notifikasi',
@@ -92,6 +94,7 @@ it('sends published-kind notifications when draft is published', function () {
 
     $draft = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -118,6 +121,7 @@ it('pemohon sees only own drafts in draft list not other pemohon drafts', functi
 
     $draft = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -150,6 +154,7 @@ it('publishes draft and calculates SLA dates', function () {
 
     $draft = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -178,6 +183,7 @@ it('forbids other requester from publishing someone else draft', function () {
 
     $draft = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -195,6 +201,7 @@ it('does not count draft ticket as overdue on dashboard', function () {
 
     $draft = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -216,6 +223,7 @@ it('allows staff who saved a draft for another requester to open the ticket page
 
     $response = $this->actingAs($staff)->post('/tickets', [
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'title' => 'Draf atas nama pemohon',
@@ -237,6 +245,7 @@ it('forbids staff from another department from viewing a draft in a different de
 
     $draft = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -257,6 +266,7 @@ it('staff in the same department sees drafts owned by another requester in the d
 
     $draft = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -289,6 +299,7 @@ it('auto publishes draft when staff takes the ticket', function () {
 
     $draft = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -325,6 +336,7 @@ it('allows staff in same department to manually publish draft', function () {
 
     $draft = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,

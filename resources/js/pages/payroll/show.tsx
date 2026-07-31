@@ -11,6 +11,7 @@ import {
     formatIdrValue,
     parseMoney,
     resolveLineLabel,
+    shouldRenderSlipLine,
     type SlipLineDef,
 } from '@/pages/payroll/payroll-slip-structure';
 import type { BreadcrumbItem } from '@/types';
@@ -30,6 +31,7 @@ type SalaryData = {
     tunj_masa_kerja: string | null;
     tunj_kehadiran: string | null;
     tunj_makan: string | null;
+    uses_combined_tunjangan?: boolean;
     fungsional: string | null;
     struktural: string | null;
     operasional: string | null;
@@ -264,7 +266,9 @@ export default function PayrollShow({ salary, csv_verification }: Props) {
                                                                 {section.number}. {section.title}
                                                             </td>
                                                         </tr>
-                                                        {section.lines.map((line) => (
+                                                        {section.lines
+                                                            .filter((line) => shouldRenderSlipLine(line, salary))
+                                                            .map((line) => (
                                                             <SlipLineRow
                                                                 key={`${section.number}-${line.key}`}
                                                                 line={line}
@@ -347,8 +351,7 @@ export default function PayrollShow({ salary, csv_verification }: Props) {
                                 Verifikasi CSV vs Database
                                 {mismatchCount > 0 ? (
                                     <span className="ml-2 text-xs font-normal text-red-600">
-                                        ({mismatchCount} tidak cocok — jalankan{' '}
-                                        <code className="rounded bg-muted px-1">php artisan payroll:reprocess-from-raw</code>)
+                                        ({mismatchCount} tidak cocok)
                                     </span>
                                 ) : (
                                     <span className="ml-2 text-xs font-normal text-green-600">(semua cocok)</span>

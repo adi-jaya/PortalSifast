@@ -398,6 +398,9 @@ class EmployeeSalaryWebImportController extends Controller
             'tunj_masa_kerja' => $employeeSalary->tunj_masa_kerja,
             'tunj_kehadiran' => $employeeSalary->tunj_kehadiran,
             'tunj_makan' => $employeeSalary->tunj_makan,
+            'uses_combined_tunjangan' => PayrollCsvMapper::usesCombinedTunjangan(
+                is_array($employeeSalary->raw_row) ? $employeeSalary->raw_row : []
+            ),
             'fungsional' => $employeeSalary->fungsional,
             'struktural' => $employeeSalary->struktural,
             'operasional' => $employeeSalary->operasional,

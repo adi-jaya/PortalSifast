@@ -1,0 +1,4 @@
+{
+  "summary": "User approved design section 1 and asked that reports/CSV export also filter IT vs IPS separately. Presenting design section 2: index tabs, create flow, transfer UI, and export/report filter alignment (export already inherits index query params).",
+  "current_status": "Brainstorming tickets IT/IPS Approach B — awaiting approval of design section 2 (UI + export)."
+}

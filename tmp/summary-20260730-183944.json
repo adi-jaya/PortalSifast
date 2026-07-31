@@ -1,0 +1,4 @@
+{
+  "summary": "Explained IPS ticket types (shared with IT) and IPS categories. Created and ran TicketIpsDemoSeeder — 20 [DEMO IPS] tickets across all IPS categories and multiple types/statuses. IPS total now 25.",
+  "current_status": "IPS dummy data seeded. User can open /tickets tab IPS to review. Re-run with php artisan db:seed --class=TicketIpsDemoSeeder --force if needed."
+}

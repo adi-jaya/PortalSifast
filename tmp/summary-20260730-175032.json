@@ -1,0 +1,4 @@
+{
+  "summary": "User asked if monitoring devices can be deleted at /monitoring. Feature did not exist; added DELETE monitoring/{device}, destroy() on MonitoringDeviceController (cascades hardware + metric samples via FK), Hapus button with confirm on monitoring/show.tsx, and Pest test. Note: if RS Agent is still running, device can reappear on next heartbeat.",
+  "current_status": "Monitoring device delete is available on detail page. User may need npm run build to see the Hapus button in production UI."
+}

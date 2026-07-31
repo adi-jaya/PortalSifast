@@ -276,6 +276,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('monitoring/{device}', [MonitoringDeviceController::class, 'show'])->name('monitoring.show');
     Route::patch('monitoring/{device}/aset', [MonitoringDeviceController::class, 'updateAset'])
         ->name('monitoring.aset.update');
+    Route::delete('monitoring/{device}', [MonitoringDeviceController::class, 'destroy'])
+        ->name('monitoring.destroy');
 
     Route::get('infrastruktur', [TianjiLaporanController::class, 'index'])->name('infrastruktur.index');
     Route::redirect('laporan-tianji', '/infrastruktur');
@@ -305,6 +307,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('tickets/import', [TicketController::class, 'import'])->name('tickets.import.store');
     Route::resource('tickets', TicketController::class);
     Route::post('tickets/{ticket}/assign-self', [TicketController::class, 'assignToSelf'])->name('tickets.assign-self');
+    Route::post('tickets/{ticket}/transfer-department', [TicketController::class, 'transferDepartment'])->name('tickets.transfer-department');
     Route::post('tickets/{ticket}/close', [TicketController::class, 'close'])->name('tickets.close');
     Route::post('tickets/{ticket}/resolve', [TicketController::class, 'resolve'])->name('tickets.resolve');
     Route::post('tickets/{ticket}/confirm', [TicketController::class, 'confirm'])->name('tickets.confirm');

@@ -72,3 +72,14 @@ it('shows monitoring device detail', function () {
             ->has('recentSamples')
             ->has('linkableAssets'));
 });
+
+it('deletes a monitoring device and redirects to index', function () {
+    $user = User::factory()->create();
+    $device = MonitoredDevice::factory()->online()->create(['hostname' => 'pc-delete-me']);
+
+    $this->actingAs($user)
+        ->delete("/monitoring/{$device->id}")
+        ->assertRedirect(route('monitoring.index'));
+
+    expect(MonitoredDevice::query()->whereKey($device->id)->exists())->toBeFalse();
+});

@@ -1,0 +1,4 @@
+{
+  "summary": "User asked if the payroll API also needs updating. Clarified import/list/detail APIs already use the same DB + PayrollCsvMapper so amounts were already correct after reprocess. Updated PayrollSlipStructure::buildSections so mobile slip_sections matches web for July combined tunjangan (label + hide empty masa kerja/makan lines). Added API feature test.",
+  "current_status": "Web and API payroll slip structures aligned for July 2026 combined tunjangan format. No separate mobile app redeploy required for amounts; apps that render slip_sections get corrected labels automatically from backend."
+}

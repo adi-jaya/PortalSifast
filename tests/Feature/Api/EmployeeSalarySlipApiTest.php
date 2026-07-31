@@ -83,6 +83,40 @@ test('payroll detail api returns slip sections and computed totals', function ()
         ->and($expected['jumlah_gaji'])->toBe(15_293_330.0);
 });
 
+test('payroll detail api uses combined tunjangan label for july csv format', function () {
+    $user = User::factory()->create(['simrs_nik' => '13.20.04.2007']);
+
+    $salary = EmployeeSalary::query()->create([
+        'period_start' => '2026-07-01',
+        'simrs_nik' => '13.20.04.2007',
+        'employee_name' => 'Dokter Gabungan',
+        'unit' => 'OBG',
+        'status' => 'published',
+        'gaji_pokok' => '2097300',
+        'keluarga' => '1048650',
+        'tunj_kehadiran' => '2768436',
+        'fungsional' => '3000000',
+        'penerimaan' => '15275385',
+        'pajak' => '0',
+        'zakat' => '0',
+        'raw_row' => [
+            'nik' => '13.20.04.2007',
+            'tunjangan_kehadiran,_makan_&_masa_kerja' => '2.768.436',
+        ],
+    ]);
+
+    $response = actingAs($user, 'sanctum')
+        ->getJson("/api/sifast/payroll/{$salary->id}")
+        ->assertOk();
+
+    $tunjanganLines = collect($response->json('data.slip_sections.1.lines'));
+
+    expect($tunjanganLines->firstWhere('key', 'tunj_kehadiran')['label'])
+        ->toBe('Kehadiran, Makan & Masa Kerja')
+        ->and($tunjanganLines->firstWhere('key', 'tunj_masa_kerja'))->toBeNull()
+        ->and($tunjanganLines->firstWhere('key', 'tunj_makan'))->toBeNull();
+});
+
 test('payroll list api includes summary totals', function () {
     $user = User::factory()->create(['simrs_nik' => '01.02.03.2000']);
 

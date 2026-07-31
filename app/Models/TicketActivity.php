@@ -56,6 +56,8 @@ class TicketActivity extends Model
 
     public const ACTION_ISSUE_RESOLVED = 'issue_resolved';
 
+    public const ACTION_DEPARTMENT_TRANSFERRED = 'department_transferred';
+
     // ==================== RELATIONSHIPS ====================
 
     public function ticket(): BelongsTo
@@ -90,6 +92,7 @@ class TicketActivity extends Model
             self::ACTION_COLLABORATOR_REMOVED => 'Rekan dihapus',
             self::ACTION_ISSUE_OPENED => 'Issue ditambahkan',
             self::ACTION_ISSUE_RESOLVED => 'Issue diselesaikan',
+            self::ACTION_DEPARTMENT_TRANSFERRED => 'Penanganan dipindah',
             default => $this->action,
         };
     }

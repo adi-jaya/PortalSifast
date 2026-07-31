@@ -1,0 +1,4 @@
+{
+  "summary": "User asked whether they still need to run payroll:reprocess-from-raw after seeing '2 tidak cocok' on CSV vs DB verification. Confirmed data was already correct after prior reprocess; the 2 mismatches were false positives from verification UI (old separate tunjangan_kehadiran check vs combined column, and BPJS sum using raw float parse on dotted Indonesian numbers). Fixed buildVerificationRows for July format and removed misleading reprocess hint from show page. Import 14 now shows 0 mismatches.",
+  "current_status": "Payroll July 2026 mapping and verification both correct. User does not need to re-run reprocess. Refresh slip page to see 'semua cocok'."
+}

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ImportTicketsRequest;
 use App\Http\Requests\StoreTicketRequest;
+use App\Http\Requests\TransferTicketDepartmentRequest;
 use App\Http\Requests\UpdateTicketRequest;
 use App\Models\Aset;
 use App\Models\Inventaris;
@@ -164,7 +165,7 @@ class TicketController extends Controller
         }
 
         $department = $this->ticketFilterScalar($request, 'department');
-        if ($department !== null && $user->isAdmin()) {
+        if ($department !== null && in_array($department, ['IT', 'IPS'], true)) {
             $query->where('dep_id', $department);
         }
 
@@ -444,13 +445,8 @@ class TicketController extends Controller
     {
         $user = $request->user();
 
-        // Get categories berdasarkan role
-        $categoriesQuery = TicketCategory::active()->with('subcategories');
-
-        // Staff IT hanya lihat kategori IT, Staff IPS hanya lihat kategori IPS
-        if ($user->isStaff() && $user->dep_id) {
-            $categoriesQuery->where('dep_id', $user->dep_id);
-        }
+        // Semua kategori IT+IPS: form create memilih penanganan dulu, lalu filter di frontend.
+        $categoriesQuery = TicketCategory::active()->with('subcategories')->orderBy('name');
 
         $recentTicketsForLink = $this->getTicketsForRelatedSelect($user)
             ->orderBy('created_at', 'desc')
@@ -686,8 +682,11 @@ class TicketController extends Controller
                 $validated['ticket_category_id'] ?? null
             );
 
-        // Determine department: from category if set, otherwise default to IT
-        $depId = $category?->dep_id ?? 'IT';
+        // Determine department: explicit penanganan, fallback category, then IT
+        $depId = $validated['dep_id'] ?? $category?->dep_id ?? 'IT';
+        if ($category?->dep_id) {
+            $depId = $category->dep_id;
+        }
 
         // Tentukan requester: admin dan staff bisa pilih manual, pemohon = diri sendiri
         $requesterId = $user->id;
@@ -897,6 +896,10 @@ class TicketController extends Controller
             'canResolveIssue' => $user->can('changeStatus', $ticket),
             'canPublish' => $user->can('publish', $ticket),
             'canDelete' => $user->can('delete', $ticket),
+            'canTransferDepartment' => $user->can('transferDepartment', $ticket),
+            'transferCategories' => TicketCategory::active()
+                ->orderBy('name')
+                ->get(['id', 'name', 'dep_id', 'ticket_type_id']),
         ]);
     }
 
@@ -1229,6 +1232,70 @@ class TicketController extends Controller
     }
 
     /**
+     * Pindahkan kepemilikan penanganan tiket IT ↔ IPS.
+     */
+    public function transferDepartment(TransferTicketDepartmentRequest $request, Ticket $ticket): RedirectResponse
+    {
+        $validated = $request->validated();
+        $targetDep = $validated['dep_id'];
+
+        if ($ticket->dep_id === $targetDep) {
+            return redirect()
+                ->route('tickets.show', $ticket)
+                ->with('error', "Tiket sudah berada di penanganan {$targetDep}.");
+        }
+
+        $category = TicketCategory::query()->findOrFail($validated['ticket_category_id']);
+        $oldDep = $ticket->dep_id;
+        $previousAssignee = $ticket->assignee;
+
+        if ($previousAssignee && $previousAssignee->dep_id !== $targetDep) {
+            $alreadyCollaborator = $ticket->collaborators()
+                ->where('user_id', $previousAssignee->id)
+                ->exists();
+
+            if (! $alreadyCollaborator) {
+                $ticket->collaborators()->create([
+                    'user_id' => $previousAssignee->id,
+                    'added_by' => $request->user()->id,
+                ]);
+            }
+
+            $ticket->assignee_id = null;
+        }
+
+        if ($ticket->ticket_group_id) {
+            $group = $ticket->group;
+            if ($group && $group->dep_id !== $targetDep) {
+                $ticket->ticket_group_id = null;
+            }
+        }
+
+        $ticket->dep_id = $targetDep;
+        $ticket->ticket_category_id = $category->id;
+        $ticket->ticket_subcategory_id = null;
+        $ticket->save();
+
+        $ticket->logActivity(
+            TicketActivity::ACTION_DEPARTMENT_TRANSFERRED,
+            $oldDep,
+            $targetDep,
+            $validated['reason']
+        );
+
+        app(FcmNotificationService::class)->sendToDepartmentStaff(
+            $targetDep,
+            'Tiket dipindah ke '.$targetDep,
+            "#{$ticket->ticket_number}: {$ticket->title}",
+            ['ticket_id' => (string) $ticket->id, 'type' => 'ticket_transferred']
+        );
+
+        return redirect()
+            ->route('tickets.show', $ticket)
+            ->with('success', "Penanganan tiket dipindah dari {$oldDep} ke {$targetDep}.");
+    }
+
+    /**
      * Tandai tiket selesai (manual): isi resolved_at dan pindah ke Menunggu Konfirmasi.
      */
     public function resolve(Ticket $ticket): RedirectResponse
@@ -1397,7 +1464,10 @@ class TicketController extends Controller
 
         $this->applyTicketListRequestFilters($query, $request, $user);
 
-        $filename = 'tickets-'.now()->format('Y-m-d-His').'.csv';
+        $department = $this->ticketFilterScalar($request, 'department');
+        $filename = in_array($department, ['IT', 'IPS'], true)
+            ? 'tickets-'.$department.'-'.now()->format('Y-m-d-His').'.csv'
+            : 'tickets-'.now()->format('Y-m-d-His').'.csv';
 
         return ResponseFacade::streamDownload(function () use ($query) {
             $handle = fopen('php://output', 'w');
@@ -1418,7 +1488,7 @@ class TicketController extends Controller
                 'Catatan anggaran',
                 'No. Inventaris Aset',
                 'Rencana (project)',
-                'Departemen',
+                'Departemen (penanganan)',
                 'Pemohon',
                 'Unit (pemohon)',
                 'Petugas',

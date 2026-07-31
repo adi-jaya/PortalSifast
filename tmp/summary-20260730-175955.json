@@ -1,0 +1,4 @@
+{
+  "summary": "Explored PortalSifast ticketing for IT vs IPS distinction: handled via string dep_id on tickets/categories/groups (seeded IT/IPS), inferred from category at create (default IT), staff scoped by user.dep_id; index has backend department filter for admin only but no UI control; edit cannot change category/dep_id; Telegram is a single shared group.",
+  "current_status": "Research complete — structured report ready for product brainstorming on clarifying IT vs IPS routing and UX."
+}

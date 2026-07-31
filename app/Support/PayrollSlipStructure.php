@@ -247,18 +247,31 @@ final class PayrollSlipStructure
      */
     public static function buildSections(EmployeeSalary $salary): array
     {
+        $raw = is_array($salary->raw_row) ? $salary->raw_row : [];
+        $usesCombinedTunjangan = PayrollCsvMapper::usesCombinedTunjangan($raw);
         $sections = [];
 
         foreach (self::SECTIONS as $section) {
             $lines = [];
 
             foreach ($section['lines'] as $line) {
+                if (
+                    $usesCombinedTunjangan
+                    && in_array($line['key'], ['tunj_masa_kerja', 'tunj_makan'], true)
+                ) {
+                    continue;
+                }
+
                 $label = $line['label'];
                 if (isset($line['dynamic_label_key'])) {
                     $dynamic = $salary->{$line['dynamic_label_key']} ?? null;
                     if (is_string($dynamic) && $dynamic !== '') {
                         $label = $dynamic;
                     }
+                }
+
+                if ($usesCombinedTunjangan && $line['key'] === 'tunj_kehadiran') {
+                    $label = 'Kehadiran, Makan & Masa Kerja';
                 }
 
                 $lines[] = [

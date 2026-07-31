@@ -1,6 +1,6 @@
 import { Head, Link, router, useForm, usePoll } from '@inertiajs/react';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
-import { useEffect, type ReactNode } from 'react';
+import { ArrowLeft, RefreshCw, Trash2 } from 'lucide-react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { AssetLinkPicker } from '@/components/monitoring/asset-link-picker';
 import { MetricBar } from '@/components/monitoring/metric-bar';
 import { MetricSparkline } from '@/components/monitoring/metric-sparkline';
@@ -174,6 +174,23 @@ export default function MonitoringShow({ device, recentSamples, linkableAssets }
         patch(`/monitoring/${device.id}/aset`, { preserveScroll: true });
     };
 
+    const [deleting, setDeleting] = useState(false);
+
+    const handleDelete = () => {
+        if (
+            !confirm(
+                `Hapus perangkat "${title}" dari monitoring?\n\nData hardware dan sampel metrik ikut terhapus. Jika agent masih aktif, perangkat bisa muncul lagi saat heartbeat berikutnya.`,
+            )
+        ) {
+            return;
+        }
+
+        setDeleting(true);
+        router.delete(`/monitoring/${device.id}`, {
+            onFinish: () => setDeleting(false),
+        });
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Monitoring · ${title}`} />
@@ -213,16 +230,27 @@ export default function MonitoringShow({ device, recentSamples, linkableAssets }
                         </div>
                     </div>
                     <div className="flex w-full flex-col gap-2 sm:w-auto sm:min-w-[280px]">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="self-end"
-                            onClick={() => router.reload({ only: ['device', 'recentSamples', 'linkableAssets'] })}
-                        >
-                            <RefreshCw className="size-3.5" />
-                            Refresh
-                        </Button>
+                        <div className="flex items-center justify-end gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => router.reload({ only: ['device', 'recentSamples', 'linkableAssets'] })}
+                            >
+                                <RefreshCw className="size-3.5" />
+                                Refresh
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                disabled={deleting}
+                                onClick={handleDelete}
+                            >
+                                <Trash2 className="size-3.5" />
+                                Hapus
+                            </Button>
+                        </div>
                         <div className="grid gap-2 rounded-xl border border-border/80 bg-card p-3">
                             <MetricBar label="CPU" value={device.last_cpu_percent} />
                             <MetricBar label="RAM" value={device.last_ram_percent} />

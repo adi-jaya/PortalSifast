@@ -139,6 +139,34 @@ class TicketPolicy
     }
 
     /**
+     * Determine whether the user can transfer ticket ownership between IT/IPS.
+     */
+    public function transferDepartment(User $user, Ticket $ticket): bool
+    {
+        if ($ticket->isDraft()) {
+            return false;
+        }
+
+        if ($ticket->status()->where('is_closed', true)->exists()) {
+            return false;
+        }
+
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        if (! $user->isStaff()) {
+            return false;
+        }
+
+        if ($ticket->assignee_id === $user->id) {
+            return true;
+        }
+
+        return $ticket->collaborators()->where('user_id', $user->id)->exists();
+    }
+
+    /**
      * Determine whether the user can confirm ticket closure (pemohon).
      */
     public function confirmClosure(User $user, Ticket $ticket): bool

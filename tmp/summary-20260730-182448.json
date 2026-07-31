@@ -1,0 +1,4 @@
+{
+  "summary": "Implemented Approach B for tickets IT/IPS dual-lane without further questions: design+plan docs, department filter tabs on /tickets, Penanganan column, create flow requiring IT/IPS first, transfer-department endpoint (assignee/collaborator/admin + reason), CSV filename tickets-IT/IPS-*, reports filter labels/backend use tickets.dep_id, Pest TicketDepartmentLaneTest (6 passed). Existing TicketTest updated for dep_id.",
+  "current_status": "Tickets IT/IPS dual-lane shipped on web. User should run npm run build to see UI. Mobile API remains backward-compatible (optional dep_id; still derives from category)."
+}

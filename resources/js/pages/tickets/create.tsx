@@ -75,6 +75,7 @@ export default function TicketCreate({
 }: Props) {
     const { data, setData, post, processing, errors, transform } = useForm({
         ticket_type_id: '',
+        dep_id: '' as '' | 'IT' | 'IPS',
         ticket_category_id: '',
         ticket_subcategory_id: '',
         ticket_priority_id: '',
@@ -99,6 +100,13 @@ export default function TicketCreate({
     const [selectedCategory, setSelectedCategory] = useState<TicketCategory | null>(null);
     const [newTags, setNewTags] = useState<string[]>([]);
     const [newProjectName, setNewProjectName] = useState<string | null>(null);
+
+    useEffect(() => {
+        const uniqueDeps = [...new Set(categories.map((c) => c.dep_id).filter(Boolean))];
+        if (uniqueDeps.length === 1 && !data.dep_id) {
+            setData('dep_id', uniqueDeps[0] as 'IT' | 'IPS');
+        }
+    }, [categories]);
 
     const handleTagChange = (selected: MultiValue<{ value: string; label: string }>) => {
         const existingIds: number[] = [];
@@ -181,28 +189,33 @@ export default function TicketCreate({
     const selectedRelatedTicketOption =
         relatedTicketOptions.find((option) => option.value === data.related_ticket_id) ?? null;
 
-    // Filter categories based on selected type (null = kategori untuk semua tipe)
+    // Filter categories based on penanganan + selected type
     useEffect(() => {
+        if (!data.dep_id) {
+            setFilteredCategories([]);
+            return;
+        }
+
+        let filtered = categories.filter((c) => c.dep_id === data.dep_id);
+
         if (data.ticket_type_id) {
             const typeId = parseInt(data.ticket_type_id);
-            const filtered = categories.filter(
+            filtered = filtered.filter(
                 (c) => c.ticket_type_id == null || c.ticket_type_id === typeId
             );
-            setFilteredCategories(filtered);
-
-            // Reset category if not in filtered list
-            if (
-                data.ticket_category_id &&
-                !filtered.some((c) => c.id === parseInt(data.ticket_category_id))
-            ) {
-                setData('ticket_category_id', '');
-                setData('ticket_subcategory_id', '');
-                setSelectedCategory(null);
-            }
-        } else {
-            setFilteredCategories([]);
         }
-    }, [data.ticket_type_id, categories]);
+
+        setFilteredCategories(filtered);
+
+        if (
+            data.ticket_category_id &&
+            !filtered.some((c) => c.id === parseInt(data.ticket_category_id))
+        ) {
+            setData('ticket_category_id', '');
+            setData('ticket_subcategory_id', '');
+            setSelectedCategory(null);
+        }
+    }, [data.ticket_type_id, data.dep_id, categories]);
 
     // Update selected category
     useEffect(() => {
@@ -309,6 +322,36 @@ export default function TicketCreate({
                         </div>
                     )}
 
+                    {/* Penanganan IT / IPS */}
+                    <div className="grid gap-2">
+                        <Label>
+                            Penanganan <span className="text-destructive">*</span>
+                        </Label>
+                        <div className="inline-flex w-fit flex-wrap gap-1 rounded-lg border bg-muted/40 p-1">
+                            {(['IT', 'IPS'] as const).map((dep) => (
+                                <Button
+                                    key={dep}
+                                    type="button"
+                                    size="sm"
+                                    variant={data.dep_id === dep ? 'default' : 'ghost'}
+                                    className="min-h-9 min-w-[4.5rem]"
+                                    onClick={() => {
+                                        setData('dep_id', dep);
+                                        setData('ticket_category_id', '');
+                                        setData('ticket_subcategory_id', '');
+                                        setSelectedCategory(null);
+                                    }}
+                                >
+                                    {dep}
+                                </Button>
+                            ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            Pilih dulu tim penanganan. Kategori akan menyesuaikan (IT = sistem/jaringan, IPS = fasilitas/alat).
+                        </p>
+                        <InputError message={errors.dep_id} />
+                    </div>
+
                     {/* Type */}
                     <div className="grid gap-2">
                         <Label htmlFor="ticket_type_id">
@@ -349,30 +392,30 @@ export default function TicketCreate({
                         </Label>
                         <Select
                             value={data.ticket_category_id}
-                            onValueChange={(v) => setData('ticket_category_id', v)}
-                            disabled={!data.ticket_type_id}
+                            onValueChange={(v) => {
+                                setData('ticket_category_id', v);
+                                setData('ticket_subcategory_id', '');
+                            }}
+                            disabled={!data.dep_id}
                         >
                             <SelectTrigger id="ticket_category_id">
                                 <SelectValue
                                     placeholder={
-                                        data.ticket_type_id
+                                        data.dep_id
                                             ? 'Pilih kategori...'
-                                            : 'Pilih tipe tiket terlebih dahulu'
+                                            : 'Pilih penanganan IT/IPS terlebih dahulu'
                                     }
                                 />
                             </SelectTrigger>
                             <SelectContent>
                                 {filteredCategories.length === 0 ? (
                                     <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                                        Tidak ada kategori untuk tipe ini
+                                        Tidak ada kategori untuk penanganan ini
                                     </div>
                                 ) : (
                                     filteredCategories.map((cat) => (
                                         <SelectItem key={cat.id} value={String(cat.id)}>
                                             {cat.name}
-                                            <span className="ml-2 text-xs text-muted-foreground">
-                                                ({cat.dep_id})
-                                            </span>
                                         </SelectItem>
                                     ))
                                 )}

@@ -1,0 +1,4 @@
+{
+  "summary": "Fixed empty IPS categories on ticket create: staff were only receiving their own dep categories from TicketController::create. Now all active IT+IPS categories are passed; frontend still filters by selected penanganan. Added Pest coverage; 3 related tests passed.",
+  "current_status": "Create form should show IPS categories after refresh. Demo IPS tickets already seeded earlier."
+}

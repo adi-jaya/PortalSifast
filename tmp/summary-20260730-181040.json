@@ -1,0 +1,4 @@
+{
+  "summary": "User chose transfer permission C: assignee or collaborator may move IT↔IPS. Presented three implementation approaches (A light UI polish, B recommended dual-lane+transfer+collab, C full workspace split) with recommendation for Approach B.",
+  "current_status": "Brainstorming tickets IT/IPS: awaiting user pick among approaches A/B/C before presenting detailed design."
+}

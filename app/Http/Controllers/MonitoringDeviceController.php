@@ -128,6 +128,17 @@ class MonitoringDeviceController extends Controller
             ->with('success', $device->aset_id ? 'Aset berhasil dihubungkan.' : 'Tautan aset dilepas.');
     }
 
+    public function destroy(MonitoredDevice $device): RedirectResponse
+    {
+        $label = $device->hostname ?: $device->computer_name ?: $device->uuid;
+
+        $device->delete();
+
+        return redirect()
+            ->route('monitoring.index')
+            ->with('success', "Perangkat {$label} berhasil dihapus.");
+    }
+
     /**
      * @return list<array{id: int, label: string}>
      */

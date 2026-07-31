@@ -164,13 +164,34 @@ export function getMoneyValue(record: Record<string, string | null | undefined>,
 
 export function resolveLineLabel(
     line: SlipLineDef,
-    record: Record<string, string | null | undefined>,
+    record: Record<string, string | null | undefined | boolean>,
 ): string {
     if (line.dynamicLabelKey && record[line.dynamicLabelKey]) {
         return record[line.dynamicLabelKey] as string;
     }
 
+    if (
+        line.key === 'tunj_kehadiran' &&
+        record.uses_combined_tunjangan === true
+    ) {
+        return 'Kehadiran, Makan & Masa Kerja';
+    }
+
     return line.label;
+}
+
+export function shouldRenderSlipLine(
+    line: SlipLineDef,
+    record: Record<string, string | null | undefined | boolean>,
+): boolean {
+    if (
+        record.uses_combined_tunjangan === true &&
+        (line.key === 'tunj_masa_kerja' || line.key === 'tunj_makan')
+    ) {
+        return false;
+    }
+
+    return true;
 }
 
 export function sumKeys(record: Record<string, string | null | undefined>, keys: string[]): number {

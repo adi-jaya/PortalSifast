@@ -75,6 +75,8 @@ type Props = {
     canResolveIssue?: boolean;
     canPublish?: boolean;
     canDelete?: boolean;
+    canTransferDepartment?: boolean;
+    transferCategories?: { id: number; name: string; dep_id: string | null; ticket_type_id: number | null }[];
 };
 
 function getPriorityColor(color: string): string {
@@ -456,6 +458,8 @@ export default function TicketShow({
     canResolveIssue = false,
     canPublish = false,
     canDelete = false,
+    canTransferDepartment = false,
+    transferCategories = [],
 }: Props) {
     const { flash, auth } = usePage<{
         flash: { success?: string; error?: string };
@@ -477,6 +481,15 @@ export default function TicketShow({
     const [aiLoading, setAiLoading] = useState(false);
     const [docLoading, setDocLoading] = useState(false);
     const [showDeleteTicketConfirm, setShowDeleteTicketConfirm] = useState(false);
+    const [showTransferForm, setShowTransferForm] = useState(false);
+
+    const targetDep = ticket.dep_id === 'IT' ? 'IPS' : 'IT';
+    const transferForm = useForm({
+        dep_id: targetDep,
+        ticket_category_id: '',
+        reason: '',
+    });
+    const transferCategoryOptions = transferCategories.filter((c) => c.dep_id === transferForm.data.dep_id);
     const [deleteConfirm, setDeleteConfirm] = useState<{
         type: 'attachment' | 'vendor_cost' | 'collaborator' | 'sparepart';
         id: number;
@@ -717,6 +730,22 @@ export default function TicketShow({
                             <Button variant="outline" onClick={handleAssignToSelf}>
                                 <UserPlus className="mr-2 h-4 w-4" />
                                 Ambil Tiket
+                            </Button>
+                        )}
+                        {canTransferDepartment && (
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    transferForm.setData({
+                                        dep_id: targetDep,
+                                        ticket_category_id: '',
+                                        reason: '',
+                                    });
+                                    setShowTransferForm((v) => !v);
+                                }}
+                            >
+                                <Users className="mr-2 h-4 w-4" />
+                                Pindah ke {targetDep}
                             </Button>
                         )}
                         {canPublish && (
@@ -1810,12 +1839,82 @@ export default function TicketShow({
                                 {/* Department */}
                                 <div>
                                     <Label className="text-xs text-muted-foreground mb-1.5 block">
-                                        Departemen
+                                        Penanganan
                                     </Label>
-                                    <p className="text-sm">{ticket.dep_id}</p>
+                                    <Badge
+                                        variant="outline"
+                                        className={
+                                            ticket.dep_id === 'IPS'
+                                                ? 'border-amber-500/50 bg-amber-500/10 text-amber-900 dark:text-amber-200'
+                                                : 'border-sky-500/50 bg-sky-500/10 text-sky-900 dark:text-sky-200'
+                                        }
+                                    >
+                                        {ticket.dep_id}
+                                    </Badge>
                                 </div>
                             </CardContent>
                         </Card>
+
+                        {canTransferDepartment && showTransferForm && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-base">Pindah penanganan ke {transferForm.data.dep_id}</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    <div className="grid gap-2">
+                                        <Label>Kategori tujuan</Label>
+                                        <Select
+                                            value={transferForm.data.ticket_category_id}
+                                            onValueChange={(v) => transferForm.setData('ticket_category_id', v)}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Pilih kategori..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {transferCategoryOptions.map((cat) => (
+                                                    <SelectItem key={cat.id} value={String(cat.id)}>
+                                                        {cat.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <InputError message={transferForm.errors.ticket_category_id} />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="transfer_reason">Alasan</Label>
+                                        <Textarea
+                                            id="transfer_reason"
+                                            value={transferForm.data.reason}
+                                            onChange={(e) => transferForm.setData('reason', e.target.value)}
+                                            placeholder="Contoh: Salah jalur, ini kerusakan fasilitas IPS"
+                                            rows={3}
+                                        />
+                                        <InputError message={transferForm.errors.reason} />
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            type="button"
+                                            disabled={transferForm.processing}
+                                            onClick={() =>
+                                                transferForm.post(`/tickets/${ticket.id}/transfer-department`, {
+                                                    preserveScroll: true,
+                                                    onSuccess: () => setShowTransferForm(false),
+                                                })
+                                            }
+                                        >
+                                            Konfirmasi pindah
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            onClick={() => setShowTransferForm(false)}
+                                        >
+                                            Batal
+                                        </Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
 
                         {/* Dates */}
                         <Card>

@@ -61,8 +61,8 @@ class ApiTicketController extends Controller
             $validated['ticket_category_id'] ?? null
         );
 
-        // Determine department: from category if set, otherwise default to IT
-        $depId = $category?->dep_id ?? 'IT';
+        // Determine department: category first, then optional dep_id, else IT
+        $depId = $category?->dep_id ?? $validated['dep_id'] ?? 'IT';
 
         $ticket = Ticket::create([
             'ticket_type_id' => $typeId,
