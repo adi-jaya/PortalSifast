@@ -56,6 +56,8 @@ type SalaryData = {
     hutang_bpjs: string | null;
     hutang_seragam: string | null;
     ikkm: string | null;
+    keterlambatan: string | null;
+    ijin: string | null;
     lain_pot: string | null;
     pajak: string | null;
     zakat: string | null;

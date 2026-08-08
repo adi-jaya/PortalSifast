@@ -80,6 +80,8 @@ final class PayrollCsvMapper
             'hutang_bpjs' => self::moneyOrNull($raw['hutang_bpjs'] ?? null),
             'hutang_seragam' => self::moneyOrNull($raw['hutang_seragam'] ?? null),
             'ikkm' => self::moneyOrNull($raw['ikkm'] ?? null),
+            'keterlambatan' => self::moneyOrNull($raw['keterlambatan'] ?? null),
+            'ijin' => self::moneyOrNull($raw['ijin'] ?? null),
             'lain_pot' => self::resolveLainPot($raw),
             'jumlah' => self::moneyOrNull($raw['jumlah'] ?? null),
             'jumlah_tunjangan' => self::moneyOrNull($raw['jumlah_tunjangan'] ?? null),
@@ -271,12 +273,30 @@ final class PayrollCsvMapper
             ];
         }
 
+        foreach ([
+            ['csv_key' => 'keterlambatan', 'csv_label' => 'Keterlambatan', 'db_key' => 'keterlambatan'],
+            ['csv_key' => 'ijin', 'csv_label' => 'Ijin', 'db_key' => 'ijin'],
+        ] as $field) {
+            $csvValue = self::moneyOrNull($raw[$field['csv_key']] ?? null);
+            $dbValue = self::moneyOrNull($dbAttributes[$field['db_key']] ?? null);
+            if ($csvValue !== null || $dbValue !== null) {
+                $rows[] = [
+                    'csv_key' => $field['csv_key'],
+                    'csv_label' => $field['csv_label'],
+                    'csv_value' => $csvValue,
+                    'db_key' => $field['db_key'],
+                    'db_value' => $dbValue,
+                    'match' => self::moneyEquals($csvValue, $dbValue),
+                ];
+            }
+        }
+
         $lainPotCsv = self::resolveLainPot($raw);
         $dbLainPot = self::moneyOrNull($dbAttributes['lain_pot'] ?? null);
         if ($lainPotCsv !== null || $dbLainPot !== null) {
             $rows[] = [
                 'csv_key' => 'lain_pot_*',
-                'csv_label' => 'Lain-lain potongan (+ keterlambatan/ijin)',
+                'csv_label' => 'Lain-lain potongan',
                 'csv_value' => $lainPotCsv,
                 'db_key' => 'lain_pot',
                 'db_value' => $dbLainPot,
@@ -410,20 +430,14 @@ final class PayrollCsvMapper
      */
     public static function resolveLainPot(array $raw): ?string
     {
-        $sum = 0.0;
-        $hasValue = false;
-
-        foreach (['lain____lain', 'lain_-_lain', 'lain_pot', 'keterlambatan', 'ijin'] as $key) {
+        foreach (['lain____lain', 'lain_-_lain', 'lain_pot'] as $key) {
             $money = self::moneyOrNull($raw[$key] ?? null);
-            if ($money === null) {
-                continue;
+            if ($money !== null) {
+                return $money;
             }
-
-            $sum += (float) $money;
-            $hasValue = true;
         }
 
-        return $hasValue ? (string) $sum : null;
+        return null;
     }
 
     /**

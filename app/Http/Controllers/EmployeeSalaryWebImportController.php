@@ -41,7 +41,7 @@ class EmployeeSalaryWebImportController extends Controller
 
         $trendData = [];
         foreach ($periods as $period) {
-            $periodStart = CarbonImmutable::createFromFormat('Y-m', $period)->startOfMonth();
+            $periodStart = CarbonImmutable::createFromFormat('!Y-m', $period)->startOfMonth();
             $stats = EmployeeSalary::query()
                 ->whereDate('period_start', $periodStart->toDateString())
                 ->selectRaw('
@@ -67,7 +67,7 @@ class EmployeeSalaryWebImportController extends Controller
         $latestPeriod = $periods->last();
         $unitDistribution = [];
         if ($latestPeriod) {
-            $latestPeriodStart = CarbonImmutable::createFromFormat('Y-m', $latestPeriod)->startOfMonth();
+            $latestPeriodStart = CarbonImmutable::createFromFormat('!Y-m', $latestPeriod)->startOfMonth();
             $unitDistribution = EmployeeSalary::query()
                 ->whereDate('period_start', $latestPeriodStart->toDateString())
                 ->selectRaw('
@@ -109,7 +109,7 @@ class EmployeeSalaryWebImportController extends Controller
 
         $topEarners = [];
         if ($latestPeriod) {
-            $latestPeriodStart = CarbonImmutable::createFromFormat('Y-m', $latestPeriod)->startOfMonth();
+            $latestPeriodStart = CarbonImmutable::createFromFormat('!Y-m', $latestPeriod)->startOfMonth();
             $topEarners = EmployeeSalary::query()
                 ->whereDate('period_start', $latestPeriodStart->toDateString())
                 ->orderByRaw('CAST(penerimaan AS DECIMAL(20,2)) DESC')
@@ -175,7 +175,7 @@ class EmployeeSalaryWebImportController extends Controller
         $applyFilters = function ($query) use ($period, $q, $unit) {
             if ($period !== '') {
                 try {
-                    $periodStart = CarbonImmutable::createFromFormat('Y-m', $period)->startOfMonth();
+                    $periodStart = CarbonImmutable::createFromFormat('!Y-m', $period)->startOfMonth();
                     $query->whereDate('period_start', $periodStart->toDateString());
                 } catch (\Throwable) {
                     // Abaikan jika format tidak valid
@@ -221,7 +221,7 @@ class EmployeeSalaryWebImportController extends Controller
         $comparison = null;
         if ($period !== '') {
             try {
-                $currentPeriod = CarbonImmutable::createFromFormat('Y-m', $period)->startOfMonth();
+                $currentPeriod = CarbonImmutable::createFromFormat('!Y-m', $period)->startOfMonth();
                 $prevPeriod = $currentPeriod->subMonth();
 
                 $prevSummary = EmployeeSalary::query()
@@ -437,6 +437,8 @@ class EmployeeSalaryWebImportController extends Controller
             'hutang_bpjs' => $employeeSalary->hutang_bpjs,
             'hutang_seragam' => $employeeSalary->hutang_seragam,
             'ikkm' => $employeeSalary->ikkm,
+            'keterlambatan' => $employeeSalary->keterlambatan,
+            'ijin' => $employeeSalary->ijin,
             'lain_pot' => $employeeSalary->lain_pot,
             'jumlah' => $employeeSalary->jumlah,
             'jumlah_tunjangan' => $employeeSalary->jumlah_tunjangan,
@@ -904,7 +906,7 @@ class EmployeeSalaryWebImportController extends Controller
             'file.max' => 'Ukuran file maksimal 10MB.',
         ]);
 
-        $periodStart = CarbonImmutable::createFromFormat('Y-m', (string) $validated['period'])
+        $periodStart = CarbonImmutable::createFromFormat('!Y-m', (string) $validated['period'])
             ->startOfMonth()
             ->toDateString();
 

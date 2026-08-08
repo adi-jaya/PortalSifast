@@ -326,7 +326,7 @@ export default function UsersCreate({
                                 </Label>
                             </div>
                             <p className="text-xs text-muted-foreground">
-                                Hanya superadmin yang dapat mengatur flag SIMMUTU per user.
+                                Hanya superadmin atau pengelola SIMMUTU yang dapat mengatur flag ini.
                             </p>
                             <InputError message={errors.can_manage_mutu} />
                             <InputError message={errors.can_input_mutu} />

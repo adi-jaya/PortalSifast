@@ -13,12 +13,13 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AsetImportController extends Controller
 {
-    public function create(Request $request): InertiaResponse
+    public function create(Request $request, ImportAsetUnitCsv $importer): InertiaResponse
     {
         $preview = $request->session()->get(ImportAsetUnitCsv::SESSION_KEY);
 
         return Inertia::render('aset/import', [
             'templateUrl' => route('aset.import.template'),
+            'hints' => $importer->importHints(),
             'preview' => $preview === null ? null : [
                 'token' => $preview['token'],
                 'error_count' => $preview['error_count'],

@@ -1,0 +1,4 @@
+{
+  "summary": "Cleaned up mistaken June overwrite: deleted 21 draft salaries from import #13. June now has 181 slips (173 from approved gajijuliupload #12 + leftovers). Original 21 June values not recoverable from DB without re-importing gajijuliupload.csv. July #14 left intact for user to replace later.",
+  "current_status": "June payroll partially restored (wrong 21 removed). User should re-import gajijuliupload.csv as June to restore those 21, then import correct July file (can rollback #14 first)."
+}

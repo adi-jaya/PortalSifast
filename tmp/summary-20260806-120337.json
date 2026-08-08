@@ -1,0 +1,4 @@
+{
+  "summary": "User asked whether delete-asset is missing on /aset. Confirmed: backend AsetController::destroy exists via resource route, but UI on aset index and show has no Hapus aset action (only hapus foto/dokumen on show). Answered without implementing unless requested.",
+  "current_status": "Portal nav parity done earlier; aset delete is API-ready but not exposed in UI on https://portalsifast.rsaisyiyahsitifatimah.com/aset."
+}

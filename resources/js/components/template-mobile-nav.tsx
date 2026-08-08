@@ -1,37 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import {
-    AlertTriangle,
-    Activity,
-    BadgeCheck,
-    Bell,
-    Building2,
-    ChevronDown,
-    Columns3,
-    FileText,
-    LayoutGrid,
-    ListFilter,
-    ListTodo,
-    MapPin,
-    MessageCircle,
-    PlusCircle,
-    UserCircle,
-    Users,
-    Settings,
-    Settings2,
-    Server,
-    FolderCog,
-    FolderKanban,
-    LayoutDashboard,
-    Package,
-    BarChart3,
-    ClipboardCheck,
-    Shapes,
-    Shield,
-    Tags,
-    Wallet,
-    Boxes,
-} from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { ChevronDown, LayoutDashboard } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import {
     Sheet,
@@ -42,361 +10,20 @@ import {
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { NavModuleItemLink } from '@/components/nav-module-item-link';
 import { IconWell } from '@/components/icon-well';
-import { buildSikatNavGroup } from '@/lib/build-sikat-nav-group';
-import { buildSimmutuNavGroup } from '@/lib/build-simmutu-nav-group';
-import { buildTatanaskahNavGroup } from '@/lib/build-tatanaskah-nav-group';
-import { buildWebOfficialNavGroup } from '@/lib/build-web-official-nav-group';
+import {
+    APP_NAME,
+    APP_SUBTITLE,
+    buildVisibleModuleGroups,
+    mainNavItems,
+    settingsNavItems,
+    type PortalNavPermissions,
+} from '@/lib/portal-nav';
 import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes';
 
-const APP_NAME = 'Portal Sifast';
-const APP_SUBTITLE = 'RS Aisyiyah Siti Fatimah';
-
-type NavItem = {
-    id: string;
-    label: string;
-    href: string;
-    icon: LucideIcon;
-    isActive: (path: string) => boolean;
-    fullPage?: boolean;
-};
-
-type NavGroup = {
-    id: string;
-    label: string;
-    icon: LucideIcon;
-    items: NavItem[];
-};
-
 type SharedPageProps = {
-    permissions?: {
-        can_access_payroll?: boolean;
-        can_access_patroli?: boolean;
-        simmutu?: {
-            can_view?: boolean;
-            can_manage?: boolean;
-            can_input?: boolean;
-        };
-        sikat?: {
-            enabled?: boolean;
-        };
-        tatanaskah?: {
-            can_view?: boolean;
-        };
-        web_official?: {
-            can_manage?: boolean;
-        };
-    };
+    permissions?: PortalNavPermissions;
 };
-
-const mainNavItems: NavItem[] = [
-    {
-        id: 'dashboard',
-        label: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-        isActive: (path) => path === '/dashboard' || path === '/',
-    },
-    {
-        id: 'chat',
-        label: 'Chat',
-        href: '/chat',
-        icon: MessageCircle,
-        isActive: (path) => path === '/chat' || /^\/chat\/\d+/.test(path),
-    },
-    {
-        id: 'pegawai',
-        label: 'Daftar Pegawai',
-        href: '/pegawai',
-        icon: UserCircle,
-        isActive: (path) => path === '/pegawai' || /^\/pegawai\/.+/.test(path),
-    },
-    {
-        id: 'users',
-        label: 'Daftar User',
-        href: '/users',
-        icon: Users,
-        isActive: (path) => path === '/users' || /^\/users\/.+/.test(path),
-    },
-];
-
-const settingsNavItems = [
-    { id: 'profile', label: 'Profil', href: '/settings/profile', icon: Settings },
-    { id: 'tickets-master', label: 'Master Tiket', href: '/settings/tickets', icon: FolderCog },
-];
-
-function isTicketListActive(path: string): boolean {
-    return path === '/tickets' || /^\/tickets\/\d+/.test(path) || /^\/tickets\/\d+\/edit/.test(path);
-}
-
-function isTicketCreateActive(path: string): boolean {
-    return path === '/tickets/create';
-}
-
-const moduleGroups: NavGroup[] = [
-    {
-        id: 'ticketing',
-        label: 'Ticketing',
-        icon: ListTodo,
-        items: [
-            { id: 'tickets', label: 'Daftar Tiket', href: '/tickets', icon: ListTodo, isActive: isTicketListActive },
-            {
-                id: 'tickets-board',
-                label: 'Papan Tiket',
-                href: '/tickets/board',
-                icon: Columns3,
-                isActive: (path) => path === '/tickets/board',
-            },
-            {
-                id: 'tickets-statuses',
-                label: 'Status Tiket',
-                href: '/tickets/statuses',
-                icon: ListFilter,
-                isActive: (path) => path === '/tickets/statuses',
-            },
-            {
-                id: 'tickets-create',
-                label: 'Buat Tiket',
-                href: '/tickets/create',
-                icon: PlusCircle,
-                isActive: isTicketCreateActive,
-            },
-            {
-                id: 'catatan',
-                label: 'Catatan Kerja',
-                href: '/catatan',
-                icon: FileText,
-                isActive: (path) => path === '/catatan' || path.startsWith('/catatan?'),
-            },
-            {
-                id: 'projects',
-                label: 'Rencana',
-                href: '/projects',
-                icon: FolderKanban,
-                isActive: (path) =>
-                    path === '/projects' ||
-                    /^\/projects\/\d+/.test(path) ||
-                    /^\/projects\/\d+\/edit/.test(path) ||
-                    path === '/projects/create',
-            },
-            {
-                id: 'reports',
-                label: 'Laporan',
-                href: '/reports',
-                icon: BarChart3,
-                isActive: (path) => path === '/reports' || /^\/reports\/.+/.test(path),
-            },
-        ],
-    },
-    {
-        id: 'emergency',
-        label: 'Emergency',
-        icon: AlertTriangle,
-        items: [
-            {
-                id: 'emergency-reports',
-                label: 'Daftar Laporan',
-                href: '/emergency-reports',
-                icon: AlertTriangle,
-                isActive: (path) => path === '/emergency-reports' || /^\/emergency-reports\/\d+/.test(path),
-            },
-            {
-                id: 'emergency-reports-create',
-                label: 'Buat Laporan',
-                href: '/emergency-reports/create',
-                icon: PlusCircle,
-                isActive: (path) => path === '/emergency-reports/create',
-            },
-            {
-                id: 'panic-staff',
-                label: 'Panic Staff',
-                href: '/panic-staff',
-                icon: Bell,
-                isActive: (path) => path === '/panic-staff',
-            },
-        ],
-    },
-    {
-        id: 'payroll',
-        label: 'Payroll',
-        icon: Wallet,
-        items: [
-            {
-                id: 'payroll-dashboard',
-                label: 'Dashboard Payroll',
-                href: '/payroll/dashboard',
-                icon: LayoutGrid,
-                isActive: (path) => path === '/payroll/dashboard',
-            },
-            {
-                id: 'payroll-list',
-                label: 'Data Payroll',
-                href: '/payroll',
-                icon: Wallet,
-                isActive: (path) =>
-                    path === '/payroll' ||
-                    /^\/payroll\/\d+/.test(path) ||
-                    /^\/payroll\/\d+\/edit/.test(path),
-            },
-            {
-                id: 'payroll-import',
-                label: 'Import Payroll',
-                href: '/payroll/import',
-                icon: PlusCircle,
-                isActive: (path) => path === '/payroll/import',
-            },
-            {
-                id: 'payroll-import-history',
-                label: 'Riwayat Import',
-                href: '/payroll/import-history',
-                icon: FileText,
-                isActive: (path) => path === '/payroll/import-history',
-            },
-            {
-                id: 'payroll-employee-history',
-                label: 'Riwayat Pegawai',
-                href: '/payroll/employee-history',
-                icon: UserCircle,
-                isActive: (path) =>
-                    path === '/payroll/employee-history' || path.startsWith('/payroll/employee/'),
-            },
-            {
-                id: 'payroll-audit-logs',
-                label: 'Audit Log',
-                href: '/payroll/audit-logs',
-                icon: ListFilter,
-                isActive: (path) => path === '/payroll/audit-logs',
-            },
-        ],
-    },
-    {
-        id: 'patroli',
-        label: 'Patroli',
-        icon: Shield,
-        items: [
-            {
-                id: 'patroli-checkin',
-                label: 'Check-in',
-                href: '/patroli/checkin',
-                icon: ClipboardCheck,
-                isActive: (path) =>
-                    path === '/patroli/checkin' ||
-                    /^\/patroli\/checkin\/\d+/.test(path) ||
-                    path.startsWith('/patroli/scan/'),
-            },
-            {
-                id: 'patroli-laporan',
-                label: 'Laporan',
-                href: '/patroli/laporan',
-                icon: BarChart3,
-                isActive: (path) => path.startsWith('/patroli/laporan'),
-            },
-            {
-                id: 'patroli-templates',
-                label: 'Template',
-                href: '/patroli/templates',
-                icon: ListTodo,
-                isActive: (path) => path.startsWith('/patroli/templates'),
-            },
-            {
-                id: 'patroli-titik',
-                label: 'Titik & QR',
-                href: '/patroli/titik',
-                icon: MapPin,
-                isActive: (path) => path.startsWith('/patroli/titik'),
-            },
-        ],
-    },
-    {
-        id: 'monitoring',
-        label: 'Monitoring',
-        icon: Activity,
-        items: [
-            {
-                id: 'monitoring-list',
-                label: 'Perangkat',
-                href: '/monitoring',
-                icon: Activity,
-                isActive: (path) =>
-                    path === '/monitoring' ||
-                    (/^\/monitoring\/\d+/.test(path) && !path.startsWith('/monitoring/pengaturan')),
-            },
-            {
-                id: 'monitoring-kategori',
-                label: 'Kategori Monitor',
-                href: '/monitoring/pengaturan-kategori',
-                icon: Settings2,
-                isActive: (path) => path.startsWith('/monitoring/pengaturan-kategori'),
-            },
-            {
-                id: 'infrastruktur',
-                label: 'Kesehatan Infrastruktur',
-                href: '/infrastruktur',
-                icon: Server,
-                isActive: (path) =>
-                    path === '/infrastruktur' ||
-                    path.startsWith('/infrastruktur') ||
-                    path.startsWith('/laporan-tianji'),
-            },
-        ],
-    },
-    {
-        id: 'inventaris',
-        label: 'Inventaris',
-        icon: Boxes,
-        items: [
-            {
-                id: 'inventaris-list',
-                label: 'Inventaris',
-                href: '/inventaris',
-                icon: Package,
-                isActive: (path) => path === '/inventaris' || /^\/inventaris\/[^/]+/.test(path),
-            },
-            {
-                id: 'inventaris-barang',
-                label: 'Inventaris Barang',
-                href: '/inventaris-barang',
-                icon: Boxes,
-                isActive: (path) => path === '/inventaris-barang' || /^\/inventaris-barang\/[^/]+/.test(path),
-            },
-            {
-                id: 'inventaris-ruang',
-                label: 'Master Ruang',
-                href: '/inventaris-ruang',
-                icon: MapPin,
-                isActive: (path) => path.startsWith('/inventaris-ruang'),
-            },
-            {
-                id: 'inventaris-kategori',
-                label: 'Master Kategori',
-                href: '/inventaris-kategori',
-                icon: Tags,
-                isActive: (path) => path.startsWith('/inventaris-kategori'),
-            },
-            {
-                id: 'inventaris-jenis',
-                label: 'Master Jenis',
-                href: '/inventaris-jenis',
-                icon: Shapes,
-                isActive: (path) => path.startsWith('/inventaris-jenis'),
-            },
-            {
-                id: 'inventaris-merk',
-                label: 'Master Merk',
-                href: '/inventaris-merk',
-                icon: BadgeCheck,
-                isActive: (path) => path.startsWith('/inventaris-merk'),
-            },
-            {
-                id: 'inventaris-produsen',
-                label: 'Master Produsen',
-                href: '/inventaris-produsen',
-                icon: Building2,
-                isActive: (path) => path.startsWith('/inventaris-produsen'),
-            },
-        ],
-    },
-];
 
 type Props = {
     open: boolean;
@@ -406,36 +33,10 @@ type Props = {
 export function TemplateMobileNav({ open, onOpenChange }: Props) {
     const { isCurrentUrl, currentUrl } = useCurrentUrl();
     const { permissions } = usePage<SharedPageProps>().props;
-    const canAccessPayroll = Boolean(permissions?.can_access_payroll);
-    const canAccessPatroli = Boolean(permissions?.can_access_patroli);
-    const visibleModuleGroups = useMemo(() => {
-        const base = moduleGroups.filter((group) => {
-            if (group.id === 'payroll') {
-                return canAccessPayroll;
-            }
-            if (group.id === 'patroli') {
-                return canAccessPatroli;
-            }
-            return true;
-        });
-        const sikatGroup = buildSikatNavGroup(permissions?.sikat?.enabled);
-        if (sikatGroup) {
-            base.push(sikatGroup);
-        }
-        const simmutuGroup = buildSimmutuNavGroup(permissions?.simmutu);
-        if (simmutuGroup) {
-            base.push(simmutuGroup);
-        }
-        const tatanaskahGroup = buildTatanaskahNavGroup(permissions?.tatanaskah?.can_view);
-        if (tatanaskahGroup) {
-            base.push(tatanaskahGroup);
-        }
-        const webOfficialGroup = buildWebOfficialNavGroup(permissions?.web_official);
-        if (webOfficialGroup) {
-            base.push(webOfficialGroup);
-        }
-        return base;
-    }, [canAccessPayroll, canAccessPatroli, permissions?.simmutu, permissions?.sikat?.enabled, permissions?.tatanaskah?.can_view, permissions?.web_official]);
+    const visibleModuleGroups = useMemo(
+        () => buildVisibleModuleGroups(permissions),
+        [permissions],
+    );
     const activeModuleIds = useMemo(
         () =>
             visibleModuleGroups
@@ -537,7 +138,14 @@ export function TemplateMobileNav({ open, onOpenChange }: Props) {
                                             size="sm"
                                             variant={hasActiveChild ? 'sidebar-active' : 'sidebar'}
                                         />
-                                        <span className="flex-1">{group.label}</span>
+                                        <span className="min-w-0 flex-1">
+                                            <span className="block truncate">{group.label}</span>
+                                            {group.hint ? (
+                                                <span className="block truncate text-[10px] font-normal text-sidebar-muted">
+                                                    {group.hint}
+                                                </span>
+                                            ) : null}
+                                        </span>
                                         <ChevronDown
                                             className={cn(
                                                 'h-4 w-4 shrink-0 transition-transform duration-200',

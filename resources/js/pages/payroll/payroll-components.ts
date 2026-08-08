@@ -53,6 +53,8 @@ export const PAYROLL_COMPONENTS: PayrollComponent[] = [
     { section: 'potongan', key: 'hutang_bpjs', label: 'Hutang BPJS' },
     { section: 'potongan', key: 'hutang_seragam', label: 'Hutang Seragam' },
     { section: 'potongan', key: 'ikkm', label: 'IKKM' },
+    { section: 'potongan', key: 'keterlambatan', label: 'Keterlambatan' },
+    { section: 'potongan', key: 'ijin', label: 'Ijin' },
     { section: 'potongan', key: 'lain_pot', label: 'Lain-lain' },
     // Zakat & Pajak
     { section: 'potongan', key: 'zakat', label: 'Zakat' },

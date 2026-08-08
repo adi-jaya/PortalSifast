@@ -1,0 +1,4 @@
+{
+  "summary": "Implemented SIMMUTU flag management for a dedicated email allowlist: added auth.simmutu_flag_manager_emails / AUTH_SIMMUTU_FLAG_MANAGERS, extended User::canManageMutuAccess(), updated helper text on user create/edit, set .env to admin@portalsifast.com (corrected typo from portalsifats), and added 4 passing Pest tests. Config cache cleared; canManageMutuAccess=yes verified for that user.",
+  "current_status": "Feature complete and tested. Login as admin@portalsifast.com should show SIMMUTU checkboxes on user edit/create. Frontend helper text change may need npm run build for production UI text."
+}

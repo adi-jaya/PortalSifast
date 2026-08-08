@@ -9,11 +9,13 @@ import {
     RefreshCw,
     Search,
     Ticket,
+    Trash2,
     Upload,
 } from 'lucide-react';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -119,6 +121,12 @@ export default function AsetIndex({ asets, ruang, filters, stats }: Props) {
         filters.aset_ruang_id ? String(filters.aset_ruang_id) : '__all__',
     );
     const [monitoring, setMonitoring] = useState(filters.monitoring || '__all__');
+    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const pageIds = useMemo(() => asets.data.map((row) => row.id), [asets.data]);
+    const allSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
+    const someSelected = selectedIds.size > 0;
 
     const apply = (overrides: Record<string, string | undefined> = {}) => {
         router.get(
@@ -138,6 +146,56 @@ export default function AsetIndex({ asets, ruang, filters, stats }: Props) {
     const onSearch = (e: FormEvent) => {
         e.preventDefault();
         apply();
+    };
+
+    const toggleSelect = (id: number): void => {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
+
+            return next;
+        });
+    };
+
+    const toggleSelectAll = (): void => {
+        if (allSelected) {
+            setSelectedIds(new Set());
+
+            return;
+        }
+
+        setSelectedIds(new Set(pageIds));
+    };
+
+    const handleBulkDelete = (): void => {
+        if (selectedIds.size === 0) {
+            return;
+        }
+
+        if (
+            !confirm(
+                `Hapus ${selectedIds.size} aset yang dipilih dari portal?\n\nData SIMRS tidak berubah.`,
+            )
+        ) {
+            return;
+        }
+
+        setIsDeleting(true);
+        router.post(
+            '/aset/bulk-delete',
+            { ids: Array.from(selectedIds) },
+            {
+                preserveScroll: true,
+                onFinish: () => {
+                    setIsDeleting(false);
+                    setSelectedIds(new Set());
+                },
+            },
+        );
     };
 
     return (
@@ -309,6 +367,34 @@ export default function AsetIndex({ asets, ruang, filters, stats }: Props) {
                     </Button>
                 </form>
 
+                {someSelected ? (
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/25 bg-destructive/5 px-3 py-2.5">
+                        <p className="text-sm font-medium">
+                            {selectedIds.size} aset dipilih
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedIds(new Set())}
+                            >
+                                Batalkan
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                disabled={isDeleting}
+                                onClick={handleBulkDelete}
+                            >
+                                <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                                Hapus {selectedIds.size} dipilih
+                            </Button>
+                        </div>
+                    </div>
+                ) : null}
+
                 {/* List */}
                 {asets.data.length === 0 ? (
                     <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border/80 px-6 py-14 text-center">
@@ -333,93 +419,144 @@ export default function AsetIndex({ asets, ruang, filters, stats }: Props) {
                 ) : (
                     <div className="overflow-hidden rounded-xl border border-border/80 bg-card shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
                         {/* Desktop header */}
-                        <div className="hidden border-b border-border/60 bg-muted/30 px-4 py-2.5 text-[11px] font-medium tracking-wide text-muted-foreground uppercase md:grid md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,0.9fr)_auto] md:gap-4">
+                        <div className="hidden border-b border-border/60 bg-muted/30 px-4 py-2.5 text-[11px] font-medium tracking-wide text-muted-foreground uppercase md:grid md:grid-cols-[auto_minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,0.9fr)_auto] md:items-center md:gap-4">
+                            <Checkbox
+                                checked={allSelected}
+                                onCheckedChange={() => toggleSelectAll()}
+                                aria-label="Pilih semua aset di halaman ini"
+                            />
                             <span>Barang</span>
                             <span>Lokasi</span>
                             <span>Status</span>
                             <span className="text-right">Aksi</span>
                         </div>
 
+                        <div className="flex items-center justify-between gap-3 border-b border-border/60 bg-muted/20 px-3 py-2 md:hidden">
+                            <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm">
+                                <Checkbox
+                                    checked={allSelected}
+                                    onCheckedChange={() => toggleSelectAll()}
+                                    aria-label="Pilih semua aset di halaman ini"
+                                />
+                                Pilih semua
+                            </label>
+                        </div>
+
                         <ul className="divide-y divide-border/60">
-                            {asets.data.map((item) => (
-                                <li key={item.id}>
-                                    <Link
-                                        href={`/aset/${item.kode_aset}`}
-                                        className="group flex flex-col gap-3 px-3 py-3 transition-colors hover:bg-muted/35 sm:px-4 md:grid md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,0.9fr)_auto] md:items-center md:gap-4"
+                            {asets.data.map((item) => {
+                                const selected = selectedIds.has(item.id);
+
+                                return (
+                                    <li
+                                        key={item.id}
+                                        className={cn(
+                                            'transition-colors',
+                                            selected ? 'bg-primary/5' : 'hover:bg-muted/35',
+                                        )}
                                     >
-                                        {/* Barang + thumb */}
-                                        <div className="flex min-w-0 items-start gap-3">
-                                            <Thumb src={item.photo_src} alt={item.nama_barang} />
-                                            <div className="min-w-0 flex-1">
-                                                <p className="truncate text-sm font-semibold tracking-tight group-hover:text-teal-800 dark:group-hover:text-teal-300">
-                                                    {item.nama_barang}
-                                                </p>
-                                                <p className="mt-0.5 font-mono text-[11px] text-muted-foreground sm:text-xs">
-                                                    {item.kode_aset}
-                                                </p>
-                                                <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-                                                    {[item.nama_merk, item.nama_jenis, item.no_seri ? `SN ${item.no_seri}` : null]
-                                                        .filter(Boolean)
-                                                        .join(' · ') || '—'}
-                                                </p>
+                                        <div className="flex flex-col gap-3 px-3 py-3 sm:px-4 md:grid md:grid-cols-[auto_minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,0.9fr)_auto] md:items-center md:gap-4">
+                                            <div className="flex items-start gap-3 md:contents">
+                                                <div className="flex min-h-11 items-center">
+                                                    <Checkbox
+                                                        checked={selected}
+                                                        onCheckedChange={() => toggleSelect(item.id)}
+                                                        aria-label={`Pilih ${item.kode_aset}`}
+                                                    />
+                                                </div>
+
+                                                {/* Barang + thumb */}
+                                                <div className="flex min-w-0 flex-1 items-start gap-3">
+                                                    <Thumb src={item.photo_src} alt={item.nama_barang} />
+                                                    <div className="min-w-0 flex-1">
+                                                        <Link
+                                                            href={`/aset/${item.kode_aset}`}
+                                                            className="truncate text-sm font-semibold tracking-tight hover:text-teal-800 dark:hover:text-teal-300"
+                                                        >
+                                                            {item.nama_barang}
+                                                        </Link>
+                                                        <p className="mt-0.5 font-mono text-[11px] text-muted-foreground sm:text-xs">
+                                                            {item.kode_aset}
+                                                        </p>
+                                                        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                                                            {[
+                                                                item.nama_merk,
+                                                                item.nama_jenis,
+                                                                item.no_seri ? `SN ${item.no_seri}` : null,
+                                                            ]
+                                                                .filter(Boolean)
+                                                                .join(' · ') || '—'}
+                                                        </p>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
 
-                                        {/* Lokasi */}
-                                        <div className="flex min-w-0 items-center gap-1.5 pl-14 text-sm text-muted-foreground md:pl-0">
-                                            <MapPin className="h-3.5 w-3.5 shrink-0 opacity-70" />
-                                            <span className="truncate">{item.nama_ruang ?? 'Ruang belum diisi'}</span>
-                                        </div>
+                                            {/* Lokasi */}
+                                            <div className="flex min-w-0 items-center gap-1.5 pl-10 text-sm text-muted-foreground md:pl-0">
+                                                <MapPin className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                                                <span className="truncate">{item.nama_ruang ?? 'Ruang belum diisi'}</span>
+                                            </div>
 
-                                        {/* Status */}
-                                        <div className="flex flex-wrap items-center gap-1.5 pl-14 md:pl-0">
-                                            <Badge
-                                                variant="outline"
-                                                className={cn('rounded-md px-1.5 py-0 text-[10px] font-medium capitalize', siklusBadge(item.siklus_hidup))}
-                                            >
-                                                {item.siklus_hidup}
-                                            </Badge>
-                                            {item.kelas_aset && (
-                                                <Badge variant="secondary" className="rounded-md px-1.5 py-0 text-[10px]">
-                                                    {item.kelas_aset}
-                                                </Badge>
-                                            )}
-                                            {item.status_fungsi === 'tidak_berfungsi' && (
-                                                <Badge variant="destructive" className="rounded-md px-1.5 py-0 text-[10px]">
-                                                    Tidak berfungsi
-                                                </Badge>
-                                            )}
-                                            {item.open_tickets > 0 && (
-                                                <Badge variant="outline" className="rounded-md px-1.5 py-0 text-[10px]">
-                                                    <Ticket className="mr-0.5 h-2.5 w-2.5" />
-                                                    {item.open_tickets}
-                                                </Badge>
-                                            )}
-                                            {item.monitoring ? (
+                                            {/* Status */}
+                                            <div className="flex flex-wrap items-center gap-1.5 pl-10 md:pl-0">
                                                 <Badge
                                                     variant="outline"
                                                     className={cn(
-                                                        'rounded-md px-1.5 py-0 text-[10px] capitalize',
-                                                        item.monitoring.status === 'online'
-                                                            ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-                                                            : 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200',
+                                                        'rounded-md px-1.5 py-0 text-[10px] font-medium capitalize',
+                                                        siklusBadge(item.siklus_hidup),
                                                     )}
                                                 >
-                                                    <Activity className="mr-0.5 h-2.5 w-2.5" />
-                                                    {item.monitoring.status}
+                                                    {item.siklus_hidup}
                                                 </Badge>
-                                            ) : null}
-                                        </div>
+                                                {item.kelas_aset && (
+                                                    <Badge
+                                                        variant="secondary"
+                                                        className="rounded-md px-1.5 py-0 text-[10px]"
+                                                    >
+                                                        {item.kelas_aset}
+                                                    </Badge>
+                                                )}
+                                                {item.status_fungsi === 'tidak_berfungsi' && (
+                                                    <Badge
+                                                        variant="destructive"
+                                                        className="rounded-md px-1.5 py-0 text-[10px]"
+                                                    >
+                                                        Tidak berfungsi
+                                                    </Badge>
+                                                )}
+                                                {item.open_tickets > 0 && (
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="rounded-md px-1.5 py-0 text-[10px]"
+                                                    >
+                                                        <Ticket className="mr-0.5 h-2.5 w-2.5" />
+                                                        {item.open_tickets}
+                                                    </Badge>
+                                                )}
+                                                {item.monitoring ? (
+                                                    <Badge
+                                                        variant="outline"
+                                                        className={cn(
+                                                            'rounded-md px-1.5 py-0 text-[10px] capitalize',
+                                                            item.monitoring.status === 'online'
+                                                                ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                                                                : 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200',
+                                                        )}
+                                                    >
+                                                        <Activity className="mr-0.5 h-2.5 w-2.5" />
+                                                        {item.monitoring.status}
+                                                    </Badge>
+                                                ) : null}
+                                            </div>
 
-                                        {/* Aksi hint */}
-                                        <div className="hidden text-right text-xs text-muted-foreground md:block">
-                                            <span className="opacity-0 transition-opacity group-hover:opacity-100">
-                                                Lihat →
-                                            </span>
+                                            <div className="pl-10 text-right md:pl-0">
+                                                <Button variant="outline" size="sm" asChild>
+                                                    <Link href={`/aset/${item.kode_aset}`}>Lihat</Link>
+                                                </Button>
+                                            </div>
                                         </div>
-                                    </Link>
-                                </li>
-                            ))}
+                                    </li>
+                                );
+                            })}
                         </ul>
                     </div>
                 )}

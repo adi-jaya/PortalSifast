@@ -1,6 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Activity, ArrowLeft, ArrowLeftRight, Download, HandCoins, QrCode, Ticket, Trash2 } from 'lucide-react';
-import { FormEvent, useEffect, useRef, type ReactNode } from 'react';
+import { FormEvent, useEffect, useRef, useState, type ReactNode } from 'react';
 import InputError from '@/components/input-error';
 import { DeviceLinkPicker, type LinkableDeviceOption } from '@/components/monitoring/device-link-picker';
 import { MetricBar } from '@/components/monitoring/metric-bar';
@@ -359,6 +359,22 @@ export default function AsetShow({
     const namaBarang = aset.barang?.nama_barang ?? 'Aset';
     const sn = aset.no_seri || aset.kode_aset;
     const titleLine = `${namaBarang} - ${sn}`;
+    const [deletingAset, setDeletingAset] = useState(false);
+
+    const handleDeleteAset = (): void => {
+        if (
+            !confirm(
+                `Hapus aset "${aset.kode_aset}" dari portal?\n\nData aset di portal akan dihapus (soft delete). Data SIMRS tidak berubah.`,
+            )
+        ) {
+            return;
+        }
+
+        setDeletingAset(true);
+        router.delete(`/aset/${aset.kode_aset}`, {
+            onFinish: () => setDeletingAset(false),
+        });
+    };
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: dashboard().url },
@@ -491,6 +507,15 @@ export default function AsetShow({
                         </Button>
                         <Button asChild>
                             <Link href={`/aset/${aset.kode_aset}/edit`}>Edit</Link>
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            disabled={deletingAset}
+                            onClick={handleDeleteAset}
+                        >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Hapus aset
                         </Button>
                     </div>
                 </div>

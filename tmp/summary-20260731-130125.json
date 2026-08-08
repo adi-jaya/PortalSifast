@@ -1,0 +1,4 @@
+{
+  "summary": "User asked if June for the 21 NIKs can be restored before re-importing. Confirmed no DB backup/binlog/CSV on server — cannot restore without re-importing gajijuliupload.csv as June. Advised replace-via-import flow for June then July.",
+  "current_status": "June 21 NIKs remain missing until user re-imports original June CSV. July #14 still present until replaced by correct July import."
+}

@@ -251,7 +251,16 @@ class User extends Authenticatable
 
     public function canManageMutuAccess(): bool
     {
-        return $this->isSuperAdmin();
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        $emails = config('auth.simmutu_flag_manager_emails', []);
+        if (! is_array($emails)) {
+            return false;
+        }
+
+        return in_array(mb_strtolower((string) $this->email), $emails, true);
     }
 
     // ==================== TATA NASKAH ====================

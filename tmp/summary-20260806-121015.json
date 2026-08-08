@@ -1,0 +1,4 @@
+{
+  "summary": "Added multi-select bulk delete on /aset index: checkboxes (per row + select all on page), toolbar Hapus N dipilih, POST /aset/bulk-delete with BulkDestroyAsetRequest and soft-delete. Tests AsetBulkDestroyTest + AsetDestroyTest all passed (7).",
+  "current_status": "Aset index supports mark-and-delete; detail page still has single Hapus aset. User may need npm run build/dev to see UI on production."
+}

@@ -1,0 +1,4 @@
+{
+  "summary": "Implemented shared portal nav: created resources/js/lib/portal-nav.ts as single source of truth (desktop Inventaris Portal + Referensi SIMRS, Patroli Area & Ruang), refactored TemplateSidebar and TemplateMobileNav to consume it, added PortalNavParityTest and updated SoftShell branding assertions. All 9 related tests passed.",
+  "current_status": "Desktop/mobile menu parity shipped via shared portal-nav; user may need npm run build/dev to see frontend changes in browser."
+}

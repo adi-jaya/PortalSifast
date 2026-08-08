@@ -1,0 +1,4 @@
+{
+  "summary": "Fixed payroll period filter bug: Carbon createFromFormat('Y-m') on July 31 overflowed June→July, so filter June showed July's 21 rows. Changed to !Y-m across payroll/mutu controllers; added Pest regression test. June now correctly returns 181 rows.",
+  "current_status": "Filter Juni vs Juli should work after refresh. Data itself was fine; UI query was wrong on day 31."
+}

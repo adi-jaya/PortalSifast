@@ -51,7 +51,10 @@ final class PayrollSlipMath
         'hutang_bpjs',
         'hutang_seragam',
         'ikkm',
+        'keterlambatan',
+        'ijin',
         'lain_lain',
+        'lain_-_lain',
     ];
 
     /**

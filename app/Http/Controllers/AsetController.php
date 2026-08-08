@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\BulkDestroyAsetRequest;
 use App\Http\Requests\Monitoring\LinkAsetMonitoredDeviceRequest;
 use App\Http\Requests\StoreAsetRequest;
 use App\Http\Requests\VerifikasiAsetRequest;
@@ -569,6 +570,18 @@ class AsetController extends Controller
         return redirect()
             ->route('aset.index')
             ->with('success', 'Aset dihapus dari portal (SIMRS tidak berubah).');
+    }
+
+    public function bulkDestroy(BulkDestroyAsetRequest $request): RedirectResponse
+    {
+        /** @var list<int> $ids */
+        $ids = $request->validated('ids');
+
+        $count = Aset::query()->whereIn('id', $ids)->delete();
+
+        return redirect()
+            ->route('aset.index')
+            ->with('success', "{$count} aset dihapus dari portal (SIMRS tidak berubah).");
     }
 
     public function verifikasi(

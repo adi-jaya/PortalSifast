@@ -1,0 +1,4 @@
+{
+  "summary": "Fixed aset CSV header error: parser now auto-detects comma/semicolon/tab delimiters (Excel ID), skips Excel sep= preamble, normalizes encoding/BOM, and shows clearer error with detected headers. Added tests for semicolon and sep= CSVs; 9 import tests passed.",
+  "current_status": "Aset import should accept Excel-saved CSV with ; delimiter; user can re-upload previous file without renaming kelas_aset column."
+}

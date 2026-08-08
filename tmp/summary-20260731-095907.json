@@ -1,0 +1,4 @@
+{
+  "summary": "User chose option A for payroll potongan: separate Keterlambatan, Ijin, and Lain-lain. Presented three implementation approaches with recommendation to add DB columns + split mapper/slip lines; awaiting approval before writing the design spec.",
+  "current_status": "Brainstorming payroll potongan split. Confirmed issue on slip #848 (90k+50k+500k merged into lain_pot 640k). Awaiting user approval of recommended Approach 1."
+}

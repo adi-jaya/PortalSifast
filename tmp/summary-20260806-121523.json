@@ -1,0 +1,4 @@
+{
+  "summary": "Explored SIMMUTU user-flag permission on Edit User: the SIMMUTU checkbox block is gated by User::canManageMutuAccess(), which currently returns only isSuperAdmin() (AUTH_SUPERADMIN_EMAILS = okyueki@gmail.com). Asked the user to choose scope for allowing admin@portalsifats.com to manage SIMMUTU flags (email-only vs all admins vs full superadmin).",
+  "current_status": "Awaiting user choice on permission scope before proposing approaches and implementing the change so admin@portalsifats.com can toggle SIMMUTU flags for other users."
+}

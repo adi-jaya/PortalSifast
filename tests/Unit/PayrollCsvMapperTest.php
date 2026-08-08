@@ -58,9 +58,25 @@ test('maps july 2026 payroll csv format with combined tunjangan column', functio
         ->and($mapped['tunj_makan'])->toBeNull()
         ->and(PayrollCsvMapper::usesCombinedTunjangan($raw))->toBeTrue()
         ->and($mapped['lain_lain'])->toBe('150000')
-        ->and($mapped['lain_pot'])->toBe('195000')
+        ->and($mapped['keterlambatan'])->toBe('120000')
+        ->and($mapped['ijin'])->toBe('50000')
+        ->and($mapped['lain_pot'])->toBe('25000')
         ->and($mapped['jkn'])->toBe('1103169')
         ->and($mapped['umum'])->toBe('528309');
+});
+
+test('maps dia nita style potongan without merging keterlambatan ijin lain', function () {
+    $raw = [
+        'keterlambatan' => '90.000',
+        'ijin' => '50.000',
+        'lain_-_lain' => '500.000',
+    ];
+
+    $mapped = PayrollCsvMapper::mapRawRow($raw);
+
+    expect($mapped['keterlambatan'])->toBe('90000')
+        ->and($mapped['ijin'])->toBe('50000')
+        ->and($mapped['lain_pot'])->toBe('500000');
 });
 
 test('build verification rows detect csv db mismatch', function () {

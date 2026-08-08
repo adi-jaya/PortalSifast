@@ -1,0 +1,4 @@
+{
+  "summary": "User chose shared nav source of truth (A). Proposed three approaches for full desktop/mobile menu parity: (1) shared nav data + visibility builder — recommended, (2) single shared PortalNav UI shell, (3) export groups from sidebar into mobile. Awaiting approach choice before presenting detailed design.",
+  "current_status": "Brainstorming — requirements locked (parity + shared source); approaches presented; waiting for user pick."
+}

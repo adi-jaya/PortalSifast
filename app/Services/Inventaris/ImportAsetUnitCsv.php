@@ -44,43 +44,93 @@ class ImportAsetUnitCsv
     }
 
     /**
+     * Example rows for the downloadable template.
+     * Uses real Master Ruang / katalog leaf codes when available so the sample actually imports.
+     *
      * @return list<list<string>>
      */
     public function exampleRows(): array
     {
+        $ruangCodes = AsetRuang::query()
+            ->orderBy('kode_ruang')
+            ->limit(2)
+            ->pluck('kode_ruang')
+            ->all();
+
+        $katalog = AsetNonAlkes::query()
+            ->leaf()
+            ->whereNotNull('kode')
+            ->where('kode', '!=', '')
+            ->orderBy('kode')
+            ->first();
+
+        if ($ruangCodes === [] || $katalog === null) {
+            return [];
+        }
+
+        $kodeKatalog = (string) ($katalog->kode ?: $katalog->alat_code);
+        $namaBarang = (string) $katalog->nama_alat;
+        $tahun = (string) now()->year;
+        $rows = [];
+
+        foreach ($ruangCodes as $index => $kodeRuang) {
+            $suffix = str_pad((string) ($index + 1), 2, '0', STR_PAD_LEFT);
+            $rows[] = [
+                'non_medis',
+                $kodeKatalog,
+                '',
+                (string) $kodeRuang,
+                $tahun,
+                'SN-CONTOH-'.$suffix,
+                $namaBarang,
+                '',
+                '',
+                '',
+                'Beli',
+                $tahun.'-01-15',
+                'berfungsi',
+                'baik',
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @return array{
+     *     ruang_count: int,
+     *     sample_ruang: list<array{kode_ruang: string, nama_ruang: string}>,
+     *     sample_non_alkes: array{kode: string, nama_alat: string}|null,
+     *     template_has_examples: bool
+     * }
+     */
+    public function importHints(): array
+    {
+        $sampleRuang = AsetRuang::query()
+            ->orderBy('kode_ruang')
+            ->limit(8)
+            ->get(['kode_ruang', 'nama_ruang'])
+            ->map(fn (AsetRuang $ruang): array => [
+                'kode_ruang' => $ruang->kode_ruang,
+                'nama_ruang' => $ruang->nama_ruang,
+            ])
+            ->all();
+
+        $katalog = AsetNonAlkes::query()
+            ->leaf()
+            ->whereNotNull('kode')
+            ->where('kode', '!=', '')
+            ->orderBy('kode')
+            ->first(['kode', 'nama_alat', 'alat_code']);
+
         return [
-            [
-                'non_medis',
-                '10.02.002',
-                '',
-                'IGD01',
-                '2026',
-                'SN-IGD-01',
-                'Lenovo Ideapad 3',
-                'Lenovo',
-                'Ideapad 3',
-                '6000000',
-                'Beli',
-                '2026-01-15',
-                'berfungsi',
-                'baik',
+            'ruang_count' => AsetRuang::query()->count(),
+            'sample_ruang' => $sampleRuang,
+            'sample_non_alkes' => $katalog === null ? null : [
+                'kode' => (string) ($katalog->kode ?: $katalog->alat_code),
+                'nama_alat' => (string) $katalog->nama_alat,
             ],
-            [
-                'non_medis',
-                '10.02.002',
-                '',
-                'POL01',
-                '2026',
-                'SN-POL-01',
-                'Lenovo Ideapad 3',
-                'Lenovo',
-                'Ideapad 3',
-                '6000000',
-                'Beli',
-                '2026-01-15',
-                'berfungsi',
-                'baik',
-            ],
+            'template_has_examples' => $sampleRuang !== [] && $katalog !== null,
         ];
     }
 
@@ -195,51 +245,109 @@ class ImportAsetUnitCsv
             return [];
         }
 
-        $handle = fopen($path, 'r');
-        if ($handle === false) {
+        $raw = file_get_contents($path);
+        if ($raw === false || trim($raw) === '') {
             return [];
         }
 
-        $header = fgetcsv($handle);
-        if ($header === false) {
-            fclose($handle);
+        $raw = $this->normalizeCsvEncoding($raw);
+        $lines = preg_split("/\r\n|\n|\r/", $raw) ?: [];
+        $lines = array_values(array_filter($lines, fn (string $line): bool => trim($line) !== ''));
 
+        if ($lines === []) {
             return [];
         }
 
-        // Strip UTF-8 BOM from first header cell
-        if (isset($header[0])) {
-            $header[0] = preg_replace('/^\xEF\xBB\xBF/', '', (string) $header[0]) ?? (string) $header[0];
+        // Excel often injects "sep=;" / "sep=," as the first line.
+        if (preg_match('/^sep=/i', trim($lines[0])) === 1) {
+            array_shift($lines);
         }
 
-        $header = array_map(fn ($h) => strtolower(trim((string) $h)), $header);
+        if ($lines === []) {
+            return [];
+        }
+
+        $delimiter = $this->detectDelimiter($lines[0]);
+        $header = array_map(
+            fn ($h) => $this->normalizeHeaderCell((string) $h),
+            str_getcsv($lines[0], $delimiter),
+        );
+
         $required = ['kelas_aset', 'kode_ruang', 'tahun_registrasi'];
         foreach ($required as $col) {
             if (! in_array($col, $header, true)) {
-                fclose($handle);
+                $found = collect($header)->filter()->take(8)->implode(', ');
                 throw ValidationException::withMessages([
-                    'file' => "Header CSV wajib mengandung kolom: {$col}.",
+                    'file' => $found === ''
+                        ? "Header CSV wajib mengandung kolom: {$col}. Unduh ulang template (jangan ubah baris header)."
+                        : "Header CSV wajib mengandung kolom: {$col}. Header terdeteksi: {$found}. Unduh ulang template atau simpan sebagai CSV UTF-8 (koma/titik-koma keduanya diterima).",
                 ]);
             }
         }
 
         $rows = [];
-        while (($data = fgetcsv($handle)) !== false) {
+        foreach (array_slice($lines, 1) as $line) {
+            $data = str_getcsv($line, $delimiter);
             if (count($data) === 1 && ($data[0] === null || trim((string) $data[0]) === '')) {
                 continue;
             }
+
             $row = [];
             foreach ($header as $i => $key) {
+                if ($key === '') {
+                    continue;
+                }
                 $row[$key] = trim((string) ($data[$i] ?? ''));
             }
+
             if ($this->rowIsEmpty($row)) {
                 continue;
             }
+
             $rows[] = $row;
         }
-        fclose($handle);
 
         return $rows;
+    }
+
+    private function normalizeCsvEncoding(string $raw): string
+    {
+        if (str_starts_with($raw, "\xFF\xFE") || str_starts_with($raw, "\xFE\xFF")) {
+            $converted = mb_convert_encoding($raw, 'UTF-8', 'UTF-16');
+
+            return is_string($converted) ? $converted : $raw;
+        }
+
+        if (str_starts_with($raw, "\xEF\xBB\xBF")) {
+            return substr($raw, 3);
+        }
+
+        return $raw;
+    }
+
+    private function detectDelimiter(string $line): string
+    {
+        $candidates = [',', ';', "\t", '|'];
+        $best = ',';
+        $bestCount = 0;
+
+        foreach ($candidates as $candidate) {
+            $count = count(str_getcsv($line, $candidate));
+            if ($count > $bestCount) {
+                $bestCount = $count;
+                $best = $candidate;
+            }
+        }
+
+        return $best;
+    }
+
+    private function normalizeHeaderCell(string $header): string
+    {
+        $header = preg_replace('/^\xEF\xBB\xBF/', '', $header) ?? $header;
+        $header = str_replace(["\u{00A0}", "\u{200B}", '"', "'"], [' ', '', '', ''], $header);
+
+        return strtolower(trim($header));
     }
 
     /**
@@ -298,7 +406,7 @@ class ImportAsetUnitCsv
         if ($kodeRuang === '') {
             $errors[] = 'kode_ruang wajib.';
         } elseif (! AsetRuang::query()->where('kode_ruang', $kodeRuang)->exists()) {
-            $errors[] = "kode_ruang \"{$kodeRuang}\" tidak ditemukan.";
+            $errors[] = "kode_ruang \"{$kodeRuang}\" tidak ditemukan di Master Ruang. Unduh ulang template atau cek Master Ruang.";
         }
 
         $tahun = $row['tahun_registrasi'] ?? '';

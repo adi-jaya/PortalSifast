@@ -32,6 +32,8 @@ export type SalaryFieldKey =
     | 'hutang_bpjs'
     | 'hutang_seragam'
     | 'ikkm'
+    | 'keterlambatan'
+    | 'ijin'
     | 'lain_pot';
 
 export type SlipLineDef = {
@@ -100,6 +102,8 @@ export const SLIP_SECTIONS: SlipSectionDef[] = [
             { key: 'hutang_bpjs', label: 'Hutang BPJS' },
             { key: 'hutang_seragam', label: 'Hutang Seragam' },
             { key: 'ikkm', label: 'IKKM' },
+            { key: 'keterlambatan', label: 'Keterlambatan' },
+            { key: 'ijin', label: 'Ijin' },
             { key: 'lain_pot', label: 'Lain-lain' },
         ],
     },

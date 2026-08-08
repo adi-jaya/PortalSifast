@@ -43,8 +43,17 @@ function makeUnitImportCsv(array $rows): UploadedFile
     return UploadedFile::fake()->createWithContent('import-aset.csv', $content);
 }
 
-it('downloads unit import csv template', function () {
+it('downloads unit import csv template with real ruang codes', function () {
     $user = User::factory()->create();
+    AsetRuang::query()->create(['kode_ruang' => 'IT', 'nama_ruang' => 'IT']);
+    AsetRuang::query()->create(['kode_ruang' => 'GM101', 'nama_ruang' => 'Direktur']);
+    AsetNonAlkes::query()->create([
+        'id_alat' => '1001002',
+        'nama_alat' => 'Mini Komputer',
+        'kode' => '10.01.002',
+        'alat_code' => '10.01.002',
+        'deleted' => false,
+    ]);
 
     $response = actingAs($user)
         ->get(route('aset.import.template'));
@@ -56,7 +65,25 @@ it('downloads unit import csv template', function () {
 
     expect($csv)->toContain('kelas_aset')
         ->and($csv)->toContain('kode_ruang')
-        ->and($csv)->toContain('10.02.002');
+        ->and($csv)->toContain('10.01.002')
+        ->and($csv)->toContain('IT')
+        ->and($csv)->toContain('GM101')
+        ->and($csv)->not->toContain('IGD01')
+        ->and($csv)->not->toContain('POL01');
+});
+
+it('import page shares ruang hints for template guidance', function () {
+    $user = User::factory()->create();
+    AsetRuang::query()->create(['kode_ruang' => 'IT', 'nama_ruang' => 'IT']);
+
+    actingAs($user)
+        ->get(route('aset.import'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('aset/import')
+            ->where('hints.ruang_count', 1)
+            ->where('hints.sample_ruang.0.kode_ruang', 'IT')
+            ->has('hints.template_has_examples'));
 });
 
 it('previews errors when kode_non_alkes missing for non_medis', function () {
@@ -155,6 +182,57 @@ it('imports two units different ruang same catalog after clean preview', functio
         ->and($asets[0]->aset_barang_id)->toBe($asets[1]->aset_barang_id)
         ->and($asets[0]->kode_aset)->toBe('INV-IGD01-2026-0001')
         ->and($asets[1]->kode_aset)->toBe('INV-POL01-2026-0001');
+});
+
+it('previews semicolon-delimited csv from excel locale', function () {
+    $user = User::factory()->create();
+    AsetRuang::query()->create(['kode_ruang' => 'IT', 'nama_ruang' => 'IT']);
+    AsetNonAlkes::query()->create([
+        'id_alat' => '1001002',
+        'nama_alat' => 'Mini Komputer',
+        'kode' => '10.01.002',
+        'alat_code' => '10.01.002',
+        'deleted' => false,
+    ]);
+
+    $csv = "kelas_aset;kode_non_alkes;kode_aspak;kode_ruang;tahun_registrasi;no_seri;nama_barang;nama_merk;nama_tipe;harga;asal_barang;tanggal_pengadaan;status_fungsi;tingkat_kerusakan\n"
+        ."non_medis;10.01.002;;IT;2026;SN-SEMI-01;Mini Komputer;;;;;;;\n";
+
+    $file = UploadedFile::fake()->createWithContent('import-excel.csv', $csv);
+
+    actingAs($user)
+        ->post(route('aset.import.preview'), ['file' => $file])
+        ->assertRedirect(route('aset.import'));
+
+    $preview = session(App\Services\Inventaris\ImportAsetUnitCsv::SESSION_KEY);
+    expect($preview['error_count'])->toBe(0)
+        ->and($preview['ok_count'])->toBe(1)
+        ->and($preview['rows'][0]['summary']['kode_ruang'])->toBe('IT');
+});
+
+it('skips excel sep= preamble and still reads headers', function () {
+    $user = User::factory()->create();
+    AsetRuang::query()->create(['kode_ruang' => 'IT', 'nama_ruang' => 'IT']);
+    AsetNonAlkes::query()->create([
+        'id_alat' => '1001002',
+        'nama_alat' => 'Mini Komputer',
+        'kode' => '10.01.002',
+        'alat_code' => '10.01.002',
+        'deleted' => false,
+    ]);
+
+    $csv = "sep=;\n"
+        ."kelas_aset;kode_non_alkes;kode_aspak;kode_ruang;tahun_registrasi;no_seri;nama_barang;nama_merk;nama_tipe;harga;asal_barang;tanggal_pengadaan;status_fungsi;tingkat_kerusakan\n"
+        ."non_medis;10.01.002;;IT;2026;SN-SEP-01;Mini Komputer;;;;;;;\n";
+
+    $file = UploadedFile::fake()->createWithContent('import-sep.csv', $csv);
+
+    actingAs($user)
+        ->post(route('aset.import.preview'), ['file' => $file])
+        ->assertRedirect(route('aset.import'));
+
+    $preview = session(App\Services\Inventaris\ImportAsetUnitCsv::SESSION_KEY);
+    expect($preview['error_count'])->toBe(0)->and($preview['ok_count'])->toBe(1);
 });
 
 it('flags duplicate serial within the csv file', function () {

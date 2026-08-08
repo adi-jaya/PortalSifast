@@ -112,6 +112,8 @@ class EmployeeSalaryImportService
                     'hutang_bpjs' => $mapped['hutang_bpjs'],
                     'hutang_seragam' => $mapped['hutang_seragam'],
                     'ikkm' => $mapped['ikkm'],
+                    'keterlambatan' => $mapped['keterlambatan'],
+                    'ijin' => $mapped['ijin'],
                     'lain_pot' => $mapped['lain_pot'],
                     'jumlah' => $mapped['jumlah'],
                     'jumlah_tunjangan' => $mapped['jumlah_tunjangan'],

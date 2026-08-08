@@ -54,12 +54,17 @@ test('icon well component provides solid icon containers', function () {
 });
 
 test('sidebar branding uses portal sifast naming', function () {
+    $portalNav = file_get_contents(resource_path('js/lib/portal-nav.ts'));
     $sidebar = file_get_contents(resource_path('js/components/template-sidebar.tsx'));
 
+    expect($portalNav)
+        ->toContain("export const APP_NAME = 'Portal Sifast'")
+        ->toContain("export const APP_SUBTITLE = 'RS Aisyiyah Siti Fatimah'");
+
     expect($sidebar)
-        ->toContain("const APP_NAME = 'Portal Sifast'")
         ->toContain('IconWell')
-        ->toContain("const APP_SUBTITLE = 'RS Aisyiyah Siti Fatimah'");
+        ->toContain('APP_NAME')
+        ->toContain('APP_SUBTITLE');
 });
 
 test('data table primitives match soft shell table spec', function () {

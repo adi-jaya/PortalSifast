@@ -1,0 +1,4 @@
+{
+  "summary": "User selected approach 1 (shared nav data + builder). Presented Design Section 1 — Architecture: new portal-nav module as single source of truth (desktop inventory groups + visibility builder), TemplateSidebar/TemplateMobileNav become render-only consumers. Awaiting approval before remaining design sections.",
+  "current_status": "Brainstorming — design presentation in progress; architecture section awaiting user OK."
+}

@@ -1,0 +1,4 @@
+{
+  "summary": "Confirmed API payroll already uses !Y-m (list + import). Added Pest regression test that period=2026-06 on July 31 returns June slip only; tests passed.",
+  "current_status": "Web and API payroll period parsing fixed for day-31 overflow. Mobile/API clients can filter ?period=2026-06 safely."
+}

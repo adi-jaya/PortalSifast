@@ -193,6 +193,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('aset/audit/{audit}/item/{item}/bukti', [AuditAsetController::class, 'storeBukti'])->name('aset.audit.item.bukti');
 
     Route::get('aset/created', [AsetController::class, 'created'])->name('aset.created');
+    Route::post('aset/bulk-delete', [AsetController::class, 'bulkDestroy'])->name('aset.bulk-destroy');
 
     Route::get('aset/import', [AsetImportController::class, 'create'])->name('aset.import');
     Route::get('aset/import/template', [AsetImportController::class, 'template'])->name('aset.import.template');

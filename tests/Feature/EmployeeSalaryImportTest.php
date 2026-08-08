@@ -83,6 +83,45 @@ test('payroll index defaults to latest period and formats period label correctly
             ->where('salaries.data.0.employee_name', 'Karyawan Juni'));
 });
 
+test('payroll index june filter does not overflow to july on day 31', function () {
+    $this->travelTo(now()->setDate(2026, 7, 31)->setTime(12, 0));
+
+    $admin = User::factory()->admin()->create(['can_access_payroll' => true]);
+
+    EmployeeSalary::query()->create([
+        'period_start' => '2026-06-01',
+        'simrs_nik' => '33.33.33.3333',
+        'employee_name' => 'Karyawan Juni Asli',
+        'unit' => 'IT',
+        'penerimaan' => '2000000',
+        'pajak' => '0',
+        'zakat' => '0',
+        'raw_row' => ['nik' => '33.33.33.3333'],
+    ]);
+
+    EmployeeSalary::query()->create([
+        'period_start' => '2026-07-01',
+        'simrs_nik' => '44.44.44.4444',
+        'employee_name' => 'Karyawan Juli',
+        'unit' => 'IT',
+        'penerimaan' => '3000000',
+        'pajak' => '0',
+        'zakat' => '0',
+        'raw_row' => ['nik' => '44.44.44.4444'],
+    ]);
+
+    actingAs($admin)
+        ->get('/payroll?period=2026-06')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('filters.period', '2026-06')
+            ->has('salaries.data', 1)
+            ->where('salaries.data.0.period_start', '2026-06-01')
+            ->where('salaries.data.0.period_label', 'June 2026')
+            ->where('salaries.data.0.employee_name', 'Karyawan Juni Asli')
+            ->where('summary.total_employees', 1));
+});
+
 test('payroll index supports search and unit filters', function () {
     $admin = User::factory()->admin()->create(['can_access_payroll' => true]);
 

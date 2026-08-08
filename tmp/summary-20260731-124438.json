@@ -1,0 +1,4 @@
+{
+  "summary": "User reported June missing on API. Confirmed not an API bug: 173 June published slips remain for other NIKs, but the 21 people from the mistaken overwrite (incl. Okyanto) have no June row after cleanup delete. Recovery requires re-importing gajijuliupload.csv as June.",
+  "current_status": "API period filter is correct. June gap for 21 NIKs is data loss from prior cleanup; awaiting user re-import of original June CSV."
+}

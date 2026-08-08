@@ -72,6 +72,8 @@ class EmployeeSalary extends Model
         'hutang_bpjs',
         'hutang_seragam',
         'ikkm',
+        'keterlambatan',
+        'ijin',
         'lain_pot',
         // Totals
         'jumlah',
@@ -141,6 +143,8 @@ class EmployeeSalary extends Model
             'hutang_bpjs' => 'decimal:2',
             'hutang_seragam' => 'decimal:2',
             'ikkm' => 'decimal:2',
+            'keterlambatan' => 'decimal:2',
+            'ijin' => 'decimal:2',
             'lain_pot' => 'decimal:2',
             // Totals
             'jumlah' => 'decimal:2',
@@ -239,6 +243,8 @@ class EmployeeSalary extends Model
             + ($this->hutang_bpjs ?? 0)
             + ($this->hutang_seragam ?? 0)
             + ($this->ikkm ?? 0)
+            + ($this->keterlambatan ?? 0)
+            + ($this->ijin ?? 0)
             + ($this->lain_pot ?? 0)
             + ($this->pajak ?? 0)
             + ($this->zakat ?? 0)

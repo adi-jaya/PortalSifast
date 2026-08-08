@@ -1,0 +1,4 @@
+{
+  "summary": "Implemented payroll potongan split (Approach A): added keterlambatan and ijin columns, stopped merging them into lain_pot, updated slip UI/API, backfilled from raw_row (848 now 90k/50k/500k), tests passed, frontend built.",
+  "current_status": "Slip section 4 shows Keterlambatan, Ijin, Lain-lain separately. Refresh /payroll/848 to verify. Spec/plan under docs/superpowers/."
+}
