@@ -19,7 +19,14 @@ class InventarisRuang extends Model
 
     protected $keyType = 'string';
 
+    public $timestamps = false;
+
     protected $fillable = [
         'id_ruang', 'nama_ruang',
     ];
+
+    public function getRouteKeyName(): string
+    {
+        return 'id_ruang';
+    }
 }

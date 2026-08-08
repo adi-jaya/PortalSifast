@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ApiAuthSessionController;
 use App\Http\Controllers\Api\ApiTicketController;
 use App\Http\Controllers\Api\EmergencyDashboardController;
 use App\Http\Controllers\Api\EmergencyReportController;
@@ -9,8 +10,31 @@ use App\Http\Controllers\Api\FcmController;
 use App\Http\Controllers\Api\LoginController;
 use App\Http\Controllers\Api\OfficerAuthController;
 use App\Http\Controllers\Api\OfficerLocationController;
+use App\Http\Controllers\Api\Patroli\PatroliCheckinController as ApiPatroliCheckinController;
+use App\Http\Controllers\Api\Patroli\PatroliLaporanController as ApiPatroliLaporanController;
+use App\Http\Controllers\Api\Patroli\PatroliMeController;
+use App\Http\Controllers\Api\Patroli\PatroliTitikController as ApiPatroliTitikController;
 use App\Http\Controllers\Api\SimmutuApiController;
 use App\Http\Controllers\Api\TelegramWebhookController;
+use App\Http\Controllers\Api\WebOfficial\DoctorProfileController;
+use App\Http\Controllers\Api\WebOfficial\DoctorScheduleController;
+use App\Http\Controllers\Api\WebOfficial\ExternalRssFeedAdminController;
+use App\Http\Controllers\Api\WebOfficial\ExternalRssFeedController;
+use App\Http\Controllers\Api\WebOfficial\InstagramFeedAdminController;
+use App\Http\Controllers\Api\WebOfficial\InstagramFeedController;
+use App\Http\Controllers\Api\WebOfficial\WebOfficialArticleAdminController;
+use App\Http\Controllers\Api\WebOfficial\WebOfficialArticleController;
+use App\Http\Controllers\Api\WebOfficial\WebOfficialFeedbackAdminController;
+use App\Http\Controllers\Api\WebOfficial\WebOfficialFeedbackController;
+use App\Http\Controllers\Api\WebOfficial\WebOfficialMediaController;
+use App\Http\Controllers\Api\WebOfficial\WebOfficialPartnerAdminController;
+use App\Http\Controllers\Api\WebOfficial\WebOfficialPartnerController;
+use App\Http\Controllers\Api\WebOfficial\WebOfficialPolyclinicAdminController;
+use App\Http\Controllers\Api\WebOfficial\WebOfficialPolyclinicController;
+use App\Http\Controllers\Api\WebOfficial\WebOfficialPromoAdminController;
+use App\Http\Controllers\Api\WebOfficial\WebOfficialPromoController;
+use App\Http\Controllers\Api\WebOfficial\WebOfficialRoomAdminController;
+use App\Http\Controllers\Api\WebOfficial\WebOfficialRoomController;
 use App\Http\Controllers\Api\WorkNoteController;
 use App\Models\TicketCategory;
 use App\Models\TicketPriority;
@@ -132,11 +156,155 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 
+// =====================================================================
+// Website Official RS (frontend terpisah)
+// =====================================================================
+Route::prefix('informasi')->group(function () {
+    Route::get('/', [WebOfficialArticleController::class, 'index']);
+    Route::get('/{slug}', [WebOfficialArticleController::class, 'show'])
+        ->where('slug', '[a-z0-9]+(?:-[a-z0-9]+)*');
+});
+
+Route::prefix('kamar-inap')->group(function () {
+    Route::get('/', [WebOfficialRoomController::class, 'index']);
+    Route::get('/{slug}', [WebOfficialRoomController::class, 'show'])
+        ->where('slug', '[a-z0-9]+(?:-[a-z0-9]+)*');
+});
+
+Route::prefix('promosi')->group(function () {
+    Route::get('/', [WebOfficialPromoController::class, 'index']);
+    Route::get('/{slug}', [WebOfficialPromoController::class, 'show'])
+        ->where('slug', '[a-z0-9]+(?:-[a-z0-9]+)*');
+});
+
+Route::prefix('poliklinik')->group(function () {
+    Route::get('/', [WebOfficialPolyclinicController::class, 'index']);
+    Route::get('/{slug}', [WebOfficialPolyclinicController::class, 'show'])
+        ->where('slug', '[a-z0-9]+(?:-[a-z0-9]+)*');
+});
+
+Route::prefix('rekanan')->group(function () {
+    Route::get('/', [WebOfficialPartnerController::class, 'index']);
+    Route::get('/{slug}', [WebOfficialPartnerController::class, 'show'])
+        ->where('slug', '[a-z0-9]+(?:-[a-z0-9]+)*');
+});
+
+Route::post('kritik-saran', [WebOfficialFeedbackController::class, 'store'])
+    ->middleware('throttle:kritik-saran');
+Route::get('service-units', [WebOfficialFeedbackController::class, 'serviceUnits']);
+
+Route::get('instagram-feed', [InstagramFeedController::class, 'index']);
+Route::get('berita-eksternal', [ExternalRssFeedController::class, 'index']);
+
+Route::get('jadwal-dokter/poliklinik', [DoctorScheduleController::class, 'poliklinik']);
+Route::get('jadwal-dokter', DoctorScheduleController::class);
+
+Route::get('dokter', [DoctorProfileController::class, 'index']);
+Route::get('dokter/{kdDokter}/foto', [DoctorProfileController::class, 'photo'])
+    ->where('kdDokter', '[A-Za-z0-9._-]+');
+Route::get('dokter/{kdDokter}', [DoctorProfileController::class, 'show'])
+    ->where('kdDokter', '[A-Za-z0-9._-]+');
+
+Route::prefix('admin')->middleware(['auth:sanctum', 'webofficial.admin'])->group(function () {
+    Route::post('/media/upload', [WebOfficialMediaController::class, 'upload']);
+    Route::delete('/media', [WebOfficialMediaController::class, 'destroy']);
+
+    Route::get('/informasi', [WebOfficialArticleAdminController::class, 'index']);
+    Route::post('/informasi', [WebOfficialArticleAdminController::class, 'store']);
+    Route::get('/informasi/{article}', [WebOfficialArticleAdminController::class, 'show']);
+    Route::put('/informasi/{article}', [WebOfficialArticleAdminController::class, 'update']);
+    Route::patch('/informasi/{article}', [WebOfficialArticleAdminController::class, 'partialUpdate']);
+    Route::delete('/informasi/{article}', [WebOfficialArticleAdminController::class, 'destroy']);
+
+    Route::get('/kamar-inap', [WebOfficialRoomAdminController::class, 'index']);
+    Route::post('/kamar-inap', [WebOfficialRoomAdminController::class, 'store']);
+    Route::get('/kamar-inap/{room}', [WebOfficialRoomAdminController::class, 'show']);
+    Route::put('/kamar-inap/{room}', [WebOfficialRoomAdminController::class, 'update']);
+    Route::patch('/kamar-inap/{room}', [WebOfficialRoomAdminController::class, 'partialUpdate']);
+    Route::delete('/kamar-inap/{room}', [WebOfficialRoomAdminController::class, 'destroy']);
+
+    Route::get('/promosi', [WebOfficialPromoAdminController::class, 'index']);
+    Route::post('/promosi', [WebOfficialPromoAdminController::class, 'store']);
+    Route::get('/promosi/{promo}', [WebOfficialPromoAdminController::class, 'show']);
+    Route::put('/promosi/{promo}', [WebOfficialPromoAdminController::class, 'update']);
+    Route::patch('/promosi/{promo}', [WebOfficialPromoAdminController::class, 'partialUpdate']);
+    Route::delete('/promosi/{promo}', [WebOfficialPromoAdminController::class, 'destroy']);
+
+    Route::get('/instagram-feed/status', [InstagramFeedAdminController::class, 'status']);
+    Route::post('/instagram-feed/sync', [InstagramFeedAdminController::class, 'sync']);
+
+    Route::get('/berita-eksternal/status', [ExternalRssFeedAdminController::class, 'status']);
+    Route::post('/berita-eksternal/sync', [ExternalRssFeedAdminController::class, 'sync']);
+
+    Route::get('/poliklinik/available', [WebOfficialPolyclinicAdminController::class, 'available']);
+    Route::get('/poliklinik', [WebOfficialPolyclinicAdminController::class, 'index']);
+    Route::post('/poliklinik', [WebOfficialPolyclinicAdminController::class, 'store']);
+    Route::get('/poliklinik/{poliklinik}', [WebOfficialPolyclinicAdminController::class, 'show']);
+    Route::put('/poliklinik/{poliklinik}', [WebOfficialPolyclinicAdminController::class, 'update']);
+    Route::patch('/poliklinik/{poliklinik}', [WebOfficialPolyclinicAdminController::class, 'partialUpdate']);
+    Route::delete('/poliklinik/{poliklinik}', [WebOfficialPolyclinicAdminController::class, 'destroy']);
+
+    Route::get('/rekanan', [WebOfficialPartnerAdminController::class, 'index']);
+    Route::post('/rekanan', [WebOfficialPartnerAdminController::class, 'store']);
+    Route::get('/rekanan/{partner}', [WebOfficialPartnerAdminController::class, 'show']);
+    Route::put('/rekanan/{partner}', [WebOfficialPartnerAdminController::class, 'update']);
+    Route::patch('/rekanan/{partner}', [WebOfficialPartnerAdminController::class, 'partialUpdate']);
+    Route::delete('/rekanan/{partner}', [WebOfficialPartnerAdminController::class, 'destroy']);
+
+    Route::get('/kritik-saran', [WebOfficialFeedbackAdminController::class, 'index']);
+    Route::get('/kritik-saran/{feedback}', [WebOfficialFeedbackAdminController::class, 'show']);
+    Route::patch('/kritik-saran/{feedback}', [WebOfficialFeedbackAdminController::class, 'partialUpdate']);
+    Route::delete('/kritik-saran/{feedback}', [WebOfficialFeedbackAdminController::class, 'destroy']);
+});
+
+// RS Agent monitoring (machine clients — enrollment key / device API key)
+Route::prefix('agent')->group(function () {
+    Route::post('/register', \App\Http\Controllers\Api\Agent\RegisterController::class);
+    Route::post('/heartbeat', \App\Http\Controllers\Api\Agent\HeartbeatController::class)
+        ->middleware('auth.agent');
+});
+
 // Telegram bot webhook (tanpa auth — dipanggil oleh Telegram)
 Route::post('/telegram/webhook', TelegramWebhookController::class)->name('api.telegram.webhook');
 
 // Login email + password (untuk frontend eksternal, mis. Sifast)
 Route::post('/login', LoginController::class);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [ApiAuthSessionController::class, 'logout']);
+    Route::post('/token/refresh', [ApiAuthSessionController::class, 'refresh']);
+});
+
+// Patroli Security (mobile) — pola sama payroll/tiket: Sanctum + NIK
+Route::prefix('sifast/patroli')->middleware('auth:sanctum')->group(function (): void {
+    Route::get('/me', PatroliMeController::class);
+
+    Route::get('/titik', [ApiPatroliTitikController::class, 'index']);
+    Route::post('/resolve-qr', [ApiPatroliTitikController::class, 'resolveQr']);
+    Route::get('/scan/{ruang}', [ApiPatroliTitikController::class, 'scanForm']);
+    Route::get('/scan-by-kode/{kodeRuang}', [ApiPatroliTitikController::class, 'scanByKode']);
+
+    Route::get('/checkin', [ApiPatroliCheckinController::class, 'index']);
+    Route::post('/checkin', [ApiPatroliCheckinController::class, 'store']);
+    Route::get('/checkin/{checkin}', [ApiPatroliCheckinController::class, 'show']);
+
+    Route::get('/laporan', [ApiPatroliLaporanController::class, 'index']);
+    Route::get('/laporan/export', [ApiPatroliLaporanController::class, 'export']);
+});
+
+// Alias lama /api/patroli → sama handler (kompat sementara)
+Route::prefix('patroli')->middleware('auth:sanctum')->group(function (): void {
+    Route::get('/me', PatroliMeController::class);
+    Route::get('/titik', [ApiPatroliTitikController::class, 'index']);
+    Route::post('/resolve-qr', [ApiPatroliTitikController::class, 'resolveQr']);
+    Route::get('/scan/{ruang}', [ApiPatroliTitikController::class, 'scanForm']);
+    Route::get('/scan-by-kode/{kodeRuang}', [ApiPatroliTitikController::class, 'scanByKode']);
+    Route::get('/checkin', [ApiPatroliCheckinController::class, 'index']);
+    Route::post('/checkin', [ApiPatroliCheckinController::class, 'store']);
+    Route::get('/checkin/{checkin}', [ApiPatroliCheckinController::class, 'show']);
+    Route::get('/laporan', [ApiPatroliLaporanController::class, 'index']);
+    Route::get('/laporan/export', [ApiPatroliLaporanController::class, 'export']);
+});
 
 // Officer login (tanpa auth — mengembalikan token)
 Route::post('/sifast/officer/auth/login', [OfficerAuthController::class, 'login']);

@@ -1,0 +1,4 @@
+{
+  "summary": "Completed ops A+B: rotated production AGENT_ENROLLMENT_KEY, installed schedule:run cron for monitoring:mark-offline, wrote rs-agent-ops.md, added kardianos/service Windows service control to rs-agent (-service install/start/stop/etc). Production API /api/agent/register reachable (422 on empty body). User must rebuild rs-agent.exe and point config.json to production URL + new enrollment key.",
+  "current_status": "Phase 1 features + production ops + Windows service code ready. Waiting on user to rebuild agent on Windows, switch config to https://portalsifast.rsaisyiyahsitifatimah.com, verify /monitoring, then install service as Admin."
+}

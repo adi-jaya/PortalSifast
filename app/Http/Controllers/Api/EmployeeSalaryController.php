@@ -50,7 +50,7 @@ class EmployeeSalaryController extends Controller
 
         if ($period !== '') {
             try {
-                $periodStart = CarbonImmutable::createFromFormat('Y-m', $period)->startOfMonth();
+                $periodStart = CarbonImmutable::createFromFormat('!Y-m', $period)->startOfMonth();
                 $query->whereDate('period_start', $periodStart->toDateString());
             } catch (\Throwable) {
                 return response()->json([

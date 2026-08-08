@@ -1,0 +1,4 @@
+{
+  "summary": "Fixed payroll sidebar 404: added GET /payroll/employee-history search page (NIK form + recent employees), renamed detail route to payroll.employee.show at /payroll/employee/{nik}, updated sidebar/mobile isActive. Tests added and passing; frontend rebuilt.",
+  "current_status": "Payroll Riwayat Pegawai menu works; aset create no_seri_list fix from prior turn also deployed. User should hard refresh."
+}

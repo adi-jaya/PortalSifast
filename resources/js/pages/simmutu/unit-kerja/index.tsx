@@ -41,7 +41,7 @@ export default function SimmutuUnitKerjaIndex({ units, summary, restricted }: Pr
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Unit kerja — SIMMUTU" />
 
-            <div className="flex h-full flex-1 flex-col gap-6 p-4 pb-10">
+            <div className="flex flex-col gap-6 pb-10">
                 <div className="relative overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/[0.07] via-card to-sky-500/[0.05] shadow-sm">
                     <div className="pointer-events-none absolute -right-12 -top-12 size-48 rounded-full bg-primary/10 blur-3xl" />
                     <div className="relative flex flex-col gap-3 p-6">

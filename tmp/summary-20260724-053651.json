@@ -1,0 +1,4 @@
+{
+  "summary": "Aligned Patroli mobile API with payroll slip pattern: auth:sanctum + required NIK (service token), paths under /api/sifast/patroli, no separate login docs. Rewrote patroli-security-mobile.md like PAYROLL-MOBILE-SLIP; 4 API tests passed.",
+  "current_status": "Patroli mobile integration now mirrors payroll/tiket: Bearer service token + nik; web still uses can_access_patroli for portal UI."
+}

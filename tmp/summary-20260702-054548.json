@@ -1,0 +1,4 @@
+{
+  "summary": "Menambahkan API profil dokter: GET /api/dokter (list dokter aktif dengan poli, jumlahJadwal, foto base64) dan GET /api/dokter/{kdDokter} (detail lengkap termasuk array jadwal, sttsAktif/isAktif dari pegawai). Filter list: q, kd_poli, poli. Hanya pegawai.stts_aktif=AKTIF. 4 tests lulus, dokumentasi §7c ditambahkan.",
+  "current_status": "Website official API lengkap: informasi, kamar inap, jadwal dokter (filter), profil dokter (list+detail), foto base64. Frontend bisa halaman daftar dokter dan halaman profil per kdDokter."
+}

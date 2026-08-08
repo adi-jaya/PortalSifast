@@ -1,0 +1,4 @@
+{
+  "summary": "Implemented idea 1: link RS Agent devices from aset detail. Added PATCH /aset/{aset}/monitoring, DeviceLinkPicker searchable UI (PC/laptop categories only), unlink/replace support, and 13 related Pest tests passing.",
+  "current_status": "Two-way aset↔monitoring linking is complete (from monitoring and from aset). User needs npm run build. Optional next: idea 2 smart match suggestions."
+}

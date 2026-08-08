@@ -1,0 +1,4 @@
+{
+  "summary": "User chose scope C (full integration). Presented three UI approaches with recommendation for Approach 2 (ops-integrated polish within existing design system) and a concrete design covering monitoring index/show, aset show monitoring card, and aset index badge+filter. Awaiting user approval before writing spec/coding.",
+  "current_status": "Brainstorming gate: design proposed for scope C; blocked on user approval (approve / revise)."
+}

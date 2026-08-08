@@ -1,0 +1,4 @@
+{
+  "summary": "User found the Patroli Area/Ruang flow confusing and asked whether concepts overlap. Explained the admin vs petugas flow and reviewed overlaps: inventaris aset_ruang vs patroli_ruang is intentional separation with Select helper as the only touchpoint; Area/Ruang/Template have distinct jobs but UI density on one page can feel overlapping.",
+  "current_status": "Patroli Area+Ruang is implemented and tested; clarification delivered without code changes. Optional UX simplification if user wants less cognitive load on the show page."
+}

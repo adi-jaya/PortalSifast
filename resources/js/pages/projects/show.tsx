@@ -68,7 +68,7 @@ export default function ProjectsShow({ project }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={project.name} />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
                         <Button variant="ghost" size="icon" asChild>

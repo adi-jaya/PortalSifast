@@ -1,0 +1,4 @@
+{
+  "summary": "Fixed clipped dropdown menus on /aset/create: root cause was overflow-hidden on step cards + sticky footer covering react-select menus. Added menuPortalTarget=document.body with z-index 9999 to SearchSelect, CreatableSearchSelect, NonAlkesLeafSearchSelect, and AspakLeafSearchSelect; removed overflow-hidden from create sections; reordered non-medis fields to Merk|Tipe then Kategori|Produsen. Build succeeded.",
+  "current_status": "Aset create medis/non-medis flows and master pages are in place; dropdown clipping bug on create form is fixed and built. Optional next: barang sudah ada mode."
+}

@@ -1,0 +1,4 @@
+{
+  "summary": "User chose multi-ruang option A (one ruang picker per unit). Presented create-flow redesign: katalog → detail barang → jumlah → N baris unit (ruang + serial opsional) → Simpan; backend aset_ruang_id_list. Awaiting design approval before implementation.",
+  "current_status": "Brainstorming create form reorder + per-unit lokasi; design section presented, waiting for OK to write spec/implement."
+}

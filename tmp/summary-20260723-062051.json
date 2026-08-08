@@ -1,0 +1,4 @@
+{
+  "summary": "Explored PortalSifast for Patroli module patterns: PayrollAccessControlTest access tests, UsersController can_access_payroll store/update, HandleInertiaRequests permissions share, bootstrap middleware alias, aset-peminjaman Inertia controller/page, UserFactory (no flag states—override on create), AsetRuang via query()->create (no factory), InventarisQrCodeGenerator labelPrint usage, and template-sidebar payroll nav gating.",
+  "current_status": "Pattern inventory complete; ready for Patroli implementation mirroring payroll access + aset-peminjaman Inertia structure."
+}

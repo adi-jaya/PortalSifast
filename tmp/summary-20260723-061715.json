@@ -1,0 +1,4 @@
+{
+  "summary": "User approved all design sections for Patroli Security module. Wrote design spec to docs/superpowers/specs/2026-07-23-patroli-security-qr-design.md covering template checklists on aset_ruang, independent check-ins, can_access_patroli role, and period reports/CSV for mutu. Self-reviewed (clarified super-admin-only toggle). Awaiting user review of the written spec before writing-plans.",
+  "current_status": "Patroli Security design spec drafted and awaiting user approval; implementation plan not started yet."
+}

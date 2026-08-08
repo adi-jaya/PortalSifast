@@ -24,4 +24,9 @@ class InventarisKategori extends Model
     protected $fillable = [
         'id_kategori', 'nama_kategori',
     ];
+
+    public function getRouteKeyName(): string
+    {
+        return 'id_kategori';
+    }
 }

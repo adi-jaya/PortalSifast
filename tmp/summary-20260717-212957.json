@@ -1,0 +1,4 @@
+{
+  "summary": "User memilih masa berlaku B: tanggal kembali opsional; bila diisi dan lewat → status terlambat. Lanjut klarifikasi batch vs satu aset per transaksi.",
+  "current_status": "Brainstorming mutasi+peminjaman hampir lengkap keputusan inti; batch/aktor akses masih terbuka."
+}

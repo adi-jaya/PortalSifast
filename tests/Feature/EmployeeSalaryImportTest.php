@@ -14,7 +14,25 @@ test('guest cannot import employee salaries', function () {
 test('admin can open payroll import page', function () {
     $admin = User::factory()->admin()->create(['can_access_payroll' => true]);
 
-    actingAs($admin)->get('/payroll/import')->assertOk();
+    actingAs($admin)
+        ->get('/payroll/import')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('templateUrl'));
+});
+
+test('admin can download payroll import template csv', function () {
+    $admin = User::factory()->admin()->create(['can_access_payroll' => true]);
+
+    $response = actingAs($admin)->get(route('payroll.import.template'));
+
+    $response->assertOk();
+    $response->assertDownload('template-import-gaji.csv');
+
+    $content = $response->streamedContent();
+    expect($content)->toContain('NIK');
+    expect($content)->toContain('Gaji Pokok');
+    expect($content)->toContain('Jumlah_Tunjangan');
+    expect($content)->toContain('03.09.07.1998');
 });
 
 test('admin can open payroll index page', function () {
@@ -27,6 +45,81 @@ test('admin without payroll access cannot open payroll index page', function () 
     $admin = User::factory()->admin()->create(['can_access_payroll' => false]);
 
     actingAs($admin)->get('/payroll')->assertForbidden();
+});
+
+test('payroll index defaults to latest period and formats period label correctly', function () {
+    $admin = User::factory()->admin()->create(['can_access_payroll' => true]);
+
+    EmployeeSalary::query()->create([
+        'period_start' => '2026-05-01',
+        'simrs_nik' => '11.11.11.1111',
+        'employee_name' => 'Karyawan Mei',
+        'unit' => 'IT',
+        'penerimaan' => '1000000',
+        'pajak' => '0',
+        'zakat' => '0',
+        'raw_row' => ['nik' => '11.11.11.1111'],
+    ]);
+
+    EmployeeSalary::query()->create([
+        'period_start' => '2026-06-01',
+        'simrs_nik' => '22.22.22.2222',
+        'employee_name' => 'Karyawan Juni',
+        'unit' => 'IT',
+        'penerimaan' => '2000000',
+        'pajak' => '0',
+        'zakat' => '0',
+        'raw_row' => ['nik' => '22.22.22.2222'],
+    ]);
+
+    actingAs($admin)
+        ->get('/payroll')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('filters.period', '2026-06')
+            ->has('salaries.data', 1)
+            ->where('salaries.data.0.period_start', '2026-06-01')
+            ->where('salaries.data.0.period_label', 'June 2026')
+            ->where('salaries.data.0.employee_name', 'Karyawan Juni'));
+});
+
+test('payroll index june filter does not overflow to july on day 31', function () {
+    $this->travelTo(now()->setDate(2026, 7, 31)->setTime(12, 0));
+
+    $admin = User::factory()->admin()->create(['can_access_payroll' => true]);
+
+    EmployeeSalary::query()->create([
+        'period_start' => '2026-06-01',
+        'simrs_nik' => '33.33.33.3333',
+        'employee_name' => 'Karyawan Juni Asli',
+        'unit' => 'IT',
+        'penerimaan' => '2000000',
+        'pajak' => '0',
+        'zakat' => '0',
+        'raw_row' => ['nik' => '33.33.33.3333'],
+    ]);
+
+    EmployeeSalary::query()->create([
+        'period_start' => '2026-07-01',
+        'simrs_nik' => '44.44.44.4444',
+        'employee_name' => 'Karyawan Juli',
+        'unit' => 'IT',
+        'penerimaan' => '3000000',
+        'pajak' => '0',
+        'zakat' => '0',
+        'raw_row' => ['nik' => '44.44.44.4444'],
+    ]);
+
+    actingAs($admin)
+        ->get('/payroll?period=2026-06')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('filters.period', '2026-06')
+            ->has('salaries.data', 1)
+            ->where('salaries.data.0.period_start', '2026-06-01')
+            ->where('salaries.data.0.period_label', 'June 2026')
+            ->where('salaries.data.0.employee_name', 'Karyawan Juni Asli')
+            ->where('summary.total_employees', 1));
 });
 
 test('payroll index supports search and unit filters', function () {
@@ -54,7 +147,7 @@ test('payroll index supports search and unit filters', function () {
         'raw_row' => ['nik' => '22.22.22.2222'],
     ]);
 
-    $response = actingAs($admin)->get('/payroll?q=Karyawan%20A&unit=IT');
+    $response = actingAs($admin)->get('/payroll?period=2026-02&q=Karyawan%20A&unit=IT');
     $response->assertOk();
     $response->assertSee('Karyawan A');
     $response->assertDontSee('Karyawan B');
@@ -85,14 +178,14 @@ test('payroll index supports sorting', function () {
         'raw_row' => [],
     ]);
 
-    $response = actingAs($admin)->get('/payroll?sort=employee_name&dir=asc');
+    $response = actingAs($admin)->get('/payroll?period=2026-02&sort=employee_name&dir=asc');
     $response->assertOk();
 
     $data = $response->original->getData()['page']['props']['salaries']['data'];
     expect($data[0]['employee_name'])->toBe('Andi');
     expect($data[1]['employee_name'])->toBe('Zara');
 
-    $response = actingAs($admin)->get('/payroll?sort=penerimaan&dir=desc');
+    $response = actingAs($admin)->get('/payroll?period=2026-02&sort=penerimaan&dir=desc');
     $response->assertOk();
 
     $data = $response->original->getData()['page']['props']['salaries']['data'];
@@ -113,7 +206,7 @@ test('payroll index can export csv', function () {
         'raw_row' => [],
     ]);
 
-    $response = actingAs($admin)->get('/payroll?export=csv');
+    $response = actingAs($admin)->get('/payroll?period=2026-02&export=csv');
     $response->assertOk();
     $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
     $response->assertDownload();
@@ -149,7 +242,7 @@ test('payroll index returns summary totals', function () {
         'raw_row' => [],
     ]);
 
-    $response = actingAs($admin)->get('/payroll');
+    $response = actingAs($admin)->get('/payroll?period=2026-02');
     $response->assertOk();
 
     $summary = $response->original->getData()['page']['props']['summary'];
@@ -285,4 +378,41 @@ test('can import employee salaries from csv and match user by simrs_nik', functi
     expect($salary)->not->toBeNull();
     expect($salary->user_id)->toBe($employee->id);
     expect($salary->imported_by)->toBe($importer->id);
+});
+
+test('admin can open payroll employee history search page', function () {
+    $admin = User::factory()->admin()->create(['can_access_payroll' => true]);
+
+    actingAs($admin)
+        ->get('/payroll/employee-history')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->component('payroll/employee-history-search'));
+});
+
+test('payroll employee history search redirects when nik query is provided', function () {
+    $admin = User::factory()->admin()->create(['can_access_payroll' => true]);
+
+    actingAs($admin)
+        ->get('/payroll/employee-history?nik=01.01.01.2000')
+        ->assertRedirect('/payroll/employee/01.01.01.2000');
+});
+
+test('admin can open payroll employee history detail page', function () {
+    $admin = User::factory()->admin()->create(['can_access_payroll' => true]);
+
+    EmployeeSalary::query()->create([
+        'period_start' => '2025-12-01',
+        'simrs_nik' => '01.01.01.2000',
+        'employee_name' => 'Contoh Pegawai',
+        'unit' => 'IT',
+        'penerimaan' => '1000000',
+        'pajak' => '50000',
+        'zakat' => '25000',
+        'raw_row' => [],
+    ]);
+
+    actingAs($admin)
+        ->get('/payroll/employee/01.01.01.2000')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->component('payroll/employee-history'));
 });

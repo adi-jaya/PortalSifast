@@ -1,0 +1,4 @@
+{
+  "summary": "Ditambah penyusutan otomatis metode garis lurus: service HitungPenyusutanAset (per bulan, akumulasi, nilai buku, sisa umur, rasio), diintegrasikan ke AsetController@show sebagai prop, dan section Usia/Umur & Penyusutan di show.tsx dengan progress bar rasio nilai buku. 3 unit test + assertion feature; 60 test Aset lulus.",
+  "current_status": "Halaman detail aset kini menampilkan depresiasi aktif (estimasi garis lurus). Belum: field pelayanan/prioritas/kelas risiko dan upload dokumen (kontrak/BA/AKD). Perlu npm run build/dev agar UI terlihat."
+}

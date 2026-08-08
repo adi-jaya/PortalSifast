@@ -1,0 +1,4 @@
+{
+  "summary": "User memilih pendekatan 2 (tabel peminjaman & mutasi terpisah) karena rencana tanda terima/bukti beda. Disajikan desain bagian 1 (model data & status); menunggu approval sebelum bagian UI.",
+  "current_status": "Brainstorming mutasi+peminjaman: pendekatan 2 dikunci; menunggu konfirmasi desain data model."
+}

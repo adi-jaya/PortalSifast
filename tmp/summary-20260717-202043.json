@@ -1,0 +1,4 @@
+{
+  "summary": "Confirmed user can add kategori/jenis/merk/produsen from /aset/create when using mode Barang baru via CreatableSelect (type name then Tambah).",
+  "current_status": "Inline master create on aset create page is available; user needs hard refresh if not seeing it."
+}

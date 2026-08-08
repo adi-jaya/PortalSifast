@@ -1,0 +1,87 @@
+name: release-rs-agent
+
+# Private repo recommended: Setup.exe embeds AGENT_ENROLLMENT_KEY from GitHub Secrets.
+# Create a release by pushing a tag: git tag rs-agent-v0.2.1 && git push origin rs-agent-v0.2.1
+
+on:
+  push:
+    tags:
+      - 'rs-agent-v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version label without prefix (e.g. 0.2.1)'
+        required: true
+        default: '0.2.1'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.x'
+          cache-dependency-path: rs-agent/go.sum
+
+      - name: Resolve version
+        id: ver
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            $v = "${{ inputs.version }}".Trim()
+          } else {
+            $tag = "${{ github.ref_name }}"
+            $v = $tag -replace '^rs-agent-v', ''
+          }
+          if ([string]::IsNullOrWhiteSpace($v)) { throw "Version kosong" }
+          "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          Write-Host "version=$v"
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup -y --no-progress
+
+      - name: Build agent + installer
+        shell: pwsh
+        env:
+          AGENT_ENROLLMENT_KEY: ${{ secrets.AGENT_ENROLLMENT_KEY }}
+          AGENT_SERVER_URL: ${{ secrets.AGENT_SERVER_URL }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:AGENT_ENROLLMENT_KEY)) {
+            throw "Secret AGENT_ENROLLMENT_KEY wajib diisi (repo Settings -> Secrets)."
+          }
+          if ([string]::IsNullOrWhiteSpace($env:AGENT_SERVER_URL)) {
+            $env:AGENT_SERVER_URL = "https://portalsifast.rsaisyiyahsitifatimah.com"
+          }
+          Set-Location rs-agent
+          .\scripts\build-installer.ps1 -Version "${{ steps.ver.outputs.version }}" -Server $env:AGENT_SERVER_URL -EnrollmentKey $env:AGENT_ENROLLMENT_KEY
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: rs-agent-v${{ steps.ver.outputs.version }}
+          name: PortalSifast Agent ${{ steps.ver.outputs.version }}
+          generate_release_notes: true
+          files: |
+            rs-agent/dist/PortalSifast-Agent-Setup.exe
+            rs-agent/dist/PortalSifast-Agent-Setup-${{ steps.ver.outputs.version }}.zip
+          body: |
+            ## PortalSifast Agent ${{ steps.ver.outputs.version }}
+
+            **Private release** — Setup berisi enrollment key internal. Jangan bagikan ke luar organisasi.
+
+            ### Install (1 klik)
+            1. Download `PortalSifast-Agent-Setup.exe` (atau zip lalu extract)
+            2. Double-click → izinkan UAC
+            3. Selesai — agent jalan sebagai Windows Service (tanpa terminal / tanpa tray icon)
+
+            Cek status di portal: `/monitoring`
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

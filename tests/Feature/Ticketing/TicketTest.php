@@ -2,6 +2,7 @@
 
 use App\Models\Ticket;
 use App\Models\TicketCategory;
+use App\Models\TicketComment;
 use App\Models\TicketIssue;
 use App\Models\TicketPriority;
 use App\Models\TicketStatus;
@@ -49,6 +50,7 @@ it('shows tickets list for authenticated admin', function () {
     $admin = User::factory()->admin()->create();
     Ticket::factory()->count(3)->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -67,6 +69,7 @@ it('includes open issues in tickets index payload', function () {
     $admin = User::factory()->admin()->create();
     $ticket = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -92,6 +95,7 @@ it('includes resolution duration label on tickets index when ticket is closed', 
     $admin = User::factory()->admin()->create();
     $ticket = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusClosed->id,
@@ -113,12 +117,35 @@ it('includes resolution duration label on tickets index when ticket is closed', 
 
 it('exports tickets csv with extended columns for admin', function () {
     $admin = User::factory()->admin()->create();
-    Ticket::factory()->create([
+    $ticket = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
+        'title' => 'Printer macet analisa',
+        'description' => 'Printer lantai 2 sering paper jam.',
+        'plan_ideas' => 'Ganti roller',
+        'asset_no_inventaris' => 'INV-PRN-001',
     ]);
+
+    TicketComment::factory()->create([
+        'ticket_id' => $ticket->id,
+        'user_id' => $admin->id,
+        'body' => 'Komentar lama diabaikan jika lebih dari 5.',
+        'created_at' => now()->subDays(6),
+    ]);
+
+    foreach (range(1, 5) as $i) {
+        TicketComment::factory()->create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $admin->id,
+            'body' => "Komentar analisa nomor {$i}",
+            'is_internal' => $i === 5,
+            'is_resolution' => $i === 5,
+            'created_at' => now()->subDays(5 - $i),
+        ]);
+    }
 
     $response = $this->actingAs($admin)->get('/tickets/export');
 
@@ -127,14 +154,80 @@ it('exports tickets csv with extended columns for admin', function () {
     expect($csv)->toContain('Masalah (terbuka)');
     expect($csv)->toContain('Lama penyelesaian');
     expect($csv)->toContain('Subkategori');
-    expect($csv)->toContain('Rencana');
+    expect($csv)->toContain('Rencana (project)');
     expect($csv)->toContain('Tag');
+    expect($csv)->toContain('Deskripsi');
+    expect($csv)->toContain('Ide rencana');
+    expect($csv)->toContain('No. Inventaris Aset');
+    expect($csv)->toContain('Jumlah komentar');
+    expect($csv)->toContain('Komentar terbaru (5)');
+    expect($csv)->toContain('Printer lantai 2 sering paper jam.');
+    expect($csv)->toContain('Ganti roller');
+    expect($csv)->toContain('INV-PRN-001');
+    expect($csv)->toContain('Komentar analisa nomor 1');
+    expect($csv)->toContain('Komentar analisa nomor 5');
+    expect($csv)->toContain('internal,resolusi');
+    expect($csv)->not->toContain('Komentar lama diabaikan jika lebih dari 5.');
 });
 
-it('forbids ticket csv export for pemohon', function () {
-    $pemohon = User::factory()->pemohon()->create();
+it('exports tickets csv filtered by created_from and created_to', function () {
+    $admin = User::factory()->admin()->create();
 
-    $this->actingAs($pemohon)->get('/tickets/export')->assertForbidden();
+    $inRange = Ticket::factory()->create([
+        'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
+        'ticket_category_id' => $this->category->id,
+        'ticket_priority_id' => $this->priority->id,
+        'ticket_status_id' => $this->statusClosed->id,
+        'title' => 'Tiket Juni In Range',
+        'is_draft' => false,
+        'created_at' => Carbon::parse('2026-06-15 10:00:00'),
+        'closed_at' => Carbon::parse('2026-06-16 10:00:00'),
+    ]);
+    $inRange->saveQuietly();
+
+    $outRange = Ticket::factory()->create([
+        'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
+        'ticket_category_id' => $this->category->id,
+        'ticket_priority_id' => $this->priority->id,
+        'ticket_status_id' => $this->statusNew->id,
+        'title' => 'Tiket Mei Out Of Range',
+        'is_draft' => false,
+        'created_at' => Carbon::parse('2026-05-10 10:00:00'),
+    ]);
+    $outRange->saveQuietly();
+
+    $response = $this->actingAs($admin)->get(
+        '/tickets/export?created_from=2026-06-01&created_to=2026-06-30&include_closed=1'
+    );
+
+    $response->assertOk();
+    $csv = $response->streamedContent();
+    expect($csv)->toContain($inRange->ticket_number)
+        ->and($csv)->toContain('Tiket Juni In Range')
+        ->and($csv)->not->toContain($outRange->ticket_number)
+        ->and($csv)->not->toContain('Tiket Mei Out Of Range');
+});
+
+it('exports tickets csv ignoring junk null filter values', function () {
+    $admin = User::factory()->admin()->create();
+    $ticket = Ticket::factory()->create([
+        'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
+        'ticket_category_id' => $this->category->id,
+        'ticket_priority_id' => $this->priority->id,
+        'ticket_status_id' => $this->statusNew->id,
+        'title' => 'Tiket Junk Filter Safe',
+        'is_draft' => false,
+    ]);
+
+    $response = $this->actingAs($admin)->get(
+        '/tickets/export?status=null&priority=undefined&include_closed=1'
+    );
+
+    $response->assertOk();
+    expect($response->streamedContent())->toContain($ticket->ticket_number);
 });
 
 it('shows only department tickets for staff', function () {
@@ -144,6 +237,7 @@ it('shows only department tickets for staff', function () {
     // IT ticket
     Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -154,6 +248,7 @@ it('shows only department tickets for staff', function () {
     $categoryIPS = TicketCategory::factory()->ips()->create(['ticket_type_id' => $this->type->id]);
     Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $categoryIPS->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -176,6 +271,7 @@ it('shows only own tickets for pemohon', function () {
     // Ticket by pemohon1
     Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -185,6 +281,7 @@ it('shows only own tickets for pemohon', function () {
     // Ticket by pemohon2
     Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -201,7 +298,7 @@ it('shows only own tickets for pemohon', function () {
 
 it('redirects guests to login', function () {
     $response = $this->get('/tickets');
-    $response->assertRedirect('/login');
+    $response->assertRedirect('/');
 });
 
 // ==================== CREATE ====================
@@ -225,6 +322,7 @@ it('can create a new ticket', function () {
 
     $response = $this->actingAs($user)->post('/tickets', [
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'title' => 'Test Ticket Title',
@@ -245,6 +343,7 @@ it('can create a new ticket with attachments', function () {
 
     $response = $this->actingAs($user)->post('/tickets', [
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'title' => 'Ticket With Attachment',
@@ -266,6 +365,7 @@ it('can upload attachment on existing ticket via attachments store', function ()
     $staff = User::factory()->staff('IT')->create();
     $ticket = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -286,6 +386,7 @@ it('truncates very long original filename on attachment upload', function () {
     $staff = User::factory()->staff('IT')->create();
     $ticket = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -314,6 +415,7 @@ it('sends on-demand telegram group notification when tickets group chat id is co
 
     $this->actingAs($user)->post('/tickets', [
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'title' => 'Telegram Group Test',
@@ -341,6 +443,7 @@ it('does not send telegram group notification when tickets group chat id is empt
 
     $this->actingAs($user)->post('/tickets', [
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'title' => 'No Group Chat',
@@ -356,7 +459,7 @@ it('validates required fields when creating ticket', function () {
     $response = $this->actingAs($user)->post('/tickets', []);
 
     // ticket_category_id is optional, so not included in required validation
-    $response->assertSessionHasErrors(['ticket_type_id', 'ticket_priority_id', 'title']);
+    $response->assertSessionHasErrors(['ticket_type_id', 'ticket_priority_id', 'title', 'dep_id']);
 });
 
 it('admin can create ticket on behalf of another user', function () {
@@ -365,6 +468,7 @@ it('admin can create ticket on behalf of another user', function () {
 
     $response = $this->actingAs($admin)->post('/tickets', [
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'title' => 'Ticket for other user',
@@ -385,6 +489,7 @@ it('non-admin cannot set requester_id', function () {
 
     $response = $this->actingAs($pemohon)->post('/tickets', [
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'title' => 'Trying to set requester',
@@ -441,6 +546,7 @@ it('shows ticket detail for requester', function () {
     $pemohon = User::factory()->pemohon()->create();
     $ticket = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -462,6 +568,7 @@ it('shows ticket detail for admin', function () {
     $pemohon = User::factory()->pemohon()->create();
     $ticket = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -478,6 +585,7 @@ it('denies pemohon access to other users tickets', function () {
     $pemohon2 = User::factory()->pemohon()->create();
     $ticket = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -495,6 +603,7 @@ it('allows staff to update ticket status', function () {
     $staff = User::factory()->staff('IT')->create();
     $ticket = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -520,6 +629,7 @@ it('allows admin to update ticket requester', function () {
 
     $ticket = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -544,6 +654,7 @@ it('logs activity when requester changes', function () {
 
     $ticket = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -566,6 +677,7 @@ it('logs activity when status changes', function () {
     $staff = User::factory()->staff('IT')->create();
     $ticket = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -589,6 +701,7 @@ it('returns canSelectRequester flag on ticket edit for staff', function () {
 
     $ticket = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -610,6 +723,7 @@ it('allows staff to assign ticket to self', function () {
     $staff = User::factory()->staff('IT')->create();
     $ticket = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -630,6 +744,7 @@ it('denies staff from other department to assign ticket', function () {
     $staffIPS = User::factory()->staff('IPS')->create();
     $ticket = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -647,6 +762,7 @@ it('allows admin to assign ticket regardless of department', function () {
     $staffIT = User::factory()->staff('IT')->create();
     $ticket = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -671,6 +787,7 @@ it('allows staff to close ticket', function () {
     $staff = User::factory()->staff('IT')->create();
     $ticket = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusAssigned->id,
@@ -692,6 +809,7 @@ it('allows user to add comment to their ticket', function () {
     $pemohon = User::factory()->pemohon()->create();
     $ticket = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -715,6 +833,7 @@ it('allows staff to add internal comment', function () {
     $staff = User::factory()->staff('IT')->create();
     $ticket = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -738,6 +857,7 @@ it('forces pemohon comments to be non-internal', function () {
     $pemohon = User::factory()->pemohon()->create();
     $ticket = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -764,12 +884,14 @@ it('filters tickets by status', function () {
 
     Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
     ]);
     Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusAssigned->id,
@@ -789,6 +911,7 @@ it('searches tickets by ticket number', function () {
 
     $ticket1 = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -796,6 +919,7 @@ it('searches tickets by ticket number', function () {
     ]);
     $ticket2 = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -817,6 +941,7 @@ it('allows admin to delete ticket', function () {
     $admin = User::factory()->admin()->create();
     $ticket = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -828,10 +953,29 @@ it('allows admin to delete ticket', function () {
     $this->assertDatabaseMissing('tickets', ['id' => $ticket->id]);
 });
 
-it('denies staff from deleting ticket', function () {
+it('allows staff to delete ticket they created as requester', function () {
     $staff = User::factory()->staff('IT')->create();
     $ticket = Ticket::factory()->create([
         'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
+        'ticket_category_id' => $this->category->id,
+        'ticket_priority_id' => $this->priority->id,
+        'ticket_status_id' => $this->statusNew->id,
+        'dep_id' => 'IT',
+        'requester_id' => $staff->id,
+    ]);
+
+    $response = $this->actingAs($staff)->delete("/tickets/{$ticket->id}");
+
+    $response->assertRedirect('/tickets');
+    $this->assertDatabaseMissing('tickets', ['id' => $ticket->id]);
+});
+
+it('denies staff from deleting ticket they did not create', function () {
+    $staff = User::factory()->staff('IT')->create();
+    $ticket = Ticket::factory()->create([
+        'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
         'ticket_category_id' => $this->category->id,
         'ticket_priority_id' => $this->priority->id,
         'ticket_status_id' => $this->statusNew->id,
@@ -839,6 +983,41 @@ it('denies staff from deleting ticket', function () {
     ]);
 
     $response = $this->actingAs($staff)->delete("/tickets/{$ticket->id}");
+
+    $response->assertForbidden();
+    $this->assertDatabaseHas('tickets', ['id' => $ticket->id]);
+});
+
+it('allows requester to delete their own ticket', function () {
+    $pemohon = User::factory()->pemohon()->create();
+    $ticket = Ticket::factory()->create([
+        'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
+        'ticket_category_id' => $this->category->id,
+        'ticket_priority_id' => $this->priority->id,
+        'ticket_status_id' => $this->statusNew->id,
+        'requester_id' => $pemohon->id,
+    ]);
+
+    $response = $this->actingAs($pemohon)->delete("/tickets/{$ticket->id}");
+
+    $response->assertRedirect('/tickets');
+    $this->assertDatabaseMissing('tickets', ['id' => $ticket->id]);
+});
+
+it('denies requester from deleting another users ticket', function () {
+    $pemohon = User::factory()->pemohon()->create();
+    $otherPemohon = User::factory()->pemohon()->create();
+    $ticket = Ticket::factory()->create([
+        'ticket_type_id' => $this->type->id,
+        'dep_id' => 'IT',
+        'ticket_category_id' => $this->category->id,
+        'ticket_priority_id' => $this->priority->id,
+        'ticket_status_id' => $this->statusNew->id,
+        'requester_id' => $otherPemohon->id,
+    ]);
+
+    $response = $this->actingAs($pemohon)->delete("/tickets/{$ticket->id}");
 
     $response->assertForbidden();
     $this->assertDatabaseHas('tickets', ['id' => $ticket->id]);

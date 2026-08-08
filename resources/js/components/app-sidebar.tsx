@@ -1,13 +1,19 @@
 import { Link } from '@inertiajs/react';
 import {
+    Activity,
     BarChart3,
+    Boxes,
+    Building2,
     Columns3,
     FilePenLine,
     FileText,
     FolderCog,
     LayoutGrid,
     ListFilter,
+    MapPin,
     Package,
+    Server,
+    Settings2,
     Ticket,
     UserCircle,
     Users,
@@ -70,9 +76,29 @@ const mainNavItems: NavItem[] = [
         icon: UserCircle,
     },
     {
-        title: 'Inventaris',
+        title: 'Aset',
+        href: '/aset',
+        icon: Package,
+    },
+    {
+        title: 'Inventaris SIMRS',
         href: '/inventaris',
         icon: Package,
+    },
+    {
+        title: 'Master Barang',
+        href: '/inventaris-barang',
+        icon: Boxes,
+    },
+    {
+        title: 'Master Ruang',
+        href: '/inventaris-ruang',
+        icon: MapPin,
+    },
+    {
+        title: 'Master Produsen',
+        href: '/inventaris-produsen',
+        icon: Building2,
     },
     {
         title: 'User Online',
@@ -83,6 +109,24 @@ const mainNavItems: NavItem[] = [
         title: 'Daftar User',
         href: '/users',
         icon: Users,
+    },
+];
+
+const monitoringNavItems: NavItem[] = [
+    {
+        title: 'Perangkat',
+        href: '/monitoring',
+        icon: Activity,
+    },
+    {
+        title: 'Kategori Monitor',
+        href: '/monitoring/pengaturan-kategori',
+        icon: Settings2,
+    },
+    {
+        title: 'Kesehatan Infrastruktur',
+        href: '/infrastruktur',
+        icon: Server,
     },
 ];
 
@@ -111,6 +155,7 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <NavMain items={mainNavItems} />
+                <NavMain items={monitoringNavItems} label="Monitoring" />
                 <NavMain items={settingsNavItems} label="Pengaturan" />
             </SidebarContent>
 

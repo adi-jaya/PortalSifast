@@ -1,0 +1,7 @@
+logs/
+dist/
+*.exe
+/rs-agent
+/rs-agent.exe
+configs/config.json
+tmp/

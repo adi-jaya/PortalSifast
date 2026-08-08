@@ -23,16 +23,19 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->statefulApi();
 
         // API SiFast (frontend kepegawaian) memakai Bearer token saja; tidak perlu CSRF cookie
-        $middleware->validateCsrfTokens(['api/sifast/*']);
+        $middleware->validateCsrfTokens(['api/sifast/*', 'api/agent/*']);
 
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         $middleware->alias([
             'officer' => \App\Http\Middleware\EnsureUserIsOfficer::class,
             'payroll.access' => \App\Http\Middleware\EnsurePayrollAccess::class,
+            'patroli.access' => \App\Http\Middleware\EnsurePatroliAccess::class,
             'simmutu.view' => \App\Http\Middleware\EnsureSimmutuViewAccess::class,
             'simmutu.manage' => \App\Http\Middleware\EnsureSimmutuManageAccess::class,
             'simmutu.input' => \App\Http\Middleware\EnsureSimmutuInputAccess::class,
+            'webofficial.admin' => \App\Http\Middleware\EnsureWebOfficialAdminAccess::class,
+            'auth.agent' => \App\Http\Middleware\AuthenticateAgent::class,
         ]);
 
         $middleware->web(append: [

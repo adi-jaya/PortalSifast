@@ -1,0 +1,4 @@
+{
+  "summary": "Explained Phase 1 is feature-complete and verified (agent heartbeats working). Remaining work is operational (production URL, scheduler, Windows service, retention) or future phases—not missing Phase 1 scope.",
+  "current_status": "Phase 1 done end-to-end. 1 device / 134 samples in DB. Next recommended: harden ops (prod URL, scheduler, service install) then pick Phase 2 feature."
+}

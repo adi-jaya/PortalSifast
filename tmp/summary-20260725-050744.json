@@ -1,0 +1,4 @@
+{
+  "summary": "Wrote and self-reviewed design spec at docs/superpowers/specs/2026-07-25-aset-unit-csv-import-design.md (clarified template examples, katalog resolve order, success redirect). Awaiting user review before writing-plans.",
+  "current_status": "Aset unit CSV import design approved in chat; user gate on written spec before implementation plan."
+}

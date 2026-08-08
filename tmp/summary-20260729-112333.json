@@ -1,0 +1,4 @@
+{
+  "summary": "User chose separate sidebar page (C) for Tianji reports. Presented three integration approaches with recommendation for live OpenAPI pull + on-demand CSV export; awaiting user pick before detailed design.",
+  "current_status": "Brainstorming mid-flow: requirements locked (both CSV types, local Tianji, Monitoring-level access, own sidebar). Waiting approach approval."
+}

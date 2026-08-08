@@ -1,0 +1,4 @@
+{
+  "summary": "Fixed inventaris photo 404 by resolving SIMRS paths (pages/upload/...) server-side from SIMRS_INVENTARIS_ASSET_BASE_URL and returning base64 data URIs to the browser so internal IP is never exposed.",
+  "current_status": "Inventaris show/edit now display existing SIMRS photos as base64. Local portal uploads under inventaris/ still work the same way."
+}

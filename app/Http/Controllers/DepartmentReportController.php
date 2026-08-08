@@ -53,11 +53,11 @@ class DepartmentReportController extends Controller
             ->join('users as assignee', 'assignee.id', '=', 'tickets.assignee_id');
 
         if ($user->isStaff()) {
-            $baseQuery->where('assignee.dep_id', $user->dep_id);
+            $baseQuery->where('tickets.dep_id', $user->dep_id);
         }
 
         if ($depId) {
-            $baseQuery->where('assignee.dep_id', $depId);
+            $baseQuery->where('tickets.dep_id', $depId);
         }
 
         $driver = DB::connection()->getDriverName();

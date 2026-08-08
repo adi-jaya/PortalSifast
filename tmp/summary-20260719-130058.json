@@ -1,0 +1,4 @@
+{
+  "summary": "Diagnosed why INV-RI052-2026-0002 cannot link monitoring: barang dell t30 has kategori KI014 Display (aset_kategori_id), not PC codes; isMonitorableForAgent=false so UI correctly blocks. Explained root cause and offered data fix vs rule change.",
+  "current_status": "Link-from-aset feature works for monitorable categories; this specific asset is blocked by inventory category Display (KI014). Awaiting user choice to fix master kategori or relax allowlist."
+}

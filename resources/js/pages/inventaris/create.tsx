@@ -28,12 +28,18 @@ type RuangOption = { id_ruang: string; nama_ruang: string };
 type Props = {
     barang: BarangOption[];
     ruang: RuangOption[];
+    prefillKodeBarang?: string | null;
 };
 
-export default function InventarisCreate({ barang, ruang }: Props) {
-    const { data, setData, post, processing, errors } = useForm({
+export default function InventarisCreate({ barang, ruang, prefillKodeBarang }: Props) {
+    const initialKode =
+        prefillKodeBarang && barang.some((b) => b.kode_barang === prefillKodeBarang)
+            ? prefillKodeBarang
+            : '';
+
+    const { data, setData, post, processing, errors, transform } = useForm({
         no_inventaris: '',
-        kode_barang: '',
+        kode_barang: initialKode,
         asal_barang: '',
         tgl_pengadaan: '',
         harga: '',
@@ -45,21 +51,22 @@ export default function InventarisCreate({ barang, ruang }: Props) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post('/inventaris', {
-            data: {
-                ...data,
-                tgl_pengadaan: data.tgl_pengadaan || null,
-                harga: data.harga ? parseFloat(data.harga) : null,
-                id_ruang: data.id_ruang === '__none__' ? null : data.id_ruang,
-            },
-        });
+        transform((form) => ({
+            ...form,
+            tgl_pengadaan: form.tgl_pengadaan || null,
+            harga: form.harga ? parseFloat(form.harga) : null,
+            id_ruang: form.id_ruang === '__none__' ? null : form.id_ruang,
+            asal_barang: form.asal_barang || null,
+            status_barang: form.status_barang || null,
+        }));
+        post('/inventaris');
     };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Tambah Inventaris" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <div className="flex items-start gap-3">
                     <Button variant="ghost" size="icon" asChild>
                         <Link href="/inventaris">

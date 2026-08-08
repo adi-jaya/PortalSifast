@@ -1,0 +1,31 @@
+<h2>Seberapa luas redesign PortalSifast?</h2>
+<p class="subtitle">EmviUI-style (fresh, clean, Tailwind-based) — pilih cakupan dulu. Klik salah satu.</p>
+
+<div class="options">
+  <div class="option" data-choice="shell" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Shell + Theme saja</h3>
+      <p>Sidebar, header, auth, welcome, token warna di app.css. ~20 file, dampak visual besar, risiko rendah. Halaman modul tetap layout lama tapi ikut warna baru.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="priority" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Shell + halaman prioritas</h3>
+      <p>Plus Dashboard, Login, Welcome, dan 1–2 modul utama (mis. Tickets / Monitoring). ~40–60 file. Recommended untuk look fresh tanpa rewrite seluruh portal.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="full" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Full redesign (~145 halaman)</h3>
+      <p>Semua modul diseragamkan. ~230+ file. Paling konsisten, tapi lama dan mudah drift di tengah jalan.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <p class="label">Konteks cepat</p>
+  <p>Portal sekarang: Inertia React + shadcn + Tailwind v4, brand teal medis <strong>#0A9E8F</strong>, dark mode sudah ada. EmviUI = estetika Figma kit (clean surfaces, soft borders, modern spacing) — bukan copy paste file Figma.</p>
+</div>

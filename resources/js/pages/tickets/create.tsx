@@ -55,6 +55,9 @@ type Props = {
     canSelectRequester: boolean;
     projects?: ProjectOption[];
     initialProjectId?: number | null;
+    initialAssetNoInventaris?: string | null;
+    initialAssetId?: number | null;
+    initialAssetLabel?: string | null;
 };
 
 export default function TicketCreate({
@@ -66,16 +69,21 @@ export default function TicketCreate({
     canSelectRequester = false,
     projects = [],
     initialProjectId = null,
+    initialAssetNoInventaris = null,
+    initialAssetId = null,
+    initialAssetLabel = null,
 }: Props) {
     const { data, setData, post, processing, errors, transform } = useForm({
         ticket_type_id: '',
+        dep_id: '' as '' | 'IT' | 'IPS',
         ticket_category_id: '',
         ticket_subcategory_id: '',
         ticket_priority_id: '',
         title: '',
         description: '',
         related_ticket_id: '',
-        asset_no_inventaris: null as string | null,
+        asset_id: initialAssetId as number | null,
+        asset_no_inventaris: initialAssetNoInventaris,
         tag_ids: [] as number[],
         requester_id: null as number | null,
         created_at: '' as string,
@@ -92,6 +100,13 @@ export default function TicketCreate({
     const [selectedCategory, setSelectedCategory] = useState<TicketCategory | null>(null);
     const [newTags, setNewTags] = useState<string[]>([]);
     const [newProjectName, setNewProjectName] = useState<string | null>(null);
+
+    useEffect(() => {
+        const uniqueDeps = [...new Set(categories.map((c) => c.dep_id).filter(Boolean))];
+        if (uniqueDeps.length === 1 && !data.dep_id) {
+            setData('dep_id', uniqueDeps[0] as 'IT' | 'IPS');
+        }
+    }, [categories]);
 
     const handleTagChange = (selected: MultiValue<{ value: string; label: string }>) => {
         const existingIds: number[] = [];
@@ -174,28 +189,33 @@ export default function TicketCreate({
     const selectedRelatedTicketOption =
         relatedTicketOptions.find((option) => option.value === data.related_ticket_id) ?? null;
 
-    // Filter categories based on selected type (null = kategori untuk semua tipe)
+    // Filter categories based on penanganan + selected type
     useEffect(() => {
+        if (!data.dep_id) {
+            setFilteredCategories([]);
+            return;
+        }
+
+        let filtered = categories.filter((c) => c.dep_id === data.dep_id);
+
         if (data.ticket_type_id) {
             const typeId = parseInt(data.ticket_type_id);
-            const filtered = categories.filter(
+            filtered = filtered.filter(
                 (c) => c.ticket_type_id == null || c.ticket_type_id === typeId
             );
-            setFilteredCategories(filtered);
-
-            // Reset category if not in filtered list
-            if (
-                data.ticket_category_id &&
-                !filtered.some((c) => c.id === parseInt(data.ticket_category_id))
-            ) {
-                setData('ticket_category_id', '');
-                setData('ticket_subcategory_id', '');
-                setSelectedCategory(null);
-            }
-        } else {
-            setFilteredCategories([]);
         }
-    }, [data.ticket_type_id, categories]);
+
+        setFilteredCategories(filtered);
+
+        if (
+            data.ticket_category_id &&
+            !filtered.some((c) => c.id === parseInt(data.ticket_category_id))
+        ) {
+            setData('ticket_category_id', '');
+            setData('ticket_subcategory_id', '');
+            setSelectedCategory(null);
+        }
+    }, [data.ticket_type_id, data.dep_id, categories]);
 
     // Update selected category
     useEffect(() => {
@@ -232,6 +252,7 @@ export default function TicketCreate({
             } else {
                 payload.related_ticket_id = null;
             }
+            payload.asset_id = formData.asset_id || null;
             payload.asset_no_inventaris = formData.asset_no_inventaris || null;
             payload.tag_ids = Array.isArray(formData.tag_ids) ? formData.tag_ids : [];
             payload.new_tag_names = newTags; // Include new tags to be created
@@ -266,7 +287,7 @@ export default function TicketCreate({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Buat Tiket" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <div className="flex items-start gap-3">
                     <Button variant="ghost" size="icon" asChild>
                         <Link href="/tickets">
@@ -300,6 +321,36 @@ export default function TicketCreate({
                             <InputError message={errors.requester_id} />
                         </div>
                     )}
+
+                    {/* Penanganan IT / IPS */}
+                    <div className="grid gap-2">
+                        <Label>
+                            Penanganan <span className="text-destructive">*</span>
+                        </Label>
+                        <div className="inline-flex w-fit flex-wrap gap-1 rounded-lg border bg-muted/40 p-1">
+                            {(['IT', 'IPS'] as const).map((dep) => (
+                                <Button
+                                    key={dep}
+                                    type="button"
+                                    size="sm"
+                                    variant={data.dep_id === dep ? 'default' : 'ghost'}
+                                    className="min-h-9 min-w-[4.5rem]"
+                                    onClick={() => {
+                                        setData('dep_id', dep);
+                                        setData('ticket_category_id', '');
+                                        setData('ticket_subcategory_id', '');
+                                        setSelectedCategory(null);
+                                    }}
+                                >
+                                    {dep}
+                                </Button>
+                            ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            Pilih dulu tim penanganan. Kategori akan menyesuaikan (IT = sistem/jaringan, IPS = fasilitas/alat).
+                        </p>
+                        <InputError message={errors.dep_id} />
+                    </div>
 
                     {/* Type */}
                     <div className="grid gap-2">
@@ -341,30 +392,30 @@ export default function TicketCreate({
                         </Label>
                         <Select
                             value={data.ticket_category_id}
-                            onValueChange={(v) => setData('ticket_category_id', v)}
-                            disabled={!data.ticket_type_id}
+                            onValueChange={(v) => {
+                                setData('ticket_category_id', v);
+                                setData('ticket_subcategory_id', '');
+                            }}
+                            disabled={!data.dep_id}
                         >
                             <SelectTrigger id="ticket_category_id">
                                 <SelectValue
                                     placeholder={
-                                        data.ticket_type_id
+                                        data.dep_id
                                             ? 'Pilih kategori...'
-                                            : 'Pilih tipe tiket terlebih dahulu'
+                                            : 'Pilih penanganan IT/IPS terlebih dahulu'
                                     }
                                 />
                             </SelectTrigger>
                             <SelectContent>
                                 {filteredCategories.length === 0 ? (
                                     <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                                        Tidak ada kategori untuk tipe ini
+                                        Tidak ada kategori untuk penanganan ini
                                     </div>
                                 ) : (
                                     filteredCategories.map((cat) => (
                                         <SelectItem key={cat.id} value={String(cat.id)}>
                                             {cat.name}
-                                            <span className="ml-2 text-xs text-muted-foreground">
-                                                ({cat.dep_id})
-                                            </span>
                                         </SelectItem>
                                     ))
                                 )}
@@ -542,15 +593,23 @@ export default function TicketCreate({
 
                     {/* Inventaris / Asset */}
                     <div className="grid gap-2">
-                        <Label htmlFor="asset_no_inventaris">Inventaris / Asset (opsional)</Label>
+                        <Label htmlFor="asset_no_inventaris">Aset / Inventaris (opsional)</Label>
                         <InventarisSearchInput
                             value={data.asset_no_inventaris}
-                            onChange={(v) => setData('asset_no_inventaris', v)}
+                            assetId={data.asset_id}
+                            initialLabel={initialAssetLabel}
+                            onChange={(selection) => {
+                                setData({
+                                    ...data,
+                                    asset_id: selection?.asset_id ?? null,
+                                    asset_no_inventaris: selection?.asset_no_inventaris ?? null,
+                                });
+                            }}
                         />
                         <p className="text-xs text-muted-foreground">
-                            Untuk tiket IPS: pilih barang inventaris jika tiket terkait alat medis/peralatan.
+                            Cari aset portal (kode aset / no seri) atau inventaris SIMRS. Preferensi: aset portal.
                         </p>
-                        <InputError message={errors.asset_no_inventaris} />
+                        <InputError message={errors.asset_id || errors.asset_no_inventaris} />
                     </div>
 
                     {/* Description */}

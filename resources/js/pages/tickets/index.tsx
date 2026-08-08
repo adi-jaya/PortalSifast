@@ -151,6 +151,7 @@ export default function TicketsIndex({
     const hasActiveFilters = !!(
         filters.status ||
         filters.priority ||
+        filters.department ||
         filters.assignee ||
         filters.search ||
         filters.tag ||
@@ -174,7 +175,7 @@ export default function TicketsIndex({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Daftar Tiket" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <Heading
                         title="Daftar Tiket"
@@ -197,13 +198,32 @@ export default function TicketsIndex({
                             <>
                                 <Button variant="outline" asChild>
                                     <a
-                                        href={`/tickets/export?${new URLSearchParams(
-                                            Object.fromEntries(
-                                                Object.entries(filters).filter(
-                                                    ([, v]) => v !== undefined && v !== ''
-                                                )
-                                            ) as Record<string, string>
-                                        )}`}
+                                        href={`/tickets/export${typeof window !== 'undefined' ? window.location.search : ''}`}
+                                        onClick={(e) => {
+                                            // Pastikan query filter sama persis dengan yang sedang aktif di URL.
+                                            e.preventDefault();
+                                            const params = new URLSearchParams();
+                                            Object.entries(filters).forEach(([key, value]) => {
+                                                if (
+                                                    value === undefined ||
+                                                    value === null ||
+                                                    value === '' ||
+                                                    value === 'null' ||
+                                                    value === 'undefined' ||
+                                                    value === '__all__'
+                                                ) {
+                                                    return;
+                                                }
+                                                params.set(key, String(value));
+                                            });
+                                            // Fallback ke query browser bila props kosong tapi URL punya filter.
+                                            const query =
+                                                params.toString() ||
+                                                window.location.search.replace(/^\?/, '');
+                                            window.location.assign(
+                                                query ? `/tickets/export?${query}` : '/tickets/export',
+                                            );
+                                        }}
                                     >
                                         <Download className="mr-2 h-4 w-4" />
                                         Ekspor CSV
@@ -227,6 +247,34 @@ export default function TicketsIndex({
                 </div>
 
                 {/* Search & Filter Bar */}
+                <div
+                    className="inline-flex w-fit max-w-full flex-wrap items-center gap-1 rounded-lg border bg-muted/40 p-1"
+                    role="tablist"
+                    aria-label="Filter penanganan"
+                >
+                    {[
+                        { value: undefined as string | undefined, label: 'Semua' },
+                        { value: 'IT', label: 'IT' },
+                        { value: 'IPS', label: 'IPS' },
+                    ].map((tab) => {
+                        const active = (filters.department || undefined) === tab.value;
+                        return (
+                            <Button
+                                key={tab.label}
+                                type="button"
+                                role="tab"
+                                aria-selected={active}
+                                size="sm"
+                                variant={active ? 'default' : 'ghost'}
+                                className="min-h-9 min-w-[4.5rem]"
+                                onClick={() => applyFilters({ department: tab.value })}
+                            >
+                                {tab.label}
+                            </Button>
+                        );
+                    })}
+                </div>
+
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                     <form onSubmit={handleSearch} className="flex flex-1 gap-2">
                         <div className="relative flex-1">
@@ -478,19 +526,20 @@ export default function TicketsIndex({
                 )}
 
                 {/* Tickets Table */}
-                <div className="rounded-2xl border border-border/80 bg-card shadow-sm">
-                    <div className="overflow-x-auto">
+                <div className="data-table">
+                    <div className="data-table-scroll">
                         <table className="w-full text-left text-sm">
                             <thead>
-                                <tr className="border-b bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 dark:from-violet-500/20 dark:to-fuchsia-500/20">
+                                <tr className="border-b">
                                     <th className="px-4 py-3 font-medium">No. Tiket</th>
                                     <th className="px-4 py-3 font-medium">Judul</th>
                                     <th className="px-4 py-3 font-medium">Prioritas</th>
                                     <th className="px-4 py-3 font-medium">Status</th>
                                     <th className="px-4 py-3 font-medium min-w-[140px]">Masalah</th>
                                     <th className="px-4 py-3 font-medium">Rencana</th>
+                                    <th className="px-4 py-3 font-medium">Penanganan</th>
                                     <th className="px-4 py-3 font-medium">Pemohon</th>
-                                    <th className="px-4 py-3 font-medium">Unit</th>
+                                    <th className="px-4 py-3 font-medium">Unit pelapor</th>
                                     <th className="px-4 py-3 font-medium">Petugas</th>
                                     <th className="px-4 py-3 font-medium whitespace-nowrap">Dibuat</th>
                                     <th className="px-4 py-3 font-medium whitespace-nowrap">Ditutup</th>
@@ -639,6 +688,18 @@ export default function TicketsIndex({
                                                     '–'
                                                 )}
                                             </td>
+                                            <td className="px-4 py-3">
+                                                <Badge
+                                                    variant="outline"
+                                                    className={
+                                                        ticket.dep_id === 'IPS'
+                                                            ? 'border-amber-500/50 bg-amber-500/10 text-amber-900 dark:text-amber-200'
+                                                            : 'border-sky-500/50 bg-sky-500/10 text-sky-900 dark:text-sky-200'
+                                                    }
+                                                >
+                                                    {ticket.dep_id || '–'}
+                                                </Badge>
+                                            </td>
                                             <td className="px-4 py-3 text-muted-foreground">
                                                 {ticket.requester.name}
                                             </td>
@@ -750,7 +811,7 @@ export default function TicketsIndex({
                                                                     </DropdownMenuSubContent>
                                                                 </DropdownMenuSub>
                                                             )}
-                                                            {canDelete && (
+                                                            {ticket.can_delete && (
                                                                 <DropdownMenuItem
                                                                     className="text-destructive focus:text-destructive"
                                                                     onClick={() => {

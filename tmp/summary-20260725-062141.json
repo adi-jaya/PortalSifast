@@ -1,0 +1,4 @@
+{
+  "summary": "User chose direct upsert import (A) for master CSV. Presenting approaches + design for ruang/ASPAK/non-alkes export+import UI reusing artisan import logic.",
+  "current_status": "Brainstorming master CSV UI; ready for approach/design approval."
+}

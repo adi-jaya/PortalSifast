@@ -1,0 +1,4 @@
+{
+  "summary": "User asked to return to the Patroli module and whether context was still retained. Confirmed recall from the approved 2026-07-23 QR patroli design spec and existing codebase (templates, check-in, titik, laporan, API, tests).",
+  "current_status": "Patroli Security v1 is implemented (web + API + Pest tests) per the approved design; waiting for the user's next request on this module."
+}

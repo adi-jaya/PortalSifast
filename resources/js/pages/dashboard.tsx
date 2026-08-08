@@ -81,7 +81,7 @@ export default function Dashboard({
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
-            <div className="flex h-full flex-1 flex-col gap-6 p-4">
+            <div className="flex flex-col gap-6">
                 <div className="rounded-2xl border border-border bg-card p-5">
                     <h1 className="text-2xl font-bold tracking-tight text-foreground">
                         Selamat datang

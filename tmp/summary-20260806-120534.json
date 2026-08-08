@@ -1,0 +1,4 @@
+{
+  "summary": "Added Hapus aset button on aset show page (confirm + soft delete via existing destroy route). Covered with AsetDestroyTest (auth required, soft delete + redirect, UI source assertion). 3 tests passed.",
+  "current_status": "Aset delete is available on detail page at /aset/{kode}; list page still links to detail only. Frontend may need npm run build/dev to reflect UI."
+}

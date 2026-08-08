@@ -1,0 +1,4 @@
+{
+  "summary": "Fixed aset CSV import template: example rows now use real Master Ruang codes (e.g. 01, GM101) and real non-alkes leaf catalog instead of fake IGD01/POL01. Import page shows ruang hints + Master Ruang link; error message points users to Master Ruang / re-download template. AsetUnitCsvImportTest 7 passed.",
+  "current_status": "Import template is usable against live ruang data; user should re-download template from /aset/import (npm build if frontend hints not visible)."
+}

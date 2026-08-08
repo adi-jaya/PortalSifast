@@ -72,7 +72,11 @@ class TicketPolicy
             return true;
         }
 
-        return $ticket->requester_id === $user->id;
+        if ($ticket->requester_id === $user->id) {
+            return true;
+        }
+
+        return $user->isStaff() && $ticket->dep_id === $user->dep_id;
     }
 
     /**
@@ -80,7 +84,11 @@ class TicketPolicy
      */
     public function delete(User $user, Ticket $ticket): bool
     {
-        return $user->isAdmin();
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        return $ticket->requester_id === $user->id;
     }
 
     /**
@@ -128,6 +136,34 @@ class TicketPolicy
         }
 
         return $user->isAdmin();
+    }
+
+    /**
+     * Determine whether the user can transfer ticket ownership between IT/IPS.
+     */
+    public function transferDepartment(User $user, Ticket $ticket): bool
+    {
+        if ($ticket->isDraft()) {
+            return false;
+        }
+
+        if ($ticket->status()->where('is_closed', true)->exists()) {
+            return false;
+        }
+
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        if (! $user->isStaff()) {
+            return false;
+        }
+
+        if ($ticket->assignee_id === $user->id) {
+            return true;
+        }
+
+        return $ticket->collaborators()->where('user_id', $user->id)->exists();
     }
 
     /**

@@ -54,4 +54,14 @@ class InventarisBarang extends Model
     {
         return $this->belongsTo(InventarisJenis::class, 'id_jenis', 'id_jenis');
     }
+
+    public function inventaris(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Inventaris::class, 'kode_barang', 'kode_barang');
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'kode_barang';
+    }
 }

@@ -32,6 +32,8 @@ export type SalaryFieldKey =
     | 'hutang_bpjs'
     | 'hutang_seragam'
     | 'ikkm'
+    | 'keterlambatan'
+    | 'ijin'
     | 'lain_pot';
 
 export type SlipLineDef = {
@@ -49,8 +51,8 @@ export type SlipSectionDef = {
 export const SLIP_SECTIONS: SlipSectionDef[] = [
     {
         number: '1',
-        title: 'Kehadiran',
-        lines: [{ key: 'gaji_pokok', label: 'Kehadiran' }],
+        title: 'Gaji Pokok',
+        lines: [{ key: 'gaji_pokok', label: 'Gaji Pokok' }],
     },
     {
         number: '2',
@@ -100,6 +102,8 @@ export const SLIP_SECTIONS: SlipSectionDef[] = [
             { key: 'hutang_bpjs', label: 'Hutang BPJS' },
             { key: 'hutang_seragam', label: 'Hutang Seragam' },
             { key: 'ikkm', label: 'IKKM' },
+            { key: 'keterlambatan', label: 'Keterlambatan' },
+            { key: 'ijin', label: 'Ijin' },
             { key: 'lain_pot', label: 'Lain-lain' },
         ],
     },
@@ -111,7 +115,30 @@ export const LAIN_LAIN_KEYS: SalaryFieldKey[] = SLIP_SECTIONS[2].lines.map((l) =
 
 export const POTONGAN_KEYS: SalaryFieldKey[] = SLIP_SECTIONS[3].lines.map((l) => l.key);
 
-export function parseMoney(value: string | null | undefined): number | null {
+export function formatPayrollPeriod(
+    dateString: string | null | undefined,
+    style: 'short' | 'long' = 'short',
+): string {
+    if (!dateString) {
+        return '-';
+    }
+
+    const match = dateString.match(/^(\d{4})-(\d{2})(?:-(\d{2}))?/);
+    if (!match) {
+        return dateString;
+    }
+
+    const [, year, month] = match;
+    const date = new Date(Date.UTC(Number(year), Number(month) - 1, 1));
+
+    return date.toLocaleDateString('id-ID', {
+        month: style === 'long' ? 'long' : 'short',
+        year: 'numeric',
+        timeZone: 'UTC',
+    });
+}
+
+export function parseMoney(value: string | number | null | undefined): number | null {
     if (value === null || value === undefined) {
         return null;
     }
@@ -141,13 +168,34 @@ export function getMoneyValue(record: Record<string, string | null | undefined>,
 
 export function resolveLineLabel(
     line: SlipLineDef,
-    record: Record<string, string | null | undefined>,
+    record: Record<string, string | null | undefined | boolean>,
 ): string {
     if (line.dynamicLabelKey && record[line.dynamicLabelKey]) {
         return record[line.dynamicLabelKey] as string;
     }
 
+    if (
+        line.key === 'tunj_kehadiran' &&
+        record.uses_combined_tunjangan === true
+    ) {
+        return 'Kehadiran, Makan & Masa Kerja';
+    }
+
     return line.label;
+}
+
+export function shouldRenderSlipLine(
+    line: SlipLineDef,
+    record: Record<string, string | null | undefined | boolean>,
+): boolean {
+    if (
+        record.uses_combined_tunjangan === true &&
+        (line.key === 'tunj_masa_kerja' || line.key === 'tunj_makan')
+    ) {
+        return false;
+    }
+
+    return true;
 }
 
 export function sumKeys(record: Record<string, string | null | undefined>, keys: string[]): number {
@@ -174,18 +222,70 @@ export function formatIdrPrint(n: number): string {
     return 'Rp ' + new Intl.NumberFormat('id-ID').format(n);
 }
 
+export function resolveJumlahTotals(
+    record: Record<string, string | null | undefined>,
+    kehadiran: number,
+    computedTunjangan: number,
+): { tunjanganTotal: number; totalPendapatan: number } {
+    const csvJumlah = parseMoney(record.jumlah);
+    const csvJumlahTunjangan = parseMoney(record.jumlah_tunjangan);
+
+    if (csvJumlah !== null && csvJumlahTunjangan !== null) {
+        const swappedMatch =
+            Math.abs(csvJumlah - computedTunjangan) < 1 &&
+            Math.abs(csvJumlahTunjangan - (kehadiran + csvJumlah)) < 1;
+
+        const standardMatch =
+            Math.abs(csvJumlahTunjangan - computedTunjangan) < 1 &&
+            Math.abs(csvJumlah - (kehadiran + csvJumlahTunjangan)) < 1;
+
+        if (swappedMatch && !standardMatch) {
+            return { tunjanganTotal: csvJumlah, totalPendapatan: csvJumlahTunjangan };
+        }
+
+        if (standardMatch) {
+            return { tunjanganTotal: csvJumlahTunjangan, totalPendapatan: csvJumlah };
+        }
+
+        if (Math.abs(csvJumlahTunjangan - (kehadiran + csvJumlah)) < 1) {
+            return { tunjanganTotal: csvJumlah, totalPendapatan: csvJumlahTunjangan };
+        }
+
+        if (Math.abs(csvJumlah - (kehadiran + csvJumlahTunjangan)) < 1) {
+            return { tunjanganTotal: csvJumlahTunjangan, totalPendapatan: csvJumlah };
+        }
+    }
+
+    if (csvJumlahTunjangan !== null) {
+        return {
+            tunjanganTotal: csvJumlahTunjangan,
+            totalPendapatan: csvJumlah ?? kehadiran + csvJumlahTunjangan,
+        };
+    }
+
+    if (csvJumlah !== null) {
+        return {
+            tunjanganTotal: computedTunjangan,
+            totalPendapatan: csvJumlah,
+        };
+    }
+
+    return {
+        tunjanganTotal: computedTunjangan,
+        totalPendapatan: kehadiran + computedTunjangan,
+    };
+}
+
 export function computeSlipTotals(record: Record<string, string | null | undefined>) {
     const kehadiran = getMoneyValue(record, 'gaji_pokok');
-    const jumlahTunjanganCsv = parseMoney(record.jumlah_tunjangan);
-    const jumlahCsv = parseMoney(record.jumlah);
     const jumlahPotCsv = parseMoney(record.jumlah_pot);
     const gajiBersihCsv = parseMoney(record.pembulatan ?? record.penerimaan);
 
-    // Jumlah Tunjangan = section 2 (Tunjangan) + section 3 (Lain-Lain), sesuai slip RS
     const tunjanganSection = sumKeys(record, TUNJANGAN_KEYS);
     const lainLainTotal = sumKeys(record, LAIN_LAIN_KEYS);
-    const tunjanganTotal = jumlahTunjanganCsv ?? tunjanganSection + lainLainTotal;
-    const totalPendapatan = jumlahCsv ?? kehadiran + tunjanganTotal;
+    const computedTunjangan = tunjanganSection + lainLainTotal;
+
+    const { tunjanganTotal, totalPendapatan } = resolveJumlahTotals(record, kehadiran, computedTunjangan);
     const totalPotongan = jumlahPotCsv ?? sumKeys(record, POTONGAN_KEYS);
     const gajiBersih = gajiBersihCsv ?? totalPendapatan - totalPotongan;
 

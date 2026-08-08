@@ -1,0 +1,4 @@
+{
+  "summary": "Confirmed Tianji is reachable locally from this host at 192.168.10.44:12345 (OpenAPI OK, 11 monitors, workspace clnzoxcy10001vy2ohi4obbi0). Advised no public domain needed if Portal server stays on same LAN; warned API key was shared in chat and must only live in .env. User wants both summary + detail CSV; brainstorming continues with one clarifying question before design.",
+  "current_status": "Tianji connectivity verified; design not started. Awaiting user answer on who may export reports (IT only vs broader roles) before proposing approaches."
+}

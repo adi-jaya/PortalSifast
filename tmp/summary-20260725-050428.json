@@ -1,0 +1,4 @@
+{
+  "summary": "User confirmed CSV row = one physical unit (A). Next clarifying question: how rows identify catalog/kelas (ASPAK or non-alkes codes vs free-text nama).",
+  "current_status": "Brainstorming aset unit CSV import UI; awaiting catalog identification preference."
+}

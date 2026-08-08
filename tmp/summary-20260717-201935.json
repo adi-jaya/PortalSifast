@@ -1,0 +1,4 @@
+{
+  "summary": "Explained sources for kategori/jenis/merk/produsen: dropdown lists come from portal DB (often filled via SIMRS sync); new entries typed in form are created by the user and saved only to portal. Current counts: 21 kategori, 39 jenis, 224 merk, 209 produsen.",
+  "current_status": "User clarifying master data provenance; portal already has synced master rows available for selection plus inline create."
+}

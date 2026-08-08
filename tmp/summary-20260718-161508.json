@@ -1,0 +1,4 @@
+{
+  "summary": "Klarifikasi ke user: penyusutan saat ini hanya dihitung & ditampilkan di show aset (garis lurus dari harga/tanggal/umur/residu); belum ada UI pengaturan metode, rasio, atau inflasi. Menjelaskan konsep dan menunggu apakah user mau UI master/setting.",
+  "current_status": "Penyusutan otomatis read-only di show. Belum ada halaman setting depresiasi/rasio/inflasi. Menunggu konfirmasi user untuk scope UI pengaturan."
+}

@@ -24,4 +24,9 @@ class InventarisMerk extends Model
     protected $fillable = [
         'id_merk', 'nama_merk',
     ];
+
+    public function getRouteKeyName(): string
+    {
+        return 'id_merk';
+    }
 }

@@ -7,6 +7,9 @@
 
 **Update Terakhir:** Mei 2026
 
+> **Login:** untuk *user app biasa* tetap **`POST /api/login`** ([api-documentation.md](./api-documentation.md)).  
+> Endpoint `POST /api/sifast/officer/auth/login` di dokumen ini **khusus petugas emergency / tracking**, bukan pengganti login app utama.
+
 ---
 
 ## FILOSOFI: "SEMUA BISA MENJADI PENOLONG"

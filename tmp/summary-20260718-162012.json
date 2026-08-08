@@ -1,0 +1,4 @@
+{
+  "summary": "Dibuat UI pengaturan penyusutan global di /aset/pengaturan-penyusutan (residu %, umur medis/non-medis/umum), menu sidebar Inventaris Portal, override di Edit aset, default diterapkan saat create/update/hitung show. 63 test Aset lulus.",
+  "current_status": "Penyusutan lengkap: hitung otomatis + UI setting global + override per aset. Bukan inflasi. Perlu npm run build/dev agar menu & halaman baru terlihat."
+}

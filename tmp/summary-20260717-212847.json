@@ -1,0 +1,4 @@
+{
+  "summary": "User memilih alur A: transaksi langsung aktif saat simpan (tanpa draft/approval). Lanjut klarifikasi masa berlaku / overdue peminjaman.",
+  "current_status": "Brainstorming mutasi+peminjaman: D, aktor C, peran C, status B, alur langsung; jatuh tempo belum dikunci."
+}

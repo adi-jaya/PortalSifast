@@ -126,4 +126,18 @@ return [
         explode(',', (string) env('AUTH_SUPERADMIN_EMAILS', ''))
     ))),
 
+    /*
+    |--------------------------------------------------------------------------
+    | SIMMUTU Flag Manager Emails
+    |--------------------------------------------------------------------------
+    |
+    | Email yang boleh mengatur flag SIMMUTU per user (can_manage_mutu,
+    | can_input_mutu, can_view_mutu_dashboard), selain superadmin.
+    |
+    */
+    'simmutu_flag_manager_emails' => array_values(array_filter(array_map(
+        fn (string $email) => mb_strtolower(trim($email)),
+        explode(',', (string) env('AUTH_SIMMUTU_FLAG_MANAGERS', ''))
+    ))),
+
 ];

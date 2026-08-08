@@ -1,0 +1,4 @@
+{
+  "summary": "Answered where to start master cleanup: /aset/master/non-alkes currently has browse + kategori assign only (no add/edit/delete nama). Recommended order: (1) lock kategori dictionary and merge Komputer vs Laptop/Notebook, (2) build non-alkes CRUD or SQL/import rename Lap Top→Laptop, (3) UI labels. Ask mode — no code changes.",
+  "current_status": "User planning master data hygiene. Non-alkes CRUD not built yet; kategori merge is manual/DB or needs admin UI. Progressive create already inherits kategori from catalog."
+}

@@ -1,0 +1,4 @@
+{
+  "summary": "Desain bagian 1–3 disetujui user. Spec ditulis ke docs/superpowers/specs/2026-07-17-aset-mutasi-peminjaman-design.md (self-review OK: dua tabel, status_ketersediaan, aktor user/pegawai, alur langsung). Belum commit; menunggu review user sebelum writing-plans.",
+  "current_status": "Spec mutasi+peminjaman siap direview. Implementasi belum dimulai."
+}

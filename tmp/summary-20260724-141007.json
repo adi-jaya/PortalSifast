@@ -1,0 +1,1 @@
+{"summary":"Implemented Merk→Jenis cascade: aset_jenis.aset_merk_id, quick-create jenis with merk, create/edit filter + clear on mismatch, validation rejects mismatched pairs, shared null-merk jenis still allowed. Tests passing.","current_status":"Follow-ups done: auto-kategori + Merk→Jenis. Remaining: existing-barang UI, live ASPAK API. User should npm run build."}

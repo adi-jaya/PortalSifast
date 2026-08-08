@@ -5,7 +5,7 @@
 **Format:** JSON  
 **Auth:** Bearer Token (Laravel Sanctum)
 
-**Update Terakhir:** Maret 2026
+**Update Terakhir:** Juli 2026
 
 **Standar integrasi & sinkronisasi dokumen:** [STANDARD-API-INTEGRASI-KEPEGAWAIAN.md](./STANDARD-API-INTEGRASI-KEPEGAWAIAN.md) (token service, NIK, checklist saat menambah endpoint).
 
@@ -13,18 +13,29 @@
 
 ## 🔐 Autentikasi
 
-Semua endpoint (kecuali login) memerlukan header:
+### Pakai login yang mana? (baca ini dulu)
+
+| Kebutuhan app | Endpoint login | Catatan |
+|---------------|----------------|---------|
+| **Mobile app umum** (payroll, patroli, tiket user, web official admin, dll.) | **`POST /api/login`** | **Ini yang dipakai.** Email + password → Bearer Sanctum. Satu token untuk semua modul. |
+| Panic / petugas emergency khusus | `POST /api/sifast/officer/auth/login` | Hanya untuk officer panic tracking — **bukan** login app utama. |
+| Integrasi server kepegawaian (service) | Token long-lived dari `php artisan` / env | Bukan login user; lihat [API-TICKETING.md](./API-TICKETING.md). |
+
+Dokumen modul lain (payroll, patroli, panic, webofficial) **tidak membuat login baru** — mereka hanya memakai token dari baris di atas.
+
+Semua endpoint (kecuali login & beberapa endpoint publik) memerlukan header:
 ```
 Authorization: Bearer {token}
+Accept: application/json
 ```
 
-### Login (email + password) — PortalSifast API
+### Login (email + password) — satu-satunya login app utama
 
 **POST** `/api/login`
 
 Request body: `{ "email": "...", "password": "..." }`
 
-Response sukses mengembalikan `token` dan objek `user` yang **termasuk `simrs_nik` dan `phone`**:
+Response sukses mengembalikan `token` dan objek `user` (termasuk `simrs_nik`, `phone`, dan flag modul):
 ```json
 {
   "success": true,
@@ -37,11 +48,17 @@ Response sukses mengembalikan `token` dan objek `user` yang **termasuk `simrs_ni
       "simrs_nik": "123456789",
       "phone": "08123456789",
       "role": "pemohon",
-      "dep_id": "IT"
+      "dep_id": "IT",
+      "can_manage_web_official": false,
+      "can_access_patroli": false
     }
   }
 }
 ```
+
+- **Payroll:** pakai token ini + NIK (lihat bagian Payroll di bawah / [PAYROLL-MOBILE-SLIP.md](./PAYROLL-MOBILE-SLIP.md)).
+- **Patroli:** pakai token ini; pastikan `can_access_patroli: true` (lihat [api/patroli-security-mobile.md](./api/patroli-security-mobile.md)).
+- **Logout / refresh:** `POST /api/logout`, `POST /api/token/refresh` (Bearer wajib).
 
 ### Current User (user yang sudah login)
 
@@ -80,6 +97,16 @@ Lalu jalankan: `php artisan config:clear`
 ---
 
 ## 📡 Endpoints
+
+---
+
+## 🛡️ Patroli Security (mobile)
+
+Auth: **sama payroll/tiket** — Bearer token service + **`?nik=`** (bukan login patroli terpisah).  
+Path: `/api/sifast/patroli/...`  
+Petugas (NIK) harus punya flag Akses Patroli di PortalSifast.
+
+Dokumentasi modul: **[api/patroli-security-mobile.md](./api/patroli-security-mobile.md)**
 
 ---
 

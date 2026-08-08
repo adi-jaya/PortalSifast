@@ -1,0 +1,4 @@
+{
+  "summary": "Discussed real case mapping for 2x Lenovo Ideapad 3 (2025, Anugrah Pratama, Rp6jt) destined for IGD and Poli Umum against current master fields. Clarified kategori/merk/tipe/katalog/distributor and noted current create flow is one ruang per submit so two rooms need two creates (or create+mutasi).",
+  "current_status": "Progressive create UI live; master dictionary still being clarified via real examples before any data cleanup or schema change."
+}

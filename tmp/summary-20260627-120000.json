@@ -1,0 +1,4 @@
+{
+  "summary": "User asked to continue explanation about draft tickets not appearing in reports. Explained that most reports intentionally exclude drafts: SLA uses published() scope, department/technician reports filter by closed_at and assignee (drafts typically have neither), CSV export from active ticket list uses published() unless draft=1 filter is active. Requester report counts by created_at and should include drafts in date range. Drafts are visible via Lihat Draf on /tickets or after publishing.",
+  "current_status": "Draft ticket publish and delete-by-requester features are implemented. Reports exclude drafts by design for SLA/performance metrics; user may want a dedicated draft report or include-drafts toggle if they need drafts in exports."
+}

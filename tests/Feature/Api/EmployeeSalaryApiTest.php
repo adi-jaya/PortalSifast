@@ -165,3 +165,40 @@ test('admin without payroll access cannot request other employee salary by nik',
         ->getJson('/api/sifast/payroll?nik=77.77.77.7777')
         ->assertForbidden();
 });
+
+test('payroll api period filter does not overflow june to july on day 31', function () {
+    $this->travelTo(now()->setDate(2026, 7, 31)->setTime(12, 0));
+
+    $user = User::factory()->create(['simrs_nik' => '55.55.55.5555']);
+
+    $june = EmployeeSalary::query()->create([
+        'period_start' => '2026-06-01',
+        'simrs_nik' => $user->simrs_nik,
+        'employee_name' => 'Juni API',
+        'unit' => 'IT',
+        'penerimaan' => '2000000',
+        'pajak' => '0',
+        'zakat' => '0',
+        'status' => 'published',
+        'raw_row' => ['nik' => $user->simrs_nik],
+    ]);
+
+    EmployeeSalary::query()->create([
+        'period_start' => '2026-07-01',
+        'simrs_nik' => $user->simrs_nik,
+        'employee_name' => 'Juli API',
+        'unit' => 'IT',
+        'penerimaan' => '3000000',
+        'pajak' => '0',
+        'zakat' => '0',
+        'status' => 'published',
+        'raw_row' => ['nik' => $user->simrs_nik],
+    ]);
+
+    actingAs($user, 'sanctum')
+        ->getJson('/api/sifast/payroll?period=2026-06')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $june->id)
+        ->assertJsonPath('data.0.period_start', '2026-06-01');
+});

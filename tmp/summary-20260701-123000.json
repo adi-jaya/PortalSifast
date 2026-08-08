@@ -1,0 +1,4 @@
+{
+  "summary": "requestwebsiteofficial.md disusun ulang berdasarkan spesifikasi aktual di berita&informasi.md dan kamarinap.md (bukan versi generik sebelumnya): path /api/informasi dan /api/kamar-inap, model Article/Room camelCase, mapping komponen frontend, seed kamar, dan checklist backend. Referensi auth.md di kedua dokumen modul diperbaiki ke webofficiallogin.md.",
+  "current_status": "Tiga dokumen web official selaras: requestwebsiteofficial.md sebagai indeks permintaan, berita&informasi.md dan kamarinap.md sebagai spesifikasi detail per modul; implementasi backend masih menunggu."
+}

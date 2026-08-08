@@ -1,0 +1,4 @@
+{
+  "summary": "Diagnosis error 500: log menunjukkan Stirling-PDF endpoint salah (/api/v1/general/get-pdf-info → 404) saat upload dokumen, sehingga POST store meledak meski data draft sudah tersimpan. Diperbaiki endpoint ke /api/v1/security/get-info-on-pdf, graceful fallback jika Stirling gagal, path file di workflow assignNomor, dan icon EmptyState di index. Cache dibersihkan, test lulus.",
+  "current_status": "Halaman /tatanaskah/dokumen seharusnya sudah bisa dibuka. Dokumen 'COBA ABSEN' user sudah ada di status review_unit. User bisa refresh index, lanjut workflow dari halaman detail, atau buat dokumen baru."
+}

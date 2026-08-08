@@ -1,0 +1,4 @@
+{
+  "summary": "Clarified architecture: master aset (merk/jenis/kategori/barang/unit) lives 100% in portal DB; SIMRS is read-only sync only; inline create and CSV import write to portal only, never to SIMRS.",
+  "current_status": "Hybrid inventaris model confirmed to user — portal owns create/update; SIMRS remains source for optional sync."
+}

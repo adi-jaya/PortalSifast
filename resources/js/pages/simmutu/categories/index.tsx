@@ -37,7 +37,7 @@ export default function MutuCategoriesIndex({ categories }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Kategori Mutu" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <Heading title="Kategori Mutu" description="Master kategori indikator mutu." />
                     <Button asChild>
@@ -48,8 +48,8 @@ export default function MutuCategoriesIndex({ categories }: Props) {
                     </Button>
                 </div>
 
-                <div className="rounded-2xl border border-border/80 bg-card shadow-sm">
-                    <div className="overflow-x-auto">
+                <div className="data-table">
+                    <div className="data-table-scroll">
                         <table className="w-full text-left text-sm">
                             <thead>
                                 <tr className="border-b bg-muted/40">

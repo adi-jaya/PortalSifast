@@ -1,0 +1,4 @@
+{
+  "summary": "Implemented external RSS news aggregation module for Suara Muhammadiyah and Muhammadiyah.or.id: ExternalRssFeedService with fetch/parse/cache, public GET /api/berita-eksternal, admin sync endpoints, artisan rss:sync-external, hourly scheduler, admin panel /web-official/berita-eksternal, docs, and tests (8 passing). Fixed SimpleXML collect bug (was only parsing 1 item per feed). Default Suara URL uses working web.suaramuhammadiyah.id/feed/ since suaramuhammadiyah.id/feed/ returns 404. Live sync returns 20 articles.",
+  "current_status": "Berita eksternal RSS module live. Frontend website can use GET /api/berita-eksternal?limit=12. Admin can manage at /web-official/berita-eksternal. Distinct from internal /api/informasi (RS-owned content)."
+}

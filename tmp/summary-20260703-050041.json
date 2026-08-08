@@ -1,0 +1,4 @@
+{
+  "summary": "Implemented Instagram feed module for Website Official: InstagramFeedService (Graph API sync + cache), public GET /api/instagram-feed, admin status/sync endpoints, artisan instagram:sync-feed command, 30-minute scheduler, config/.env.example entries, Pest tests (7 passing), and docs (instagram.md + PANDUAN update).",
+  "current_status": "Backend Instagram integration is ready. Awaiting Meta credentials in production .env (INSTAGRAM_FEED_ENABLED, ACCESS_TOKEN, USER_ID) and first sync via php artisan instagram:sync-feed. Frontend website can consume GET /api/instagram-feed."
+}

@@ -39,15 +39,7 @@ class LoginController extends Controller
             'success' => true,
             'data' => [
                 'token' => $token,
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'simrs_nik' => $user->simrs_nik,
-                    'phone' => $user->phone,
-                    'role' => $user->role,
-                    'dep_id' => $user->dep_id,
-                ],
+                'user' => $user->toApiProfileArray(),
             ],
         ]);
     }

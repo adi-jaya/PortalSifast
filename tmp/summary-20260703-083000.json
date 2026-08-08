@@ -1,0 +1,4 @@
+{
+  "summary": "Created reusable StatusBadge component with semantic tones (urgent, warning, normal, follow-up, info, neutral, primary) mapped to the teal medical palette. Extended shadcn Badge with semantic variants. Updated all web-official admin pages (articles, poliklinik, promosi, rooms, instagram, berita-eksternal) to use StatusBadge/ActiveBadge/YesNoBadge instead of plain text or hardcoded colors. Added public frontend example components in docs/webofficial/examples/ (theme.ts, StatusBadge, ArticlesSection, RoomsSection, ExternalNewsSection, updated InstagramFeedSection) with the new color system for the separate React website team. Build and WebOfficialWebTest passed.",
+  "current_status": "Teal medical theme applied. Status badges standardized across web-official admin UI. Public frontend reference components with semantic colors ready in docs/webofficial/examples/ for integration team."
+}

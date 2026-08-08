@@ -1,0 +1,4 @@
+{
+  "summary": "Halaman show aset dirapikan ala Trilux: section Identitas, Lokasi, Pendanaan, Usia/Umur, Data teknis, Foto & QR; props ditambah nilai_residu/tahun_mulai_operasi/non-alkes. Test AsetShowPageTest lulus.",
+  "current_status": "Show aset sudah mengikuti struktur informasi alat Trilux dari field existing. Depresiasi aktif & upload dokumen pendukung masih placeholder/belum."
+}

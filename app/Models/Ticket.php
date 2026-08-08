@@ -145,11 +145,19 @@ class Ticket extends Model
     }
 
     /**
-     * Inventaris/aset yang terkait tiket (untuk IPS: alat medis, peralatan)
+     * Inventaris/aset SIMRS (legacy string link)
      */
     public function inventaris(): BelongsTo
     {
         return $this->belongsTo(Inventaris::class, 'asset_no_inventaris', 'no_inventaris');
+    }
+
+    /**
+     * Aset portal (database utama)
+     */
+    public function aset(): BelongsTo
+    {
+        return $this->belongsTo(Aset::class, 'asset_id');
     }
 
     /**

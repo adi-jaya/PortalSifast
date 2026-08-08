@@ -1,0 +1,4 @@
+{
+  "summary": "User asked where the monitoring UI lives. Answered: /monitoring (list) and /monitoring/{id} (detail), reachable via sidebar Monitoring after login.",
+  "current_status": "Phase 2.2 UI is on PortalSifast monitoring pages; user may need npm run build if assets not rebuilt yet."
+}

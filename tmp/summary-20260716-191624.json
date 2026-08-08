@@ -1,0 +1,4 @@
+{
+  "summary": "Added Epson LW-600P 24mm inventaris QR label print page with QR + nama barang, no inventaris, kode barang, and ruang; print buttons on show and catalog cards.",
+  "current_status": "Label print available at /inventaris/{no}/label-print. Printable height ~18mm within 24mm tape, label length ~52mm. User should select LW-600P, scale 100%, zero margins."
+}

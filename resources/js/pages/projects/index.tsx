@@ -79,7 +79,7 @@ export default function ProjectsIndex({ projects, filters }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Rencana / Proyek" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <Heading
                         title="Rencana / Proyek"
@@ -123,11 +123,11 @@ export default function ProjectsIndex({ projects, filters }: Props) {
                     )}
                 </form>
 
-                <div className="rounded-2xl border border-border/80 bg-card shadow-sm">
-                    <div className="overflow-x-auto">
+                <div className="data-table">
+                    <div className="data-table-scroll">
                         <table className="w-full text-left text-sm">
                             <thead>
-                                <tr className="border-b bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 dark:from-violet-500/20 dark:to-fuchsia-500/20">
+                                <tr className="border-b">
                                     <th className="px-4 py-3 font-medium">Nama</th>
                                     <th className="px-4 py-3 font-medium">Status</th>
                                     <th className="px-4 py-3 font-medium">Tiket</th>

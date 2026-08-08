@@ -61,8 +61,8 @@ class ApiTicketController extends Controller
             $validated['ticket_category_id'] ?? null
         );
 
-        // Determine department: from category if set, otherwise default to IT
-        $depId = $category?->dep_id ?? 'IT';
+        // Determine department: category first, then optional dep_id, else IT
+        $depId = $category?->dep_id ?? $validated['dep_id'] ?? 'IT';
 
         $ticket = Ticket::create([
             'ticket_type_id' => $typeId,
@@ -390,15 +390,7 @@ class ApiTicketController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'simrs_nik' => $user->simrs_nik,
-                    'phone' => $user->phone,
-                    'dep_id' => $user->dep_id,
-                    'role' => $user->role,
-                ],
+                'data' => $user->toApiProfileArray(),
             ]);
         }
 
@@ -418,15 +410,7 @@ class ApiTicketController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => [
-                'id' => $userByNik->id,
-                'name' => $userByNik->name,
-                'email' => $userByNik->email,
-                'simrs_nik' => $userByNik->simrs_nik,
-                'phone' => $userByNik->phone,
-                'dep_id' => $userByNik->dep_id,
-                'role' => $userByNik->role,
-            ],
+            'data' => $userByNik->toApiProfileArray(),
         ]);
     }
 

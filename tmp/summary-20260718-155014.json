@@ -1,0 +1,4 @@
+{
+  "summary": "Dipetakan detail alat Trilux ke field portal: banyak sudah ada (nama, SN, merk, lokasi, harga, kondisi, level teknologi, QR, umur); gap utama: pelayanan, prioritas, kelas risiko, depresiasi aktif, dan dokumen penerimaan/pendukung.",
+  "current_status": "Menunggu user pilih scope: rapikan layout show ala Trilux dari field yang ada, atau sekalian tambah field+dokumen yang masih missing."
+}

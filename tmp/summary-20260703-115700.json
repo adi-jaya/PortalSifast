@@ -1,0 +1,4 @@
+{
+  "summary": "Added Website Official access badge column to Users index table. Backend now passes can_manage_web_official and has_web_official_access per user via paginator through(). Frontend shows StatusBadge 'Admin' (teal) for admins with automatic access, 'Staff' (green) for flagged staff, dash for users without access. Feature test added. Build passed.",
+  "current_status": "Users list now shows Website Official access at a glance. Admins can still assign access via Users edit form checkbox."
+}

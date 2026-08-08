@@ -1,0 +1,4 @@
+{
+  "summary": "Implemented public QR scan at /q/{kode_aset} without login; field-safe info only; label print now points to public URL. Tests passing and frontend rebuilt.",
+  "current_status": "QR guest scan live; old printed labels need reprint to use new public URL."
+}

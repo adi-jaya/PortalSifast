@@ -1,0 +1,4 @@
+{
+  "summary": "Spec approved. Wrote implementation plan docs/superpowers/plans/2026-07-17-aset-mutasi-peminjaman.md (9 tasks TDD: migrasi status_ketersediaan, peminjaman services/HTTP/UI, mutasi, aset show, verifikasi). Spec marked Approved. Awaiting user choice: subagent-driven vs inline execution.",
+  "current_status": "Plan mutasi+peminjaman siap dieksekusi; coding belum dimulai."
+}

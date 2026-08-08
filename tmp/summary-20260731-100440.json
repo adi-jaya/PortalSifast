@@ -1,0 +1,4 @@
+{
+  "summary": "Confirmed for the user that the payroll API was updated: GET /api/payroll/{id} uses PayrollSlipStructure for slip_sections and components, which now include keterlambatan and ijin separately from lain_pot.",
+  "current_status": "Payroll potongan split live on web + API. Mobile clients reading slip_sections/components get the three separate lines automatically."
+}

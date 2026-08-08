@@ -1,0 +1,4 @@
+{
+  "summary": "User asked why site opens at /login instead of root domain. Moved Fortify login path to / via fortify.paths.login, removed welcome page from root, added permanent redirect /login -> /. Updated auth layout links and tests. Login now at portalsifast.../ without /login in URL; legacy /login still redirects.",
+  "current_status": "Root URL serves login page for guests. Authenticated users redirected to dashboard when accessing protected routes. Wayfinder and frontend rebuilt."
+}

@@ -1,0 +1,4 @@
+{
+  "summary": "Fixed swapped Jumlah Tunjangan and Jumlah Gaji on payroll slip. Root cause: RS CSV export labels jumlah as total tunjangan and jumlah_tunjangan as total gaji (gaji_pokok + tunjangan), opposite of prior mapping. Added resolveJumlahTotals auto-detection in PayrollSlipStructure.php and payroll-slip-structure.ts. Verified salary 759 now shows Jumlah Tunjangan 3.981.085 and Jumlah Gaji 5.502.885. Added unit tests for swapped, standard, and fallback CSV formats.",
+  "current_status": "Payroll slip totals now auto-detect CSV column semantics for both export formats. Web show/print and mobile API use the same logic. Run npm run build to deploy frontend fix."
+}

@@ -1,0 +1,4 @@
+{
+  "summary": "User menyampaikan spesifikasi frontend di kritik&saran.md. Modul Kritik & Saran diimplementasikan lengkap: POST /api/kritik-saran (camelCase, rate limit 5/jam, anti-duplikat 5 menit), GET /service-units, admin API PATCH/DELETE, panel /web-official/kritik-saran, migrasi web_official_feedback, 9 test lulus, dokumentasi di-update, endpoint live terverifikasi.",
+  "current_status": "API kritik-saran sudah live dan siap dipakai website official. Admin dapat kelola pengaduan di /web-official/kritik-saran. Notifikasi email/WA masih opsional belum dibuat."
+}

@@ -25,6 +25,7 @@ class StoreTicketRequest extends FormRequest
     {
         $rules = [
             'ticket_type_id' => ['required', 'integer', Rule::exists('ticket_types', 'id')->where('is_active', true)],
+            'dep_id' => ['required', 'string', Rule::in(['IT', 'IPS'])],
             'ticket_category_id' => ['nullable', 'integer', Rule::exists('ticket_categories', 'id')->where('is_active', true)],
             'ticket_subcategory_id' => ['nullable', 'integer', Rule::exists('ticket_subcategories', 'id')->where('is_active', true)],
             'ticket_priority_id' => ['required', 'integer', Rule::exists('ticket_priorities', 'id')->where('is_active', true)],
@@ -32,6 +33,7 @@ class StoreTicketRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:10000'],
             'related_ticket_id' => ['nullable', 'integer', Rule::exists('tickets', 'id')],
             'asset_no_inventaris' => ['nullable', 'string', 'max:50'],
+            'asset_id' => ['nullable', 'integer', 'exists:aset,id'],
             'tag_ids' => ['nullable', 'array'],
             'tag_ids.*' => ['integer', Rule::exists('ticket_tags', 'id')->where('is_active', true)],
             'new_tag_names' => ['nullable', 'array'],
@@ -60,6 +62,26 @@ class StoreTicketRequest extends FormRequest
         return $rules;
     }
 
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator): void {
+            $depId = $this->input('dep_id');
+            $categoryId = $this->input('ticket_category_id');
+
+            if (! $depId || ! $categoryId) {
+                return;
+            }
+
+            $category = \App\Models\TicketCategory::query()->find($categoryId);
+            if ($category && $category->dep_id && $category->dep_id !== $depId) {
+                $validator->errors()->add(
+                    'ticket_category_id',
+                    'Kategori tidak sesuai dengan penanganan '.$depId.'.'
+                );
+            }
+        });
+    }
+
     /**
      * Get custom messages for validator errors.
      *
@@ -70,6 +92,8 @@ class StoreTicketRequest extends FormRequest
         return [
             'ticket_type_id.required' => 'Tipe tiket harus dipilih.',
             'ticket_type_id.exists' => 'Tipe tiket tidak valid.',
+            'dep_id.required' => 'Penanganan (IT/IPS) harus dipilih.',
+            'dep_id.in' => 'Penanganan harus IT atau IPS.',
             'ticket_category_id.exists' => 'Kategori tiket tidak valid.',
             'ticket_subcategory_id.exists' => 'Sub-kategori tiket tidak valid.',
             'ticket_priority_id.required' => 'Prioritas tiket harus dipilih.',

@@ -162,7 +162,7 @@ export type Ticket = {
     project_id: number | null;
     related_ticket_id: number | null;
     asset_no_inventaris: string | null;
-    asset_id?: number | null; // deprecated
+    asset_id?: number | null;
     title: string;
     description: string | null;
     is_draft: boolean;
@@ -176,6 +176,8 @@ export type Ticket = {
     closed_at: string | null;
     /** Durasi dibuat → ditutup, diisi server (teks ID) */
     resolution_duration_label?: string | null;
+    /** Boleh dihapus oleh user saat ini (daftar tiket) */
+    can_delete?: boolean;
     response_due_at: string | null;
     resolution_due_at: string | null;
     due_date: string | null;
@@ -196,6 +198,13 @@ export type Ticket = {
         kode_barang: string;
         barang?: {nama_barang: string};
         ruang?: {nama_ruang: string};
+    } | null;
+    aset?: {
+        id: number;
+        kode_aset: string;
+        no_simrs: string | null;
+        barang?: { nama_barang: string } | null;
+        ruang?: { nama_ruang: string } | null;
     } | null;
     tags?: TicketTag[];
     /** Masalah terbuka (sub-tiket issue); diisi di daftar tiket untuk indikator cepat */

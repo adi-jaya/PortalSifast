@@ -1,0 +1,4 @@
+{
+  "summary": "Reviewed the Patroli Area+Ruang cutover against the approved design and focused on behavior, regressions, and coverage rather than style. The main gaps are incomplete ruang CRUD/status handling in the Inertia UI, ambiguous non-unique patroli room codes that the API resolves with first-match behavior while the helper still copies inventory codes, missing per-template reporting in the UI/export despite backend aggregation support, and weak validation around malformed checklist payloads. No direct auth bypass stood out in the reviewed files.",
+  "current_status": "Patroli Area+Ruang review completed. Findings are ready for the user, and no code was modified beyond the required chat summary artifact."
+}

@@ -1,0 +1,4 @@
+{
+  "summary": "User asked why Kesehatan Infrastruktur was not under Monitoring. Root cause: layout uses TemplateSidebar (grouped), but item was only added to flat app-sidebar. Fixed by nesting under Monitoring group in template-sidebar and template-mobile-nav alongside Perangkat and Kategori Monitor; also regrouped app-sidebar for consistency.",
+  "current_status": "Sidebar placement corrected: Kesehatan Infrastruktur is a child of Monitoring. User needs npm run build/dev to see the change."
+}

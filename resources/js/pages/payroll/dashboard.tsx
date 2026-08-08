@@ -102,7 +102,7 @@ export default function PayrollDashboard({ trendData, unitDistribution, yoyGrowt
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard Analytics Payroll" />
 
-            <div className="flex h-full flex-1 flex-col gap-6 p-4">
+            <div className="flex flex-col gap-6">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                         <Button variant="ghost" size="icon" asChild>

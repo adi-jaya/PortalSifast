@@ -1,0 +1,4 @@
+{
+  "summary": "Menambahkan field foto dokter di GET /api/jadwal-dokter: left join pegawai (nik=kd_dokter), ambil pegawai.photo, fetch dari server SIMRS internal, encode ke data URI base64 (foto) agar IP lokal tidak terekspos. Cache 12 jam, opsional with_foto=false. Config SIMRS_PEGAWAI_PHOTO_BASE_URL default http://DB_HOST_2/webapps2/penggajian. 9 tests lulus, dokumentasi diperbarui.",
+  "current_status": "API jadwal dokter lengkap dengan foto base64 dari tabel pegawai SIMRS. Frontend bisa pakai <img src={row.foto} /> langsung. Panel web-official dan modul informasi/kamar inap tetap siap."
+}

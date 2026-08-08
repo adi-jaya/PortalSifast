@@ -1,0 +1,41 @@
+<?php
+
+namespace App\Http\Requests\WebOfficial;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class StoreWebOfficialPolyclinicWebRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return $this->user()?->canManageWebOfficial() ?? false;
+    }
+
+    /**
+     * @return array<string, array<int, mixed>>
+     */
+    public function rules(): array
+    {
+        return [
+            'kd_poli' => ['required', 'string', 'max:20', 'unique:web_official_polyclinics,kd_poli'],
+            'slug' => ['nullable', 'string', 'max:200', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', 'unique:web_official_polyclinics,slug'],
+            'label' => ['nullable', 'string', 'max:80'],
+            'name_override' => ['nullable', 'string', 'max:200'],
+            'short_description' => ['required', 'string', 'min:10', 'max:500'],
+            'long_description' => ['nullable', 'string'],
+            'photo' => ['nullable', 'string', 'url', 'max:500', 'required_without:photo_file'],
+            'photo_file' => ['nullable', 'file', 'mimes:jpeg,jpg,png,webp', 'max:2048', 'required_without:photo'],
+            'icon' => ['nullable', 'string', 'max:100'],
+            'sort_order' => ['nullable', 'integer', 'min:0'],
+            'is_active' => ['nullable', 'boolean'],
+        ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'is_active' => $this->boolean('is_active'),
+            'label' => filled($this->input('label')) ? $this->input('label') : 'KLINIK SPESIALIS',
+        ]);
+    }
+}

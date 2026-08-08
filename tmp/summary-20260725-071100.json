@@ -1,0 +1,4 @@
+{
+  "summary": "User proposed adding a dedicated Area master for Patroli (e.g. Area Poli containing Poli Umum/Gigi/Kandungan; Area Farmasi/Kasir). Started brainstorming: confirmed understanding against current design that uses flat aset_ruang; asked one clarifying question about whether child rooms reuse aset_ruang or become a new patroli-only table.",
+  "current_status": "Patroli v1 exists without Area hierarchy. Design discussion for Area layer in progress; no implementation until design approved."
+}

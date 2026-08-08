@@ -1,0 +1,4 @@
+{
+  "summary": "Implemented Medis/Non-medis create flow: removed existing-barang mode; ASPAK leaf search for medis; non-alkes for non-medis; BuatAsetBatch resolveBarangFromAspak with reuse; importAspak accepts aspak_new_alat CSV headers; browse page /aset/master/aspak; migration extended nama_alat/nama_barang; Pest tests all passing.",
+  "current_status": "Create aset UX redesigned around kelas + catalog. User still needs to import ASPAK CSV (aspak_new_alat dump) via artisan. Merk→jenis cascade remains deferred follow-up. Frontend may need npm run build if assets not hot-reloading."
+}

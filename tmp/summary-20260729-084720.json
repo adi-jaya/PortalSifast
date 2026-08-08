@@ -1,0 +1,4 @@
+{
+  "summary": "Fixed empty ticket CSV export: root causes were junk filter values (status=null etc.) excluding all rows, fragile date binding, and export query rebuild from props. Hardened backend filters/dates, made export use the active page filters safely, added regression tests (3 passed). Frontend needs npm run build.",
+  "current_status": "Ticket CSV export with comments + date filters should now return June rows (~65 published in DB). Ask user to rebuild frontend and re-export."
+}

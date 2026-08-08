@@ -1,0 +1,4 @@
+{
+  "summary": "User asked if Tianji /server page data can be exported to CSV like Kesehatan Infrastruktur. Explained: current menu uses Monitor (ping/HTTP) APIs; /server is Server Status (CPU/RAM via tianji-reporter) with limited OpenAPI (publicInfo needs server names; live list mainly via cache/WebSocket). Feasible to add but not wired yet; probed publicInfo returned empty on their instance.",
+  "current_status": "Monitor CSV exports work. Tianji Server Status CSV not implemented; awaiting user go-ahead and ideally server reporter names from their /server UI."
+}

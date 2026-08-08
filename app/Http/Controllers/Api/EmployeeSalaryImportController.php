@@ -13,7 +13,7 @@ class EmployeeSalaryImportController extends Controller
 {
     public function __invoke(ImportEmployeeSalariesRequest $request, EmployeeSalaryImportService $importer, FcmNotificationService $fcm): JsonResponse
     {
-        $periodStart = CarbonImmutable::createFromFormat('Y-m', $request->string('period')->toString())
+        $periodStart = CarbonImmutable::createFromFormat('!Y-m', $request->string('period')->toString())
             ->startOfMonth()
             ->toDateString();
 

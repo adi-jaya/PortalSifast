@@ -1,0 +1,4 @@
+{
+  "summary": "Created a dedicated frontend handoff document for the new poliklinik module at docs/webofficial/poliklinik.md, covering architecture (local overlay + SIMRS read-only), public/admin endpoints, payload examples, validations, media upload flow, panel routes, frontend mapping, and integration notes. Also updated PANDUAN-INTEGRASI-FRONTEND.md to include the new poliklinik module in sidebar flow and lampiran references.",
+  "current_status": "Documentation package is now ready to hand over to frontend: the master guide references the module and a standalone detailed poliklinik API spec is available alongside existing informasi/promosi/kamar docs."
+}

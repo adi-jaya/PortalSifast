@@ -88,7 +88,7 @@ export default function MutuRealisationsShow({ realisation }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Detail Realisasi — ${realisation.indicator_title ?? 'ID ' + realisation.id}`} />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <div className="flex items-center justify-between">
                     <Heading
                         title="Detail Realisasi Mutu"

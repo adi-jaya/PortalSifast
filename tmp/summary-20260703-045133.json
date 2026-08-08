@@ -1,0 +1,4 @@
+{
+  "summary": "Diagnosed empty SIMRS poliklinik dropdown: backend had cached an empty array (from earlier failed SIMRS fetch) for 60 minutes, while live DB actually has 33 active polikliniks. Fixed PolyclinicService to never persist empty cache, cleared cache, added empty-state UI on create/edit forms, disabled save when no options, added tests, and rebuilt frontend.",
+  "current_status": "Poliklinik admin dropdown should now show 33 SIMRS options after page refresh. Cache bug fixed to prevent recurrence. Build and polyclinic tests passing."
+}

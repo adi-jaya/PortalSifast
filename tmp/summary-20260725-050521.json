@@ -1,0 +1,4 @@
+{
+  "summary": "User chose kode_ruang-only matching (A). Next clarifying question: import failure mode (all-or-nothing vs skip bad rows vs preview-then-commit).",
+  "current_status": "Brainstorming aset unit CSV import; awaiting failure-mode preference."
+}

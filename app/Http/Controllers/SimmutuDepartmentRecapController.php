@@ -73,7 +73,7 @@ class SimmutuDepartmentRecapController extends Controller
             $selectedDep = (string) ($departmentRecaps->first()['dep_id'] ?? $user->dep_id ?? '');
         }
 
-        $monthStart = CarbonImmutable::createFromFormat('Y-m', $month)->startOfMonth();
+        $monthStart = CarbonImmutable::createFromFormat('!Y-m', $month)->startOfMonth();
         $monthEnd = $monthStart->endOfMonth();
         $dailyMap = $rows
             ->filter(fn (MutuRealisation $r) => $r->dep_id === $selectedDep && str_starts_with($r->period_anchor, 'D:'))

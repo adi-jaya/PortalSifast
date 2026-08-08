@@ -11,8 +11,8 @@ export type ColorTheme =
 export const COLOR_THEMES: Record<ColorTheme, { label: string; primary: string; ring: string }> = {
     blue: {
         label: 'Biru',
-        primary: 'oklch(0.50 0.20 250)',
-        ring:   'oklch(0.50 0.20 250)',
+        primary: '#2563EB',
+        ring:   '#2563EB',
     },
     indigo: {
         label: 'Indigo',
@@ -26,13 +26,13 @@ export const COLOR_THEMES: Record<ColorTheme, { label: string; primary: string; 
     },
     teal: {
         label: 'Teal',
-        primary: 'oklch(0.48 0.14 195)',
-        ring:   'oklch(0.48 0.14 195)',
+        primary: '#0D9488',
+        ring:   '#0D9488',
     },
     green: {
         label: 'Hijau',
-        primary: 'oklch(0.50 0.14 165)',
-        ring:   'oklch(0.50 0.14 165)',
+        primary: '#16A34A',
+        ring:   '#16A34A',
     },
     amber: {
         label: 'Amber',

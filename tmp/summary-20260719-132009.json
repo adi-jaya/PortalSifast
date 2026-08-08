@@ -1,0 +1,4 @@
+{
+  "summary": "Added Monitoring module to TemplateSidebar (the live layout): Perangkat + Kategori Monitor. Also updated AppSidebar for consistency. User needs npm run build/refresh to see sidebar items.",
+  "current_status": "Monitoring kategori settings is now linked from the real sidebar. Frontend rebuild still needed for production assets."
+}

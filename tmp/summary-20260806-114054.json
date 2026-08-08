@@ -1,0 +1,4 @@
+{
+  "summary": "Confirmed desktop vs mobile sidebar menu drift: TemplateSidebar and TemplateMobileNav maintain duplicate nav definitions. Desktop has Inventaris Portal (aset flows) + Referensi SIMRS and Patroli 'Area & Ruang'; mobile still has legacy Inventaris group and Patroli 'Titik & QR'. Started brainstorming clarifying questions before proposing a fix approach.",
+  "current_status": "Brainstorming in progress — root cause identified in code; awaiting user confirmation on which menu differences they noticed / intended source of truth."
+}

@@ -1,0 +1,200 @@
+<?php
+
+namespace App\Support;
+
+use Carbon\CarbonImmutable;
+
+/**
+ * Template CSV untuk impor gaji — selaras dengan PayrollCsvMapper.
+ */
+final class PayrollCsvTemplate
+{
+    public const DELIMITER = ';';
+
+    public const FILENAME = 'template-import-gaji.csv';
+
+    /**
+     * @return list<string>
+     */
+    public static function headers(?CarbonImmutable $reference = null): array
+    {
+        $reference ??= CarbonImmutable::now();
+        $jknMonth = $reference->translatedFormat('F Y');
+        $umumMonth = $reference->subMonth()->translatedFormat('F Y');
+
+        return [
+            'No. Ref',
+            'No. Gaji',
+            'Nama',
+            'Instalasi/Unit',
+            'NIK',
+            'NPWP',
+            'Gaji Pokok',
+            'Tunjangan Keluarga',
+            'Tunjangan Masa Kerja',
+            'Tunjangan Kehadiran',
+            'Tunjangan Makan Minum',
+            'Fungsional Profesi',
+            'Struktural',
+            'Operasional',
+            'JKK',
+            'JKM',
+            'JHT',
+            'JP',
+            'TUNJ_BPJS_TK',
+            'BPJS KES',
+            'Transt/SPJ/Komunikasi',
+            'JM Dokter',
+            'Lain2/Bonus',
+            'Lembur',
+            'On Call',
+            "JKN {$jknMonth}",
+            "Umum {$umumMonth}",
+            'JKN Susulan',
+            'JKN Susulan_L',
+            'Jumlah',
+            'Jumlah_Tunjangan',
+            'Zakat',
+            'Pajak',
+            'JKK_K',
+            'JKM_K',
+            'JHT_K',
+            'JP_K',
+            'POT_BPJS_TK',
+            'BPJS_KES_K',
+            'JHT_I',
+            'JP_I',
+            'BPJS_Kes_I',
+            'BPJS_Kes_tdk_di_tgg',
+            'Matan',
+            'Lazismu',
+            'Obat2an/R',
+            'Hutang BPJS',
+            'Hutang Seragam',
+            'IKKM',
+            'Lain - lain',
+            'Jumlah_Pot',
+            'Penerimaan',
+            'Pembulatan',
+        ];
+    }
+
+    /**
+     * @return list<list<string>>
+     */
+    public static function exampleRows(): array
+    {
+        return [
+            [
+                '1',
+                '1',
+                'Nama Pegawai Contoh',
+                'Kabag IT',
+                '03.09.07.1998',
+                '665022430603000',
+                '4.291.650',
+                '858.330',
+                '885.914',
+                '570.000',
+                '380.000',
+                '1.500.000',
+                '750.000',
+                '1.000.000',
+                '14.706',
+                '18.382',
+                '226.712',
+                '122.547',
+                '382.347',
+                '259.756',
+                '525.000',
+                '0',
+                '0',
+                '332.300',
+                '-',
+                '518.593',
+                '250.459',
+                '26.940',
+                '12.935',
+                '9.308.310',
+                '5.399.007',
+                '-',
+                '1.181.851',
+                '14.706',
+                '18.382',
+                '226.712',
+                '122.547',
+                '382.347',
+                '259.756',
+                '122.547',
+                '61.274',
+                '64.939',
+                '-',
+                '15.000',
+                '15.000',
+                '-',
+                '-',
+                '-',
+                '50.000',
+                '-',
+                '2.152.714',
+                '7.155.596',
+                '7.155.596',
+            ],
+            [
+                '2',
+                '2',
+                'Pegawai Kedua',
+                'Keuangan',
+                '26.01.03.2009',
+                '665022430603001',
+                '1.475.300',
+                '221.295',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+                '0',
+            ],
+        ];
+    }
+}

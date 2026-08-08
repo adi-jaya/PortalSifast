@@ -1,0 +1,4 @@
+{
+  "summary": "User felt monthly reporting was incomplete with CSV-only approach. Explained gaps: 31-day limit, ringkasan uses raw checks vs dashboard publicSummary, missing daily/events/agent CSV, no month preset. Proposed 3-CSV monthly report pack workflow using Tianji publicSummary + events.",
+  "current_status": "Dashboard at /infrastruktur works; monthly CSV suite not built yet—awaiting user go to implement laporan bulanan exports."
+}

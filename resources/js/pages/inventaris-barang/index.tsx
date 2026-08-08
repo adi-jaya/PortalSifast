@@ -5,6 +5,13 @@ import { EmptyState } from '@/components/empty-state';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
@@ -36,29 +43,48 @@ type PaginatedBarang = {
 
 type Props = {
     barang: PaginatedBarang;
-    filters: { q?: string };
+    kategori: { id_kategori: string; nama_kategori: string }[];
+    jenis: { id_jenis: string; nama_jenis: string }[];
+    filters: { q?: string; id_kategori?: string; id_jenis?: string };
 };
 
-export default function InventarisBarangIndex({ barang, filters }: Props) {
+export default function InventarisBarangIndex({ barang, kategori, jenis, filters }: Props) {
     const [search, setSearch] = useState(filters.q ?? '');
+    const [idKategori, setIdKategori] = useState(filters.id_kategori || '__all__');
+    const [idJenis, setIdJenis] = useState(filters.id_jenis || '__all__');
+
+    const applyFilters = (overrides: Record<string, string | undefined> = {}) => {
+        router.get(
+            '/inventaris-barang',
+            {
+                q: search || undefined,
+                id_kategori: idKategori === '__all__' ? undefined : idKategori,
+                id_jenis: idJenis === '__all__' ? undefined : idJenis,
+                ...overrides,
+            },
+            { preserveState: true },
+        );
+    };
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        router.get('/inventaris-barang', { q: search || undefined }, { preserveState: true });
+        applyFilters();
     };
 
-    const clearSearch = () => {
+    const clearFilters = () => {
         setSearch('');
+        setIdKategori('__all__');
+        setIdJenis('__all__');
         router.get('/inventaris-barang', {}, { preserveState: true });
     };
 
-    const hasSearch = !!filters.q;
+    const hasFilters = !!(filters.q || filters.id_kategori || filters.id_jenis);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Master Barang" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <Heading
                         title="Master Barang"
@@ -72,7 +98,7 @@ export default function InventarisBarangIndex({ barang, filters }: Props) {
                     </Button>
                 </div>
 
-                <form onSubmit={handleSearch} className="flex gap-2">
+                <form onSubmit={handleSearch} className="flex flex-col gap-2 lg:flex-row">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
@@ -82,19 +108,57 @@ export default function InventarisBarangIndex({ barang, filters }: Props) {
                             className="pl-9"
                         />
                     </div>
+                    <Select
+                        value={idKategori}
+                        onValueChange={(v) => {
+                            setIdKategori(v);
+                            applyFilters({ id_kategori: v === '__all__' ? undefined : v });
+                        }}
+                    >
+                        <SelectTrigger className="w-full lg:w-48">
+                            <SelectValue placeholder="Kategori" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="__all__">Semua kategori</SelectItem>
+                            {kategori.map((k) => (
+                                <SelectItem key={k.id_kategori} value={k.id_kategori}>
+                                    {k.nama_kategori}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Select
+                        value={idJenis}
+                        onValueChange={(v) => {
+                            setIdJenis(v);
+                            applyFilters({ id_jenis: v === '__all__' ? undefined : v });
+                        }}
+                    >
+                        <SelectTrigger className="w-full lg:w-48">
+                            <SelectValue placeholder="Jenis" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="__all__">Semua jenis</SelectItem>
+                            {jenis.map((j) => (
+                                <SelectItem key={j.id_jenis} value={j.id_jenis}>
+                                    {j.nama_jenis}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                     <Button type="submit">Cari</Button>
-                    {hasSearch && (
-                        <Button type="button" variant="outline" onClick={clearSearch}>
+                    {hasFilters && (
+                        <Button type="button" variant="outline" onClick={clearFilters}>
                             Reset
                         </Button>
                     )}
                 </form>
 
-                <div className="rounded-2xl border border-border/80 bg-card shadow-sm">
-                    <div className="overflow-x-auto">
+                <div className="data-table">
+                    <div className="data-table-scroll">
                         <table className="w-full text-left text-sm">
                             <thead>
-                                <tr className="border-b bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 dark:from-violet-500/20 dark:to-fuchsia-500/20">
+                                <tr className="border-b bg-muted/40">
                                     <th className="px-4 py-3 font-medium">Kode Barang</th>
                                     <th className="px-4 py-3 font-medium">Nama Barang</th>
                                     <th className="px-4 py-3 font-medium">Jumlah</th>
@@ -102,22 +166,23 @@ export default function InventarisBarangIndex({ barang, filters }: Props) {
                                     <th className="px-4 py-3 font-medium">Merk</th>
                                     <th className="px-4 py-3 font-medium">Tahun</th>
                                     <th className="px-4 py-3 font-medium">Kategori</th>
-                                    <th className="px-4 py-3 font-medium w-28">Aksi</th>
+                                    <th className="px-4 py-3 font-medium">Jenis</th>
+                                    <th className="w-28 px-4 py-3 font-medium">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {barang.data.length === 0 ? (
                                     <tr>
-                                        <td colSpan={8} className="p-0">
+                                        <td colSpan={9} className="p-0">
                                             <EmptyState
                                                 title={
-                                                    hasSearch
+                                                    hasFilters
                                                         ? 'Tidak ada hasil pencarian'
                                                         : 'Belum ada data barang'
                                                 }
                                                 description={
-                                                    hasSearch
-                                                        ? 'Coba ubah kata kunci pencarian.'
+                                                    hasFilters
+                                                        ? 'Coba ubah kata kunci atau filter.'
                                                         : 'Tambahkan barang master untuk inventaris.'
                                                 }
                                                 icon={<Package className="size-7" />}
@@ -153,6 +218,9 @@ export default function InventarisBarangIndex({ barang, filters }: Props) {
                                             </td>
                                             <td className="px-4 py-3 text-muted-foreground">
                                                 {item.nama_kategori ?? '–'}
+                                            </td>
+                                            <td className="px-4 py-3 text-muted-foreground">
+                                                {item.nama_jenis ?? '–'}
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div className="flex items-center gap-1">
@@ -220,11 +288,7 @@ export default function InventarisBarangIndex({ barang, filters }: Props) {
 
                 <p className="text-sm text-muted-foreground">
                     Total: {barang.total} barang
-                    {hasSearch && ` (filter: "${filters.q}")`}
-                </p>
-
-                <p className="text-xs text-muted-foreground">
-                    Master barang ini digunakan sebagai referensi saat membuat inventaris.
+                    {hasFilters && ' (dengan filter)'}
                 </p>
             </div>
         </AppLayout>

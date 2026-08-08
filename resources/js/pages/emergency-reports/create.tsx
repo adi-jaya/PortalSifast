@@ -55,7 +55,7 @@ export default function EmergencyReportsCreate({ categories }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Input Laporan Darurat (Admin)" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-2">
                     <Button variant="ghost" size="icon" asChild>
                         <Link href="/emergency-reports">

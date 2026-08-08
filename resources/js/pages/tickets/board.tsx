@@ -165,7 +165,7 @@ export default function TicketsBoard({ tickets, statuses, canChangeStatus }: Pro
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Papan Tiket" />
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-foreground">

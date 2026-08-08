@@ -1,0 +1,4 @@
+﻿{
+  "summary": "Mendiagnosis heartbeat production 500: endpoint agent sudah deploy (401 tanpa token), tetapi register/heartbeat dengan token gagal 500 — indikasi kuat tabel monitored_devices belum di-migrate di production. API key di config.json juga dari registrasi lokal, bukan production.",
+  "current_status": "Root cause: production belum siap database agent (migration). User perlu php artisan migrate di server + set AGENT_ENROLLMENT_KEY, lalu register ulang agent (kosongkan api_key/uuid lokal)."
+}

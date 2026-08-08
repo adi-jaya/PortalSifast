@@ -1,0 +1,4 @@
+{
+  "summary": "Menambahkan API publik GET /api/jadwal-dokter yang membaca jadwal praktek dokter dari koneksi dbsimrs (DB_HOST_2 / database sik2): join jadwal+dokter+poliklinik, filter hari dari tanggal atau param hari, opsional kd_poli. Response camelCase dengan meta tanggal/hari. Unit + feature tests lulus (13). Dokumentasi PANDUAN-INTEGRASI-FRONTEND diperbarui.",
+  "current_status": "Website official API lengkap: informasi, kamar inap, jadwal dokter (SIMRS), panel admin PortalSifast /web-official, dan admin API eksternal. Jadwal dokter siap diintegrasikan frontend."
+}

@@ -24,4 +24,9 @@ class InventarisJenis extends Model
     protected $fillable = [
         'id_jenis', 'nama_jenis',
     ];
+
+    public function getRouteKeyName(): string
+    {
+        return 'id_jenis';
+    }
 }

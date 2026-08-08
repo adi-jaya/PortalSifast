@@ -1,0 +1,4 @@
+{
+  "summary": "User clarified TicketingSeeder only seeds types/categories (no tickets). Deleted TicketIpsDemoSeeder and removed 20 [DEMO IPS] tickets; IPS remaining count is 5.",
+  "current_status": "Master data for IPS comes from TicketingSeeder only. No demo ticket seeder remains."
+}

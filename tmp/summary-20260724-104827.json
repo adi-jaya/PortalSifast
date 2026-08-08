@@ -1,0 +1,4 @@
+{
+  "summary": "Reviewed plan aset_kategori_merk_cascade: current Medis/Non-medis+ASPAK scope is fully done (including browse page; todo marked completed). Remaining work is the deferred follow-up from the earlier pivot: auto-kategori from non-alkes, Merk→filter Jenis, optional existing-barang UI, live ASPAK API.",
+  "current_status": "Create aset Medis/ASPAK vs Non-medis/non-alkes shipped. Next candidate feature if user wants: Merk→Jenis cascade and/or auto-kategori."
+}

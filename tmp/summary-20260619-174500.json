@@ -1,0 +1,4 @@
+{
+  "summary": "Mengimplementasikan pipeline TTE Stirling-PDF sesuai alur user: add-stamp gambar TTD (opsional) → cert-sign (.p12) → timestamp-pdf → validate-signature. DocumentSigningService dipanggil saat Setujui & Aktifkan. Konfigurasi via .env (cert, image PNG, enable flags). UI show menampilkan status kemampuan signing. Cert signing default OFF sampai sertifikat RS dipasang.",
+  "current_status": "Soft approve tetap jalan tanpa cert (salin file_final). TTE hukum penuh aktif setelah admin set STIRLING_PDF_ENABLE_CERT_SIGN=true + file .p12 BSrE/perusahaan + opsional PNG TTD Direktur."
+}

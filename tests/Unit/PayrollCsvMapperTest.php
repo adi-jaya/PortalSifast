@@ -34,6 +34,51 @@ test('maps payroll csv column aliases to database fields', function () {
         ->and($mapped['lain_pot'])->toBe('10000');
 });
 
+test('maps july 2026 payroll csv format with combined tunjangan column', function () {
+    $raw = [
+        'gaji_pokok' => '2.097.300',
+        'tunjangan_keluarga' => '1.048.650',
+        'tunjangan_kehadiran,_makan_&_masa_kerja' => '2.768.436',
+        'fungsional_profesi' => '3.000.000',
+        'jkn_mei_2026' => '1.103.169',
+        'umum_juni_2026' => '528.309',
+        'lain2_jaga_pabrik' => '150.000',
+        'keterlambatan' => '120.000',
+        'ijin' => '50.000',
+        'lain_-_lain' => '25.000',
+        'jumlah' => '18.346.211',
+        'jumlah_pot' => '1.912.751',
+        'penerimaan' => '15.275.385',
+    ];
+
+    $mapped = PayrollCsvMapper::mapRawRow($raw);
+
+    expect($mapped['tunj_kehadiran'])->toBe('2768436')
+        ->and($mapped['tunj_masa_kerja'])->toBeNull()
+        ->and($mapped['tunj_makan'])->toBeNull()
+        ->and(PayrollCsvMapper::usesCombinedTunjangan($raw))->toBeTrue()
+        ->and($mapped['lain_lain'])->toBe('150000')
+        ->and($mapped['keterlambatan'])->toBe('120000')
+        ->and($mapped['ijin'])->toBe('50000')
+        ->and($mapped['lain_pot'])->toBe('25000')
+        ->and($mapped['jkn'])->toBe('1103169')
+        ->and($mapped['umum'])->toBe('528309');
+});
+
+test('maps dia nita style potongan without merging keterlambatan ijin lain', function () {
+    $raw = [
+        'keterlambatan' => '90.000',
+        'ijin' => '50.000',
+        'lain_-_lain' => '500.000',
+    ];
+
+    $mapped = PayrollCsvMapper::mapRawRow($raw);
+
+    expect($mapped['keterlambatan'])->toBe('90000')
+        ->and($mapped['ijin'])->toBe('50000')
+        ->and($mapped['lain_pot'])->toBe('500000');
+});
+
 test('build verification rows detect csv db mismatch', function () {
     $raw = [
         'tunjangan_keluarga' => '221,295',
@@ -50,4 +95,33 @@ test('build verification rows detect csv db mismatch', function () {
 
     expect($keluargaRow['match'])->toBeTrue()
         ->and($fungsionalRow['match'])->toBeFalse();
+});
+
+test('july 2026 verification matches after combined tunjangan mapping', function () {
+    $raw = [
+        'gaji_pokok' => '2.097.300',
+        'tunjangan_keluarga' => '1.048.650',
+        'tunjangan_kehadiran,_makan_&_masa_kerja' => '2.768.436',
+        'fungsional_profesi' => '3.000.000',
+        'jkk' => '14.384',
+        'jkm' => '17.980',
+        'jht' => '221.758',
+        'jp' => '119.869',
+        'lain2_jaga_pabrik' => '150.000',
+        'keterlambatan' => '120.000',
+        'ijin' => '50.000',
+        'lain_-_lain' => '25.000',
+        'jkn_mei_2026' => '1.103.169',
+        'umum_juni_2026' => '528.309',
+        'jumlah' => '18.346.211',
+        'jumlah_pot' => '1.912.751',
+        'penerimaan' => '15.275.385',
+    ];
+
+    $mapped = PayrollCsvMapper::mapRawRow($raw);
+    $rows = PayrollCsvMapper::buildVerificationRows($raw, $mapped);
+
+    expect(collect($rows)->every(fn ($row) => $row['match']))->toBeTrue()
+        ->and(collect($rows)->firstWhere('csv_key', 'tunjangan_kmm')['match'])->toBeTrue()
+        ->and(collect($rows)->firstWhere('csv_key', 'jkk+jkm+jht+jp')['match'])->toBeTrue();
 });

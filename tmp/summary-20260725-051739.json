@@ -1,0 +1,4 @@
+{
+  "summary": "Clarified CSV unit import codes (kode_aspak, kode_non_alkes, kode_ruang). User wants export/import CSV for those masters; asked scope choice A/B/C before designing.",
+  "current_status": "Unit inventaris CSV import is live; awaiting user choice on which master catalogs get export/import UI next."
+}

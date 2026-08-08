@@ -36,13 +36,14 @@ final class PayrollCsvMapper
 
         [$jkn, $jknLabel] = self::parseJkn($raw);
         [$umum, $umumLabel] = self::parseUmum($raw);
+        [$tunjMasaKerja, $tunjKehadiran, $tunjMakan] = self::resolveTunjanganKmm($raw);
 
         return [
             'gaji_pokok' => self::moneyOrNull($raw['gaji_pokok'] ?? null),
             'keluarga' => self::moneyOrNull($raw['tunjangan_keluarga'] ?? $raw['keluarga'] ?? null),
-            'tunj_masa_kerja' => self::moneyOrNull($raw['tunjangan_masa_kerja'] ?? null),
-            'tunj_kehadiran' => self::moneyOrNull($raw['tunjangan_kehadiran'] ?? null),
-            'tunj_makan' => self::moneyOrNull($raw['tunjangan_makan_minum'] ?? $raw['tunjangan_makan'] ?? null),
+            'tunj_masa_kerja' => $tunjMasaKerja,
+            'tunj_kehadiran' => $tunjKehadiran,
+            'tunj_makan' => $tunjMakan,
             'fungsional' => self::moneyOrNull($raw['fungsional_profesi'] ?? $raw['fungsional'] ?? null),
             'struktural' => self::moneyOrNull($raw['struktural'] ?? null),
             'operasional' => self::moneyOrNull($raw['operasional'] ?? null),
@@ -50,7 +51,7 @@ final class PayrollCsvMapper
             'jm_dokter' => self::moneyOrNull($raw['jm_dokter'] ?? null),
             'lembur' => self::moneyOrNull($raw['lembur'] ?? null),
             'on_call' => self::moneyOrNull($raw['on_call'] ?? null),
-            'lain_lain' => self::moneyOrNull($raw['lain2_bonus'] ?? $raw['lain_lain'] ?? null),
+            'lain_lain' => self::resolveLainLain($raw),
             'jkn' => $jkn,
             'jkn_label' => $jknLabel,
             'umum' => $umum,
@@ -79,7 +80,9 @@ final class PayrollCsvMapper
             'hutang_bpjs' => self::moneyOrNull($raw['hutang_bpjs'] ?? null),
             'hutang_seragam' => self::moneyOrNull($raw['hutang_seragam'] ?? null),
             'ikkm' => self::moneyOrNull($raw['ikkm'] ?? null),
-            'lain_pot' => self::moneyOrNull($raw['lain____lain'] ?? $raw['lain_-_lain'] ?? $raw['lain_pot'] ?? null),
+            'keterlambatan' => self::moneyOrNull($raw['keterlambatan'] ?? null),
+            'ijin' => self::moneyOrNull($raw['ijin'] ?? null),
+            'lain_pot' => self::resolveLainPot($raw),
             'jumlah' => self::moneyOrNull($raw['jumlah'] ?? null),
             'jumlah_tunjangan' => self::moneyOrNull($raw['jumlah_tunjangan'] ?? null),
             'jumlah_pot' => self::moneyOrNull($raw['jumlah_pot'] ?? null),
@@ -186,19 +189,17 @@ final class PayrollCsvMapper
      */
     public static function buildVerificationRows(array $raw, array $dbAttributes): array
     {
+        $usesCombinedTunjangan = self::usesCombinedTunjangan($raw);
+
         $checks = [
             ['csv' => 'gaji_pokok', 'db' => 'gaji_pokok'],
             ['csv' => 'tunjangan_keluarga', 'db' => 'keluarga', 'fallback_csv' => 'keluarga'],
-            ['csv' => 'tunjangan_masa_kerja', 'db' => 'tunj_masa_kerja'],
-            ['csv' => 'tunjangan_kehadiran', 'db' => 'tunj_kehadiran'],
-            ['csv' => 'tunjangan_makan_minum', 'db' => 'tunj_makan'],
             ['csv' => 'fungsional_profesi', 'db' => 'fungsional', 'fallback_csv' => 'fungsional'],
             ['csv' => 'struktural', 'db' => 'struktural'],
             ['csv' => 'operasional', 'db' => 'operasional'],
             ['csv' => 'bpjs_kes', 'db' => 'bpjs_kes'],
             ['csv' => 'transt_spj_komunikasi', 'db' => 'transport_spj', 'fallback_csv' => 'transport_spj'],
             ['csv' => 'jm_dokter', 'db' => 'jm_dokter'],
-            ['csv' => 'lain2_bonus', 'db' => 'lain_lain', 'fallback_csv' => 'lain_lain'],
             ['csv' => 'lembur', 'db' => 'lembur'],
             ['csv' => 'on_call', 'db' => 'on_call'],
             ['csv' => 'jkn_susulan', 'db' => 'jkn_susulan'],
@@ -209,6 +210,14 @@ final class PayrollCsvMapper
             ['csv' => 'jumlah_pot', 'db' => 'jumlah_pot'],
             ['csv' => 'penerimaan', 'db' => 'penerimaan'],
         ];
+
+        if (! $usesCombinedTunjangan) {
+            array_splice($checks, 2, 0, [
+                ['csv' => 'tunjangan_masa_kerja', 'db' => 'tunj_masa_kerja'],
+                ['csv' => 'tunjangan_kehadiran', 'db' => 'tunj_kehadiran'],
+                ['csv' => 'tunjangan_makan_minum', 'db' => 'tunj_makan'],
+            ]);
+        }
 
         $rows = [];
 
@@ -233,6 +242,65 @@ final class PayrollCsvMapper
                 'db_key' => $dbKey,
                 'db_value' => $dbValue,
                 'match' => self::moneyEquals($csvValue, $dbValue),
+            ];
+        }
+
+        if ($usesCombinedTunjangan) {
+            $combinedTunjCsv = self::findCombinedTunjanganValue($raw);
+            $dbCombinedTunj = self::moneyOrNull($dbAttributes['tunj_kehadiran'] ?? null);
+            if ($combinedTunjCsv !== null || $dbCombinedTunj !== null) {
+                $rows[] = [
+                    'csv_key' => 'tunjangan_kmm',
+                    'csv_label' => 'Kehadiran, Makan & Masa Kerja',
+                    'csv_value' => $combinedTunjCsv,
+                    'db_key' => 'tunj_kehadiran',
+                    'db_value' => $dbCombinedTunj,
+                    'match' => self::moneyEquals($combinedTunjCsv, $dbCombinedTunj),
+                ];
+            }
+        }
+
+        $lainLainCsv = self::resolveLainLain($raw);
+        $dbLainLain = self::moneyOrNull($dbAttributes['lain_lain'] ?? null);
+        if ($lainLainCsv !== null || $dbLainLain !== null) {
+            $rows[] = [
+                'csv_key' => 'lain2_*',
+                'csv_label' => 'Lain-lain (pendapatan)',
+                'csv_value' => $lainLainCsv,
+                'db_key' => 'lain_lain',
+                'db_value' => $dbLainLain,
+                'match' => self::moneyEquals($lainLainCsv, $dbLainLain),
+            ];
+        }
+
+        foreach ([
+            ['csv_key' => 'keterlambatan', 'csv_label' => 'Keterlambatan', 'db_key' => 'keterlambatan'],
+            ['csv_key' => 'ijin', 'csv_label' => 'Ijin', 'db_key' => 'ijin'],
+        ] as $field) {
+            $csvValue = self::moneyOrNull($raw[$field['csv_key']] ?? null);
+            $dbValue = self::moneyOrNull($dbAttributes[$field['db_key']] ?? null);
+            if ($csvValue !== null || $dbValue !== null) {
+                $rows[] = [
+                    'csv_key' => $field['csv_key'],
+                    'csv_label' => $field['csv_label'],
+                    'csv_value' => $csvValue,
+                    'db_key' => $field['db_key'],
+                    'db_value' => $dbValue,
+                    'match' => self::moneyEquals($csvValue, $dbValue),
+                ];
+            }
+        }
+
+        $lainPotCsv = self::resolveLainPot($raw);
+        $dbLainPot = self::moneyOrNull($dbAttributes['lain_pot'] ?? null);
+        if ($lainPotCsv !== null || $dbLainPot !== null) {
+            $rows[] = [
+                'csv_key' => 'lain_pot_*',
+                'csv_label' => 'Lain-lain potongan',
+                'csv_value' => $lainPotCsv,
+                'db_key' => 'lain_pot',
+                'db_value' => $dbLainPot,
+                'match' => self::moneyEquals($lainPotCsv, $dbLainPot),
             ];
         }
 
@@ -264,7 +332,10 @@ final class PayrollCsvMapper
 
         $tunjBpjsCsv = self::moneyOrNull($raw['tunj_bpjs_tk'] ?? null);
         if ($tunjBpjsCsv === null) {
-            $sum = (float) ($raw['jkk'] ?? 0) + (float) ($raw['jkm'] ?? 0) + (float) ($raw['jht'] ?? 0) + (float) ($raw['jp'] ?? 0);
+            $sum = (float) (self::moneyOrNull($raw['jkk'] ?? null) ?? 0)
+                + (float) (self::moneyOrNull($raw['jkm'] ?? null) ?? 0)
+                + (float) (self::moneyOrNull($raw['jht'] ?? null) ?? 0)
+                + (float) (self::moneyOrNull($raw['jp'] ?? null) ?? 0);
             $tunjBpjsCsv = $sum > 0 ? (string) $sum : null;
         }
 
@@ -286,6 +357,115 @@ final class PayrollCsvMapper
     public static function humanizeKey(string $key): string
     {
         return ucwords(str_replace('_', ' ', $key));
+    }
+
+    /**
+     * Format Juli 2026+: tunjangan kehadiran, makan & masa kerja digabung satu kolom.
+     *
+     * @param  array<string, mixed>  $raw
+     * @return array{0: ?string, 1: ?string, 2: ?string, 3: bool}
+     */
+    public static function resolveTunjanganKmm(array $raw): array
+    {
+        $masaKerja = self::moneyOrNull($raw['tunjangan_masa_kerja'] ?? null);
+        $kehadiran = self::moneyOrNull($raw['tunjangan_kehadiran'] ?? null);
+        $makan = self::moneyOrNull($raw['tunjangan_makan_minum'] ?? $raw['tunjangan_makan'] ?? null);
+
+        if ($masaKerja !== null || $kehadiran !== null || $makan !== null) {
+            return [$masaKerja, $kehadiran, $makan, false];
+        }
+
+        $combined = self::findCombinedTunjanganValue($raw);
+        if ($combined === null) {
+            return [null, null, null, false];
+        }
+
+        return [null, $combined, null, true];
+    }
+
+    /**
+     * @param  array<string, mixed>  $raw
+     */
+    public static function usesCombinedTunjangan(array $raw): bool
+    {
+        return self::resolveTunjanganKmm($raw)[3];
+    }
+
+    /**
+     * @param  array<string, mixed>  $raw
+     */
+    public static function resolveLainLain(array $raw): ?string
+    {
+        $candidates = [
+            'lain2_bonus',
+            'lain2_jaga_pabrik',
+            'lain2_jaga',
+            'lain_lain',
+        ];
+
+        foreach ($candidates as $key) {
+            $value = self::moneyOrNull($raw[$key] ?? null);
+            if ($value !== null) {
+                return $value;
+            }
+        }
+
+        foreach ($raw as $key => $value) {
+            $keyStr = (string) $key;
+            if (preg_match('/^lain2/i', $keyStr) !== 1) {
+                continue;
+            }
+
+            $money = self::moneyOrNull($value);
+            if ($money !== null) {
+                return $money;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $raw
+     */
+    public static function resolveLainPot(array $raw): ?string
+    {
+        foreach (['lain____lain', 'lain_-_lain', 'lain_pot'] as $key) {
+            $money = self::moneyOrNull($raw[$key] ?? null);
+            if ($money !== null) {
+                return $money;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $raw
+     */
+    public static function findCombinedTunjanganValue(array $raw): ?string
+    {
+        foreach ($raw as $key => $value) {
+            $keyStr = mb_strtolower((string) $key);
+            if ($keyStr === '') {
+                continue;
+            }
+
+            $hasKehadiran = str_contains($keyStr, 'kehadiran');
+            $hasMakan = str_contains($keyStr, 'makan');
+            $hasMasaKerja = str_contains($keyStr, 'masa_kerja');
+
+            if (! $hasKehadiran || (! $hasMakan && ! $hasMasaKerja)) {
+                continue;
+            }
+
+            $money = self::moneyOrNull($value);
+            if ($money !== null) {
+                return $money;
+            }
+        }
+
+        return null;
     }
 
     public static function moneyOrNull(mixed $value): ?string

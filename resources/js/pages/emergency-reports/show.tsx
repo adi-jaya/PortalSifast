@@ -229,7 +229,7 @@ export default function EmergencyReportsShow({ report, statuses, categories }: P
         <AppLayout breadcrumbs={[...breadcrumbs, { title: reportData.report_id, href: `/emergency-reports/${reportData.report_id}` }]}>
             <Head title={`Laporan ${reportData.report_id}`} />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 {/* Header */}
                 <div className="flex items-center gap-3">
                     <Button variant="ghost" size="icon" asChild>

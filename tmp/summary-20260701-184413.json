@@ -1,0 +1,4 @@
+{
+  "summary": "Menyelesaikan panel admin Website Official di dalam PortalSifast sesuai kebutuhan user: modul /web-official dengan CRUD Berita & Informasi serta Kamar Inap (Inertia/React), routes web dengan middleware webofficial.admin, navigasi sidebar, middleware 403 untuk request web non-JSON, 6 feature tests lulus, dan dokumentasi PANDUAN-INTEGRASI-FRONTEND diperbarui menjelaskan dua cara kelola konten (PortalSifast built-in vs API website official).",
+  "current_status": "Backend API web official sudah lengkap; panel admin PortalSifast di /web-official sudah siap dipakai admin untuk mengisi berita/informasi dan kamar inap. Website official frontend eksternal tetap memakai API /api/admin/*. Jalankan npm run build jika UI belum tampil di browser."
+}

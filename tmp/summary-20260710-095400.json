@@ -1,0 +1,4 @@
+{
+  "summary": "User meminta dokumentasi pengembang modul Rekanan. Dibuat docs/webofficial/rekanan.md (spesifikasi lengkap API public/admin, model data, upload logo, panel web, contoh fetch/cURL) dan di-update PANDUAN-INTEGRASI-FRONTEND.md (tabel modul, menu, endpoint, section 7g, checklist, lampiran).",
+  "current_status": "Dokumentasi pengembang Rekanan sudah lengkap dan terintegrasi ke panduan utama Website Official. Tim frontend bisa mulai dari PANDUAN-INTEGRASI-FRONTEND.md section 7g atau detail di rekanan.md."
+}

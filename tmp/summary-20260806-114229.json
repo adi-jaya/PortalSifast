@@ -1,0 +1,4 @@
+{
+  "summary": "User confirmed option C: mobile sidebar menus must match desktop exactly (full parity). Continuing brainstorming with the next clarifying question on whether to fix with a shared nav source of truth or a one-time sync.",
+  "current_status": "Brainstorming — scope locked to full desktop/mobile menu parity; awaiting preference on long-term fix strategy."
+}

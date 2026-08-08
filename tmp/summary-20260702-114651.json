@@ -1,0 +1,4 @@
+{
+  "summary": "Fixed payroll slip section 1 label bug: gaji_pokok was displayed as Kehadiran on show/print pages and API slip_sections. Updated payroll-slip-structure.ts and PayrollSlipStructure.php to use title and line label Gaji Pokok (key remains gaji_pokok). Added API test assertions for corrected labels.",
+  "current_status": "Payroll slip section 1 now correctly shows Gaji Pokok from gaji_pokok field on web detail, print, and mobile API. Tunjangan Kehadiran (tunj_kehadiran) in section 2 unchanged. Run npm run build for frontend to reflect on live site."
+}

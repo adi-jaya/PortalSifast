@@ -1,0 +1,4 @@
+{
+  "summary": "API jadwal dokter diperluas untuk kebutuhan pencarian frontend: filter hari/tanggal, kd_poli (exact), poli (nama klinik LIKE), q (nama dokter LIKE), semua_hari; kombinasi filter AND; auto semua hari jika cari nama/poli tanpa hari; endpoint GET /api/jadwal-dokter/poliklinik untuk dropdown; setiap item sekarang punya hari/hariKey. 8 tests lulus, dokumentasi PANDUAN diperbarui.",
+  "current_status": "API jadwal dokter siap untuk UI pencarian: filter hari, klinik spesialis, dan nama dokter. Foto base64 tetap ada. Frontend bisa load dropdown poli dari /jadwal-dokter/poliklinik lalu kombinasikan query param."
+}

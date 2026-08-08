@@ -1,0 +1,4 @@
+{
+  "summary": "User asked about Website Official access control. Confirmed prior implementation was role-only (admin/superadmin). Implemented granular access: new users.can_manage_web_official flag, updated canManageWebOfficial() and canManageWebOfficialAccess(), superadmin UI in Users create/edit forms, API login/GET /api/user now returns can_manage_web_official, updated docs/webofficial/webofficiallogin.md. All 21 web-official tests pass.",
+  "current_status": "Website Official access: superadmin and admin automatic; staff needs can_manage_web_official flag assigned by superadmin via Users menu. Middleware, sidebar, and API admin routes enforce this."
+}

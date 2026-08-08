@@ -1,0 +1,4 @@
+{
+  "summary": "User asked if API responses automatically reflect the payroll slip fixes. Confirmed EmployeeSalaryController uses PayrollSlipStructure::computeTotals() and buildSections() for both list and detail endpoints, so API already returns corrected Gaji Pokok labels and swapped jumlah totals without mobile app changes.",
+  "current_status": "API payroll list and detail endpoints auto-serve fixed totals and slip_sections via shared PayrollSlipStructure backend helper. Mobile apps should consume totals and slip_sections from API, not recalculate locally."
+}

@@ -1,0 +1,4 @@
+{
+  "summary": "User asked what to do next after Phase 1. Advised practical ops path: secure enrollment key, rebuild frontend for /monitoring, build Go agent on a machine with Go, pilot 1–2 hosts, then optionally Phase 2 features. No code changes this turn.",
+  "current_status": "Phase 1 code is in place and tested. Blockers for live use: Go not on this server (build elsewhere), frontend assets may need npm build, production enrollment key should be rotated from placeholder, scheduler must be running for offline status."
+}

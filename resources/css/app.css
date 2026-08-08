@@ -2,6 +2,9 @@
 
 @import 'tw-animate-css';
 
+/* AOS — Animate On Scroll */
+@import 'aos/dist/aos.css';
+
 /* Leaflet CSS for Emergency Map */
 @import 'leaflet/dist/leaflet.css';
 
@@ -11,13 +14,63 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-    /* Plus Jakarta Sans — clean, professional, TailAdmin-inspired */
-    --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    /* Inter — primary typeface */
+    --font-sans:
+        Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+        Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace;
+
+    /* Font weights */
+    --font-weight-thin: 100;
+    --font-weight-extralight: 200;
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --font-weight-extrabold: 800;
+
+    /* Display */
+    --text-display-2xl: 4.5rem;
+    --text-display-2xl--line-height: 5rem;
+    --text-display-xl: 3.75rem;
+    --text-display-xl--line-height: 4.25rem;
+    --text-display-lg: 3rem;
+    --text-display-lg--line-height: 3.5rem;
+    --text-display-md: 2.25rem;
+    --text-display-md--line-height: 2.75rem;
+    --text-display-sm: 1.875rem;
+    --text-display-sm--line-height: 2.375rem;
+
+    /* Heading */
+    --text-h1: 3rem;
+    --text-h1--line-height: 3.5rem;
+    --text-h2: 2.5rem;
+    --text-h2--line-height: 3rem;
+    --text-h3: 2rem;
+    --text-h3--line-height: 2.5rem;
+    --text-h4: 1.75rem;
+    --text-h4--line-height: 2.25rem;
+    --text-h5: 1.5rem;
+    --text-h5--line-height: 2rem;
+    --text-h6: 1.25rem;
+    --text-h6--line-height: 1.75rem;
+
+    /* Body (override defaults where needed) */
+    --text-lg: 1.125rem;
+    --text-lg--line-height: 1.75rem;
+    --text-base: 1rem;
+    --text-base--line-height: 1.5rem;
+    --text-sm: 0.875rem;
+    --text-sm--line-height: 1.25rem;
+    --text-xs: 0.75rem;
+    --text-xs--line-height: 1.125rem;
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
 
+    /* ── Semantic color tokens (mapped to CSS vars) ── */
     --color-background: var(--background);
     --color-foreground: var(--foreground);
 
@@ -61,94 +114,142 @@
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-muted: var(--sidebar-muted);
     --color-sidebar-ring: var(--sidebar-ring);
+
+    /* ── Design palette — clean white + fresh blue ── */
+    --color-ink: #0F172A;
+    --color-ink-muted: #64748B;
+    --color-ink-subtle: #94A3B8;
+    --color-canvas: #FFFFFF;
+    --color-surface-1: #F8FAFC;
+    --color-surface-2: #F1F5F9;
+    --color-border-strong: #CBD5E1;
+    --color-primary-light: #DBEAFE;
+    --color-primary-hover: #1D4ED8;
+
+    /* ── Semantic status colors — use as bg-urgent, text-normal, etc. ── */
+    --color-urgent: var(--urgent);
+    --color-urgent-bg: var(--urgent-bg);
+    --color-warning: var(--warning);
+    --color-warning-bg: var(--warning-bg);
+    --color-normal: var(--normal);
+    --color-normal-bg: var(--normal-bg);
+    --color-follow-up: var(--follow-up);
+    --color-follow-up-bg: var(--follow-up-bg);
+    --color-info: var(--info);
+    --color-info-bg: var(--info-bg);
 }
 
-/* ─── LIGHT THEME — TailAdmin Blue ─────────────────────────────────────────── */
+/* ─── LIGHT THEME — white clean + fresh blue ────────────────────────────────── */
 :root {
-    --background: oklch(0.97 0.01 250);
-    --foreground: oklch(0.20 0.03 250);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.20 0.03 250);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.20 0.03 250);
+    --background: #F8FAFC;
+    --foreground: #0F172A;
+    --card: #FFFFFF;
+    --card-foreground: #0F172A;
+    --popover: #FFFFFF;
+    --popover-foreground: #0F172A;
 
-    /* Primary: TailAdmin blue — clean, professional */
-    --primary: oklch(0.50 0.20 250);
-    --primary-foreground: oklch(1 0 0);
+    /* Fresh blue */
+    --primary: #2563EB;
+    --primary-foreground: #FFFFFF;
 
-    --secondary: oklch(0.94 0.02 250);
-    --secondary-foreground: oklch(0.35 0.06 250);
-    --muted: oklch(0.94 0.02 250);
-    --muted-foreground: oklch(0.50 0.03 250);
-    --accent: oklch(0.94 0.04 250);
-    --accent-foreground: oklch(0.35 0.06 250);
+    --secondary: #EFF6FF;
+    --secondary-foreground: #1E40AF;
+    --muted: #F1F5F9;
+    --muted-foreground: #64748B;
+    --accent: #DBEAFE;
+    --accent-foreground: #1D4ED8;
 
-    --destructive: oklch(0.52 0.20 25);
-    --destructive-foreground: oklch(1 0 0);
-    --border: oklch(0.90 0.02 250);
-    --input: oklch(0.90 0.02 250);
-    --ring: oklch(0.50 0.20 250);
+    --destructive: #DC2626;
+    --destructive-foreground: #FFFFFF;
+    --border: #E2E8F0;
+    --input: #E2E8F0;
+    --ring: #2563EB;
 
-    /* Charts — blue family */
-    --chart-1: oklch(0.50 0.20 250);
-    --chart-2: oklch(0.55 0.14 210);
-    --chart-3: oklch(0.60 0.14 280);
-    --chart-4: oklch(0.58 0.10 170);
-    --chart-5: oklch(0.52 0.14 330);
+    /* Semantic status colors */
+    --urgent: #DC2626;
+    --urgent-bg: #FEF2F2;
+    --warning: #D97706;
+    --warning-bg: #FFFBEB;
+    --normal: #16A34A;
+    --normal-bg: #F0FDF4;
+    --follow-up: #7C3AED;
+    --follow-up-bg: #F5F3FF;
+    --info: #2563EB;
+    --info-bg: #EFF6FF;
 
-    /* Sidebar — dark navy, professional */
-    --sidebar: oklch(0.18 0.04 250);
-    --sidebar-foreground: oklch(0.93 0.02 250);
-    --sidebar-primary: oklch(0.55 0.18 250);
-    --sidebar-primary-foreground: oklch(1 0 0);
-    --sidebar-accent: oklch(0.26 0.05 250);
-    --sidebar-accent-foreground: oklch(0.93 0.02 250);
-    --sidebar-border: oklch(0.28 0.04 250);
-    --sidebar-muted: oklch(0.58 0.03 250);
-    --sidebar-ring: oklch(0.55 0.18 250);
+    /* Charts */
+    --chart-1: #2563EB;
+    --chart-2: #0EA5E9;
+    --chart-3: #7C3AED;
+    --chart-4: #16A34A;
+    --chart-5: #D97706;
 
-    --radius: 0.5rem;
+    /* Sidebar — solid fresh blue */
+    --sidebar: #1D4ED8;
+    --sidebar-foreground: #FFFFFF;
+    --sidebar-primary: #FFFFFF;
+    --sidebar-primary-foreground: #1D4ED8;
+    --sidebar-accent: #1E40AF;
+    --sidebar-accent-foreground: #FFFFFF;
+    --sidebar-border: rgba(255, 255, 255, 0.18);
+    --sidebar-muted: rgba(255, 255, 255, 0.75);
+    --sidebar-ring: #FFFFFF;
+
+    --radius: 0.75rem;
 }
 
-/* ─── DARK THEME ──────────────────────────────────────────────────────────── */
+/* ─── DARK THEME — paired blue (not inverted) ───────────────────────────────── */
 .dark {
-    --background: oklch(0.14 0.03 250);
-    --foreground: oklch(0.94 0.02 250);
-    --card: oklch(0.18 0.04 250);
-    --card-foreground: oklch(0.94 0.02 250);
-    --popover: oklch(0.18 0.04 250);
-    --popover-foreground: oklch(0.94 0.02 250);
+    --background: #0F172A;
+    --foreground: #F8FAFC;
+    --card: #1E293B;
+    --card-foreground: #F8FAFC;
+    --popover: #1E293B;
+    --popover-foreground: #F8FAFC;
 
-    --primary: oklch(0.60 0.18 250);
-    --primary-foreground: oklch(1 0 0);
-    --secondary: oklch(0.28 0.05 250);
-    --secondary-foreground: oklch(0.90 0.02 250);
-    --muted: oklch(0.28 0.04 250);
-    --muted-foreground: oklch(0.65 0.03 250);
-    --accent: oklch(0.32 0.06 250);
-    --accent-foreground: oklch(0.92 0.02 250);
-    --destructive: oklch(0.55 0.20 25);
-    --destructive-foreground: oklch(1 0 0);
+    --primary: #3B82F6;
+    --primary-foreground: #FFFFFF;
 
-    --border: oklch(0.30 0.04 250);
-    --input: oklch(0.28 0.03 250);
-    --ring: oklch(0.60 0.18 250);
+    --secondary: #1E3A8A;
+    --secondary-foreground: #DBEAFE;
+    --muted: #334155;
+    --muted-foreground: #94A3B8;
+    --accent: #1E40AF;
+    --accent-foreground: #BFDBFE;
 
-    --chart-1: oklch(0.60 0.18 250);
-    --chart-2: oklch(0.60 0.12 210);
-    --chart-3: oklch(0.65 0.12 280);
-    --chart-4: oklch(0.62 0.10 170);
-    --chart-5: oklch(0.58 0.12 330);
+    --destructive: #EF4444;
+    --destructive-foreground: #FFFFFF;
+    --border: rgba(148, 163, 184, 0.16);
+    --input: rgba(148, 163, 184, 0.12);
+    --ring: #3B82F6;
 
-    --sidebar: oklch(0.13 0.03 250);
-    --sidebar-foreground: oklch(0.88 0.02 250);
-    --sidebar-primary: oklch(0.60 0.18 250);
-    --sidebar-primary-foreground: oklch(1 0 0);
-    --sidebar-accent: oklch(0.24 0.05 250);
-    --sidebar-accent-foreground: oklch(0.88 0.02 250);
-    --sidebar-border: oklch(0.26 0.04 250);
-    --sidebar-muted: oklch(0.52 0.03 250);
-    --sidebar-ring: oklch(0.60 0.18 250);
+    --urgent: #EF4444;
+    --urgent-bg: #450A0A;
+    --warning: #F59E0B;
+    --warning-bg: #422006;
+    --normal: #22C55E;
+    --normal-bg: #052E16;
+    --follow-up: #8B5CF6;
+    --follow-up-bg: #2E1065;
+    --info: #60A5FA;
+    --info-bg: #1E3A8A;
+
+    --chart-1: #3B82F6;
+    --chart-2: #38BDF8;
+    --chart-3: #8B5CF6;
+    --chart-4: #22C55E;
+    --chart-5: #F59E0B;
+
+    /* Sidebar — deep blue */
+    --sidebar: #1E3A8A;
+    --sidebar-foreground: #FFFFFF;
+    --sidebar-primary: #FFFFFF;
+    --sidebar-primary-foreground: #1E3A8A;
+    --sidebar-accent: #2563EB;
+    --sidebar-accent-foreground: #FFFFFF;
+    --sidebar-border: rgba(255, 255, 255, 0.14);
+    --sidebar-muted: rgba(255, 255, 255, 0.7);
+    --sidebar-ring: #FFFFFF;
 }
 
 /* ─── BASE ─────────────────────────────────────────────────────────────────── */
@@ -158,7 +259,31 @@
     }
 
     body {
-        @apply bg-background text-foreground font-sans antialiased;
+        @apply bg-background text-foreground font-sans text-base font-normal antialiased;
+    }
+
+    h1 {
+        @apply text-h1 font-bold;
+    }
+
+    h2 {
+        @apply text-h2 font-bold;
+    }
+
+    h3 {
+        @apply text-h3 font-bold;
+    }
+
+    h4 {
+        @apply text-h4 font-semibold;
+    }
+
+    h5 {
+        @apply text-h5 font-semibold;
+    }
+
+    h6 {
+        @apply text-h6 font-semibold;
     }
 
     html {
@@ -172,21 +297,42 @@
     }
 }
 
-/* ─── CARD — clean TailAdmin style ─────────────────────────────────────────── */
+/* ─── CARD — white content card on clean canvas ─────────────────────────────── */
 .card-refined {
-    @apply rounded-xl border border-border bg-card shadow-sm;
+    @apply rounded-2xl border border-border bg-card shadow-sm;
     transition: box-shadow 200ms ease, transform 200ms ease;
 }
 .card-refined:hover {
-    box-shadow: 0 4px 16px oklch(0 0 0 / 0.08);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.12);
     transform: translateY(-1px);
+}
+
+/* Full-color brand cards / columns */
+.card-brand {
+    @apply rounded-2xl border-0 bg-primary p-5 text-primary-foreground shadow-md;
+    transition: box-shadow 200ms ease, transform 200ms ease;
+}
+.card-brand:hover {
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.28);
+    transform: translateY(-1px);
+}
+
+/* Button type scale helpers */
+.btn-text-lg {
+    @apply text-base font-semibold;
+}
+.btn-text-md {
+    @apply text-sm font-semibold;
+}
+.btn-text-sm {
+    @apply text-xs font-semibold;
 }
 
 /* ─── SCROLLBAR ────────────────────────────────────────────────────────────── */
 @layer utilities {
     .scrollbar-thin {
         scrollbar-width: thin;
-        scrollbar-color: oklch(0.80 0.03 250) transparent;
+        scrollbar-color: #C4C4C4 transparent;
     }
 }
 
@@ -211,10 +357,172 @@
 .animate-stagger > *:nth-child(5) { animation-delay: 200ms; }
 .animate-stagger > *:nth-child(6) { animation-delay: 240ms; }
 
+/* ─── RESPONSIVE TABLE ──────────────────────────────────────────────────────── */
+.table-responsive {
+    @apply w-full overflow-x-auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive table {
+    @apply min-w-full;
+}
+
+/* ─── DATA TABLE — clean / spacious Soft Shell tables ───────────────────────── */
+.data-table {
+    @apply overflow-hidden rounded-2xl border border-primary/20 bg-white shadow-xs;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.06), 0 0 0 1px rgba(37, 99, 235, 0.04);
+}
+
+.dark .data-table {
+    @apply border-primary/25 bg-card;
+    box-shadow: none;
+}
+
+.data-table-scroll {
+    @apply w-full overflow-x-auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.data-table table {
+    @apply w-full min-w-full caption-bottom text-left text-sm;
+}
+
+.data-table thead tr {
+    background-image: linear-gradient(90deg, #EFF6FF 0%, #DBEAFE 55%, #E0F2FE 100%) !important;
+    @apply border-b border-primary/25;
+}
+
+.dark .data-table thead tr {
+    background-image: linear-gradient(90deg, #1E3A8A 0%, #1E40AF 55%, #1E3A8A 100%) !important;
+    @apply border-primary/40;
+}
+
+.data-table thead th {
+    @apply !h-[52px] !border-b !border-primary/20 !px-5 !py-0 align-middle !text-sm !font-semibold
+           whitespace-nowrap !text-primary normal-case;
+}
+
+.dark .data-table thead th {
+    @apply !border-primary/30 !text-blue-100;
+}
+
+.data-table tbody tr {
+    @apply !h-14 !border-b !border-blue-50 !bg-white transition-colors duration-150 ease-in-out;
+}
+
+.data-table tbody tr:nth-child(even) {
+    @apply !bg-sky-50/60;
+}
+
+.dark .data-table tbody tr {
+    @apply !border-border/60 !bg-card;
+}
+
+.dark .data-table tbody tr:nth-child(even) {
+    @apply !bg-primary/10;
+}
+
+.data-table tbody tr:last-child {
+    @apply !border-b-0;
+}
+
+.data-table tbody tr:hover {
+    @apply !bg-primary/10;
+}
+
+.dark .data-table tbody tr:hover {
+    @apply !bg-primary/20;
+}
+
+.data-table tbody td {
+    @apply !px-5 !py-4 align-middle !text-sm !font-normal !text-gray-700;
+}
+
+.dark .data-table tbody td {
+    @apply !text-foreground;
+}
+
+.data-table tbody td.cell-empty,
+.data-table tbody td:has([data-empty-state]) {
+    @apply !p-0 !bg-transparent;
+}
+
+.data-table tfoot {
+    @apply border-t border-primary/15 bg-blue-50;
+}
+
+.dark .data-table tfoot {
+    @apply border-primary/25 bg-primary/10;
+}
+
+.data-table .cell-num,
+.data-table .cell-price,
+.data-table .cell-action {
+    @apply text-right;
+}
+
+.data-table .cell-badge,
+.data-table .cell-checkbox {
+    @apply text-center;
+}
+
+.data-table-pagination {
+    @apply gap-2 border-t border-primary/15 bg-blue-50/80;
+}
+
+.dark .data-table-pagination {
+    @apply border-primary/25 bg-primary/10;
+}
+
+@media (max-width: 767px) {
+    .data-table .col-secondary {
+        @apply hidden;
+    }
+}
+
+/* ─── PAGE CONTAINER — standardizes inner page layout ───────────────────────── */
+.page-container {
+    @apply flex flex-col gap-4 sm:gap-6;
+}
+
+/* ─── STAT CARD — full brand blue ───────────────────────────────────────────── */
+.stat-card {
+    @apply rounded-2xl border-0 bg-primary p-4 text-primary-foreground shadow-md;
+}
+
+/* ─── MODULE CARD — full brand blue columns ─────────────────────────────────── */
+.module-card {
+    @apply relative flex flex-col rounded-2xl border-0 bg-primary p-5 text-primary-foreground shadow-md
+           transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:bg-primary-hover;
+}
+
+/* ─── USER AVATAR — sidebar & header initials ────────────────────────────────── */
+.avatar-initials {
+    @apply flex shrink-0 items-center justify-center rounded-full bg-primary font-semibold
+           text-primary-foreground uppercase tracking-wide select-none;
+}
+
+/* ─── FORM SECTION — standardizes form page layout ─────────────────────────── */
+.form-section {
+    @apply rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-sm;
+}
+
+/* ─── FILTER BAR — responsive filter row ────────────────────────────────────── */
+.filter-bar {
+    @apply flex flex-wrap gap-2 sm:items-center;
+}
+
 /* ─── RESPONSIVE ────────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
     html, body {
         overflow-x: hidden;
+    }
+
+    /* Ensure tables in cards don't overflow the card */
+    .card-refined .table-responsive,
+    .form-section .table-responsive {
+        margin-inline: -1rem;
+        padding-inline: 1rem;
     }
 }
 
@@ -224,7 +532,9 @@
     .animate-scale-in {
         animation: none !important;
     }
-    .card-refined:hover {
+    .card-refined:hover,
+    .card-brand:hover,
+    .module-card:hover {
         transform: none !important;
     }
 }

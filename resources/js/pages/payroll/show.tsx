@@ -11,6 +11,7 @@ import {
     formatIdrValue,
     parseMoney,
     resolveLineLabel,
+    shouldRenderSlipLine,
     type SlipLineDef,
 } from '@/pages/payroll/payroll-slip-structure';
 import type { BreadcrumbItem } from '@/types';
@@ -30,6 +31,7 @@ type SalaryData = {
     tunj_masa_kerja: string | null;
     tunj_kehadiran: string | null;
     tunj_makan: string | null;
+    uses_combined_tunjangan?: boolean;
     fungsional: string | null;
     struktural: string | null;
     operasional: string | null;
@@ -58,6 +60,8 @@ type SalaryData = {
     hutang_bpjs: string | null;
     hutang_seragam: string | null;
     ikkm: string | null;
+    keterlambatan: string | null;
+    ijin: string | null;
     lain_pot: string | null;
     pajak: string | null;
     zakat: string | null;
@@ -146,7 +150,7 @@ export default function PayrollShow({ salary, csv_verification }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Gaji - ${salary.employee_name ?? salary.simrs_nik}`} />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" size="icon" asChild>
                         <Link href="/payroll">
@@ -264,7 +268,9 @@ export default function PayrollShow({ salary, csv_verification }: Props) {
                                                                 {section.number}. {section.title}
                                                             </td>
                                                         </tr>
-                                                        {section.lines.map((line) => (
+                                                        {section.lines
+                                                            .filter((line) => shouldRenderSlipLine(line, salary))
+                                                            .map((line) => (
                                                             <SlipLineRow
                                                                 key={`${section.number}-${line.key}`}
                                                                 line={line}
@@ -347,8 +353,7 @@ export default function PayrollShow({ salary, csv_verification }: Props) {
                                 Verifikasi CSV vs Database
                                 {mismatchCount > 0 ? (
                                     <span className="ml-2 text-xs font-normal text-red-600">
-                                        ({mismatchCount} tidak cocok — jalankan{' '}
-                                        <code className="rounded bg-muted px-1">php artisan payroll:reprocess-from-raw</code>)
+                                        ({mismatchCount} tidak cocok)
                                     </span>
                                 ) : (
                                     <span className="ml-2 text-xs font-normal text-green-600">(semua cocok)</span>

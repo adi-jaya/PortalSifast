@@ -1,0 +1,4 @@
+{
+  "summary": "Clarified for user: June (gajijuliupload, 181 slips) and July (gajijuni2026, 21 slips) no longer share NIKs after cleanup. They looked the same before because the same CSV was applied to both periods for 21 people. Filename vs period labels are swapped, which adds confusion.",
+  "current_status": "Data state is consistent: filter period June vs July on /payroll to see different sets. User should re-import correct files if June needs the missing 21 or July needs full month data."
+}

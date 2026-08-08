@@ -96,7 +96,7 @@ export default function SimmutuDashboard({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="SIMMUTU" />
 
-            <div className="flex h-full flex-1 flex-col gap-6 p-4">
+            <div className="flex flex-col gap-6">
                 {/* Hero section */}
                 <div className="relative overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/[0.08] via-card to-emerald-500/[0.06] shadow-sm">
                     <div className="pointer-events-none absolute -right-16 -top-16 size-56 rounded-full bg-primary/10 blur-3xl" />
@@ -358,7 +358,7 @@ export default function SimmutuDashboard({
                 </div>
 
                 {/* Recent entries table */}
-                <div className="rounded-2xl border border-border/80 bg-card shadow-sm">
+                <div className="data-table">
                     <div className="flex items-center justify-between border-b px-4 py-3">
                         <div>
                             <h2 className="text-sm font-semibold">Entri terbaru</h2>

@@ -1,0 +1,4 @@
+{
+  "summary": "User chose option B: dedicated patroli_area + patroli_ruang tables, fully separate from inventaris aset_ruang. Next clarifying question focuses on migration of existing v1 check-ins that still use aset_ruang_id.",
+  "current_status": "Brainstorming Patroli Area hierarchy; decision locked on separate master tables. Awaiting migration/compatibility choice before proposing approaches."
+}

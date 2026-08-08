@@ -1,0 +1,4 @@
+{
+  "summary": "User chose access option B: anyone who can open Monitoring may export Tianji CSV. Next clarifying question is UI placement (submenu under Monitoring vs separate page).",
+  "current_status": "Brainstorming Tianji CSV bridge for PortalSifast; connectivity verified; awaiting UI placement choice before approaches/design."
+}

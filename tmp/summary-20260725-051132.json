@@ -1,0 +1,4 @@
+{
+  "summary": "Implemented aset unit CSV import UI at /aset/import: template download, preview validation, session-backed confirm via ImportAsetUnitCsv + BuatAsetBatch; index link added; 6 Pest tests passed and frontend built.",
+  "current_status": "Unit inventaris CSV import ready for use; master-katalog UI import remains phase 2."
+}

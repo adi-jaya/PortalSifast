@@ -1,0 +1,4 @@
+{
+  "summary": "User asked how to get CSV server-monitoring reports from Tianji and whether it can be merged with PortalSifast. Explained that PortalSifast already has RS Agent device monitoring (CPU/RAM/disk) while Tianji covers uptime/website/server via OpenAPI; recommended a Portal bridge that pulls Tianji OpenAPI and exports CSV rather than duplicating agents, and asked which report type they need before building.",
+  "current_status": "Advisory only — no Tianji integration code yet. PortalSifast monitoring module (MonitoredDevice/heartbeat) remains separate from Tianji; next step is user choice of export scope (uptime summary vs metrics) and Tianji base URL/API key availability."
+}

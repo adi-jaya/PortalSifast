@@ -1,0 +1,4 @@
+{
+  "summary": "Implementasi katalog non-alkes: tabel aset_non_alkes, FK ke aset_barang, import CSV tipe non_alkes (kompatibel m_non_alkes), search API leaf-only, form create aset pilih katalog, BuatAsetBatch findOrCreate barang dari leaf. 3 Pest tests lulus.",
+  "current_status": "Katalog non-alkes siap dipakai. User tinggal siapkan CSV dan jalankan aset:import-master --tipe=non_alkes, lalu pilih leaf di form Tambah aset (mode Barang baru)."
+}

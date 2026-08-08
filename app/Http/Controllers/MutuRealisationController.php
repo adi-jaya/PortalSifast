@@ -103,7 +103,7 @@ class MutuRealisationController extends Controller
         if (! preg_match('/^\d{4}-\d{2}$/', $selectedMonth)) {
             $selectedMonth = now()->format('Y-m');
         }
-        $monthStart = CarbonImmutable::createFromFormat('Y-m', $selectedMonth)->startOfMonth();
+        $monthStart = CarbonImmutable::createFromFormat('!Y-m', $selectedMonth)->startOfMonth();
         $monthEnd = $monthStart->endOfMonth();
 
         $indicatorQuery = MutuIndicator::query()

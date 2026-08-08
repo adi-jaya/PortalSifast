@@ -1,0 +1,4 @@
+{
+  "summary": "Implemented master CSV export/import UI for ruang, ASPAK, and non-alkes: AsetMasterCsv service (shared with artisan), new /aset/master/ruang page, MasterCsvActions on catalog pages, 22 related tests passed, Vite build OK. Self code-review: silent skip of incomplete rows matches artisan; auth is session-only like sibling master pages.",
+  "current_status": "Master code catalogs (ruang/ASPAK/non-alkes) now have UI export+import; unit inventaris import already live."
+}

@@ -1,0 +1,4 @@
+{
+  "summary": "Dibuat dokumen baru docs/webofficial/PANDUAN-INTEGRASI-FRONTEND.md sebagai satu pintu masuk untuk tim frontend: ringkasan API siap (auth, informasi, kamar inap), base URL, CORS localhost, daftar endpoint, field camelCase, contoh TypeScript/cURL, checklist integrasi, dan lampiran ke dokumen detail.",
+  "current_status": "Handoff frontend lengkap di PANDUAN-INTEGRASI-FRONTEND.md; backend web official sudah live, tim frontend bisa mulai integrasi dari dokumen tersebut."
+}

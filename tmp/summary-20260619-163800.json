@@ -1,0 +1,4 @@
+{
+  "summary": "Menambahkan field penandatangan per dokumen (nik, nama, jabatan) dengan React Select async search pegawai SIMRS di form buat dokumen. API GET /tatanaskah/pegawai/search, komponen PegawaiSearchSelect, kolom di index/show, policy approve untuk can_tte_dokumen/sekretaris/penandatangan. Migrasi dan build selesai, test lulus.",
+  "current_status": "Setiap dokumen wajib pilih 'Yang menyetujui (penandatangan)' saat buat draft. Ajukan ke pejabat tersebut; Sekretaris dengan can_tte_dokumen tetap bisa setujui atas nama penandatangan."
+}

@@ -1,0 +1,4 @@
+{
+  "summary": "Clarified PAYROLL-MOBILE-SLIP auth: primary pattern is service Bearer token + required NIK (like ticketing); POST /api/login is an alternative if user has simrs_nik. Corrected the slip doc note that had oversimplified to login-only.",
+  "current_status": "Auth guidance for payroll slip vs patroli vs main login is documented more accurately."
+}

@@ -15,9 +15,9 @@ final class PayrollSlipStructure
     public const SECTIONS = [
         [
             'number' => '1',
-            'title' => 'Kehadiran',
+            'title' => 'Gaji Pokok',
             'lines' => [
-                ['key' => 'gaji_pokok', 'label' => 'Kehadiran'],
+                ['key' => 'gaji_pokok', 'label' => 'Gaji Pokok'],
             ],
         ],
         [
@@ -68,6 +68,8 @@ final class PayrollSlipStructure
                 ['key' => 'hutang_bpjs', 'label' => 'Hutang BPJS'],
                 ['key' => 'hutang_seragam', 'label' => 'Hutang Seragam'],
                 ['key' => 'ikkm', 'label' => 'IKKM'],
+                ['key' => 'keterlambatan', 'label' => 'Keterlambatan'],
+                ['key' => 'ijin', 'label' => 'Ijin'],
                 ['key' => 'lain_pot', 'label' => 'Lain-lain'],
             ],
         ],
@@ -114,18 +116,19 @@ final class PayrollSlipStructure
         $kehadiran = self::moneyValue($salary->gaji_pokok);
         $subtotalTunjangan = self::sumKeys($salary, self::tunjanganKeys());
         $subtotalLainLain = self::sumKeys($salary, self::lainLainKeys());
+        $computedTunjangan = $subtotalTunjangan + $subtotalLainLain;
 
-        $fromCsvJumlahTunjangan = self::parseMoney($salary->jumlah_tunjangan) !== null;
-        $fromCsvJumlahGaji = self::parseMoney($salary->jumlah) !== null;
         $fromCsvJumlahPot = self::parseMoney($salary->jumlah_pot) !== null;
         $fromCsvGajiBersih = self::parseMoney($salary->pembulatan ?? $salary->penerimaan) !== null;
 
-        // Jumlah Tunjangan = section 2 + section 3 (sesuai slip RS)
-        $jumlahTunjangan = self::parseMoney($salary->jumlah_tunjangan)
-            ?? ($subtotalTunjangan + $subtotalLainLain);
+        $resolved = self::resolveJumlahTotals(
+            $salary,
+            $kehadiran,
+            $computedTunjangan,
+        );
 
-        $jumlahGaji = self::parseMoney($salary->jumlah)
-            ?? ($kehadiran + $jumlahTunjangan);
+        $jumlahTunjangan = $resolved['jumlah_tunjangan'];
+        $jumlahGaji = $resolved['jumlah_gaji'];
 
         $jumlahPotongan = self::parseMoney($salary->jumlah_pot)
             ?? self::sumKeys($salary, self::potonganKeys());
@@ -142,10 +145,101 @@ final class PayrollSlipStructure
             'jumlah_potongan' => $jumlahPotongan,
             'gaji_bersih' => $gajiBersih,
             'from_csv' => [
-                'jumlah_tunjangan' => $fromCsvJumlahTunjangan,
-                'jumlah_gaji' => $fromCsvJumlahGaji,
+                'jumlah_tunjangan' => $resolved['from_csv']['jumlah_tunjangan'],
+                'jumlah_gaji' => $resolved['from_csv']['jumlah_gaji'],
                 'jumlah_potongan' => $fromCsvJumlahPot,
                 'gaji_bersih' => $fromCsvGajiBersih,
+            ],
+        ];
+    }
+
+    /**
+     * Beberapa export CSV RS menukar makna kolom: `jumlah` = total tunjangan, `jumlah_tunjangan` = jumlah gaji.
+     *
+     * @return array{
+     *     jumlah_tunjangan: float,
+     *     jumlah_gaji: float,
+     *     from_csv: array{jumlah_tunjangan: bool, jumlah_gaji: bool}
+     * }
+     */
+    public static function resolveJumlahTotals(
+        EmployeeSalary $salary,
+        float $kehadiran,
+        float $computedTunjangan,
+    ): array {
+        $csvJumlah = self::parseMoney($salary->jumlah);
+        $csvJumlahTunjangan = self::parseMoney($salary->jumlah_tunjangan);
+
+        if ($csvJumlah !== null && $csvJumlahTunjangan !== null) {
+            $swappedMatch = abs($csvJumlah - $computedTunjangan) < 1
+                && abs($csvJumlahTunjangan - ($kehadiran + $csvJumlah)) < 1;
+
+            $standardMatch = abs($csvJumlahTunjangan - $computedTunjangan) < 1
+                && abs($csvJumlah - ($kehadiran + $csvJumlahTunjangan)) < 1;
+
+            if ($swappedMatch && ! $standardMatch) {
+                return [
+                    'jumlah_tunjangan' => $csvJumlah,
+                    'jumlah_gaji' => $csvJumlahTunjangan,
+                    'from_csv' => ['jumlah_tunjangan' => true, 'jumlah_gaji' => true],
+                ];
+            }
+
+            if ($standardMatch) {
+                return [
+                    'jumlah_tunjangan' => $csvJumlahTunjangan,
+                    'jumlah_gaji' => $csvJumlah,
+                    'from_csv' => ['jumlah_tunjangan' => true, 'jumlah_gaji' => true],
+                ];
+            }
+
+            if (abs($csvJumlahTunjangan - ($kehadiran + $csvJumlah)) < 1) {
+                return [
+                    'jumlah_tunjangan' => $csvJumlah,
+                    'jumlah_gaji' => $csvJumlahTunjangan,
+                    'from_csv' => ['jumlah_tunjangan' => true, 'jumlah_gaji' => true],
+                ];
+            }
+
+            if (abs($csvJumlah - ($kehadiran + $csvJumlahTunjangan)) < 1) {
+                return [
+                    'jumlah_tunjangan' => $csvJumlahTunjangan,
+                    'jumlah_gaji' => $csvJumlah,
+                    'from_csv' => ['jumlah_tunjangan' => true, 'jumlah_gaji' => true],
+                ];
+            }
+        }
+
+        if ($csvJumlahTunjangan !== null) {
+            $jumlahTunjangan = $csvJumlahTunjangan;
+
+            return [
+                'jumlah_tunjangan' => $jumlahTunjangan,
+                'jumlah_gaji' => $csvJumlah ?? ($kehadiran + $jumlahTunjangan),
+                'from_csv' => [
+                    'jumlah_tunjangan' => true,
+                    'jumlah_gaji' => $csvJumlah !== null,
+                ],
+            ];
+        }
+
+        if ($csvJumlah !== null) {
+            return [
+                'jumlah_tunjangan' => $computedTunjangan,
+                'jumlah_gaji' => $csvJumlah,
+                'from_csv' => [
+                    'jumlah_tunjangan' => false,
+                    'jumlah_gaji' => true,
+                ],
+            ];
+        }
+
+        return [
+            'jumlah_tunjangan' => $computedTunjangan,
+            'jumlah_gaji' => $kehadiran + $computedTunjangan,
+            'from_csv' => [
+                'jumlah_tunjangan' => false,
+                'jumlah_gaji' => false,
             ],
         ];
     }
@@ -155,18 +249,31 @@ final class PayrollSlipStructure
      */
     public static function buildSections(EmployeeSalary $salary): array
     {
+        $raw = is_array($salary->raw_row) ? $salary->raw_row : [];
+        $usesCombinedTunjangan = PayrollCsvMapper::usesCombinedTunjangan($raw);
         $sections = [];
 
         foreach (self::SECTIONS as $section) {
             $lines = [];
 
             foreach ($section['lines'] as $line) {
+                if (
+                    $usesCombinedTunjangan
+                    && in_array($line['key'], ['tunj_masa_kerja', 'tunj_makan'], true)
+                ) {
+                    continue;
+                }
+
                 $label = $line['label'];
                 if (isset($line['dynamic_label_key'])) {
                     $dynamic = $salary->{$line['dynamic_label_key']} ?? null;
                     if (is_string($dynamic) && $dynamic !== '') {
                         $label = $dynamic;
                     }
+                }
+
+                if ($usesCombinedTunjangan && $line['key'] === 'tunj_kehadiran') {
+                    $label = 'Kehadiran, Makan & Masa Kerja';
                 }
 
                 $lines[] = [
@@ -225,6 +332,8 @@ final class PayrollSlipStructure
             'hutang_bpjs' => $salary->hutang_bpjs,
             'hutang_seragam' => $salary->hutang_seragam,
             'ikkm' => $salary->ikkm,
+            'keterlambatan' => $salary->keterlambatan,
+            'ijin' => $salary->ijin,
             'lain_pot' => $salary->lain_pot,
             'jumlah_tunjangan' => $salary->jumlah_tunjangan,
             'jumlah' => $salary->jumlah,

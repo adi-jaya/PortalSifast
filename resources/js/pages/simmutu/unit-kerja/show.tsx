@@ -48,7 +48,7 @@ export default function SimmutuUnitKerjaShow({ dep, categories, summary }: Props
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`${dep.nama} — Unit kerja`} />
 
-            <div className="flex h-full flex-1 flex-col gap-6 p-4 pb-10">
+            <div className="flex flex-col gap-6 pb-10">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                         <p className="font-mono text-xs text-muted-foreground">{dep.dep_id}</p>

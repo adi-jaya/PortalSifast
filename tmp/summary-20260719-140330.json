@@ -1,0 +1,4 @@
+{
+  "summary": "User found cyan teal palette eye-straining. Switched to clean white canvas (#F7F7F7) with Gojek brand green #00AA13: solid green sidebar, full-color green stat/module cards (.card-brand), white content cards, green auth panel. Tests passed and assets rebuilt.",
+  "current_status": "Gojek-green Soft Shell ready for visual QA after hard refresh; clean white + green hierarchy."
+}

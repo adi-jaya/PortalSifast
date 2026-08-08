@@ -1,0 +1,4 @@
+{
+  "summary": "User confirmed clean cutover (A) for check-in/QR onto patroli_ruang, and clarified aset_ruang remains usable as a React Select reference when creating patroli rooms. Next question: store optional FK vs copy-only naming.",
+  "current_status": "Brainstorming Patroli Area: locked on separate tables + clean cutover + aset_ruang as UI reference. Awaiting FK-vs-copy decision before approaches."
+}

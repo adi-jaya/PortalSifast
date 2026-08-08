@@ -1,0 +1,4 @@
+{
+  "summary": "Walked through a real purchase case (2x Lenovo Ideapad 3 for IGD and Poli Umum) mapping each field in the progressive create flow without writing to DB. Clarified: one create = one ruang, so two rooms need two saves reusing the same catalog/barang; discussed kategori vs merk vs tipe labeling with example values.",
+  "current_status": "Discussing operational dictionary with concrete purchase example; no DB writes. Progressive create UI already shipped."
+}

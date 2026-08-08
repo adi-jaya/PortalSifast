@@ -4,13 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ImportTicketsRequest;
 use App\Http\Requests\StoreTicketRequest;
+use App\Http\Requests\TransferTicketDepartmentRequest;
 use App\Http\Requests\UpdateTicketRequest;
+use App\Models\Aset;
 use App\Models\Inventaris;
 use App\Models\Pegawai;
 use App\Models\Project;
 use App\Models\Ticket;
 use App\Models\TicketActivity;
 use App\Models\TicketCategory;
+use App\Models\TicketComment;
 use App\Models\TicketPriority;
 use App\Models\TicketSlaRule;
 use App\Models\TicketStatus;
@@ -64,11 +67,12 @@ class TicketController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $tickets = $tickets->through(function (Ticket $ticket) {
+        $tickets = $tickets->through(function (Ticket $ticket) use ($user) {
             $ticket->setAttribute(
                 'resolution_duration_label',
                 TicketResolutionDuration::format($ticket->created_at, $ticket->closed_at)
             );
+            $ticket->setAttribute('can_delete', $user->can('delete', $ticket));
 
             return $ticket;
         });
@@ -85,7 +89,7 @@ class TicketController extends Controller
             'categories' => $this->getCategoriesForTicketList($user),
             'projects' => Project::query()->orderBy('name')->get(['id', 'name']),
             'canExport' => $user->isAdmin() || $user->isStaff(),
-            'canDelete' => $user->isAdmin(),
+            'canDelete' => $tickets->getCollection()->contains(fn (Ticket $ticket) => $ticket->can_delete),
         ]);
     }
 
@@ -150,53 +154,60 @@ class TicketController extends Controller
             $query->whereHas('status', fn ($q) => $q->where('is_closed', false));
         }
 
-        if ($request->filled('status')) {
-            $query->where('ticket_status_id', $request->status);
+        $statusId = $this->ticketFilterScalar($request, 'status');
+        if ($statusId !== null) {
+            $query->where('ticket_status_id', $statusId);
         }
 
-        if ($request->filled('priority')) {
-            $query->where('ticket_priority_id', $request->priority);
+        $priorityId = $this->ticketFilterScalar($request, 'priority');
+        if ($priorityId !== null) {
+            $query->where('ticket_priority_id', $priorityId);
         }
 
-        if ($request->filled('department') && $user->isAdmin()) {
-            $query->where('dep_id', $request->department);
+        $department = $this->ticketFilterScalar($request, 'department');
+        if ($department !== null && in_array($department, ['IT', 'IPS'], true)) {
+            $query->where('dep_id', $department);
         }
 
-        if ($request->filled('assignee')) {
-            if ($request->assignee === 'unassigned') {
+        $assignee = $this->ticketFilterScalar($request, 'assignee');
+        if ($assignee !== null) {
+            if ($assignee === 'unassigned') {
                 $query->whereNull('assignee_id');
-            } elseif ($request->assignee === 'me') {
+            } elseif ($assignee === 'me') {
                 $query->where('assignee_id', $user->id);
-            } elseif ($request->assignee === 'my_group') {
+            } elseif ($assignee === 'my_group') {
                 $groupIds = \App\Models\TicketGroup::whereHas('members', fn ($q) => $q->where('user_id', $user->id))->pluck('id');
                 $query->whereIn('ticket_group_id', $groupIds)->whereNull('assignee_id');
             } else {
-                $query->where('assignee_id', $request->assignee);
+                $query->where('assignee_id', $assignee);
             }
         }
 
-        if ($request->filled('search')) {
-            $search = $request->search;
+        $search = $this->ticketFilterScalar($request, 'search');
+        if ($search !== null) {
             $query->where(function ($q) use ($search) {
                 $q->where('ticket_number', 'like', "%{$search}%")
                     ->orWhere('title', 'like', "%{$search}%");
             });
         }
 
-        if ($request->filled('tag')) {
-            $query->whereHas('tags', fn ($q) => $q->where('ticket_tags.id', $request->tag));
+        $tagId = $this->ticketFilterScalar($request, 'tag');
+        if ($tagId !== null) {
+            $query->whereHas('tags', fn ($q) => $q->where('ticket_tags.id', $tagId));
         }
 
-        if ($request->filled('category')) {
-            $query->where('ticket_category_id', $request->category);
+        $categoryId = $this->ticketFilterScalar($request, 'category');
+        if ($categoryId !== null) {
+            $query->where('ticket_category_id', $categoryId);
         }
 
-        if ($request->filled('subcategory')) {
-            $query->where('ticket_subcategory_id', $request->subcategory);
+        $subcategoryId = $this->ticketFilterScalar($request, 'subcategory');
+        if ($subcategoryId !== null) {
+            $query->where('ticket_subcategory_id', $subcategoryId);
         }
 
-        if ($request->filled('project')) {
-            $projectVal = $request->project;
+        $projectVal = $this->ticketFilterScalar($request, 'project');
+        if ($projectVal !== null) {
             if ($projectVal === '0' || $projectVal === '__none__') {
                 $query->whereNull('project_id');
             } else {
@@ -204,11 +215,25 @@ class TicketController extends Controller
             }
         }
 
-        if ($request->filled('created_from') && $request->filled('created_to')) {
+        $createdFrom = $this->ticketFilterDate($request, 'created_from');
+        $createdTo = $this->ticketFilterDate($request, 'created_to');
+        if ($createdFrom !== null && $createdTo !== null) {
             $query->whereBetween('created_at', [
-                $request->date('created_from')->startOfDay(),
-                $request->date('created_to')->endOfDay(),
+                $createdFrom->copy()->startOfDay()->format('Y-m-d H:i:s'),
+                $createdTo->copy()->endOfDay()->format('Y-m-d H:i:s'),
             ]);
+        } elseif ($createdFrom !== null) {
+            $query->where(
+                'created_at',
+                '>=',
+                $createdFrom->copy()->startOfDay()->format('Y-m-d H:i:s')
+            );
+        } elseif ($createdTo !== null) {
+            $query->where(
+                'created_at',
+                '<=',
+                $createdTo->copy()->endOfDay()->format('Y-m-d H:i:s')
+            );
         } else {
             if ($request->filled('from')) {
                 $query->whereDate('created_at', '>=', $request->from);
@@ -218,17 +243,57 @@ class TicketController extends Controller
             }
         }
 
-        if ($request->filled('closed_from') && $request->filled('closed_to')) {
+        $closedFrom = $this->ticketFilterDate($request, 'closed_from');
+        $closedTo = $this->ticketFilterDate($request, 'closed_to');
+        if ($closedFrom !== null && $closedTo !== null) {
             $query->whereNotNull('closed_at')
                 ->whereBetween('closed_at', [
-                    $request->date('closed_from')->startOfDay(),
-                    $request->date('closed_to')->endOfDay(),
+                    $closedFrom->copy()->startOfDay()->format('Y-m-d H:i:s'),
+                    $closedTo->copy()->endOfDay()->format('Y-m-d H:i:s'),
                 ]);
         }
 
         if ($request->boolean('resolved_only')) {
             $query->whereNotNull('resolved_at');
         }
+    }
+
+    /**
+     * Parse tanggal filter tiket (abaikan nilai sampah seperti "null").
+     */
+    private function ticketFilterDate(Request $request, string $key): ?Carbon
+    {
+        $raw = $this->ticketFilterScalar($request, $key);
+        if ($raw === null) {
+            return null;
+        }
+
+        try {
+            return $request->date($key)->timezone(config('app.timezone'));
+        } catch (\Throwable) {
+            try {
+                return Carbon::parse($raw, config('app.timezone'));
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+    }
+
+    /**
+     * Ambil nilai filter skalar; abaikan string kosong / sampah dari query URL.
+     */
+    private function ticketFilterScalar(Request $request, string $key): ?string
+    {
+        if (! $request->filled($key)) {
+            return null;
+        }
+
+        $raw = trim((string) $request->input($key));
+        if ($raw === '' || in_array($raw, ['null', 'undefined', '__all__'], true)) {
+            return null;
+        }
+
+        return $raw;
     }
 
     /**
@@ -241,6 +306,71 @@ class TicketController extends Controller
         }
 
         return $ticket->openIssues->pluck('title')->filter()->implode(' | ');
+    }
+
+    /**
+     * Normalisasi teks panjang untuk sel CSV (notebook / LLM-friendly).
+     */
+    private function sanitizeCsvText(?string $text): string
+    {
+        if ($text === null || $text === '') {
+            return '';
+        }
+
+        $plain = html_entity_decode(strip_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        if (! mb_check_encoding($plain, 'UTF-8')) {
+            $plain = mb_convert_encoding($plain, 'UTF-8', 'UTF-8');
+        }
+        $plain = preg_replace("/[ \t]+/u", ' ', $plain) ?? $plain;
+        $plain = preg_replace("/\R{3,}/u", "\n\n", $plain) ?? $plain;
+
+        return trim($plain);
+    }
+
+    /**
+     * 5 komentar terbaru, diurutkan kronologis (lama → baru) untuk analisa.
+     *
+     * @param  \Illuminate\Support\Collection<int, TicketComment>  $commentsNewestFirst
+     */
+    private function formatRecentCommentsForCsvExport(\Illuminate\Support\Collection $commentsNewestFirst): string
+    {
+        if ($commentsNewestFirst->isEmpty()) {
+            return '';
+        }
+
+        return $commentsNewestFirst
+            ->take(5)
+            ->sortBy([
+                ['created_at', 'asc'],
+                ['id', 'asc'],
+            ])
+            ->values()
+            ->map(function (TicketComment $comment, int $index): string {
+                $flags = [];
+                if ($comment->is_internal) {
+                    $flags[] = 'internal';
+                }
+                if ($comment->is_resolution) {
+                    $flags[] = 'resolusi';
+                }
+                if ($flags === []) {
+                    $flags[] = 'publik';
+                }
+
+                $when = $comment->created_at?->format('Y-m-d H:i') ?? '-';
+                $who = $comment->user?->name ?? 'Sistem';
+                $body = $this->sanitizeCsvText($comment->body);
+
+                return sprintf(
+                    '%d) [%s | %s | %s] %s',
+                    $index + 1,
+                    $when,
+                    $who,
+                    implode(',', $flags),
+                    $body
+                );
+            })
+            ->implode("\n");
     }
 
     /**
@@ -315,13 +445,8 @@ class TicketController extends Controller
     {
         $user = $request->user();
 
-        // Get categories berdasarkan role
-        $categoriesQuery = TicketCategory::active()->with('subcategories');
-
-        // Staff IT hanya lihat kategori IT, Staff IPS hanya lihat kategori IPS
-        if ($user->isStaff() && $user->dep_id) {
-            $categoriesQuery->where('dep_id', $user->dep_id);
-        }
+        // Semua kategori IT+IPS: form create memilih penanganan dulu, lalu filter di frontend.
+        $categoriesQuery = TicketCategory::active()->with('subcategories')->orderBy('name');
 
         $recentTicketsForLink = $this->getTicketsForRelatedSelect($user)
             ->orderBy('created_at', 'desc')
@@ -330,6 +455,31 @@ class TicketController extends Controller
 
         $projects = Project::query()->orderBy('name')->get(['id', 'name']);
         $initialProjectId = $request->integer('project_id', 0) ?: null;
+        $initialAssetNoInventaris = $request->query('asset_no_inventaris')
+            ? (string) $request->query('asset_no_inventaris')
+            : null;
+        $initialAssetId = $request->integer('asset_id', 0) ?: null;
+        $initialAssetLabel = null;
+
+        if ($initialAssetId) {
+            $portalAset = Aset::query()->with('barang')->find($initialAssetId);
+            if ($portalAset) {
+                $initialAssetNoInventaris = $portalAset->no_simrs ?: $portalAset->kode_aset;
+                $initialAssetLabel = trim(($portalAset->kode_aset).' — '.($portalAset->barang?->nama_barang ?? ''));
+            }
+        } elseif ($initialAssetNoInventaris) {
+            $portalAset = Aset::query()
+                ->with('barang')
+                ->where(function ($query) use ($initialAssetNoInventaris) {
+                    $query->where('kode_aset', $initialAssetNoInventaris)
+                        ->orWhere('no_simrs', $initialAssetNoInventaris);
+                })
+                ->first();
+            if ($portalAset) {
+                $initialAssetId = $portalAset->id;
+                $initialAssetLabel = trim(($portalAset->kode_aset).' — '.($portalAset->barang?->nama_barang ?? ''));
+            }
+        }
 
         return Inertia::render('tickets/create', [
             'types' => TicketType::active()->get(),
@@ -340,6 +490,9 @@ class TicketController extends Controller
             'canSelectRequester' => $user->isAdmin() || $user->isStaff(),
             'projects' => $projects,
             'initialProjectId' => $initialProjectId,
+            'initialAssetNoInventaris' => $initialAssetNoInventaris,
+            'initialAssetId' => $initialAssetId,
+            'initialAssetLabel' => $initialAssetLabel,
         ]);
     }
 
@@ -366,38 +519,80 @@ class TicketController extends Controller
     }
 
     /**
-     * Search inventaris for asset selector (IPS: alat medis, peralatan).
+     * Search aset portal (+ fallback SIMRS) for ticket asset selector.
      */
     public function searchForInventaris(Request $request): \Illuminate\Http\JsonResponse
     {
-        $q = $request->query('q', '');
-
-        try {
-            $query = Inventaris::query()
-                ->with(['barang', 'ruang'])
-                ->when($q, function ($query) use ($q) {
-                    $query->where(function ($q2) use ($q) {
-                        $q2->where('no_inventaris', 'like', "%{$q}%")
-                            ->orWhere('kode_barang', 'like', "%{$q}%");
-                    });
-                })
-                ->orderBy('no_inventaris')
-                ->limit(20);
-
-            $items = $query->get()->map(function (Inventaris $inv) {
-                return [
-                    'no_inventaris' => $inv->no_inventaris,
-                    'kode_barang' => $inv->kode_barang,
-                    'nama_barang' => $inv->barang?->nama_barang ?? $inv->kode_barang,
-                    'nama_ruang' => $inv->ruang?->nama_ruang ?? null,
-                    'status_barang' => $inv->status_barang ?? null,
-                ];
-            });
-
-            return response()->json($items);
-        } catch (\Throwable $e) {
+        $q = trim((string) $request->query('q', ''));
+        if ($q === '') {
             return response()->json([]);
         }
+
+        $items = collect();
+
+        try {
+            $portal = Aset::query()
+                ->with(['barang', 'ruang'])
+                ->where(function ($query) use ($q) {
+                    $search = "%{$q}%";
+                    $query->where('kode_aset', 'like', $search)
+                        ->orWhere('no_simrs', 'like', $search)
+                        ->orWhere('no_seri', 'like', $search)
+                        ->orWhereHas('barang', fn ($b) => $b->where('nama_barang', 'like', $search)
+                            ->orWhere('kode_barang', 'like', $search));
+                })
+                ->orderByDesc('id')
+                ->limit(15)
+                ->get()
+                ->map(fn (Aset $aset) => [
+                    'asset_id' => $aset->id,
+                    'kode_aset' => $aset->kode_aset,
+                    'no_inventaris' => $aset->no_simrs ?: $aset->kode_aset,
+                    'kode_barang' => $aset->barang?->kode_barang ?? '',
+                    'nama_barang' => $aset->barang?->nama_barang ?? $aset->kode_aset,
+                    'nama_ruang' => $aset->ruang?->nama_ruang,
+                    'status_barang' => $aset->status_fungsi,
+                    'sumber' => 'portal',
+                ]);
+
+            $items = $items->concat($portal);
+        } catch (\Throwable) {
+            // Portal DB unavailable — continue with SIMRS fallback
+        }
+
+        $remaining = max(0, 20 - $items->count());
+        if ($remaining > 0) {
+            try {
+                $linkedSimrs = $items->pluck('no_inventaris')->filter()->all();
+                $simrs = Inventaris::query()
+                    ->with(['barang', 'ruang'])
+                    ->where(function ($query) use ($q) {
+                        $search = "%{$q}%";
+                        $query->where('no_inventaris', 'like', $search)
+                            ->orWhere('kode_barang', 'like', $search);
+                    })
+                    ->when($linkedSimrs !== [], fn ($query) => $query->whereNotIn('no_inventaris', $linkedSimrs))
+                    ->orderBy('no_inventaris')
+                    ->limit($remaining)
+                    ->get()
+                    ->map(fn (Inventaris $inv) => [
+                        'asset_id' => null,
+                        'kode_aset' => null,
+                        'no_inventaris' => $inv->no_inventaris,
+                        'kode_barang' => $inv->kode_barang,
+                        'nama_barang' => $inv->barang?->nama_barang ?? $inv->kode_barang,
+                        'nama_ruang' => $inv->ruang?->nama_ruang,
+                        'status_barang' => $inv->status_barang,
+                        'sumber' => 'simrs',
+                    ]);
+
+                $items = $items->concat($simrs);
+            } catch (\Throwable) {
+                // SIMRS unavailable
+            }
+        }
+
+        return response()->json($items->values());
     }
 
     /**
@@ -487,13 +682,32 @@ class TicketController extends Controller
                 $validated['ticket_category_id'] ?? null
             );
 
-        // Determine department: from category if set, otherwise default to IT
-        $depId = $category?->dep_id ?? 'IT';
+        // Determine department: explicit penanganan, fallback category, then IT
+        $depId = $validated['dep_id'] ?? $category?->dep_id ?? 'IT';
+        if ($category?->dep_id) {
+            $depId = $category->dep_id;
+        }
 
         // Tentukan requester: admin dan staff bisa pilih manual, pemohon = diri sendiri
         $requesterId = $user->id;
         if (($user->isAdmin() || $user->isStaff()) && ! empty($validated['requester_id'])) {
             $requesterId = $validated['requester_id'];
+        }
+
+        // Resolve portal aset ↔ SIMRS no
+        $assetId = $validated['asset_id'] ?? null;
+        $assetNo = $validated['asset_no_inventaris'] ?? null;
+        if ($assetId && ! $assetNo) {
+            $portalAset = Aset::query()->find($assetId);
+            $assetNo = $portalAset?->no_simrs ?: $portalAset?->kode_aset;
+        } elseif (! $assetId && $assetNo) {
+            $portalAset = Aset::query()
+                ->where(function ($query) use ($assetNo) {
+                    $query->where('kode_aset', $assetNo)
+                        ->orWhere('no_simrs', $assetNo);
+                })
+                ->first();
+            $assetId = $portalAset?->id;
         }
 
         $ticket = Ticket::create([
@@ -507,7 +721,8 @@ class TicketController extends Controller
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
             'related_ticket_id' => $validated['related_ticket_id'] ?? null,
-            'asset_no_inventaris' => $validated['asset_no_inventaris'] ?? null,
+            'asset_id' => $assetId,
+            'asset_no_inventaris' => $assetNo,
             'project_id' => $validated['project_id'] ?? null,
             'is_draft' => $isDraft,
             'published_at' => $isDraft ? null : now(),
@@ -613,6 +828,8 @@ class TicketController extends Controller
             'tags',
             'inventaris.barang',
             'inventaris.ruang',
+            'aset.barang',
+            'aset.ruang',
             'collaborators.user',
             'comments' => fn ($q) => $q->visibleTo($user)->with('user')->orderBy('created_at', 'asc'),
             'attachments.user',
@@ -678,6 +895,11 @@ class TicketController extends Controller
             'canManageVendorCosts' => $user->can('manageVendorCosts', $ticket),
             'canResolveIssue' => $user->can('changeStatus', $ticket),
             'canPublish' => $user->can('publish', $ticket),
+            'canDelete' => $user->can('delete', $ticket),
+            'canTransferDepartment' => $user->can('transferDepartment', $ticket),
+            'transferCategories' => TicketCategory::active()
+                ->orderBy('name')
+                ->get(['id', 'name', 'dep_id', 'ticket_type_id']),
         ]);
     }
 
@@ -690,7 +912,7 @@ class TicketController extends Controller
 
         $user = request()->user();
 
-        $ticket->load(['type', 'category', 'subcategory', 'priority', 'status', 'requester', 'tags', 'inventaris.barang', 'inventaris.ruang', 'project:id,name']);
+        $ticket->load(['type', 'category', 'subcategory', 'priority', 'status', 'requester', 'tags', 'inventaris.barang', 'inventaris.ruang', 'aset.barang', 'aset.ruang', 'project:id,name']);
 
         return Inertia::render('tickets/edit', [
             'ticket' => $ticket,
@@ -839,9 +1061,30 @@ class TicketController extends Controller
             $ticket->due_date = $validated['due_date'];
         }
 
-        // Update inventaris / asset
-        if (array_key_exists('asset_no_inventaris', $validated)) {
-            $ticket->asset_no_inventaris = $validated['asset_no_inventaris'] ?: null;
+        // Update inventaris / asset (resolve portal ↔ SIMRS)
+        if (array_key_exists('asset_id', $validated) || array_key_exists('asset_no_inventaris', $validated)) {
+            $assetId = array_key_exists('asset_id', $validated)
+                ? ($validated['asset_id'] ?: null)
+                : $ticket->asset_id;
+            $assetNo = array_key_exists('asset_no_inventaris', $validated)
+                ? ($validated['asset_no_inventaris'] ?: null)
+                : $ticket->asset_no_inventaris;
+
+            if ($assetId && ! $assetNo) {
+                $portalAset = Aset::query()->find($assetId);
+                $assetNo = $portalAset?->no_simrs ?: $portalAset?->kode_aset;
+            } elseif (! $assetId && $assetNo) {
+                $portalAset = Aset::query()
+                    ->where(function ($query) use ($assetNo) {
+                        $query->where('kode_aset', $assetNo)
+                            ->orWhere('no_simrs', $assetNo);
+                    })
+                    ->first();
+                $assetId = $portalAset?->id;
+            }
+
+            $ticket->asset_id = $assetId;
+            $ticket->asset_no_inventaris = $assetNo;
         }
 
         // Update tags
@@ -872,12 +1115,27 @@ class TicketController extends Controller
             $ticket->project_id = $validated['project_id'] ?: null;
         }
 
+        $shouldPublishDraft = $ticket->isDraft() && collect($changes)->contains(
+            fn (array $change) => in_array($change['action'], [
+                TicketActivity::ACTION_STATUS_CHANGED,
+                TicketActivity::ACTION_ASSIGNED,
+            ], true)
+        );
+
+        if ($shouldPublishDraft) {
+            $this->applyDraftPublicationAttributes($ticket);
+        }
+
         $ticket->save();
         $this->normalizeDraftPlanFields($ticket);
 
         // Log all changes
         foreach ($changes as $change) {
             $ticket->logActivity($change['action'], $change['old'], $change['new']);
+        }
+
+        if ($shouldPublishDraft) {
+            $this->finalizeDraftPublication($ticket, 'Draf dipublikasikan otomatis saat tiket diproses');
         }
 
         if ($telegramAssigneeGroupEvent !== null) {
@@ -915,27 +1173,9 @@ class TicketController extends Controller
                 ->with('info', 'Tiket ini sudah dipublikasikan.');
         }
 
-        $slaDates = $this->calculateSlaDates(
-            $ticket->ticket_type_id,
-            $ticket->ticket_priority_id,
-            $ticket->ticket_category_id
-        );
-
-        $ticket->is_draft = false;
-        $ticket->published_at = now();
-        $ticket->response_due_at = $slaDates['response_due_at'];
-        $ticket->resolution_due_at = $slaDates['resolution_due_at'];
+        $this->applyDraftPublicationAttributes($ticket);
         $ticket->save();
-        $this->normalizeDraftPlanFields($ticket);
-
-        $ticket->logActivity(TicketActivity::ACTION_CREATED, null, null, 'Draf dipublikasikan menjadi tiket aktif');
-
-        $staffInDept = User::where('role', 'staff')->where('dep_id', $ticket->dep_id)->get();
-        foreach ($staffInDept as $staff) {
-            $staff->notify(new TicketCreatedNotification($ticket, 'published'));
-        }
-
-        TicketTelegramGroupNotifier::notifyNewTicket($ticket, 'published');
+        $this->finalizeDraftPublication($ticket, 'Draf dipublikasikan menjadi tiket aktif');
 
         return redirect()
             ->route('tickets.show', $ticket)
@@ -951,6 +1191,7 @@ class TicketController extends Controller
 
         $user = request()->user();
 
+        $wasDraft = $ticket->isDraft();
         $oldAssignee = $ticket->assignee?->name ?? 'Belum ditugaskan';
         $ticket->assignee_id = $user->id;
 
@@ -969,9 +1210,18 @@ class TicketController extends Controller
             }
         }
 
+        if ($wasDraft) {
+            $this->applyDraftPublicationAttributes($ticket);
+        }
+
         $ticket->save();
+        $this->normalizeDraftPlanFields($ticket);
 
         $ticket->logActivity(TicketActivity::ACTION_ASSIGNED, $oldAssignee, $user->name, 'Mengambil tiket sendiri');
+
+        if ($wasDraft) {
+            $this->finalizeDraftPublication($ticket, 'Draf dipublikasikan otomatis saat tiket diambil');
+        }
 
         $ticket->refresh();
         TicketTelegramGroupNotifier::notifyTicketTakenBySelf($ticket, $user);
@@ -979,6 +1229,70 @@ class TicketController extends Controller
         return redirect()
             ->route('tickets.show', $ticket)
             ->with('success', 'Tiket berhasil diambil.');
+    }
+
+    /**
+     * Pindahkan kepemilikan penanganan tiket IT ↔ IPS.
+     */
+    public function transferDepartment(TransferTicketDepartmentRequest $request, Ticket $ticket): RedirectResponse
+    {
+        $validated = $request->validated();
+        $targetDep = $validated['dep_id'];
+
+        if ($ticket->dep_id === $targetDep) {
+            return redirect()
+                ->route('tickets.show', $ticket)
+                ->with('error', "Tiket sudah berada di penanganan {$targetDep}.");
+        }
+
+        $category = TicketCategory::query()->findOrFail($validated['ticket_category_id']);
+        $oldDep = $ticket->dep_id;
+        $previousAssignee = $ticket->assignee;
+
+        if ($previousAssignee && $previousAssignee->dep_id !== $targetDep) {
+            $alreadyCollaborator = $ticket->collaborators()
+                ->where('user_id', $previousAssignee->id)
+                ->exists();
+
+            if (! $alreadyCollaborator) {
+                $ticket->collaborators()->create([
+                    'user_id' => $previousAssignee->id,
+                    'added_by' => $request->user()->id,
+                ]);
+            }
+
+            $ticket->assignee_id = null;
+        }
+
+        if ($ticket->ticket_group_id) {
+            $group = $ticket->group;
+            if ($group && $group->dep_id !== $targetDep) {
+                $ticket->ticket_group_id = null;
+            }
+        }
+
+        $ticket->dep_id = $targetDep;
+        $ticket->ticket_category_id = $category->id;
+        $ticket->ticket_subcategory_id = null;
+        $ticket->save();
+
+        $ticket->logActivity(
+            TicketActivity::ACTION_DEPARTMENT_TRANSFERRED,
+            $oldDep,
+            $targetDep,
+            $validated['reason']
+        );
+
+        app(FcmNotificationService::class)->sendToDepartmentStaff(
+            $targetDep,
+            'Tiket dipindah ke '.$targetDep,
+            "#{$ticket->ticket_number}: {$ticket->title}",
+            ['ticket_id' => (string) $ticket->id, 'type' => 'ticket_transferred']
+        );
+
+        return redirect()
+            ->route('tickets.show', $ticket)
+            ->with('success', "Penanganan tiket dipindah dari {$oldDep} ke {$targetDep}.");
     }
 
     /**
@@ -1004,9 +1318,20 @@ class TicketController extends Controller
         $oldStatus = $ticket->status->name;
         $ticket->resolved_at = $ticket->resolved_at ?? now();
         $ticket->ticket_status_id = $waitingStatus->id;
+
+        $wasDraft = $ticket->isDraft();
+        if ($wasDraft) {
+            $this->applyDraftPublicationAttributes($ticket);
+        }
+
         $ticket->save();
+        $this->normalizeDraftPlanFields($ticket);
 
         $ticket->logActivity(TicketActivity::ACTION_STATUS_CHANGED, $oldStatus, $waitingStatus->name, 'Tandai selesai (manual)');
+
+        if ($wasDraft) {
+            $this->finalizeDraftPublication($ticket, 'Draf dipublikasikan otomatis saat tiket ditandai selesai');
+        }
 
         return redirect()
             ->route('tickets.show', $ticket)
@@ -1030,9 +1355,20 @@ class TicketController extends Controller
         if ($ticket->resolved_at === null) {
             $ticket->resolved_at = now();
         }
+
+        $wasDraft = $ticket->isDraft();
+        if ($wasDraft) {
+            $this->applyDraftPublicationAttributes($ticket);
+        }
+
         $ticket->save();
+        $this->normalizeDraftPlanFields($ticket);
 
         $ticket->logActivity(TicketActivity::ACTION_CLOSED, $oldStatus, $closedStatus->name);
+
+        if ($wasDraft) {
+            $this->finalizeDraftPublication($ticket, 'Draf dipublikasikan otomatis saat tiket ditutup');
+        }
 
         return redirect()
             ->route('tickets.show', $ticket)
@@ -1128,7 +1464,10 @@ class TicketController extends Controller
 
         $this->applyTicketListRequestFilters($query, $request, $user);
 
-        $filename = 'tickets-'.now()->format('Y-m-d-His').'.csv';
+        $department = $this->ticketFilterScalar($request, 'department');
+        $filename = in_array($department, ['IT', 'IPS'], true)
+            ? 'tickets-'.$department.'-'.now()->format('Y-m-d-His').'.csv'
+            : 'tickets-'.now()->format('Y-m-d-His').'.csv';
 
         return ResponseFacade::streamDownload(function () use ($query) {
             $handle = fopen('php://output', 'w');
@@ -1136,14 +1475,20 @@ class TicketController extends Controller
             fputcsv($handle, [
                 'No. Tiket',
                 'Judul',
+                'Deskripsi',
                 'Tipe',
                 'Kategori',
                 'Subkategori',
                 'Prioritas',
                 'Status',
                 'Masalah (terbuka)',
-                'Rencana',
-                'Departemen',
+                'Ide rencana',
+                'Alat/peralatan',
+                'Estimasi anggaran',
+                'Catatan anggaran',
+                'No. Inventaris Aset',
+                'Rencana (project)',
+                'Departemen (penanganan)',
                 'Pemohon',
                 'Unit (pemohon)',
                 'Petugas',
@@ -1151,20 +1496,45 @@ class TicketController extends Controller
                 'Dibuat',
                 'Ditutup',
                 'Lama penyelesaian',
+                'Jumlah komentar',
+                'Komentar terbaru (5)',
             ]);
 
-            $query->orderBy('created_at', 'desc')->chunk(100, function ($tickets) use ($handle) {
-                $this->addRequesterDepartemenToTickets($tickets);
-                foreach ($tickets as $t) {
+            $tickets = $query
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
+                ->get();
+
+            $this->addRequesterDepartemenToTickets($tickets);
+
+            $commentsByTicketId = TicketComment::query()
+                ->with(['user:id,name'])
+                ->whereIn('ticket_id', $tickets->pluck('id'))
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
+                ->get()
+                ->groupBy('ticket_id');
+
+            foreach ($tickets as $t) {
+                try {
+                    /** @var \Illuminate\Support\Collection<int, TicketComment> $ticketComments */
+                    $ticketComments = $commentsByTicketId->get($t->id, collect());
+
                     fputcsv($handle, [
                         $t->ticket_number,
                         $t->title,
+                        $this->sanitizeCsvText($t->description),
                         $t->type?->name ?? '',
                         $t->category?->name ?? '',
                         $t->subcategory?->name ?? '',
                         $t->priority?->name ?? '',
                         $t->status?->name ?? '',
                         $this->formatOpenIssuesForCsvExport($t),
+                        $this->sanitizeCsvText($t->plan_ideas),
+                        $this->sanitizeCsvText($t->plan_tools),
+                        $t->budget_estimate ?? '',
+                        $this->sanitizeCsvText($t->budget_notes),
+                        $t->asset_no_inventaris ?? '',
                         $t->project?->name ?? '',
                         $t->dep_id,
                         $t->requester?->name ?? '',
@@ -1174,9 +1544,18 @@ class TicketController extends Controller
                         $t->created_at?->format('Y-m-d H:i') ?? '',
                         $t->closed_at?->format('Y-m-d H:i') ?? '',
                         TicketResolutionDuration::format($t->created_at, $t->closed_at) ?? '',
+                        $ticketComments->count(),
+                        $this->formatRecentCommentsForCsvExport($ticketComments),
+                    ]);
+                } catch (\Throwable $e) {
+                    report($e);
+                    fputcsv($handle, [
+                        $t->ticket_number ?? '',
+                        $t->title ?? '',
+                        '[ERROR export baris: '.$e->getMessage().']',
                     ]);
                 }
-            });
+            }
 
             fclose($handle);
         }, $filename, [
@@ -1470,6 +1849,38 @@ class TicketController extends Controller
             'response_due_at' => $slaRule->response_minutes ? now()->addMinutes($slaRule->response_minutes) : null,
             'resolution_due_at' => $slaRule->resolution_minutes ? now()->addMinutes($slaRule->resolution_minutes) : null,
         ];
+    }
+
+    private function applyDraftPublicationAttributes(Ticket $ticket): void
+    {
+        if (! $ticket->isDraft()) {
+            return;
+        }
+
+        $slaDates = $this->calculateSlaDates(
+            $ticket->ticket_type_id,
+            $ticket->ticket_priority_id,
+            $ticket->ticket_category_id
+        );
+
+        $ticket->is_draft = false;
+        $ticket->published_at = now();
+        $ticket->response_due_at = $slaDates['response_due_at'];
+        $ticket->resolution_due_at = $slaDates['resolution_due_at'];
+    }
+
+    private function finalizeDraftPublication(Ticket $ticket, string $activityDescription): void
+    {
+        $this->normalizeDraftPlanFields($ticket);
+
+        $ticket->logActivity(TicketActivity::ACTION_CREATED, null, null, $activityDescription);
+
+        $staffInDept = User::where('role', 'staff')->where('dep_id', $ticket->dep_id)->get();
+        foreach ($staffInDept as $staff) {
+            $staff->notify(new TicketCreatedNotification($ticket, 'published'));
+        }
+
+        TicketTelegramGroupNotifier::notifyNewTicket($ticket, 'published');
     }
 
     private function normalizeDraftPlanFields(Ticket $ticket): void

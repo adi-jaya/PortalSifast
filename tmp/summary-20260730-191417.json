@@ -1,0 +1,4 @@
+{
+  "summary": "User hit permission denied on laravel.log (chown www:www locks out replikasi) and missing TicketIpsDemoSeeder (deleted earlier). Recreated seeder and seeded 20 DEMO IPS tickets using LOG_CHANNEL=stderr.",
+  "current_status": "TicketIpsDemoSeeder restored and run successfully. User should fix storage ownership to www-data:www-data (or add replikasi to group www) so artisan can write logs."
+}

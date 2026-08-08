@@ -24,4 +24,9 @@ class InventarisProdusen extends Model
     protected $keyType = 'string';
 
     public $timestamps = false;
+
+    public function getRouteKeyName(): string
+    {
+        return 'kode_produsen';
+    }
 }

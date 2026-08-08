@@ -1,0 +1,4 @@
+{
+  "summary": "Enriched tickets CSV export for LLM/notebook analysis: added description, plan/budget/asset fields, comment count, and the latest 5 comments (chronological, with author/time/flags). Updated Pest coverage; test passed.",
+  "current_status": "Ticket CSV export now includes last-5 comments and richer analysis columns. UI unchanged; export-only."
+}

@@ -259,7 +259,7 @@ export default function EmergencyReportsIndex({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Laporan Darurat" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 p-4">
+            <div className="flex flex-col gap-4">
                 {/* Header with stats and view toggle */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <Heading
@@ -491,7 +491,7 @@ export default function EmergencyReportsIndex({
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left text-sm">
                                         <thead>
-                                            <tr className="border-b bg-gradient-to-r from-amber-500/10 to-orange-500/10 dark:from-amber-500/20 dark:to-orange-500/20">
+                                            <tr className="border-b">
                                                 <th className="px-4 py-3 font-medium">Report ID</th>
                                                 <th className="px-4 py-3 font-medium">Status</th>
                                                 <th className="px-4 py-3 font-medium">Kategori</th>

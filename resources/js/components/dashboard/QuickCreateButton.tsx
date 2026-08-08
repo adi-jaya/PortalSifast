@@ -10,8 +10,8 @@ export function QuickCreateButton() {
             className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-lg"
             style={{ borderRadius: '50%' }}
         >
-            <Link href="/tickets/create">
-                <Plus className="h-6 w-6" />
+            <Link href="/tickets/create" aria-label="Buat tiket">
+                <Plus className="h-6 w-6" strokeWidth={2.5} />
             </Link>
         </Button>
     );

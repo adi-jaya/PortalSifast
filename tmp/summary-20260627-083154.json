@@ -1,0 +1,4 @@
+{
+  "summary": "User asked whether delete ticket feature exists for /tickets/545. Confirmed it is already implemented: backend DELETE /tickets/{id} via TicketController::destroy, admin-only via TicketPolicy. UI available on tickets index (dropdown Hapus) and edit page (Hapus Tiket button), but not on the show/detail page which only supports deleting attachments, vendor costs, spareparts, and collaborators.",
+  "current_status": "Ticket deletion feature is complete for admin users from list and edit pages; show page at /tickets/{id} has no ticket-level delete button."
+}

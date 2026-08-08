@@ -1,0 +1,4 @@
+{
+  "summary": "User feedback: palette too white/flat. Strengthened Soft Shell to bold teal hierarchy — canvas #ECFEFF, sidebar #F0FDFA, solid teal active nav (#0D9488 on white text), teal-tinted borders, richer auth teal-950 panel, stronger welcome gradients. Tests 4/4 passed; npm build done.",
+  "current_status": "Bold teal Soft Shell live in build; awaiting visual QA after hard refresh."
+}

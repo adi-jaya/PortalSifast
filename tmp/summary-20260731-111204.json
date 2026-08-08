@@ -1,0 +1,4 @@
+{
+  "summary": "Explained why June looks like July: same CSV gajijuni2026.csv was imported twice (as June #13 then July #14). updateOrCreate overwrote 21 June slips from the bulk gajijuliupload import, so those NIKs now have identical amounts in both periods.",
+  "current_status": "June bulk import #12 still has 173 other slips; 21 overlapping NIKs match July exactly due to mistaken re-upload of the same file with wrong period labels."
+}

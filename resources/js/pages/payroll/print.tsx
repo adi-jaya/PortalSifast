@@ -5,8 +5,10 @@ import {
     SLIP_SECTIONS,
     computeSlipTotals,
     formatIdrPrint,
+    formatPayrollPeriod,
     getMoneyValue,
     resolveLineLabel,
+    shouldRenderSlipLine,
     type SlipLineDef,
 } from '@/pages/payroll/payroll-slip-structure';
 
@@ -25,6 +27,7 @@ type SalaryData = {
     tunj_masa_kerja: string | null;
     tunj_kehadiran: string | null;
     tunj_makan: string | null;
+    uses_combined_tunjangan?: boolean;
     fungsional: string | null;
     struktural: string | null;
     operasional: string | null;
@@ -53,6 +56,8 @@ type SalaryData = {
     hutang_bpjs: string | null;
     hutang_seragam: string | null;
     ikkm: string | null;
+    keterlambatan: string | null;
+    ijin: string | null;
     lain_pot: string | null;
     pajak: string | null;
     zakat: string | null;
@@ -70,19 +75,7 @@ type Props = {
 };
 
 function formatPeriod(dateString: string | null): string {
-    if (!dateString) {
-        return '-';
-    }
-
-    const match = dateString.match(/^(\d{4})-(\d{2})/);
-    if (match) {
-        const [, year, month] = match;
-        const d = new Date(parseInt(year), parseInt(month) - 1, 1);
-
-        return d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
-    }
-
-    return dateString;
+    return formatPayrollPeriod(dateString, 'long');
 }
 
 function SlipRow({ line, salary, indent = false }: { line: SlipLineDef; salary: SalaryData; indent?: boolean }) {
@@ -245,7 +238,7 @@ function SectionBlock({
                     {number}. {title}
                 </td>
             </tr>
-            {lines.map((line) => (
+            {lines.filter((line) => shouldRenderSlipLine(line, salary)).map((line) => (
                 <SlipRow key={`${number}-${line.key}`} line={line} salary={salary} indent={number !== '1'} />
             ))}
         </>

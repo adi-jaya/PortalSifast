@@ -1,0 +1,4 @@
+{
+  "summary": "User chose approach 1 (template per ruang, area as grouping). Presented design section 1: data model for patroli_area / patroli_ruang and cutover from aset_ruang; awaiting approval before next sections.",
+  "current_status": "Brainstorming Patroli Area — design sections in progress. Locked: separate tables, clean cutover, no FK, template per ruang."
+}
