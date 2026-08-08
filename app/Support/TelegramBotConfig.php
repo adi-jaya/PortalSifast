@@ -24,12 +24,33 @@ final class TelegramBotConfig
             return $fromEnv;
         }
 
-        return self::readTokenFromDotEnvFile();
+        return self::readEnvFileValue('TELEGRAM_BOT_TOKEN');
     }
 
     public static function hasToken(): bool
     {
         return self::token() !== null;
+    }
+
+    /**
+     * ID topik forum grup tiket. Urutan: config → getenv → file .env.
+     * Penting untuk queue worker + config:cache yang mungkin belum memuat key baru.
+     */
+    public static function ticketsGroupThreadId(): ?int
+    {
+        $candidates = [
+            config('services.telegram-bot-api.tickets_group_thread_id'),
+            getenv('TELEGRAM_TICKETS_GROUP_THREAD_ID'),
+            self::readEnvFileValue('TELEGRAM_TICKETS_GROUP_THREAD_ID'),
+        ];
+
+        foreach ($candidates as $value) {
+            if (is_numeric($value) && (int) $value > 0) {
+                return (int) $value;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -42,15 +63,15 @@ final class TelegramBotConfig
             $message->token($token);
         }
 
-        $threadId = config('services.telegram-bot-api.tickets_group_thread_id');
-        if (is_numeric($threadId) && (int) $threadId > 0) {
-            $message->options(['message_thread_id' => (int) $threadId]);
+        $threadId = self::ticketsGroupThreadId();
+        if ($threadId !== null) {
+            $message->options(['message_thread_id' => $threadId]);
         }
 
         return $message;
     }
 
-    private static function readTokenFromDotEnvFile(): ?string
+    private static function readEnvFileValue(string $key): ?string
     {
         $path = base_path('.env');
         if (! is_file($path) || ! is_readable($path)) {
@@ -62,12 +83,14 @@ final class TelegramBotConfig
             return null;
         }
 
+        $pattern = '/^'.preg_quote($key, '/').'\s*=\s*(.*)$/';
+
         foreach (explode("\n", $content) as $line) {
             $line = trim($line);
             if ($line === '' || str_starts_with($line, '#')) {
                 continue;
             }
-            if (! preg_match('/^TELEGRAM_BOT_TOKEN\s*=\s*(.*)$/', $line, $m)) {
+            if (! preg_match($pattern, $line, $m)) {
                 continue;
             }
             $raw = trim($m[1]);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\TelegramRequesterSearch;
 use App\Services\TelegramTicketCreator;
 use App\Support\TelegramBotConfig;
 use App\Support\TelegramWorkNudgeConversation;
@@ -105,22 +106,59 @@ class TelegramWebhookController extends Controller
         }
 
         $state = TelegramWorkNudgeConversation::get($chatId);
-        if ($state === null || ($state['step'] ?? null) !== TelegramWorkNudgeConversation::STEP_AWAITING_TICKET_CHOICE) {
-            $this->sendTelegram($token, $chatId, 'Sesi Jarvis sudah habis/berubah. Tunggu nudge berikutnya atau ketik kerjaanmu biasa.', false);
+        if ($state === null) {
+            $this->sendTelegram($token, $chatId, 'Sesi Jarvis sudah habis. Tunggu nudge berikutnya atau ketik kerjaanmu biasa.', false);
 
             return;
         }
 
-        if ($data === 'nudge:ticket_yes') {
-            $this->beginRequesterStep($chatId, $token, $state);
+        $step = $state['step'] ?? '';
+
+        if ($step === TelegramWorkNudgeConversation::STEP_AWAITING_TICKET_CHOICE) {
+            if ($data === 'nudge:ticket_yes') {
+                $this->beginRequesterStep($chatId, $token, $state);
+
+                return;
+            }
+
+            if ($data === 'nudge:ticket_no') {
+                TelegramWorkNudgeConversation::clear($chatId);
+                $this->sendTelegram($token, $chatId, TelegramWorkNudgeCopy::ticketSkipped(), false);
+            }
 
             return;
         }
 
-        if ($data === 'nudge:ticket_no') {
-            TelegramWorkNudgeConversation::clear($chatId);
-            $this->sendTelegram($token, $chatId, TelegramWorkNudgeCopy::ticketSkipped(), false);
+        if ($step === TelegramWorkNudgeConversation::STEP_AWAITING_REQUESTER) {
+            if ($data === 'nudge:req_search_again') {
+                $this->sendTelegram($token, $chatId, TelegramWorkNudgeCopy::askRequester(), false);
+
+                return;
+            }
+
+            if (preg_match('/^nudge:req:(\d+)$/', $data, $m) === 1) {
+                $requester = User::query()->find((int) $m[1]);
+                if (! $requester) {
+                    $this->sendTelegram($token, $chatId, 'Pemohon itu sudah tidak ada. Cari lagi ya.', false);
+
+                    return;
+                }
+
+                $actor = $this->findUserByTelegramChatId($chatId);
+                if (! $actor) {
+                    TelegramWorkNudgeConversation::clear($chatId);
+                    $this->sendTelegram($token, $chatId, TelegramWorkNudgeCopy::needLinkedAccount(), false);
+
+                    return;
+                }
+
+                $this->finishWizardTicket($chatId, $token, $actor, $state, $requester, $requester->name);
+
+                return;
+            }
         }
+
+        $this->sendTelegram($token, $chatId, 'Sesi Jarvis sudah berubah. Ketik /batal atau tunggu nudge berikutnya.', false);
     }
 
     /**
@@ -199,31 +237,103 @@ class TelegramWebhookController extends Controller
                 return;
             }
 
-            $requestedBy = $this->resolveRequestedBy($text, $user);
-            $title = Str::limit(str_replace(["\r", "\n"], ' ', $workText), 255, '...');
-
-            try {
-                $ticket = app(TelegramTicketCreator::class)->create($user, $title, $workText, $requestedBy);
-            } catch (RuntimeException $e) {
-                $this->sendTelegram($token, $chatId, $e->getMessage()."\n\nCoba lagi, atau ketik /batal.", false);
-
-                return;
-            } catch (\Throwable $e) {
-                Log::error('Telegram Jarvis tiket gagal', ['exception' => $e->getMessage()]);
-                $this->sendTelegram($token, $chatId, 'Gagal menyimpan tiket. Coba lagi atau buat lewat web.', false);
+            $normalized = mb_strtolower(trim($text));
+            if (in_array($normalized, ['sendiri', 'saya', 'gue', 'aku', 'internal'], true)) {
+                $this->finishWizardTicket(
+                    $chatId,
+                    $token,
+                    $user,
+                    $state,
+                    $user,
+                    $user->name.' - '.($user->dep_id ?: 'IT').' (internal)'
+                );
 
                 return;
             }
 
-            TelegramWorkNudgeConversation::clear($chatId);
-            $ticketUrl = route('tickets.show', $ticket);
-            $this->sendTelegram(
-                $token,
-                $chatId,
-                "✅ Tiket jadi: {$ticket->ticket_number}\n{$ticketUrl}\n\nJarvis sudah bantu masukkan. Finalisasi pemohon di web kalau perlu. 💪",
-                false
-            );
+            if (mb_strlen(trim($text)) < 2) {
+                $this->sendTelegram($token, $chatId, "Ketik minimal 2 huruf untuk cari pemohon, atau sendiri.\n/batal untuk batal.", false);
+
+                return;
+            }
+
+            $this->presentRequesterChoices($chatId, $token, trim($text));
         }
+    }
+
+    /**
+     * @param  array{step: string, user_id: int, work_text?: string, note_id?: int}  $state
+     */
+    private function finishWizardTicket(
+        string $chatId,
+        string $token,
+        User $actor,
+        array $state,
+        User $requester,
+        string $requestedByLabel,
+    ): void {
+        $workText = trim((string) ($state['work_text'] ?? ''));
+        if ($workText === '') {
+            TelegramWorkNudgeConversation::clear($chatId);
+            $this->sendTelegram($token, $chatId, 'Sesi hilang. Ceritain kerjaanmu lagi nanti ya.', false);
+
+            return;
+        }
+
+        $title = Str::limit(str_replace(["\r", "\n"], ' ', $workText), 255, '...');
+
+        try {
+            $ticket = app(TelegramTicketCreator::class)->create(
+                $actor,
+                $title,
+                $workText,
+                $requestedByLabel,
+                $requester
+            );
+        } catch (RuntimeException $e) {
+            $this->sendTelegram($token, $chatId, $e->getMessage()."\n\nCoba lagi, atau ketik /batal.", false);
+
+            return;
+        } catch (\Throwable $e) {
+            Log::error('Telegram Jarvis tiket gagal', ['exception' => $e->getMessage()]);
+            $this->sendTelegram($token, $chatId, 'Gagal menyimpan tiket. Coba lagi atau buat lewat web.', false);
+
+            return;
+        }
+
+        TelegramWorkNudgeConversation::clear($chatId);
+        $ticketUrl = route('tickets.show', $ticket);
+        $this->sendTelegram(
+            $token,
+            $chatId,
+            "✅ Tiket jadi: {$ticket->ticket_number}\nPemohon: {$requester->name}\n{$ticketUrl}\n\nJarvis sudah masukkan ke portal. 💪",
+            false
+        );
+    }
+
+    private function presentRequesterChoices(string $chatId, string $token, string $query): void
+    {
+        $search = app(TelegramRequesterSearch::class);
+        $users = $search->search($query, 5);
+
+        if ($users->isEmpty()) {
+            $this->sendTelegram($token, $chatId, TelegramWorkNudgeCopy::requesterNotFound($query), false);
+
+            return;
+        }
+
+        $candidates = $users->map(fn (User $u) => [
+            'id' => $u->id,
+            'label' => $search->buttonLabel($u),
+        ])->values()->all();
+
+        $this->sendTelegram(
+            $token,
+            $chatId,
+            TelegramWorkNudgeCopy::requesterPickPrompt($users->count()),
+            false,
+            TelegramWorkNudgeCopy::requesterChoiceKeyboard($candidates)
+        );
     }
 
     /**
@@ -242,20 +352,6 @@ class TelegramWebhookController extends Controller
 
         TelegramWorkNudgeConversation::put($chatId, $next);
         $this->sendTelegram($token, $chatId, TelegramWorkNudgeCopy::askRequester(), false);
-    }
-
-    private function resolveRequestedBy(string $text, User $user): string
-    {
-        $normalized = mb_strtolower(trim($text));
-        if (in_array($normalized, ['sendiri', 'saya', 'gue', 'aku', 'internal'], true)) {
-            return $user->name.' - '.($user->dep_id ?: 'IT').' (internal)';
-        }
-
-        if (preg_match('/^diminta\s+oleh\s*[:：]\s*(.+)$/iu', trim($text), $m) === 1) {
-            return trim($m[1]);
-        }
-
-        return trim($text);
     }
 
     private function isYes(string $text): bool

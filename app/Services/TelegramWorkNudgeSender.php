@@ -63,9 +63,9 @@ final class TelegramWorkNudgeSender
             'text' => TelegramWorkNudgeCopy::groupBroadcast(),
         ];
 
-        $threadId = config('services.telegram-bot-api.tickets_group_thread_id');
-        if (is_numeric($threadId) && (int) $threadId > 0) {
-            $payload['message_thread_id'] = (int) $threadId;
+        $threadId = TelegramBotConfig::ticketsGroupThreadId();
+        if ($threadId !== null) {
+            $payload['message_thread_id'] = $threadId;
         }
 
         return $this->postSendMessage($token, $payload);

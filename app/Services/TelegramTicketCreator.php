@@ -16,22 +16,30 @@ use RuntimeException;
 final class TelegramTicketCreator
 {
     /**
-     * Buat tiket dari Telegram (pemohon sementara = user terhubung).
+     * Buat tiket dari Telegram.
+     *
+     * @param  User  $actor  Staff yang membuat via Telegram
+     * @param  User|null  $requester  Pemohon dari DB; null = pakai $actor (teks manual / sementara)
      *
      * @throws RuntimeException
      */
-    public function create(User $user, string $title, string $description, string $requestedBy): Ticket
-    {
+    public function create(
+        User $actor,
+        string $title,
+        string $description,
+        string $requestedByLabel,
+        ?User $requester = null,
+    ): Ticket {
         $title = trim($title);
-        $requestedBy = trim($requestedBy);
+        $requestedByLabel = trim($requestedByLabel);
         $description = trim($description);
 
         if ($title === '') {
             throw new RuntimeException('Judul tiket kosong.');
         }
 
-        if ($requestedBy === '') {
-            throw new RuntimeException('Pemohon (Diminta oleh) wajib diisi.');
+        if ($requestedByLabel === '' && $requester === null) {
+            throw new RuntimeException('Pemohon wajib dipilih atau diisi.');
         }
 
         $type = TicketType::query()->active()->orderByRaw("slug = 'incident' desc")->orderBy('id')->first();
@@ -48,12 +56,25 @@ final class TelegramTicketCreator
                 $q->whereNull('ticket_type_id')
                     ->orWhere('ticket_type_id', $type->id);
             })
-            ->orderByRaw('dep_id = ? desc', [$user->dep_id ?? 'IT'])
+            ->orderByRaw('dep_id = ? desc', [$actor->dep_id ?? 'IT'])
             ->orderBy('id')
             ->first();
 
-        $depId = $category?->dep_id ?? ($user->dep_id ?: 'IT');
-        $ticketDescriptionPrefix = "Permintaan dibuat via Telegram oleh {$user->name} ({$user->email}).\nPemohon aktual (manual): {$requestedBy}\nMohon finalisasi pemohon aktual di web setelah tiket dibuat.";
+        $depId = $category?->dep_id ?? ($actor->dep_id ?: 'IT');
+        $requesterModel = $requester ?? $actor;
+        $resolvedFromDb = $requester !== null;
+
+        if ($resolvedFromDb) {
+            $ticketDescriptionPrefix = "Permintaan dibuat via Telegram oleh {$actor->name} ({$actor->email}).\nPemohon: {$requesterModel->name}"
+                .($requesterModel->simrs_nik ? " (NIK: {$requesterModel->simrs_nik})" : '')
+                .($requesterModel->dep_id ? " · {$requesterModel->dep_id}" : '');
+            $activityNote = 'Tiket dibuat via Telegram Jarvis (pemohon dipilih dari database).';
+        } else {
+            $label = $requestedByLabel !== '' ? $requestedByLabel : $actor->name;
+            $ticketDescriptionPrefix = "Permintaan dibuat via Telegram oleh {$actor->name} ({$actor->email}).\nPemohon aktual (manual): {$label}\nMohon finalisasi pemohon aktual di web setelah tiket dibuat.";
+            $activityNote = 'Tiket dibuat via Telegram (pemohon sementara, perlu finalisasi pemohon).';
+        }
+
         $ticketDescription = trim($ticketDescriptionPrefix."\n\n".($description !== '' ? $description : '(Tanpa deskripsi tambahan)'));
 
         $ticket = Ticket::query()->create([
@@ -62,7 +83,7 @@ final class TelegramTicketCreator
             'ticket_priority_id' => $priority->id,
             'ticket_status_id' => $statusNew->id,
             'dep_id' => $depId,
-            'requester_id' => $user->id,
+            'requester_id' => $requesterModel->id,
             'title' => Str::limit($title, 255, '...'),
             'description' => Str::limit($ticketDescription, 10000, '...'),
         ]);
@@ -71,8 +92,8 @@ final class TelegramTicketCreator
             TicketActivity::ACTION_CREATED,
             null,
             null,
-            'Tiket dibuat via Telegram (pemohon sementara, perlu finalisasi pemohon).',
-            $user->id
+            $activityNote,
+            $actor->id
         );
 
         try {

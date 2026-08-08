@@ -34,9 +34,41 @@ final class TelegramWorkNudgeCopy
     public static function askRequester(): string
     {
         return "Siapa pemohonnya?\n"
-            ."Ketik: Nama - Unit\n"
-            ."Contoh: Budi - IGD\n\n"
-            .'Atau ketik sendiri kalau ini kerjaan internalmu.';
+            ."Ketik nama / NIK / email — aku cari di portal, terus pencet tombolnya.\n\n"
+            ."Atau ketik sendiri kalau pemohonnya kamu.\n"
+            .'Ketik /batal untuk batal.';
+    }
+
+    public static function requesterNotFound(string $query): string
+    {
+        return "Tidak ketemu pemohon untuk \"{$query}\".\n"
+            .'Coba nama lain / NIK, ketik sendiri, atau /batal.';
+    }
+
+    public static function requesterPickPrompt(int $count): string
+    {
+        return "Ketemu {$count} orang. Pencet yang benar — atau ketik kata kunci lain / sendiri.";
+    }
+
+    /**
+     * @param  list<array{id: int, label: string}>  $candidates
+     * @return array{inline_keyboard: list<list<array{text: string, callback_data: string}>>}
+     */
+    public static function requesterChoiceKeyboard(array $candidates): array
+    {
+        $rows = [];
+        foreach ($candidates as $candidate) {
+            $rows[] = [[
+                'text' => $candidate['label'],
+                'callback_data' => 'nudge:req:'.$candidate['id'],
+            ]];
+        }
+        $rows[] = [[
+            'text' => '🔎 Cari lagi',
+            'callback_data' => 'nudge:req_search_again',
+        ]];
+
+        return ['inline_keyboard' => $rows];
     }
 
     public static function ticketSkipped(): string
