@@ -63,11 +63,6 @@ class TicketCreatedTelegramGroupNotification extends Notification implements Sho
             ->line("\u{1F517} Buka tiket:")
             ->line($url);
 
-        $token = TelegramBotConfig::token();
-        if ($token !== null) {
-            $message->token($token);
-        }
-
-        return $message;
+        return TelegramBotConfig::applyGroupMessageOptions($message);
     }
 }

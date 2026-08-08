@@ -40,6 +40,15 @@ return [
         'username' => env('TELEGRAM_BOT_USERNAME'),
         'base_uri' => env('TELEGRAM_BOT_BASE_URI', 'https://api.telegram.org'),
         'tickets_group_chat_id' => env('TELEGRAM_TICKETS_GROUP_CHAT_ID'),
+        'tickets_group_thread_id' => env('TELEGRAM_TICKETS_GROUP_THREAD_ID'),
+        'daily_it_report_times' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('TELEGRAM_DAILY_IT_REPORT_TIMES', '23:00'))
+        ))),
+        'daily_it_report_dep' => env('TELEGRAM_DAILY_IT_REPORT_DEP', 'IT'),
+        'work_nudge_enabled' => filter_var(env('TELEGRAM_WORK_NUDGE_ENABLED', true), FILTER_VALIDATE_BOOL),
+        'work_nudge_dep' => env('TELEGRAM_WORK_NUDGE_DEP', 'IT'),
+        'work_nudge_cron' => env('TELEGRAM_WORK_NUDGE_CRON', '0 7,11,15,19,23 * * *'),
     ],
 
     'firebase' => [

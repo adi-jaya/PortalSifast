@@ -35,10 +35,17 @@ class TelegramTestGroupCommand extends Command
 
         $url = rtrim((string) config('services.telegram-bot-api.base_uri', 'https://api.telegram.org'), '/')."/bot{$token}/sendMessage";
 
-        $response = Http::asForm()->timeout(15)->post($url, [
+        $payload = [
             'chat_id' => $chatId,
             'text' => $text,
-        ]);
+        ];
+
+        $threadId = config('services.telegram-bot-api.tickets_group_thread_id');
+        if (is_numeric($threadId) && (int) $threadId > 0) {
+            $payload['message_thread_id'] = (int) $threadId;
+        }
+
+        $response = Http::asForm()->timeout(15)->post($url, $payload);
 
         if (! $response->successful()) {
             $this->error('Telegram API gagal: HTTP '.$response->status());

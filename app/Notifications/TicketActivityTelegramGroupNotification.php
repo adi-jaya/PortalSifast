@@ -55,11 +55,6 @@ class TicketActivityTelegramGroupNotification extends Notification implements Sh
 
         $message->line('')->line('🔗 Buka tiket:')->line($url);
 
-        $token = TelegramBotConfig::token();
-        if ($token !== null) {
-            $message->token($token);
-        }
-
-        return $message;
+        return TelegramBotConfig::applyGroupMessageOptions($message);
     }
 }

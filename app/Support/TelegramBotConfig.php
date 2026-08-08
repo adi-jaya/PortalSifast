@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use NotificationChannels\Telegram\TelegramMessage;
+
 final class TelegramBotConfig
 {
     /**
@@ -28,6 +30,24 @@ final class TelegramBotConfig
     public static function hasToken(): bool
     {
         return self::token() !== null;
+    }
+
+    /**
+     * Token + message_thread_id forum (jika TELEGRAM_TICKETS_GROUP_THREAD_ID di-set).
+     */
+    public static function applyGroupMessageOptions(TelegramMessage $message): TelegramMessage
+    {
+        $token = self::token();
+        if ($token !== null) {
+            $message->token($token);
+        }
+
+        $threadId = config('services.telegram-bot-api.tickets_group_thread_id');
+        if (is_numeric($threadId) && (int) $threadId > 0) {
+            $message->options(['message_thread_id' => (int) $threadId]);
+        }
+
+        return $message;
     }
 
     private static function readTokenFromDotEnvFile(): ?string
