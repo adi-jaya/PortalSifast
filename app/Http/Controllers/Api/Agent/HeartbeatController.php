@@ -6,12 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Agent\HeartbeatAgentRequest;
 use App\Models\DeviceMetricSample;
 use App\Models\MonitoredDevice;
+use App\Services\Agent\AgentDeviceCommandService;
 use App\Support\AgentLog;
 use Illuminate\Http\JsonResponse;
 
 class HeartbeatController extends Controller
 {
-    public function __invoke(HeartbeatAgentRequest $request): JsonResponse
+    public function __invoke(HeartbeatAgentRequest $request, AgentDeviceCommandService $commands): JsonResponse
     {
         /** @var MonitoredDevice $device */
         $device = $request->attributes->get('monitored_device');
@@ -82,6 +83,11 @@ class HeartbeatController extends Controller
             'collected_at' => $collectedAt,
         ]);
 
+        $pending = $commands->claimPending(
+            $device,
+            (int) config('agent.command_batch_size', 5),
+        );
+
         AgentLog::debug('Agent heartbeat accepted', [
             'request_id' => $requestId,
             'device_uuid' => $device->uuid,
@@ -93,6 +99,7 @@ class HeartbeatController extends Controller
                 'status' => MonitoredDevice::STATUS_ONLINE,
                 'last_seen_at' => $collectedAt->toIso8601String(),
                 'request_id' => $requestId,
+                'pending_commands' => $commands->formatForHeartbeat($pending),
             ],
         ]);
     }

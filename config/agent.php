@@ -18,6 +18,8 @@ return [
 
     'default_interval' => (int) env('AGENT_DEFAULT_INTERVAL', 30),
 
+    'command_batch_size' => (int) env('AGENT_COMMAND_BATCH_SIZE', 5),
+
     /*
     |--------------------------------------------------------------------------
     | Metric sample retention (Phase 2)

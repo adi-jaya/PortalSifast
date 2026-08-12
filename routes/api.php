@@ -262,6 +262,8 @@ Route::prefix('agent')->group(function () {
     Route::post('/register', \App\Http\Controllers\Api\Agent\RegisterController::class);
     Route::post('/heartbeat', \App\Http\Controllers\Api\Agent\HeartbeatController::class)
         ->middleware('auth.agent');
+    Route::post('/commands/result', \App\Http\Controllers\Api\Agent\AgentCommandResultController::class)
+        ->middleware('auth.agent');
 });
 
 // Telegram bot webhook (tanpa auth — dipanggil oleh Telegram)

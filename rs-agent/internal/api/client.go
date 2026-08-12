@@ -31,12 +31,38 @@ type registerResponse struct {
 	} `json:"error"`
 }
 
+type PendingCommand struct {
+	ID      uint64         `json:"id"`
+	Type    string         `json:"type"`
+	Payload map[string]any `json:"payload"`
+}
+
+type HeartbeatResult struct {
+	RequestID string
+	Commands  []PendingCommand
+}
+
 type heartbeatResponse struct {
 	Success bool `json:"success"`
 	Data    struct {
-		Status     string `json:"status"`
-		LastSeenAt string `json:"last_seen_at"`
-		RequestID  string `json:"request_id"`
+		Status          string           `json:"status"`
+		LastSeenAt      string           `json:"last_seen_at"`
+		RequestID       string           `json:"request_id"`
+		PendingCommands []PendingCommand `json:"pending_commands"`
+	} `json:"data"`
+	Error *struct {
+		Code      string `json:"code"`
+		Message   string `json:"message"`
+		RequestID string `json:"request_id"`
+	} `json:"error"`
+}
+
+type commandResultResponse struct {
+	Success bool `json:"success"`
+	Data    struct {
+		CommandID uint64 `json:"command_id"`
+		Status    string `json:"status"`
+		RequestID string `json:"request_id"`
 	} `json:"data"`
 	Error *struct {
 		Code      string `json:"code"`
@@ -114,7 +140,7 @@ func (c *Client) Register(enrollmentKey string, snap collector.Snapshot) (apiKey
 	return body.Data.APIKey, body.Data.RequestID, nil
 }
 
-func (c *Client) Heartbeat(apiKey string, snap collector.Snapshot) (requestID string, err error) {
+func (c *Client) Heartbeat(apiKey string, snap collector.Snapshot) (HeartbeatResult, error) {
 	payload := map[string]any{
 		"cpu_percent":    snap.Metrics.CPUPercent,
 		"ram_percent":    snap.Metrics.RAMPercent,
@@ -147,7 +173,7 @@ func (c *Client) Heartbeat(apiKey string, snap collector.Snapshot) (requestID st
 		SetResult(&body).
 		Post(c.server + "/api/agent/heartbeat")
 	if err != nil {
-		return "", err
+		return HeartbeatResult{}, err
 	}
 
 	if resp.IsError() || !body.Success {
@@ -157,10 +183,44 @@ func (c *Client) Heartbeat(apiKey string, snap collector.Snapshot) (requestID st
 			msg = body.Error.Message
 			rid = body.Error.RequestID
 		}
-		return rid, fmt.Errorf("%s (status %d)", msg, resp.StatusCode())
+		return HeartbeatResult{RequestID: rid}, fmt.Errorf("%s (status %d)", msg, resp.StatusCode())
 	}
 
-	return body.Data.RequestID, nil
+	return HeartbeatResult{
+		RequestID: body.Data.RequestID,
+		Commands:  body.Data.PendingCommands,
+	}, nil
+}
+
+func (c *Client) ReportCommand(apiKey string, commandID uint64, status string, result map[string]any) error {
+	if result == nil {
+		result = map[string]any{}
+	}
+
+	var body commandResultResponse
+	resp, err := c.http.R().
+		SetHeader("Content-Type", "application/json").
+		SetHeader("Authorization", "Bearer "+apiKey).
+		SetBody(map[string]any{
+			"command_id": commandID,
+			"status":     status,
+			"result":     result,
+		}).
+		SetResult(&body).
+		Post(c.server + "/api/agent/commands/result")
+	if err != nil {
+		return err
+	}
+
+	if resp.IsError() || !body.Success {
+		msg := "command result failed"
+		if body.Error != nil && body.Error.Message != "" {
+			msg = body.Error.Message
+		}
+		return fmt.Errorf("%s (status %d)", msg, resp.StatusCode())
+	}
+
+	return nil
 }
 
 func criticalSoftwarePayload(snap collector.Snapshot) []map[string]any {

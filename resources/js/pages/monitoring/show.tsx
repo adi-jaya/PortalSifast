@@ -1,5 +1,5 @@
 import { Head, Link, router, useForm, usePoll } from '@inertiajs/react';
-import { ArrowLeft, RefreshCw, Trash2 } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Trash2, X } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { AssetLinkPicker } from '@/components/monitoring/asset-link-picker';
 import { MetricBar } from '@/components/monitoring/metric-bar';
@@ -101,10 +101,27 @@ type LinkableAsset = {
     label: string;
 };
 
+type WindowApp = {
+    pid: number;
+    exe: string;
+    title: string;
+};
+
+type PendingRemoteCommand = {
+    id: number;
+    type: 'list_windows' | 'kill_pid';
+    status: 'pending' | 'sent' | 'succeeded' | 'failed';
+    created_at: string | null;
+};
+
 type Props = {
     device: Device;
     recentSamples: Sample[];
     linkableAssets: LinkableAsset[];
+    canRemoteApps?: boolean;
+    windowSnapshot?: { windows: WindowApp[] } | null;
+    windowSnapshotAt?: string | null;
+    pendingRemoteCommand?: PendingRemoteCommand | null;
 };
 
 const NONE_ASET = '__none__';
@@ -148,7 +165,117 @@ function Panel({ title, hint, children }: { title: string; hint?: string; childr
     );
 }
 
-export default function MonitoringShow({ device, recentSamples, linkableAssets }: Props) {
+function RemoteAppsPanel({
+    deviceId,
+    snapshot,
+    snapshotAt,
+    pending,
+}: {
+    deviceId: number;
+    snapshot: { windows: WindowApp[] } | null;
+    snapshotAt: string | null;
+    pending: PendingRemoteCommand | null;
+}) {
+    const [busy, setBusy] = useState(false);
+    const windows = snapshot?.windows ?? [];
+    const waiting = pending !== null;
+
+    const postCommand = (data: Record<string, string | number>) => {
+        setBusy(true);
+        router.post(`/monitoring/${deviceId}/commands`, data, {
+            preserveScroll: true,
+            onFinish: () => setBusy(false),
+        });
+    };
+
+    const refreshWindows = () => {
+        postCommand({ type: 'list_windows' });
+    };
+
+    const closeApp = (row: WindowApp) => {
+        if (
+            !confirm(
+                `Tutup "${row.title || row.exe}" (PID ${row.pid}) di PC ini?\n\nProses akan dihentikan tanpa konfirmasi di komputer user.`,
+            )
+        ) {
+            return;
+        }
+
+        postCommand({ type: 'kill_pid', pid: row.pid, exe: row.exe });
+    };
+
+    return (
+        <Panel
+            title="Aplikasi terbuka"
+            hint="Hanya jendela GUI. Proses kritis OS tidak bisa ditutup. Refresh menunggu heartbeat agent (~30 detik)."
+        >
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs text-muted-foreground">
+                    {waiting
+                        ? `Menunggu agent (${pending.type === 'kill_pid' ? 'menutup aplikasi' : 'daftar jendela'} · ${pending.status})`
+                        : snapshotAt
+                          ? `Terakhir diambil ${formatRelativeId(snapshotAt)}`
+                          : 'Belum ada daftar. Klik Refresh aplikasi.'}
+                </p>
+                <Button type="button" variant="outline" size="sm" disabled={busy} onClick={refreshWindows}>
+                    <RefreshCw className={cn('size-3.5', waiting || busy ? 'animate-spin' : '')} />
+                    Refresh aplikasi
+                </Button>
+            </div>
+            <div className="overflow-x-auto">
+                <table className="w-full min-w-[480px] text-left text-sm">
+                    <thead className="border-b text-xs uppercase tracking-wide text-muted-foreground">
+                        <tr>
+                            <th className="py-2 pr-3 font-medium">Jendela</th>
+                            <th className="py-2 pr-3 font-medium">Exe</th>
+                            <th className="py-2 pr-3 font-medium">PID</th>
+                            <th className="py-2 font-medium">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {windows.length === 0 ? (
+                            <tr>
+                                <td colSpan={4} className="py-4 text-muted-foreground">
+                                    Tidak ada jendela tercatat.
+                                </td>
+                            </tr>
+                        ) : (
+                            windows.map((row) => (
+                                <tr key={`${row.pid}-${row.title}`} className="border-b last:border-0">
+                                    <td className="py-2 pr-3">{row.title || '–'}</td>
+                                    <td className="py-2 pr-3 font-mono text-xs">{row.exe || '–'}</td>
+                                    <td className="py-2 pr-3 font-mono text-xs">{row.pid}</td>
+                                    <td className="py-2">
+                                        <Button
+                                            type="button"
+                                            variant="destructive"
+                                            size="sm"
+                                            disabled={busy}
+                                            onClick={() => closeApp(row)}
+                                        >
+                                            <X className="size-3.5" />
+                                            Tutup
+                                        </Button>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </Panel>
+    );
+}
+
+export default function MonitoringShow({
+    device,
+    recentSamples,
+    linkableAssets,
+    canRemoteApps = false,
+    windowSnapshot = null,
+    windowSnapshotAt = null,
+    pendingRemoteCommand = null,
+}: Props) {
     const title = device.hostname || device.computer_name || device.uuid;
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Dashboard', href: dashboard().url },
@@ -166,8 +293,10 @@ export default function MonitoringShow({ device, recentSamples, linkableAssets }
         setData('aset_id', device.aset?.id ?? null);
     }, [device.aset?.id, setData]);
 
+    const remoteOnly = ['device', 'recentSamples', 'linkableAssets', 'windowSnapshot', 'windowSnapshotAt', 'pendingRemoteCommand', 'canRemoteApps'];
+
     usePoll(30000, {
-        only: ['device', 'recentSamples', 'linkableAssets'],
+        only: remoteOnly,
     });
 
     const submitAset = () => {
@@ -235,7 +364,7 @@ export default function MonitoringShow({ device, recentSamples, linkableAssets }
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                onClick={() => router.reload({ only: ['device', 'recentSamples', 'linkableAssets'] })}
+                                onClick={() => router.reload({ only: remoteOnly })}
                             >
                                 <RefreshCw className="size-3.5" />
                                 Refresh
@@ -307,6 +436,15 @@ export default function MonitoringShow({ device, recentSamples, linkableAssets }
                         <Field label="Uptime" value={formatUptime(device.uptime_seconds)} />
                     </dl>
                 </Panel>
+
+                {canRemoteApps ? (
+                    <RemoteAppsPanel
+                        deviceId={device.id}
+                        snapshot={windowSnapshot}
+                        snapshotAt={windowSnapshotAt}
+                        pending={pendingRemoteCommand}
+                    />
+                ) : null}
 
                 <Panel title="Software kritis" hint="Tools remote / sync untuk dukungan jarak jauh.">
                     <div className="grid gap-2 sm:grid-cols-3">

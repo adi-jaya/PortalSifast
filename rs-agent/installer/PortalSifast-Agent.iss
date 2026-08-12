@@ -50,11 +50,8 @@ Source: "..\configs\config.example.json"; DestDir: "{app}\configs"; Flags: ignor
 [Icons]
 Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
 
-[Run]
-Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\scripts\install-service.ps1"" -SourceExe ""{app}\{#MyAppExeName}"" -Server ""{code:GetServerURL}"" -EnrollmentKey ""{code:GetEnrollmentKey}"""; \
-  StatusMsg: "Menginstal Windows Service..."; \
-  Flags: runhidden waituntilterminated
+; Service install is done in [Code] CurStepChanged(ssPostInstall) so failures
+; surface as a message box (silent [Run] previously left EXE without a service).
 
 [UninstallRun]
 Filename: "powershell.exe"; \
@@ -68,7 +65,7 @@ var
   CompiledKey: string;
   CompiledServer: string;
 
-function GetEnrollmentKey(Param: string): string;
+function GetEnrollmentKey(): string;
 begin
   if KeyPage <> nil then
     Result := Trim(KeyPage.Values[0])
@@ -76,7 +73,7 @@ begin
     Result := CompiledKey;
 end;
 
-function GetServerURL(Param: string): string;
+function GetServerURL(): string;
 begin
   if KeyPage <> nil then
     Result := Trim(KeyPage.Values[1])
@@ -117,6 +114,87 @@ begin
     begin
       MsgBox('Server URL wajib diisi.', mbError, MB_OK);
       Result := False;
+    end;
+  end;
+end;
+
+function WriteEnrollFile(const FileName: string): Boolean;
+var
+  Lines: TArrayOfString;
+begin
+  SetArrayLength(Lines, 2);
+  Lines[0] := 'server=' + GetServerURL();
+  Lines[1] := 'enrollment_key=' + GetEnrollmentKey();
+  Result := SaveStringsToFile(FileName, Lines, False);
+end;
+
+function InstallWindowsService(): Boolean;
+var
+  EnrollFile: string;
+  Params: string;
+  ResultCode: Integer;
+  Ok: Boolean;
+begin
+  Result := False;
+  EnrollFile := ExpandConstant('{tmp}\psa-enroll.txt');
+  if not WriteEnrollFile(EnrollFile) then
+  begin
+    MsgBox('Gagal menulis file enrollment sementara.', mbError, MB_OK);
+    exit;
+  end;
+
+  if Trim(GetEnrollmentKey()) = '' then
+  begin
+    MsgBox('Enrollment key kosong. Install dibatalkan.', mbError, MB_OK);
+    exit;
+  end;
+
+  Params :=
+    '-NoProfile -ExecutionPolicy Bypass -File "' + ExpandConstant('{app}\scripts\install-service.ps1') + '"' +
+    ' -SourceExe "' + ExpandConstant('{app}\{#MyAppExeName}') + '"' +
+    ' -EnrollmentKeyFile "' + EnrollFile + '"';
+
+  WizardForm.StatusLabel.Caption := 'Menginstal Windows Service...';
+  Ok := Exec(
+    ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
+    Params,
+    '',
+    SW_HIDE,
+    ewWaitUntilTerminated,
+    ResultCode
+  );
+
+  if (not Ok) or (ResultCode <> 0) then
+  begin
+    MsgBox(
+      'Instalasi service gagal (kode ' + IntToStr(ResultCode) + ').' + #13#10#13#10 +
+      'Agent TIDAK berjalan otomatis.' + #13#10 +
+      'Cek log: %ProgramData%\PortalSifast Agent\logs\install.log' + #13#10 +
+      'atau Event Viewer → Windows Logs → Application.',
+      mbError,
+      MB_OK
+    );
+    exit;
+  end;
+
+  Result := True;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then
+  begin
+    if not InstallWindowsService() then
+    begin
+      { Keep files on disk for diagnosis, but make failure obvious. }
+      SuppressibleMsgBox(
+        'Setup selesai menyalin file, tetapi Windows Service gagal diaktifkan.' + #13#10 +
+        'Jalankan ulang Setup sebagai Administrator, atau:' + #13#10 +
+        'powershell -ExecutionPolicy Bypass -File "C:\Program Files\PortalSifast Agent\scripts\install-service.ps1"',
+        mbError,
+        MB_OK,
+        IDOK
+      );
     end;
   end;
 end;

@@ -35,6 +35,8 @@ class MonitoredDevice extends Model
         'critical_software',
         'usb_inventory',
         'sensors',
+        'window_snapshot',
+        'window_snapshot_at',
         'aset_id',
     ];
 
@@ -49,7 +51,14 @@ class MonitoredDevice extends Model
             'critical_software' => 'array',
             'usb_inventory' => 'array',
             'sensors' => 'array',
+            'window_snapshot' => 'array',
+            'window_snapshot_at' => 'datetime',
         ];
+    }
+
+    public function commands(): HasMany
+    {
+        return $this->hasMany(AgentDeviceCommand::class);
     }
 
     public function hardware(): HasOne

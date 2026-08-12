@@ -3,7 +3,9 @@ package heartbeat
 import (
 	"time"
 
+	"github.com/portalsifast/rs-agent/internal/api"
 	"github.com/portalsifast/rs-agent/internal/collector"
+	"github.com/portalsifast/rs-agent/internal/commands"
 	"github.com/portalsifast/rs-agent/internal/config"
 	"github.com/rs/zerolog"
 )
@@ -16,7 +18,12 @@ const (
 // API is the subset of the HTTP client used by the heartbeat loop.
 type API interface {
 	Register(enrollmentKey string, snap collector.Snapshot) (apiKey string, requestID string, err error)
-	Heartbeat(apiKey string, snap collector.Snapshot) (requestID string, err error)
+	Heartbeat(apiKey string, snap collector.Snapshot) (api.HeartbeatResult, error)
+	ReportCommand(apiKey string, commandID uint64, status string, result map[string]any) error
+}
+
+type CommandRunner interface {
+	Run(cmd commands.Command) (status string, result map[string]any)
 }
 
 type Loop struct {
@@ -27,6 +34,7 @@ type Loop struct {
 
 	// Overridable for tests.
 	Collect    func(deviceUUID, agentVersion string) (collector.Snapshot, error)
+	Commands   CommandRunner
 	Interval   time.Duration
 	MaxBackoff time.Duration
 }
@@ -45,6 +53,7 @@ func New(cfg *config.Config, client API, log zerolog.Logger, version string) *Lo
 		log:        log,
 		version:    version,
 		Collect:    collector.Collect,
+		Commands:   commands.NewRunner(),
 		Interval:   interval,
 		MaxBackoff: DefaultMaxBackoff,
 	}
@@ -116,18 +125,51 @@ func (l *Loop) tick() bool {
 		l.log.Info().Str("event", "register").Str("request_id", requestID).Msg("registered")
 	}
 
-	requestID, err := l.client.Heartbeat(l.cfg.APIKey, snap)
+	hb, err := l.client.Heartbeat(l.cfg.APIKey, snap)
 	if err != nil {
-		l.log.Error().Err(err).Str("event", "retry").Str("request_id", requestID).Msg("heartbeat failed")
+		l.log.Error().Err(err).Str("event", "retry").Str("request_id", hb.RequestID).Msg("heartbeat failed")
 		return false
 	}
 
+	l.runPendingCommands(hb.Commands)
+
 	l.log.Debug().
 		Str("event", "heartbeat").
-		Str("request_id", requestID).
+		Str("request_id", hb.RequestID).
+		Int("commands", len(hb.Commands)).
 		Float64("cpu", snap.Metrics.CPUPercent).
 		Float64("ram", snap.Metrics.RAMPercent).
 		Float64("disk", snap.Metrics.DiskPercent).
 		Msg("heartbeat ok")
 	return true
+}
+
+func (l *Loop) runPendingCommands(pending []api.PendingCommand) {
+	if l.Commands == nil || len(pending) == 0 {
+		return
+	}
+
+	for _, item := range pending {
+		cmd := commands.Command{
+			ID:      item.ID,
+			Type:    item.Type,
+			Payload: item.Payload,
+		}
+		status, result := l.Commands.Run(cmd)
+		if err := l.client.ReportCommand(l.cfg.APIKey, item.ID, status, result); err != nil {
+			l.log.Error().
+				Err(err).
+				Uint64("command_id", item.ID).
+				Str("type", item.Type).
+				Str("event", "error").
+				Msg("report command failed")
+			continue
+		}
+		l.log.Info().
+			Uint64("command_id", item.ID).
+			Str("type", item.Type).
+			Str("status", status).
+			Str("event", "command").
+			Msg("command finished")
+	}
 }

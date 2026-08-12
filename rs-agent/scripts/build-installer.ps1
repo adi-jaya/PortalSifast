@@ -59,16 +59,20 @@ if ([string]::IsNullOrWhiteSpace($EnrollmentKey)) {
     $EnrollmentKey = Get-DotEnvValue -Path $dotenv -Name "AGENT_ENROLLMENT_KEY"
 }
 
+# Prefer dedicated agent URL — do NOT fall back to APP_URL (often http://localhost in .env).
 if ([string]::IsNullOrWhiteSpace($Server)) {
     $Server = $env:AGENT_SERVER_URL
 }
 if ([string]::IsNullOrWhiteSpace($Server)) {
-    $Server = Get-DotEnvValue -Path $dotenv -Name "APP_URL"
+    $Server = Get-DotEnvValue -Path $dotenv -Name "AGENT_SERVER_URL"
 }
 if ([string]::IsNullOrWhiteSpace($Server)) {
     $Server = "https://portalsifast.rsaisyiyahsitifatimah.com"
 }
 $Server = $Server.TrimEnd("/")
+if ($Server -match '^https?://(localhost|127\.0\.0\.1)(:|$)') {
+    Write-Warning "Server URL looks local ($Server). PC clients will not reach production. Pass -Server https://..."
+}
 
 $isccCandidates = @(
     "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",

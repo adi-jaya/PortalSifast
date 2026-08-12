@@ -3,11 +3,14 @@ package heartbeat
 import (
 	"errors"
 	"os"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/portalsifast/rs-agent/internal/api"
 	"github.com/portalsifast/rs-agent/internal/collector"
+	"github.com/portalsifast/rs-agent/internal/commands"
 	"github.com/portalsifast/rs-agent/internal/config"
 	"github.com/rs/zerolog"
 )
@@ -15,9 +18,21 @@ import (
 type stubAPI struct {
 	registerCalls  atomic.Int32
 	heartbeatCalls atomic.Int32
+	reportCalls    atomic.Int32
 	registerErr    error
 	heartbeatErr   error
+	reportErr      error
 	apiKey         string
+	commands       []api.PendingCommand
+
+	mu      sync.Mutex
+	reports []reportCall
+}
+
+type reportCall struct {
+	id     uint64
+	status string
+	result map[string]any
 }
 
 func (s *stubAPI) Register(_ string, _ collector.Snapshot) (string, string, error) {
@@ -28,12 +43,20 @@ func (s *stubAPI) Register(_ string, _ collector.Snapshot) (string, string, erro
 	return s.apiKey, "req-reg", nil
 }
 
-func (s *stubAPI) Heartbeat(_ string, _ collector.Snapshot) (string, error) {
+func (s *stubAPI) Heartbeat(_ string, _ collector.Snapshot) (api.HeartbeatResult, error) {
 	s.heartbeatCalls.Add(1)
 	if s.heartbeatErr != nil {
-		return "req-hb", s.heartbeatErr
+		return api.HeartbeatResult{RequestID: "req-hb"}, s.heartbeatErr
 	}
-	return "req-hb", nil
+	return api.HeartbeatResult{RequestID: "req-hb", Commands: s.commands}, nil
+}
+
+func (s *stubAPI) ReportCommand(_ string, commandID uint64, status string, result map[string]any) error {
+	s.reportCalls.Add(1)
+	s.mu.Lock()
+	s.reports = append(s.reports, reportCall{id: commandID, status: status, result: result})
+	s.mu.Unlock()
+	return s.reportErr
 }
 
 func TestNextBackoff(t *testing.T) {
@@ -185,6 +208,63 @@ func TestLoopBacksOffOnFailure(t *testing.T) {
 	}
 	if calls > 6 {
 		t.Fatalf("backoff too aggressive / too many calls: %d", calls)
+	}
+}
+
+func TestLoopRunsPendingCommands(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	path := dir + "/config.json"
+	writeTestConfig(t, path, "", "rsag_ready")
+
+	cfg, err := config.Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	apiClient := &stubAPI{
+		apiKey: "rsag_ready",
+		commands: []api.PendingCommand{
+			{ID: 9, Type: commands.TypeListWindows, Payload: map[string]any{}},
+		},
+	}
+	loop := New(cfg, apiClient, zerolog.Nop(), "0.3.0-test")
+	loop.Collect = func(uuid, version string) (collector.Snapshot, error) {
+		return collector.Snapshot{UUID: uuid, AgentVersion: version}, nil
+	}
+	loop.Commands = &commands.Runner{
+		ListWindows: func() ([]commands.Window, error) {
+			return []commands.Window{{PID: 11, Exe: "notepad.exe", Title: "Untitled"}}, nil
+		},
+	}
+	loop.Interval = 40 * time.Millisecond
+	loop.MaxBackoff = 120 * time.Millisecond
+
+	stop := make(chan struct{})
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		loop.Run(stop)
+	}()
+
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		if apiClient.reportCalls.Load() > 0 {
+			break
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	close(stop)
+	<-done
+
+	if apiClient.reportCalls.Load() == 0 {
+		t.Fatal("expected command result report")
+	}
+	apiClient.mu.Lock()
+	defer apiClient.mu.Unlock()
+	if apiClient.reports[0].id != 9 || apiClient.reports[0].status != commands.StatusSucceeded {
+		t.Fatalf("report=%+v", apiClient.reports[0])
 	}
 }
 

@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Monitoring\EnqueueAgentDeviceCommandRequest;
 use App\Http\Requests\Monitoring\LinkMonitoredDeviceAsetRequest;
+use App\Models\AgentDeviceCommand;
 use App\Models\Aset;
 use App\Models\MonitoredDevice;
+use App\Models\User;
+use App\Services\Agent\AgentDeviceCommandService;
 use App\Services\Monitoring\MarkStaleDevicesOffline;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -86,7 +90,7 @@ class MonitoringDeviceController extends Controller
         ]);
     }
 
-    public function show(MonitoredDevice $device, MarkStaleDevicesOffline $markStaleDevicesOffline): Response
+    public function show(Request $request, MonitoredDevice $device, MarkStaleDevicesOffline $markStaleDevicesOffline): Response
     {
         $markStaleDevicesOffline();
         $device->refresh();
@@ -108,11 +112,59 @@ class MonitoringDeviceController extends Controller
                 'collected_at',
             ]);
 
+        $canRemoteApps = $request->user()?->isAdmin() ?? false;
+        $pending = $canRemoteApps
+            ? app(AgentDeviceCommandService::class)->latestOpen($device)
+            : null;
+
+        if (! $canRemoteApps) {
+            $device->makeHidden(['window_snapshot', 'window_snapshot_at']);
+        }
+
         return Inertia::render('monitoring/show', [
             'device' => $device,
             'recentSamples' => $recentSamples,
             'linkableAssets' => $this->linkableAssetsFor($device),
+            'canRemoteApps' => $canRemoteApps,
+            'windowSnapshot' => $canRemoteApps ? $device->window_snapshot : null,
+            'windowSnapshotAt' => $canRemoteApps ? $device->window_snapshot_at?->toIso8601String() : null,
+            'pendingRemoteCommand' => $pending === null ? null : [
+                'id' => $pending->id,
+                'type' => $pending->type,
+                'status' => $pending->status,
+                'created_at' => $pending->created_at?->toIso8601String(),
+            ],
         ]);
+    }
+
+    public function storeCommand(
+        EnqueueAgentDeviceCommandRequest $request,
+        MonitoredDevice $device,
+        AgentDeviceCommandService $commands,
+    ): RedirectResponse {
+        $validated = $request->validated();
+        $actor = $request->user();
+        if (! $actor instanceof User) {
+            abort(403);
+        }
+
+        $commands->enqueue(
+            $device,
+            $actor,
+            $validated['type'],
+            [
+                'pid' => $validated['pid'] ?? null,
+                'exe' => $validated['exe'] ?? null,
+            ],
+        );
+
+        $message = $validated['type'] === AgentDeviceCommand::TYPE_KILL_PID
+            ? 'Perintah tutup aplikasi dikirim. Hasil muncul setelah heartbeat agent (~30 detik).'
+            : 'Meminta daftar aplikasi terbuka. Hasil muncul setelah heartbeat agent (~30 detik).';
+
+        return redirect()
+            ->route('monitoring.show', $device)
+            ->with('success', $message);
     }
 
     public function updateAset(LinkMonitoredDeviceAsetRequest $request, MonitoredDevice $device): RedirectResponse
