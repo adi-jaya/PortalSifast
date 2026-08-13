@@ -226,7 +226,7 @@ func TestLoopRunsPendingCommands(t *testing.T) {
 	apiClient := &stubAPI{
 		apiKey: "rsag_ready",
 		commands: []api.PendingCommand{
-			{ID: 9, Type: commands.TypeListWindows, Payload: map[string]any{}},
+			{ID: 9, Type: commands.TypeListWindows, Payload: []byte(`{}`)},
 		},
 	}
 	loop := New(cfg, apiClient, zerolog.Nop(), "0.3.0-test")

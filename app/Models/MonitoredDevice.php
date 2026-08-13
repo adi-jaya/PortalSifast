@@ -37,6 +37,13 @@ class MonitoredDevice extends Model
         'sensors',
         'window_snapshot',
         'window_snapshot_at',
+        'process_snapshot',
+        'process_snapshot_at',
+        'suspicious_processes',
+        'suspicious_processes_at',
+        'desktop_snapshot_path',
+        'desktop_snapshot_at',
+        'desktop_snapshot_meta',
         'aset_id',
     ];
 
@@ -53,6 +60,12 @@ class MonitoredDevice extends Model
             'sensors' => 'array',
             'window_snapshot' => 'array',
             'window_snapshot_at' => 'datetime',
+            'process_snapshot' => 'array',
+            'process_snapshot_at' => 'datetime',
+            'suspicious_processes' => 'array',
+            'suspicious_processes_at' => 'datetime',
+            'desktop_snapshot_at' => 'datetime',
+            'desktop_snapshot_meta' => 'array',
         ];
     }
 

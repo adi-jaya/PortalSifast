@@ -2,7 +2,7 @@
   "server": "https://portalsifast.rsaisyiyahsitifatimah.com",
   "enrollment_key": "PASTE_AGENT_ENROLLMENT_KEY_FROM_SERVER_ENV",
   "api_key": "",
-  "interval": 30,
+  "interval": 10,
   "log_level": "info",
   "uuid": ""
 }

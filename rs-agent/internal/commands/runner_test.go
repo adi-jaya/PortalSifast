@@ -111,6 +111,25 @@ func TestRunnerKillPropagatesBlockedError(t *testing.T) {
 	}
 }
 
+func TestRunnerListProcesses(t *testing.T) {
+	t.Parallel()
+
+	runner := &Runner{
+		ListProcesses: func() ([]ProcessEntry, error) {
+			return []ProcessEntry{{PID: 42, Exe: "chrome.exe", CPUPercent: 1.2}}, nil
+		},
+	}
+
+	status, result := runner.Run(Command{ID: 4, Type: TypeListProcesses})
+	if status != StatusSucceeded {
+		t.Fatalf("status=%s result=%v", status, result)
+	}
+	processes, ok := result["processes"].([]ProcessEntry)
+	if !ok || len(processes) != 1 || processes[0].Exe != "chrome.exe" {
+		t.Fatalf("processes=%v", result["processes"])
+	}
+}
+
 func TestRunnerListWindowsError(t *testing.T) {
 	t.Parallel()
 

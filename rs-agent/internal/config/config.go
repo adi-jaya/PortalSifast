@@ -37,7 +37,7 @@ func Load(path string) (*Config, error) {
 		return nil, fmt.Errorf("config.server is required")
 	}
 	if cfg.Interval <= 0 {
-		cfg.Interval = 30
+		cfg.Interval = 10
 	}
 	if cfg.LogLevel == "" {
 		cfg.LogLevel = "info"

@@ -20,8 +20,8 @@ func TestLoadDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Interval != 30 {
-		t.Fatalf("interval=%d want 30", cfg.Interval)
+	if cfg.Interval != 10 {
+		t.Fatalf("interval=%d want 10", cfg.Interval)
 	}
 	if cfg.LogLevel != "info" {
 		t.Fatalf("log_level=%q want info", cfg.LogLevel)

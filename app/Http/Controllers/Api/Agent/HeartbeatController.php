@@ -7,13 +7,17 @@ use App\Http\Requests\Api\Agent\HeartbeatAgentRequest;
 use App\Models\DeviceMetricSample;
 use App\Models\MonitoredDevice;
 use App\Services\Agent\AgentDeviceCommandService;
+use App\Services\Agent\ProcessThreatEvaluator;
 use App\Support\AgentLog;
 use Illuminate\Http\JsonResponse;
 
 class HeartbeatController extends Controller
 {
-    public function __invoke(HeartbeatAgentRequest $request, AgentDeviceCommandService $commands): JsonResponse
-    {
+    public function __invoke(
+        HeartbeatAgentRequest $request,
+        AgentDeviceCommandService $commands,
+        ProcessThreatEvaluator $threats,
+    ): JsonResponse {
         /** @var MonitoredDevice $device */
         $device = $request->attributes->get('monitored_device');
         $requestId = (string) $request->attributes->get('agent_request_id');
@@ -45,6 +49,12 @@ class HeartbeatController extends Controller
 
         if (array_key_exists('sensors', $validated) && is_array($validated['sensors'])) {
             $updates['sensors'] = $validated['sensors'];
+        }
+
+        if (array_key_exists('suspicious_processes', $validated)) {
+            $candidates = is_array($validated['suspicious_processes']) ? $validated['suspicious_processes'] : [];
+            $updates['suspicious_processes'] = $threats->evaluate($candidates);
+            $updates['suspicious_processes_at'] = $collectedAt;
         }
 
         MonitoredDevice::query()->whereKey($device->id)->update($updates);

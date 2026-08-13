@@ -46,23 +46,46 @@ class RegisterController extends Controller
         $plainKey = $this->apiKeys->generatePlainKey();
 
         $device = DB::transaction(function () use ($validated, $hardware, $plainKey): MonitoredDevice {
-            /** @var MonitoredDevice $device */
-            $device = MonitoredDevice::query()->updateOrCreate(
-                ['uuid' => $validated['uuid']],
-                [
-                    'hostname' => $validated['hostname'] ?? null,
-                    'computer_name' => $validated['computer_name'] ?? null,
-                    'ip_address' => $validated['ip_address'] ?? null,
-                    'mac_address' => $validated['mac_address'] ?? null,
-                    'api_key_prefix' => $this->apiKeys->prefix($plainKey),
-                    'api_key_hash' => $this->apiKeys->hash($plainKey),
-                    'agent_version' => $validated['agent_version'] ?? null,
-                    'sensors' => $validated['sensors'] ?? null,
-                    'status' => MonitoredDevice::STATUS_ONLINE,
-                    'last_seen_at' => now(),
-                    // aset_id: manual link only (Phase 2.3) — do not auto-match serial
-                ]
-            );
+            $shared = [
+                'hostname' => $validated['hostname'] ?? null,
+                'computer_name' => $validated['computer_name'] ?? null,
+                'ip_address' => $validated['ip_address'] ?? null,
+                'mac_address' => $validated['mac_address'] ?? null,
+                'api_key_prefix' => $this->apiKeys->prefix($plainKey),
+                'api_key_hash' => $this->apiKeys->hash($plainKey),
+                'agent_version' => $validated['agent_version'] ?? null,
+                'sensors' => $validated['sensors'] ?? null,
+                'status' => MonitoredDevice::STATUS_ONLINE,
+                'last_seen_at' => now(),
+            ];
+
+            $existingByMac = null;
+            if (! empty($validated['mac_address'])) {
+                $existingByMac = MonitoredDevice::query()
+                    ->where('mac_address', $validated['mac_address'])
+                    ->where('uuid', '!=', $validated['uuid'])
+                    ->first();
+            }
+
+            if ($existingByMac !== null) {
+                AgentLog::info('Agent register merged duplicate device by mac', [
+                    'device_id' => $existingByMac->id,
+                    'previous_uuid' => $existingByMac->uuid,
+                    'new_uuid' => $validated['uuid'],
+                ]);
+
+                $existingByMac->update(array_merge($shared, [
+                    'uuid' => $validated['uuid'],
+                ]));
+
+                $device = $existingByMac;
+            } else {
+                /** @var MonitoredDevice $device */
+                $device = MonitoredDevice::query()->updateOrCreate(
+                    ['uuid' => $validated['uuid']],
+                    $shared,
+                );
+            }
 
             $device->hardware()->updateOrCreate(
                 ['monitored_device_id' => $device->id],

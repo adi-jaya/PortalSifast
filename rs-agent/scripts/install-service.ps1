@@ -152,7 +152,7 @@ if ($needEnrollment) {
         server         = $Server
         enrollment_key = $EnrollmentKey
         api_key        = ""
-        interval       = 30
+        interval       = 10
         log_level      = "info"
         uuid           = ""
     }

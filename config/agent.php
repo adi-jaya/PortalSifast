@@ -16,9 +16,62 @@ return [
 
     'offline_after_minutes' => (int) env('AGENT_OFFLINE_AFTER_MINUTES', 5),
 
-    'default_interval' => (int) env('AGENT_DEFAULT_INTERVAL', 30),
+    'default_interval' => (int) env('AGENT_DEFAULT_INTERVAL', 10),
 
     'command_batch_size' => (int) env('AGENT_COMMAND_BATCH_SIZE', 5),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Process security (Windows agent ≥ 0.4.0)
+    |--------------------------------------------------------------------------
+    */
+
+    'suspicious_cpu_percent' => (float) env('AGENT_SUSPICIOUS_CPU_PERCENT', 30),
+
+    'process_allowlist' => [
+        'chrome.exe',
+        'msedge.exe',
+        'firefox.exe',
+        'cursor.exe',
+        'code.exe',
+        'explorer.exe',
+        'dwm.exe',
+        'searchhost.exe',
+        'shellexperiencehost.exe',
+        'startmenuexperiencehost.exe',
+        'applicationframehost.exe',
+        'runtimebroker.exe',
+        'svchost.exe',
+        'taskmgr.exe',
+        'teams.exe',
+        'outlook.exe',
+        'winword.exe',
+        'excel.exe',
+        'powerpnt.exe',
+        'onedrive.exe',
+        'githubdesktop.exe',
+        'anydesk.exe',
+        'rs-agent.exe',
+    ],
+
+    'miner_exe_patterns' => [
+        'xmrig',
+        'minergate',
+        'nicehash',
+        'ethminer',
+        'cpuminer',
+        'miner.exe',
+        'nscpu',
+        'coinhive',
+        'cryptonight',
+    ],
+
+    'suspicious_path_fragments' => [
+        '\\appdata\\local\\temp\\',
+        '\\windows\\temp\\',
+        '\\programdata\\',
+        '\\downloads\\',
+    ],
 
     /*
     |--------------------------------------------------------------------------

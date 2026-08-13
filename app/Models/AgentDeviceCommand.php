@@ -13,7 +13,11 @@ class AgentDeviceCommand extends Model
 
     public const TYPE_LIST_WINDOWS = 'list_windows';
 
+    public const TYPE_LIST_PROCESSES = 'list_processes';
+
     public const TYPE_KILL_PID = 'kill_pid';
+
+    public const TYPE_CAPTURE_DESKTOP = 'capture_desktop';
 
     public const STATUS_PENDING = 'pending';
 
@@ -28,7 +32,9 @@ class AgentDeviceCommand extends Model
      */
     public const TYPES = [
         self::TYPE_LIST_WINDOWS,
+        self::TYPE_LIST_PROCESSES,
         self::TYPE_KILL_PID,
+        self::TYPE_CAPTURE_DESKTOP,
     ];
 
     protected $fillable = [

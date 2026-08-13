@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -32,9 +33,9 @@ type registerResponse struct {
 }
 
 type PendingCommand struct {
-	ID      uint64         `json:"id"`
-	Type    string         `json:"type"`
-	Payload map[string]any `json:"payload"`
+	ID      uint64          `json:"id"`
+	Type    string          `json:"type"`
+	Payload json.RawMessage `json:"payload"`
 }
 
 type HeartbeatResult struct {
@@ -112,9 +113,10 @@ func (c *Client) Register(enrollmentKey string, snap collector.Snapshot) (apiKey
 			"domain":        snap.Hardware.Domain,
 			"username":      snap.Hardware.Username,
 		},
-		"critical_software": criticalSoftwarePayload(snap),
-		"usb":               usbPayload(snap),
-		"sensors":           sensorsPayload(snap),
+		"critical_software":    criticalSoftwarePayload(snap),
+		"usb":                  usbPayload(snap),
+		"sensors":              sensorsPayload(snap),
+		"suspicious_processes": suspiciousProcessesPayload(snap),
 	}
 
 	var body registerResponse
@@ -160,9 +162,10 @@ func (c *Client) Heartbeat(apiKey string, snap collector.Snapshot) (HeartbeatRes
 			"domain":        snap.Hardware.Domain,
 			"username":      snap.Hardware.Username,
 		},
-		"critical_software": criticalSoftwarePayload(snap),
-		"usb":               usbPayload(snap),
-		"sensors":           sensorsPayload(snap),
+		"critical_software":    criticalSoftwarePayload(snap),
+		"usb":                  usbPayload(snap),
+		"sensors":              sensorsPayload(snap),
+		"suspicious_processes": suspiciousProcessesPayload(snap),
 	}
 
 	var body heartbeatResponse
@@ -249,6 +252,25 @@ func sensorsPayload(snap collector.Snapshot) map[string]any {
 		"note":      snap.Sensors.Note,
 		"readings":  readings,
 	}
+}
+
+func suspiciousProcessesPayload(snap collector.Snapshot) []map[string]any {
+	out := make([]map[string]any, 0, len(snap.Suspicious))
+	for _, p := range snap.Suspicious {
+		row := map[string]any{
+			"pid":     p.PID,
+			"exe":     p.Exe,
+			"reasons": p.Reasons,
+		}
+		if p.Path != "" {
+			row["path"] = p.Path
+		}
+		if p.CPUPercent > 0 {
+			row["cpu_percent"] = p.CPUPercent
+		}
+		out = append(out, row)
+	}
+	return out
 }
 
 func usbPayload(snap collector.Snapshot) map[string]any {

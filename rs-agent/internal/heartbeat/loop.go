@@ -1,6 +1,7 @@
 package heartbeat
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/portalsifast/rs-agent/internal/api"
@@ -11,7 +12,7 @@ import (
 )
 
 const (
-	DefaultInterval   = 30 * time.Second
+	DefaultInterval   = 10 * time.Second
 	DefaultMaxBackoff = 15 * time.Minute
 )
 
@@ -150,10 +151,14 @@ func (l *Loop) runPendingCommands(pending []api.PendingCommand) {
 	}
 
 	for _, item := range pending {
+		payload := map[string]any{}
+		if len(item.Payload) > 0 && string(item.Payload) != "null" && string(item.Payload) != "[]" {
+			_ = json.Unmarshal(item.Payload, &payload)
+		}
 		cmd := commands.Command{
 			ID:      item.ID,
 			Type:    item.Type,
-			Payload: item.Payload,
+			Payload: payload,
 		}
 		status, result := l.Commands.Run(cmd)
 		if err := l.client.ReportCommand(l.cfg.APIKey, item.ID, status, result); err != nil {

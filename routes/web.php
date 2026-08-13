@@ -275,6 +275,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('monitoring/pengaturan-kategori', [MonitoringKategoriSettingsController::class, 'update'])
         ->name('monitoring.pengaturan-kategori.update');
     Route::get('monitoring/{device}', [MonitoringDeviceController::class, 'show'])->name('monitoring.show');
+    Route::get('monitoring/{device}/desktop', [MonitoringDeviceController::class, 'desktop'])
+        ->name('monitoring.desktop');
     Route::post('monitoring/{device}/commands', [MonitoringDeviceController::class, 'storeCommand'])
         ->name('monitoring.commands.store');
     Route::patch('monitoring/{device}/aset', [MonitoringDeviceController::class, 'updateAset'])

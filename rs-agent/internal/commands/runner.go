@@ -6,10 +6,12 @@ import (
 )
 
 const (
-	TypeListWindows = "list_windows"
-	TypeKillPID     = "kill_pid"
-	StatusSucceeded = "succeeded"
-	StatusFailed    = "failed"
+	TypeListWindows    = "list_windows"
+	TypeListProcesses  = "list_processes"
+	TypeKillPID        = "kill_pid"
+	TypeCaptureDesktop = "capture_desktop"
+	StatusSucceeded    = "succeeded"
+	StatusFailed       = "failed"
 )
 
 type Window struct {
@@ -27,16 +29,28 @@ type Command struct {
 var ErrBlocked = errors.New("blocked")
 
 type Runner struct {
-	ListWindows func() ([]Window, error)
-	LookupExe   func(pid uint32) (string, error)
-	KillPID     func(pid uint32) (exe string, err error)
+	ListWindows    func() ([]Window, error)
+	ListProcesses  func() ([]ProcessEntry, error)
+	LookupExe      func(pid uint32) (string, error)
+	KillPID        func(pid uint32) (exe string, err error)
+	CaptureDesktop func() (DesktopCapture, error)
+}
+
+type ProcessEntry struct {
+	PID        uint32  `json:"pid"`
+	Exe        string  `json:"exe"`
+	Path       string  `json:"path,omitempty"`
+	User       string  `json:"user,omitempty"`
+	CPUPercent float64 `json:"cpu_percent,omitempty"`
 }
 
 func NewRunner() *Runner {
 	return &Runner{
-		ListWindows: listWindows,
-		LookupExe:   processImageName,
-		KillPID:     killPID,
+		ListWindows:    listWindows,
+		ListProcesses:  listProcesses,
+		LookupExe:      processImageName,
+		KillPID:        killPID,
+		CaptureDesktop: captureDesktop,
 	}
 }
 
@@ -44,8 +58,12 @@ func (r *Runner) Run(cmd Command) (status string, result map[string]any) {
 	switch cmd.Type {
 	case TypeListWindows:
 		return r.runListWindows()
+	case TypeListProcesses:
+		return r.runListProcesses()
 	case TypeKillPID:
 		return r.runKillPID(cmd.Payload)
+	case TypeCaptureDesktop:
+		return r.runCaptureDesktop()
 	default:
 		return StatusFailed, map[string]any{"error": fmt.Sprintf("unknown command %s", cmd.Type)}
 	}
@@ -57,12 +75,30 @@ func (r *Runner) runListWindows() (string, map[string]any) {
 	}
 	windows, err := r.ListWindows()
 	if err != nil {
-		return StatusFailed, map[string]any{"error": err.Error()}
+		return StatusFailed, map[string]any{"error": err.Error(), "windows": []Window{}}
 	}
 	if windows == nil {
 		windows = []Window{}
 	}
-	return StatusSucceeded, map[string]any{"windows": windows}
+	result := map[string]any{"windows": windows}
+	if len(windows) == 0 {
+		result["note"] = "no visible titled windows (service may lack desktop access; use list_processes)"
+	}
+	return StatusSucceeded, result
+}
+
+func (r *Runner) runListProcesses() (string, map[string]any) {
+	if r.ListProcesses == nil {
+		return StatusFailed, map[string]any{"error": "list_processes unavailable"}
+	}
+	processes, err := r.ListProcesses()
+	if err != nil {
+		return StatusFailed, map[string]any{"error": err.Error()}
+	}
+	if processes == nil {
+		processes = []ProcessEntry{}
+	}
+	return StatusSucceeded, map[string]any{"processes": processes}
 }
 
 func (r *Runner) runKillPID(payload map[string]any) (string, map[string]any) {
@@ -111,4 +147,15 @@ func (r *Runner) runKillPID(payload map[string]any) (string, map[string]any) {
 		"pid": pid,
 		"exe": NormalizedExe(killedExe),
 	}
+}
+
+func (r *Runner) runCaptureDesktop() (string, map[string]any) {
+	if r.CaptureDesktop == nil {
+		return StatusFailed, map[string]any{"error": "capture_desktop unavailable"}
+	}
+	cap, err := r.CaptureDesktop()
+	if err != nil {
+		return StatusFailed, map[string]any{"error": err.Error()}
+	}
+	return StatusSucceeded, desktopCaptureResult(cap)
 }

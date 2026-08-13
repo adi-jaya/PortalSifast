@@ -59,6 +59,13 @@ class HeartbeatAgentRequest extends FormRequest
             'sensors.readings' => ['nullable', 'array', 'max:32'],
             'sensors.readings.*.name' => ['nullable', 'string', 'max:255'],
             'sensors.readings.*.temperature_c' => ['nullable', 'numeric', 'min:-50', 'max:150'],
+            'suspicious_processes' => ['nullable', 'array', 'max:100'],
+            'suspicious_processes.*.pid' => ['required_with:suspicious_processes', 'integer', 'min:1'],
+            'suspicious_processes.*.exe' => ['required_with:suspicious_processes', 'string', 'max:255'],
+            'suspicious_processes.*.path' => ['nullable', 'string', 'max:1024'],
+            'suspicious_processes.*.cpu_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'suspicious_processes.*.reasons' => ['nullable', 'array', 'max:10'],
+            'suspicious_processes.*.reasons.*' => ['string', 'max:64'],
         ];
     }
 
