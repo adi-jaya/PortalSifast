@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\MergeAsetKategoriRequest;
+use App\Http\Requests\StoreAsetKategoriRequest;
+use App\Http\Requests\UpdateAsetKategoriRequest;
 use App\Models\AsetKategori;
-use App\Models\AsetNonAlkes;
+use App\Services\Inventaris\GeneratorKodeMasterAset;
 use App\Services\Inventaris\MergeAsetKategori;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,7 +20,7 @@ class AsetKategoriController extends Controller
         $q = trim((string) $request->query('q', ''));
 
         $items = AsetKategori::query()
-            ->withCount(['barang'])
+            ->withCount(['barang', 'nonAlkes'])
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($inner) use ($q) {
                     $inner->where('nama_kategori', 'like', "%{$q}%")
@@ -29,9 +31,7 @@ class AsetKategoriController extends Controller
             ->paginate(40)
             ->withQueryString()
             ->through(function (AsetKategori $item) {
-                $nonAlkesCount = AsetNonAlkes::query()
-                    ->where('aset_kategori_id', $item->id)
-                    ->count();
+                $nonAlkesCount = (int) $item->non_alkes_count;
 
                 return [
                     'id' => $item->id,
@@ -55,6 +55,53 @@ class AsetKategoriController extends Controller
                     'nama' => $k->nama_kategori,
                 ]),
         ]);
+    }
+
+    public function store(StoreAsetKategoriRequest $request, GeneratorKodeMasterAset $generator): RedirectResponse
+    {
+        $validated = $request->validated();
+        $kode = $validated['kode_kategori'] ?? null;
+
+        if ($kode === null) {
+            $kode = $generator->generate($validated['nama_kategori'], new AsetKategori, 'kode_kategori');
+        }
+
+        AsetKategori::query()->create([
+            'kode_kategori' => $kode,
+            'nama_kategori' => $validated['nama_kategori'],
+        ]);
+
+        return redirect()
+            ->route('aset.master.kategori.index')
+            ->with('success', 'Kategori berhasil ditambahkan.');
+    }
+
+    public function update(UpdateAsetKategoriRequest $request, AsetKategori $kategori): RedirectResponse
+    {
+        $kategori->update($request->validated());
+
+        return redirect()
+            ->route('aset.master.kategori.index')
+            ->with('success', 'Kategori berhasil diperbarui.');
+    }
+
+    public function destroy(AsetKategori $kategori): RedirectResponse
+    {
+        $usage = $kategori->barang()->count() + $kategori->nonAlkes()->count();
+
+        if ($usage > 0) {
+            return back()->with(
+                'error',
+                "Kategori \"{$kategori->nama_kategori}\" masih dipakai ({$usage} referensi). Gabungkan ke kategori lain sebelum menghapus.",
+            );
+        }
+
+        $nama = $kategori->nama_kategori;
+        $kategori->delete();
+
+        return redirect()
+            ->route('aset.master.kategori.index')
+            ->with('success', "Kategori \"{$nama}\" berhasil dihapus.");
     }
 
     public function merge(

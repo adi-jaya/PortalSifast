@@ -17,6 +17,8 @@ type Props = {
     hasError?: boolean;
     inputId?: string;
     noOptionsMessage?: string;
+    size?: 'default' | 'sm';
+    className?: string;
 };
 
 const menuPortalStyles: StylesConfig<SearchSelectOption, false> = {
@@ -33,11 +35,14 @@ export function SearchSelect({
     hasError = false,
     inputId,
     noOptionsMessage = 'Tidak ditemukan',
+    size = 'default',
+    className,
 }: Props) {
     const selected = options.find((o) => o.value === value) ?? null;
 
     return (
-        <ReactSelect<SearchSelectOption, false>
+        <div className={className}>
+            <ReactSelect<SearchSelectOption, false>
             inputId={inputId}
             options={options}
             value={selected}
@@ -73,7 +78,8 @@ export function SearchSelect({
             classNames={{
                 control: () =>
                     cn(
-                        '!min-h-10 !rounded-md !border-input !bg-background !shadow-xs hover:!border-input',
+                        size === 'sm' ? '!min-h-8' : '!min-h-10',
+                        '!rounded-md !border-input !bg-background !shadow-xs hover:!border-input',
                         hasError && '!border-destructive',
                     ),
                 menu: () => '!z-[9999] !rounded-md !border !bg-popover !text-popover-foreground !shadow-md',
@@ -87,6 +93,7 @@ export function SearchSelect({
                 singleValue: () => '!text-foreground',
                 input: () => '!text-foreground',
             }}
-        />
+            />
+        </div>
     );
 }

@@ -1,18 +1,12 @@
 import { Head, router } from '@inertiajs/react';
 import { Search } from 'lucide-react';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
+import { SearchSelect, type SearchSelectOption } from '@/components/search-select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
@@ -51,6 +45,22 @@ export default function MasterJenisIndex({ items, filters, stats, merkOptions }:
     const [search, setSearch] = useState(filters.q ?? '');
     const [merkFilter, setMerkFilter] = useState(filters.merk_id || '__all__');
     const [onlyUnassigned, setOnlyUnassigned] = useState(Boolean(filters.only_unassigned));
+
+    const merkFilterOptions = useMemo<SearchSelectOption[]>(
+        () => [
+            { value: '__all__', label: 'Semua merk' },
+            ...merkOptions.map((m) => ({ value: String(m.id), label: m.nama })),
+        ],
+        [merkOptions],
+    );
+
+    const merkSelectOptions = useMemo<SearchSelectOption[]>(
+        () => [
+            { value: '__none__', label: 'Belum diisi' },
+            ...merkOptions.map((m) => ({ value: String(m.id), label: m.nama })),
+        ],
+        [merkOptions],
+    );
 
     const applyFilters = (e?: FormEvent) => {
         e?.preventDefault();
@@ -116,19 +126,13 @@ export default function MasterJenisIndex({ items, filters, stats, merkOptions }:
                     </div>
                     <div className="w-full space-y-1.5 sm:w-48">
                         <Label>Filter merk</Label>
-                        <Select value={merkFilter} onValueChange={setMerkFilter}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Semua" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="__all__">Semua merk</SelectItem>
-                                {merkOptions.map((m) => (
-                                    <SelectItem key={m.id} value={String(m.id)}>
-                                        {m.nama}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <SearchSelect
+                            options={merkFilterOptions}
+                            value={merkFilter}
+                            onChange={setMerkFilter}
+                            placeholder="Semua"
+                            isClearable={false}
+                        />
                     </div>
                     <div className="flex items-center gap-2 pb-2 sm:pb-2.5">
                         <Checkbox
@@ -166,24 +170,17 @@ export default function MasterJenisIndex({ items, filters, stats, merkOptions }:
                                             <td className="px-4 py-3 font-mono text-xs">{row.kode_jenis ?? '—'}</td>
                                             <td className="px-4 py-3 font-medium">{row.nama_jenis}</td>
                                             <td className="px-4 py-3">
-                                                <Select
+                                                <SearchSelect
+                                                    options={merkSelectOptions}
                                                     value={
                                                         row.aset_merk_id ? String(row.aset_merk_id) : '__none__'
                                                     }
-                                                    onValueChange={(v) => updateMerk(row.id, v)}
-                                                >
-                                                    <SelectTrigger className="h-8 w-[200px]">
-                                                        <SelectValue placeholder="Pilih merk" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="__none__">Belum diisi</SelectItem>
-                                                        {merkOptions.map((m) => (
-                                                            <SelectItem key={m.id} value={String(m.id)}>
-                                                                {m.nama}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
+                                                    onChange={(v) => updateMerk(row.id, v || '__none__')}
+                                                    placeholder="Pilih merk"
+                                                    isClearable={false}
+                                                    size="sm"
+                                                    className="w-[200px]"
+                                                />
                                             </td>
                                         </tr>
                                     ))

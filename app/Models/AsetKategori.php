@@ -27,4 +27,9 @@ class AsetKategori extends Model
     {
         return $this->hasMany(AsetBarang::class, 'aset_kategori_id');
     }
+
+    public function nonAlkes(): HasMany
+    {
+        return $this->hasMany(AsetNonAlkes::class, 'aset_kategori_id');
+    }
 }

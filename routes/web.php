@@ -223,14 +223,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('aset.master.store');
     Route::get('aset/master/non-alkes/search', [AsetMasterController::class, 'searchNonAlkes'])
         ->name('aset.master.non-alkes.search');
+    Route::get('aset/master/non-alkes/suggest-kode', [AsetNonAlkesController::class, 'suggestKode'])
+        ->name('aset.master.non-alkes.suggest-kode');
     Route::get('aset/master/non-alkes', [AsetNonAlkesController::class, 'index'])
         ->name('aset.master.non-alkes.index');
+    Route::post('aset/master/non-alkes', [AsetNonAlkesController::class, 'store'])
+        ->name('aset.master.non-alkes.store');
     Route::patch('aset/master/non-alkes/{nonAlkes}/kategori', [AsetNonAlkesController::class, 'updateKategori'])
         ->name('aset.master.non-alkes.kategori');
+    Route::patch('aset/master/non-alkes/{nonAlkes}/nama', [AsetNonAlkesController::class, 'updateNama'])
+        ->name('aset.master.non-alkes.nama');
+    Route::patch('aset/master/non-alkes/{nonAlkes}', [AsetNonAlkesController::class, 'update'])
+        ->name('aset.master.non-alkes.update');
+    Route::delete('aset/master/non-alkes/{nonAlkes}', [AsetNonAlkesController::class, 'destroy'])
+        ->name('aset.master.non-alkes.destroy');
     Route::get('aset/master/aspak/search', [AsetMasterController::class, 'searchAspak'])
         ->name('aset.master.aspak.search');
+    Route::get('aset/master/aspak/suggest-kode', [AsetAspakController::class, 'suggestKode'])
+        ->name('aset.master.aspak.suggest-kode');
     Route::get('aset/master/aspak', [AsetAspakController::class, 'index'])
         ->name('aset.master.aspak.index');
+    Route::post('aset/master/aspak', [AsetAspakController::class, 'store'])
+        ->name('aset.master.aspak.store');
+    Route::patch('aset/master/aspak/{aspak}', [AsetAspakController::class, 'update'])
+        ->name('aset.master.aspak.update');
+    Route::delete('aset/master/aspak/{aspak}', [AsetAspakController::class, 'destroy'])
+        ->name('aset.master.aspak.destroy');
     Route::get('aset/master/ruang', [AsetRuangController::class, 'index'])
         ->name('aset.master.ruang.index');
     Route::get('aset/master/{tipe}/csv/template', [AsetMasterCsvController::class, 'template'])
@@ -248,10 +266,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('aset.master.jenis.merk');
     Route::get('aset/master/kategori', [AsetKategoriController::class, 'index'])
         ->name('aset.master.kategori.index');
+    Route::post('aset/master/kategori/simpan', [AsetKategoriController::class, 'store'])
+        ->name('aset.master.kategori.store');
+    Route::patch('aset/master/kategori/{kategori}', [AsetKategoriController::class, 'update'])
+        ->name('aset.master.kategori.update');
+    Route::delete('aset/master/kategori/{kategori}', [AsetKategoriController::class, 'destroy'])
+        ->name('aset.master.kategori.destroy');
     Route::post('aset/master/kategori/{kategori}/merge', [AsetKategoriController::class, 'merge'])
         ->name('aset.master.kategori.merge');
-    Route::patch('aset/master/non-alkes/{nonAlkes}/nama', [AsetNonAlkesController::class, 'updateNama'])
-        ->name('aset.master.non-alkes.nama');
     Route::get('aset/pengaturan-penyusutan', [AsetPenyusutanSettingsController::class, 'edit'])
         ->name('aset.pengaturan-penyusutan.edit');
     Route::put('aset/pengaturan-penyusutan', [AsetPenyusutanSettingsController::class, 'update'])

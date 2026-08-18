@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class AsetAspakAlat extends Model
 {
@@ -83,5 +84,37 @@ class AsetAspakAlat extends Model
     public function isLeaf(): bool
     {
         return ! $this->children()->exists();
+    }
+
+    public static function generateIdAspak(): string
+    {
+        do {
+            $id = 'AP'.strtoupper(Str::random(10));
+        } while (static::query()->where('id_alat_aspak', $id)->exists());
+
+        return $id;
+    }
+
+    public function placeUnder(?self $parent): void
+    {
+        $this->parent_id = $parent?->id;
+    }
+
+    public function hasAncestor(self $other): bool
+    {
+        $node = $this;
+        $guard = 0;
+
+        while ($node !== null && $guard < 20) {
+            if ($node->is($other)) {
+                return true;
+            }
+
+            $node->loadMissing('parent');
+            $node = $node->parent;
+            $guard++;
+        }
+
+        return false;
     }
 }

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class AsetNonAlkes extends Model
 {
@@ -95,6 +96,52 @@ class AsetNonAlkes extends Model
         }
 
         return ! $this->children()->where('deleted', false)->exists();
+    }
+
+    public static function generateIdAlat(): string
+    {
+        do {
+            $id = 'NA'.strtoupper(Str::random(10));
+        } while (static::query()->where('id_alat', $id)->exists());
+
+        return $id;
+    }
+
+    public function placeUnder(?self $parent): void
+    {
+        $this->parent_id = $parent?->id;
+        $this->level = $parent === null ? 1 : min(255, $parent->level + 1);
+    }
+
+    public function hasAncestor(self $other): bool
+    {
+        $node = $this;
+        $guard = 0;
+
+        while ($node !== null && $guard < 20) {
+            if ($node->is($other)) {
+                return true;
+            }
+
+            $node->loadMissing('parent');
+            $node = $node->parent;
+            $guard++;
+        }
+
+        return false;
+    }
+
+    public function syncDescendantLevels(): void
+    {
+        $children = $this->children()->where('deleted', false)->get();
+
+        foreach ($children as $child) {
+            $expected = min(255, $this->level + 1);
+            if ($child->level !== $expected) {
+                $child->update(['level' => $expected]);
+            }
+            $child->syncDescendantLevels();
+        }
     }
 
     /**
