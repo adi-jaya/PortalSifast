@@ -13,6 +13,7 @@ use App\Http\Controllers\AsetJenisController;
 use App\Http\Controllers\AsetKategoriController;
 use App\Http\Controllers\AsetMasterController;
 use App\Http\Controllers\AsetMasterCsvController;
+use App\Http\Controllers\AsetMerkController;
 use App\Http\Controllers\AsetMutasiLokasiController;
 use App\Http\Controllers\AsetMutasiLokasiPrintController;
 use App\Http\Controllers\AsetNonAlkesController;
@@ -251,6 +252,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('aset.master.aspak.destroy');
     Route::get('aset/master/ruang', [AsetRuangController::class, 'index'])
         ->name('aset.master.ruang.index');
+    Route::post('aset/master/ruang/simpan', [AsetRuangController::class, 'store'])
+        ->name('aset.master.ruang.store');
+    Route::patch('aset/master/ruang/{ruang}', [AsetRuangController::class, 'update'])
+        ->name('aset.master.ruang.update');
+    Route::delete('aset/master/ruang/{ruang}', [AsetRuangController::class, 'destroy'])
+        ->name('aset.master.ruang.destroy');
+    Route::post('aset/master/ruang/bulk-delete', [AsetRuangController::class, 'bulkDestroy'])
+        ->name('aset.master.ruang.bulk-destroy');
     Route::get('aset/master/{tipe}/csv/template', [AsetMasterCsvController::class, 'template'])
         ->whereIn('tipe', ['ruang', 'aspak', 'non_alkes'])
         ->name('aset.master.csv.template');
@@ -262,8 +271,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('aset.master.csv.import');
     Route::get('aset/master/jenis', [AsetJenisController::class, 'index'])
         ->name('aset.master.jenis.index');
+    Route::post('aset/master/jenis/simpan', [AsetJenisController::class, 'store'])
+        ->name('aset.master.jenis.store');
+    Route::patch('aset/master/jenis/{jenis}', [AsetJenisController::class, 'update'])
+        ->name('aset.master.jenis.update');
+    Route::delete('aset/master/jenis/{jenis}', [AsetJenisController::class, 'destroy'])
+        ->name('aset.master.jenis.destroy');
+    Route::post('aset/master/jenis/bulk-delete', [AsetJenisController::class, 'bulkDestroy'])
+        ->name('aset.master.jenis.bulk-destroy');
     Route::patch('aset/master/jenis/{jenis}/merk', [AsetJenisController::class, 'updateMerk'])
         ->name('aset.master.jenis.merk');
+    Route::get('aset/master/merk', [AsetMerkController::class, 'index'])
+        ->name('aset.master.merk.index');
+    Route::post('aset/master/merk/simpan', [AsetMerkController::class, 'store'])
+        ->name('aset.master.merk.store');
+    Route::patch('aset/master/merk/{merk}', [AsetMerkController::class, 'update'])
+        ->name('aset.master.merk.update');
+    Route::delete('aset/master/merk/{merk}', [AsetMerkController::class, 'destroy'])
+        ->name('aset.master.merk.destroy');
+    Route::post('aset/master/merk/bulk-delete', [AsetMerkController::class, 'bulkDestroy'])
+        ->name('aset.master.merk.bulk-destroy');
     Route::get('aset/master/kategori', [AsetKategoriController::class, 'index'])
         ->name('aset.master.kategori.index');
     Route::post('aset/master/kategori/simpan', [AsetKategoriController::class, 'store'])

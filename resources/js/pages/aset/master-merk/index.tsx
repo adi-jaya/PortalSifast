@@ -1,7 +1,6 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { FormEvent, useMemo, useState } from 'react';
-import { MasterCsvActions } from '@/components/aset/master-csv-actions';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,9 +14,10 @@ import type { BreadcrumbItem } from '@/types';
 
 type Row = {
     id: number;
-    kode_ruang: string;
-    nama_ruang: string;
-    aset_count: number;
+    kode_merk: string | null;
+    nama_merk: string;
+    barang_count: number;
+    jenis_count: number;
 };
 
 type Paginated = {
@@ -38,10 +38,10 @@ type Flash = { success?: string; error?: string };
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: dashboard().url },
     { title: 'Aset', href: '/aset' },
-    { title: 'Master Ruang', href: '/aset/master/ruang' },
+    { title: 'Master Merk', href: '/aset/master/merk' },
 ];
 
-export default function MasterRuangIndex({ items, filters, stats }: Props) {
+export default function MasterMerkIndex({ items, filters, stats }: Props) {
     const flash = (usePage().props.flash ?? {}) as Flash;
     const [search, setSearch] = useState(filters.q ?? '');
     const [showCreate, setShowCreate] = useState(false);
@@ -50,26 +50,26 @@ export default function MasterRuangIndex({ items, filters, stats }: Props) {
     const [isDeleting, setIsDeleting] = useState(false);
 
     const createForm = useForm({
-        kode_ruang: '',
-        nama_ruang: '',
+        kode_merk: '',
+        nama_merk: '',
     });
 
     const editForm = useForm({
-        kode_ruang: '',
-        nama_ruang: '',
+        kode_merk: '',
+        nama_merk: '',
     });
 
-    const pageIds = useMemo(() => items.data.map((row) => row.id), [items.data]);
-    const allSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
-    const someSelected = selectedIds.size > 0;
-    const selectedAsetCount = useMemo(
-        () => items.data.filter((row) => selectedIds.has(row.id)).reduce((sum, row) => sum + row.aset_count, 0),
-        [items.data, selectedIds],
+    const deletablePageIds = useMemo(
+        () => items.data.filter((row) => row.barang_count === 0).map((row) => row.id),
+        [items.data],
     );
+    const allDeletableSelected =
+        deletablePageIds.length > 0 && deletablePageIds.every((id) => selectedIds.has(id));
+    const someSelected = selectedIds.size > 0;
 
     const applyFilters = (e?: FormEvent) => {
         e?.preventDefault();
-        router.get('/aset/master/ruang', { q: search || undefined }, { preserveState: true });
+        router.get('/aset/master/merk', { q: search || undefined }, { preserveState: true });
     };
 
     const openCreate = () => {
@@ -83,15 +83,15 @@ export default function MasterRuangIndex({ items, filters, stats }: Props) {
         setShowCreate(false);
         setEditingId(row.id);
         editForm.setData({
-            kode_ruang: row.kode_ruang,
-            nama_ruang: row.nama_ruang,
+            kode_merk: row.kode_merk ?? '',
+            nama_merk: row.nama_merk,
         });
         editForm.clearErrors();
     };
 
     const submitCreate = (e: FormEvent) => {
         e.preventDefault();
-        createForm.post('/aset/master/ruang/simpan', {
+        createForm.post('/aset/master/merk/simpan', {
             preserveScroll: true,
             onSuccess: () => {
                 createForm.reset();
@@ -105,19 +105,41 @@ export default function MasterRuangIndex({ items, filters, stats }: Props) {
         if (!editingId) {
             return;
         }
-        editForm.patch(`/aset/master/ruang/${editingId}`, {
+        editForm.patch(`/aset/master/merk/${editingId}`, {
             preserveScroll: true,
             onSuccess: () => setEditingId(null),
         });
     };
 
-    const toggleSelect = (id: number): void => {
+    const destroyMerk = (row: Row) => {
+        if (row.barang_count > 0) {
+            alert(
+                `Merk "${row.nama_merk}" masih dipakai (${row.barang_count} barang master). Ubah referensi barang sebelum menghapus.`,
+            );
+            return;
+        }
+
+        const jenisNote =
+            row.jenis_count > 0
+                ? `\n\n${row.jenis_count} jenis akan dilepas dari merk ini.`
+                : '';
+        if (!confirm(`Hapus merk "${row.nama_merk}"?${jenisNote}`)) {
+            return;
+        }
+        router.delete(`/aset/master/merk/${row.id}`, { preserveScroll: true });
+    };
+
+    const toggleSelect = (row: Row): void => {
+        if (row.barang_count > 0) {
+            return;
+        }
+
         setSelectedIds((prev) => {
             const next = new Set(prev);
-            if (next.has(id)) {
-                next.delete(id);
+            if (next.has(row.id)) {
+                next.delete(row.id);
             } else {
-                next.add(id);
+                next.add(row.id);
             }
 
             return next;
@@ -125,24 +147,13 @@ export default function MasterRuangIndex({ items, filters, stats }: Props) {
     };
 
     const toggleSelectAll = (): void => {
-        if (allSelected) {
+        if (allDeletableSelected) {
             setSelectedIds(new Set());
 
             return;
         }
 
-        setSelectedIds(new Set(pageIds));
-    };
-
-    const destroyRuang = (row: Row) => {
-        const asetNote =
-            row.aset_count > 0
-                ? `\n\n${row.aset_count} aset di ruang ini ikut dihapus (cascade).`
-                : '';
-        if (!confirm(`Hapus ruang "${row.nama_ruang}"?${asetNote}`)) {
-            return;
-        }
-        router.delete(`/aset/master/ruang/${row.id}`, { preserveScroll: true });
+        setSelectedIds(new Set(deletablePageIds));
     };
 
     const handleBulkDelete = (): void => {
@@ -150,17 +161,32 @@ export default function MasterRuangIndex({ items, filters, stats }: Props) {
             return;
         }
 
-        const asetNote =
-            selectedAsetCount > 0
-                ? `\n\n${selectedAsetCount} aset di ruang terpilih ikut dihapus (cascade).`
-                : '';
-        if (!confirm(`Hapus ${selectedIds.size} ruang yang dipilih?${asetNote}`)) {
+        const selectedRows = items.data.filter((row) => selectedIds.has(row.id));
+        const inUseCount = selectedRows.filter((row) => row.barang_count > 0).length;
+        const deletableCount = selectedRows.length - inUseCount;
+
+        if (deletableCount === 0) {
+            alert('Semua merk yang dipilih masih dipakai barang master dan tidak bisa dihapus.');
+
+            return;
+        }
+
+        const jenisCount = selectedRows
+            .filter((row) => row.barang_count === 0)
+            .reduce((sum, row) => sum + row.jenis_count, 0);
+        const jenisNote = jenisCount > 0 ? `\n\n${jenisCount} jenis akan dilepas dari merk terhapus.` : '';
+        const message =
+            inUseCount > 0
+                ? `Hapus ${deletableCount} merk yang bisa dihapus?${jenisNote}\n\n${inUseCount} merk lain dilewati karena masih dipakai barang.`
+                : `Hapus ${deletableCount} merk yang dipilih?${jenisNote}`;
+
+        if (!confirm(message)) {
             return;
         }
 
         setIsDeleting(true);
         router.post(
-            '/aset/master/ruang/bulk-delete',
+            '/aset/master/merk/bulk-delete',
             { ids: Array.from(selectedIds) },
             {
                 preserveScroll: true,
@@ -174,22 +200,22 @@ export default function MasterRuangIndex({ items, filters, stats }: Props) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Master Ruang" />
+            <Head title="Master Merk" />
 
             <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                        <h1 className="text-xl font-semibold tracking-tight">Master Ruang</h1>
+                        <h1 className="text-xl font-semibold tracking-tight">Master Merk</h1>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            Kode ruang dipakai di form tambah aset dan import unit CSV (`kode_ruang`). Hapus ruang
-                            akan cascade: aset di ruang ikut dihapus, audit ruang ikut terhapus.
+                            Kelola merk barang untuk form tambah aset dan penghubung jenis. Import:{' '}
+                            <code className="text-xs">php artisan aset:import-master file.csv --tipe=merk</code>
                         </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="secondary">{stats.total} ruang</Badge>
+                        <Badge variant="secondary">{stats.total} merk</Badge>
                         <Button type="button" onClick={openCreate}>
                             <Plus className="mr-2 h-4 w-4" />
-                            Tambah Ruang
+                            Tambah Merk
                         </Button>
                     </div>
                 </div>
@@ -212,26 +238,25 @@ export default function MasterRuangIndex({ items, filters, stats }: Props) {
                         className="grid gap-4 rounded-xl border bg-card p-4 sm:grid-cols-2 lg:grid-cols-3"
                     >
                         <div className="space-y-1.5">
-                            <Label htmlFor="create_kode">Kode ruang</Label>
+                            <Label htmlFor="create_kode">Kode (opsional)</Label>
                             <Input
                                 id="create_kode"
-                                value={createForm.data.kode_ruang}
-                                onChange={(e) => createForm.setData('kode_ruang', e.target.value.toUpperCase())}
-                                placeholder="Contoh: IGD01"
-                                required
+                                value={createForm.data.kode_merk}
+                                onChange={(e) => createForm.setData('kode_merk', e.target.value.toUpperCase())}
+                                placeholder="Auto jika kosong"
                             />
-                            <InputError message={createForm.errors.kode_ruang} />
+                            <InputError message={createForm.errors.kode_merk} />
                         </div>
                         <div className="space-y-1.5">
-                            <Label htmlFor="create_nama">Nama ruang</Label>
+                            <Label htmlFor="create_nama">Nama merk</Label>
                             <Input
                                 id="create_nama"
-                                value={createForm.data.nama_ruang}
-                                onChange={(e) => createForm.setData('nama_ruang', e.target.value)}
-                                placeholder="Contoh: IGD"
+                                value={createForm.data.nama_merk}
+                                onChange={(e) => createForm.setData('nama_merk', e.target.value)}
+                                placeholder="Contoh: Philips"
                                 required
                             />
-                            <InputError message={createForm.errors.nama_ruang} />
+                            <InputError message={createForm.errors.nama_merk} />
                         </div>
                         <div className="flex items-end gap-2">
                             <Button type="submit" disabled={createForm.processing}>
@@ -250,24 +275,24 @@ export default function MasterRuangIndex({ items, filters, stats }: Props) {
                         className="grid gap-4 rounded-xl border border-teal-700/20 bg-teal-50/30 p-4 sm:grid-cols-2 lg:grid-cols-3 dark:bg-teal-950/20"
                     >
                         <div className="space-y-1.5">
-                            <Label htmlFor="edit_kode">Kode ruang</Label>
+                            <Label htmlFor="edit_kode">Kode merk</Label>
                             <Input
                                 id="edit_kode"
-                                value={editForm.data.kode_ruang}
-                                onChange={(e) => editForm.setData('kode_ruang', e.target.value.toUpperCase())}
+                                value={editForm.data.kode_merk}
+                                onChange={(e) => editForm.setData('kode_merk', e.target.value.toUpperCase())}
                                 required
                             />
-                            <InputError message={editForm.errors.kode_ruang} />
+                            <InputError message={editForm.errors.kode_merk} />
                         </div>
                         <div className="space-y-1.5">
-                            <Label htmlFor="edit_nama">Nama ruang</Label>
+                            <Label htmlFor="edit_nama">Nama merk</Label>
                             <Input
                                 id="edit_nama"
-                                value={editForm.data.nama_ruang}
-                                onChange={(e) => editForm.setData('nama_ruang', e.target.value)}
+                                value={editForm.data.nama_merk}
+                                onChange={(e) => editForm.setData('nama_merk', e.target.value)}
                                 required
                             />
-                            <InputError message={editForm.errors.nama_ruang} />
+                            <InputError message={editForm.errors.nama_merk} />
                         </div>
                         <div className="flex items-end gap-2">
                             <Button type="submit" disabled={editForm.processing}>
@@ -279,8 +304,6 @@ export default function MasterRuangIndex({ items, filters, stats }: Props) {
                         </div>
                     </form>
                 ) : null}
-
-                <MasterCsvActions tipe="ruang" />
 
                 <form
                     onSubmit={applyFilters}
@@ -294,7 +317,7 @@ export default function MasterRuangIndex({ items, filters, stats }: Props) {
                                 id="q"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Kode atau nama ruang..."
+                                placeholder="Kode atau nama merk..."
                                 className="pl-9"
                             />
                         </div>
@@ -306,10 +329,7 @@ export default function MasterRuangIndex({ items, filters, stats }: Props) {
 
                 {someSelected ? (
                     <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/25 bg-destructive/5 px-3 py-2.5">
-                        <p className="text-sm font-medium">
-                            {selectedIds.size} ruang dipilih
-                            {selectedAsetCount > 0 ? ` · ${selectedAsetCount} aset ikut cascade` : ''}
-                        </p>
+                        <p className="text-sm font-medium">{selectedIds.size} merk dipilih</p>
                         <div className="flex flex-wrap gap-2">
                             <Button type="button" variant="outline" size="sm" onClick={() => setSelectedIds(new Set())}>
                                 Batalkan
@@ -334,28 +354,30 @@ export default function MasterRuangIndex({ items, filters, stats }: Props) {
                             <tr>
                                 <th className="w-10 px-4 py-3">
                                     <Checkbox
-                                        checked={allSelected}
-                                        disabled={pageIds.length === 0}
+                                        checked={allDeletableSelected}
+                                        disabled={deletablePageIds.length === 0}
                                         onCheckedChange={() => toggleSelectAll()}
-                                        aria-label="Pilih semua ruang di halaman ini"
+                                        aria-label="Pilih semua merk yang bisa dihapus di halaman ini"
                                     />
                                 </th>
                                 <th className="px-4 py-3 font-medium">Kode</th>
-                                <th className="px-4 py-3 font-medium">Nama ruang</th>
-                                <th className="px-4 py-3 font-medium">Aset</th>
+                                <th className="px-4 py-3 font-medium">Nama merk</th>
+                                <th className="px-4 py-3 font-medium">Barang</th>
+                                <th className="px-4 py-3 font-medium">Jenis</th>
                                 <th className="px-4 py-3 font-medium text-right">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             {items.data.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
-                                        Belum ada ruang. Tambah manual, import CSV, atau sinkron dari SIMRS.
+                                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                                        Belum ada merk. Tambah manual, import CSV, atau sinkron dari SIMRS.
                                     </td>
                                 </tr>
                             ) : (
                                 items.data.map((row) => {
                                     const selected = selectedIds.has(row.id);
+                                    const inUse = row.barang_count > 0;
 
                                     return (
                                         <tr
@@ -363,18 +385,21 @@ export default function MasterRuangIndex({ items, filters, stats }: Props) {
                                             className={cn(
                                                 'border-b border-border/60',
                                                 selected && 'bg-primary/5',
+                                                inUse && 'opacity-80',
                                             )}
                                         >
                                             <td className="px-4 py-3">
                                                 <Checkbox
                                                     checked={selected}
-                                                    onCheckedChange={() => toggleSelect(row.id)}
-                                                    aria-label={`Pilih ${row.nama_ruang}`}
+                                                    disabled={inUse}
+                                                    onCheckedChange={() => toggleSelect(row)}
+                                                    aria-label={`Pilih ${row.nama_merk}`}
                                                 />
                                             </td>
-                                            <td className="px-4 py-3 font-mono text-xs">{row.kode_ruang}</td>
-                                            <td className="px-4 py-3">{row.nama_ruang}</td>
-                                            <td className="px-4 py-3 text-muted-foreground">{row.aset_count}</td>
+                                            <td className="px-4 py-3 font-mono text-xs">{row.kode_merk ?? '—'}</td>
+                                            <td className="px-4 py-3">{row.nama_merk}</td>
+                                            <td className="px-4 py-3 text-muted-foreground">{row.barang_count}</td>
+                                            <td className="px-4 py-3 text-muted-foreground">{row.jenis_count}</td>
                                             <td className="px-4 py-3">
                                                 <div className="flex justify-end gap-1">
                                                     <Button
@@ -382,7 +407,7 @@ export default function MasterRuangIndex({ items, filters, stats }: Props) {
                                                         variant="ghost"
                                                         size="icon"
                                                         onClick={() => openEdit(row)}
-                                                        aria-label={`Edit ${row.nama_ruang}`}
+                                                        aria-label={`Edit ${row.nama_merk}`}
                                                     >
                                                         <Pencil className="h-4 w-4" />
                                                     </Button>
@@ -390,8 +415,8 @@ export default function MasterRuangIndex({ items, filters, stats }: Props) {
                                                         type="button"
                                                         variant="ghost"
                                                         size="icon"
-                                                        onClick={() => destroyRuang(row)}
-                                                        aria-label={`Hapus ${row.nama_ruang}`}
+                                                        onClick={() => destroyMerk(row)}
+                                                        aria-label={`Hapus ${row.nama_merk}`}
                                                     >
                                                         <Trash2 className="h-4 w-4 text-destructive" />
                                                     </Button>

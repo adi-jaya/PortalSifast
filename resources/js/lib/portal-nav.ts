@@ -396,6 +396,13 @@ export const moduleGroups: PortalNavGroup[] = [
                 isActive: (path) => path.startsWith('/aset/master/jenis'),
             },
             {
+                id: 'aset-master-merk',
+                label: 'Master Merk',
+                href: '/aset/master/merk',
+                icon: BadgeCheck,
+                isActive: (path) => path.startsWith('/aset/master/merk'),
+            },
+            {
                 id: 'aset-master-ruang',
                 label: 'Master Ruang',
                 href: '/aset/master/ruang',
