@@ -8,20 +8,20 @@ Portal Sifast menyediakan modul **Headless CMS** bagi Humas dan Tim Komunikasi u
 
 ```mermaid
 graph TB
-    subgraph Pengelola Konten (Admin Portal Sifast)
-        Admin[Humas / Web Admin (can_manage_web_official)]
-        AdminUI[CMS Panel di /web-official/*]
+    subgraph CMSAdmin ["Pengelola Konten (Admin Portal Sifast)"]
+        Admin["Humas / Web Admin (can_manage_web_official)"]
+        AdminUI["CMS Panel di /web-official/*"]
     end
 
-    subgraph Backend Portal Sifast
-        CMS_DB[(Tabel Web Official)]
-        SIMRS_DB[(Database SIMRS: Jadwal Dokter)]
-        API_Public[REST API Publik /api/informasi, /api/dokter, dll]
-        SyncJobs[Artisan Sync Jobs: Instagram & RSS]
+    subgraph BackendCore ["Backend Portal Sifast"]
+        CMS_DB[("Tabel Web Official")]
+        SIMRS_DB[("Database SIMRS: Jadwal Dokter")]
+        API_Public["REST API Publik /api/informasi, /api/dokter, dll"]
+        SyncJobs["Artisan Sync Jobs: Instagram & RSS"]
     end
 
-    subgraph Website Publik (Frontend Terpisah)
-        NextJS[Website Resmi RS Aisyiyah Siti Fatimah]
+    subgraph PublicWeb ["Website Publik (Frontend Terpisah)"]
+        NextJS["Website Resmi RS Aisyiyah Siti Fatimah"]
     end
 
     Admin --> AdminUI --> CMS_DB

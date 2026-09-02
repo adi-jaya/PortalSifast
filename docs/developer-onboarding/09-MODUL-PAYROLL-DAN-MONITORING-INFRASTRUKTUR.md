@@ -37,16 +37,16 @@ Portal Sifast memiliki dua lapisan pemantauan infrastruktur teknologi informasi:
 
 ```mermaid
 graph LR
-    subgraph Server & Node
-        TianjiServer[Tianji Monitoring Server] -->|REST API Metrics| TianjiController[TianjiLaporanController]
+    subgraph ServerNode ["Server & Node"]
+        TianjiServer["Tianji Monitoring Server"] -->|REST API Metrics| TianjiController["TianjiLaporanController"]
     end
 
-    subgraph Workstation & PC RS
-        RSAgentDaemon[rs-agent Daemon di PC Kasir/Poli] -->|Heartbeat POST /agent/heartbeat| AgentAPI[Agent API Controller]
+    subgraph WorkstationPC ["Workstation & PC RS"]
+        RSAgentDaemon["rs-agent Daemon di PC Kasir/Poli"] -->|Heartbeat POST /agent/heartbeat| AgentAPI["Agent API Controller"]
     end
 
-    TianjiController --> AdminUI[Halaman Infrastruktur Web]
-    AgentAPI --> DB_Devices[(Tabel monitored_devices & device_hardware)]
+    TianjiController --> AdminUI["Halaman Infrastruktur Web"]
+    AgentAPI --> DB_Devices[("Tabel monitored_devices & device_hardware")]
 ```
 
 ### A. Integrasi Tianji Server Monitoring

@@ -8,38 +8,38 @@ Dokumen ini menjelaskan fondasi teknologi, arsitektur perangkat lunak, serta str
 
 ```mermaid
 graph TB
-    subgraph Client Layer
-        WebSPA[Web Portal Sifast<br/>React 19 + Inertia v2 + TypeScript]
-        MobileApp[Mobile / PWA Client<br/>Flutter / React Native / Lovable]
-        AgentDaemon[RS-Agent Go/Python/Rust<br/>Workstation & PC Monitoring]
+    subgraph ClientLayer ["Client Layer"]
+        WebSPA["Web Portal Sifast<br/>React 19 + Inertia v2 + TypeScript"]
+        MobileApp["Mobile / PWA Client<br/>Flutter / React Native / Lovable"]
+        AgentDaemon["RS-Agent Go/Python/Rust<br/>Workstation & PC Monitoring"]
     end
 
-    subgraph Gateway & Communication
-        HTTPS[HTTPS REST & Inertia Protocol]
-        WSS[WebSocket Secure - Laravel Reverb]
+    subgraph GatewayComm ["Gateway & Communication"]
+        HTTPS["HTTPS REST & Inertia Protocol"]
+        WSS["WebSocket Secure - Laravel Reverb"]
     end
 
-    subgraph Application Core (Laravel 12)
-        AuthGate[Auth: Fortify 2FA + Sanctum Tokens]
-        Routing[Wayfinder Type-Safe Routing]
-        Controllers[Controllers & Actions]
-        Services[Domain Services Layer]
-        EventsListeners[Events, Listeners & Observers]
-        QueueWorker[Database Queue Workers]
+    subgraph AppCore ["Application Core (Laravel 12)"]
+        AuthGate["Auth: Fortify 2FA + Sanctum Tokens"]
+        Routing["Wayfinder Type-Safe Routing"]
+        Controllers["Controllers & Actions"]
+        Services["Domain Services Layer"]
+        EventsListeners["Events, Listeners & Observers"]
+        QueueWorker["Database Queue Workers"]
     end
 
-    subgraph Data Layer
-        DB_Portal[(Primary DB: MySQL / MariaDB<br/>Portal Sifast Data)]
-        DB_SIMRS[(Secondary DB: MySQL Khanza<br/>dbsimrs - Read-Only Master)]
-        StorageFiles[Local / S3 Storage<br/>Dokumen, Bukti, Foto Aset]
+    subgraph DataLayer ["Data Layer"]
+        DB_Portal[("Primary DB: MySQL / MariaDB<br/>Portal Sifast Data")]
+        DB_SIMRS[("Secondary DB: MySQL Khanza<br/>dbsimrs - Read-Only Master")]
+        StorageFiles["Local / S3 Storage<br/>Dokumen, Bukti, Foto Aset"]
     end
 
-    subgraph Third-Party & External Services
-        FCM[Firebase Cloud Messaging (Kreait)]
-        TelegramAPI[Telegram Bot API]
-        SIKAT_SSO[SIKAT Surat Menyurat (HMAC SHA-256)]
-        TianjiAPI[Tianji Node & Server Monitoring]
-        InstagramAPI[Instagram Graph API]
+    subgraph ExternalServices ["Third-Party & External Services"]
+        FCM["Firebase Cloud Messaging (Kreait)"]
+        TelegramAPI["Telegram Bot API"]
+        SIKAT_SSO["SIKAT Surat Menyurat (HMAC SHA-256)"]
+        TianjiAPI["Tianji Node & Server Monitoring"]
+        InstagramAPI["Instagram Graph API"]
     end
 
     WebSPA -->|Inertia Request / JSON| HTTPS
@@ -107,37 +107,31 @@ graph TB
 Portal Sifast mengadopsi pola arsitektur **Dual Database** untuk memisahkan data operasional aplikasi baru dengan database historis SIMRS Khanza:
 
 ```mermaid
-classDiagram
-    class DatabasePortal {
-        <<Connection: mysql / default>>
-        +users
-        +tickets
-        +aset
-        +audit_asets
-        +mutu_indicators
-        +mutu_realisations
-        +dokumens
-        +emergency_reports
-        +patroli_checkins
-        +employee_salaries
-        +web_official_articles
-        +monitored_devices
-    }
+graph LR
+    subgraph PortalDB ["Database Utama (MySQL / Default)"]
+        direction TB
+        T_Users["users"]
+        T_Tickets["tickets"]
+        T_Aset["aset & audit_asets"]
+        T_Mutu["mutu_indicators & realisations"]
+        T_Dokumen["dokumens & tatanaskah"]
+        T_Emergency["emergency_reports"]
+        T_Patroli["patroli_checkins"]
+        T_Payroll["employee_salaries"]
+        T_WebOfficial["web_official_articles"]
+        T_Devices["monitored_devices"]
+    end
 
-    class DatabaseSIMRS {
-        <<Connection: dbsimrs (Read-Only)>>
-        +pegawai
-        +petugas
-        +dokter
-        +departemen
-        +inventaris
-        +inventaris_barang
-        +inventaris_ruang
-        +poliklinik
-        +jadwal
-    }
+    subgraph SimrsDB ["Database SIMRS Khanza (dbsimrs - Read Only)"]
+        direction TB
+        S_Pegawai["pegawai & petugas"]
+        S_Dokter["dokter & jadwal"]
+        S_Departemen["departemen"]
+        S_Inventaris["inventaris & inventaris_barang"]
+        S_Poli["poliklinik"]
+    end
 
-    DatabasePortal ..> DatabaseSIMRS : Relasi Logical via simrs_nik, kd_dokter, no_inventaris
+    PortalDB -.->|Relasi Logical via simrs_nik, kd_dokter, no_inventaris| SimrsDB
 ```
 
 ### Konfigurasi Koneksi (`config/database.php`):

@@ -8,15 +8,15 @@ Modul Patroli Keamanan mendigitalkan seluruh aktivitas ronda satpam dan petugas 
 
 ```mermaid
 flowchart TD
-    Start[Satpam Memulai Shift Patroli] --> Scan[Pindai QR Code di Titik Ruangan / Pos]
-    Scan --> Resolve[Sistem Memvalidasi Kode Ruang & Template Checklist]
-    Resolve --> Form[Muncul Formulir Checklist di Smartphone]
-    Form --> Inspect[Pemeriksaan Fisik: Pintu, Jendela, APAR, Kebersihan, Lampu]
-    Inspect --> Decision{Ada Temuan Rusak / Bahaya?}
-    Decision -- Ya --> Foto[Wajib Foto Temuan & Tulis Deskripsi Insiden]
-    Decision -- Tidak --> Submit[Submit Check-in]
+    Start["Satpam Memulai Shift Patroli"] --> Scan["Pindai QR Code di Titik Ruangan / Pos"]
+    Scan --> Resolve["Sistem Memvalidasi Kode Ruang & Template Checklist"]
+    Resolve --> Form["Muncul Formulir Checklist di Smartphone"]
+    Form --> Inspect["Pemeriksaan Fisik: Pintu, Jendela, APAR, Kebersihan, Lampu"]
+    Inspect --> Decision{"Ada Temuan Rusak / Bahaya?"}
+    Decision -- Ya --> Foto["Wajib Foto Temuan & Tulis Deskripsi Insiden"]
+    Decision -- Tidak --> Submit["Submit Check-in"]
     Foto --> Submit
-    Submit --> Save[(Tersimpan di Server & Terhubung ke Laporan Monitoring)]
+    Submit --> Save[("Tersimpan di Server & Terhubung ke Laporan Monitoring")]
 ```
 
 ---

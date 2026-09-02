@@ -13,19 +13,19 @@ Dokumen ini disusun khusus sebagai panduan komprehensif bagi developer baru agar
 ### Ekosistem Sistem Terhubung:
 ```mermaid
 graph TD
-    UserWeb[Browser / Web Portal Sifast<br/>React 19 + Inertia v2] --> PortalBackend[Laravel 12 Core Backend<br/>Portal Sifast]
-    UserMobile[Aplikasi Mobile / PWA Kepegawaian<br/>Flutter / React / Lovable] -->|Sanctum REST API| PortalBackend
+    UserWeb["Browser / Web Portal Sifast<br/>React 19 + Inertia v2"] --> PortalBackend["Laravel 12 Core Backend<br/>Portal Sifast"]
+    UserMobile["Aplikasi Mobile / PWA Kepegawaian<br/>Flutter / React / Lovable"] -->|Sanctum REST API| PortalBackend
     
-    PortalBackend --> DB_Portal[(Database Utama MySQL<br/>Portal Sifast)]
-    PortalBackend -->|Read / Sync| DB_SIMRS[(Database SIMRS Khanza<br/>MySQL dbsimrs)]
+    PortalBackend --> DB_Portal[("Database Utama MySQL<br/>Portal Sifast")]
+    PortalBackend -->|Read / Sync| DB_SIMRS[("Database SIMRS Khanza<br/>MySQL dbsimrs")]
     
-    PortalBackend -->|SSO Token / HMAC| SIKAT[Sistem Surat SIKAT Legacy]
-    PortalBackend -->|FCM Push Notification| Firebase[Firebase Cloud Messaging]
-    PortalBackend -->|Bot Alerts & Nudges| Telegram[Telegram Bot API]
-    PortalBackend -->|Server & Node Metrics| Tianji[Tianji Monitoring Server]
+    PortalBackend -->|SSO Token / HMAC| SIKAT["Sistem Surat SIKAT Legacy"]
+    PortalBackend -->|FCM Push Notification| Firebase["Firebase Cloud Messaging"]
+    PortalBackend -->|Bot Alerts & Nudges| Telegram["Telegram Bot API"]
+    PortalBackend -->|Server & Node Metrics| Tianji["Tianji Monitoring Server"]
     
-    RSAgent[Daemon rs-agent di PC RS] -->|Heartbeat & Snapshots| PortalBackend
-    Reverb[Laravel Reverb WebSocket] <-->|Presence & Chat Events| UserWeb
+    RSAgent["Daemon rs-agent di PC RS"] -->|Heartbeat & Snapshots| PortalBackend
+    Reverb["Laravel Reverb WebSocket"] <-->|Presence & Chat Events| UserWeb
 ```
 
 ---
