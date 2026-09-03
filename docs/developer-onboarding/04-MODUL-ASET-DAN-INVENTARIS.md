@@ -42,9 +42,9 @@ erDiagram
 
 ### A. Klasifikasi Aset
 1. **Aset Alkes (Alat Kesehatan / ASPAK):**
-   * Mengacu pada tabel [`AsetAspakAlat`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Models/AsetAspakAlat.php) yang sesuai dengan nomenklatur standar Kemenkes RI.
+   * Mengacu pada tabel [`AsetAspakAlat`](../../app/Models/AsetAspakAlat.php) yang sesuai dengan nomenklatur standar Kemenkes RI.
 2. **Aset Non-Alkes:**
-   * Mengacu pada tabel [`AsetNonAlkes`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Models/AsetNonAlkes.php) untuk perangkat IT, furnitur, kelistrikan, dan kendaraan operasional.
+   * Mengacu pada tabel [`AsetNonAlkes`](../../app/Models/AsetNonAlkes.php) untuk perangkat IT, furnitur, kelistrikan, dan kendaraan operasional.
 
 ---
 
@@ -69,7 +69,7 @@ erDiagram
 ## 4. Scan QR Publik & Penampil Foto
 
 ### A. Endpoint QR Code Publik (`/q/{aset}`)
-* Dikelola oleh [`AsetPublicController`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Http/Controllers/AsetPublicController.php).
+* Dikelola oleh [`AsetPublicController`](../../app/Http/Controllers/AsetPublicController.php).
 * Halaman ini dapat diakses oleh siapa saja yang memindai QR Code stiker aset tanpa perlu login.
 * Menampilkan informasi ringkas: Nama Aset, Kode Aset, Lokasi Ruangan, Tahun Pengadaan, dan Riwayat Singkat Pemeliharaan.
 

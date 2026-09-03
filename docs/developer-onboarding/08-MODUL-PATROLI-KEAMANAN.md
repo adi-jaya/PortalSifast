@@ -34,10 +34,10 @@ erDiagram
 ```
 
 ### Entitas Kunci:
-1. **[`PatroliArea`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Models/PatroliArea.php):** Pengelompokan zona gedung (Lantai 1, Rawat Inap, Basement & Parkir, Farmasi & Gudang).
-2. **[`PatroliRuang`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Models/PatroliRuang.php):** Titik fisik penempelan QR stiker. Memiliki fungsi cetak label otomatis dengan format SVG/PNG.
-3. **[`PatroliTemplate`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Models/PatroliTemplate.php):** Paket pertanyaan checklist yang fleksibel dan dapat disesuaikan tanpa perlu mengubah struktur tabel (*schema-free questionnaire*).
-4. **[`PatroliCheckin`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Models/PatroliCheckin.php):** Bukti kehadiran fisik petugas di lokasi tertentu lengkap dengan timestamp server.
+1. **[`PatroliArea`](../../app/Models/PatroliArea.php):** Pengelompokan zona gedung (Lantai 1, Rawat Inap, Basement & Parkir, Farmasi & Gudang).
+2. **[`PatroliRuang`](../../app/Models/PatroliRuang.php):** Titik fisik penempelan QR stiker. Memiliki fungsi cetak label otomatis dengan format SVG/PNG.
+3. **[`PatroliTemplate`](../../app/Models/PatroliTemplate.php):** Paket pertanyaan checklist yang fleksibel dan dapat disesuaikan tanpa perlu mengubah struktur tabel (*schema-free questionnaire*).
+4. **[`PatroliCheckin`](../../app/Models/PatroliCheckin.php):** Bukti kehadiran fisik petugas di lokasi tertentu lengkap dengan timestamp server.
 
 ---
 

@@ -1458,10 +1458,11 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
+import { dashboard } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Dashboard', href: dashboard().url },
     { title: 'Rencana', href: '/projects' },
 ];
 
@@ -1835,10 +1836,11 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
+import { dashboard } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Dashboard', href: dashboard().url },
     { title: 'Rencana', href: '/projects' },
     { title: 'Tambah Rencana', href: '/projects/create' },
 ];
@@ -2072,7 +2074,7 @@ export function FlashMessage() {
     if (!visible || !message) return null;
 
     return (
-        <div className="fixed top-4 left-4 right-4 z-[100] animate-in fade-in slide-from-top-2 duration-300 sm:left-auto sm:max-w-sm">
+        <div className="fixed top-4 left-4 right-4 z-[100] animate-in fade-in slide-in-from-top-2 duration-300 sm:left-auto sm:max-w-sm">
             <Alert
                 variant={message.type === 'error' ? 'destructive' : 'default'}
                 className={
@@ -2987,7 +2989,7 @@ const incidentBadgeVariants = cva(
                 critical: "bg-urgent-bg text-urgent border border-urgent/30 animate-pulse",
             },
             size: {
-                sm: "text-[11px] px-2 py-0.2",
+                sm: "text-[11px] px-2 py-0.5",
                 default: "text-xs px-2.5 py-0.5",
                 lg: "text-sm px-3 py-1",
             },
@@ -3705,6 +3707,7 @@ Buat hook di `resources/js/hooks/use-ticket-notifications.ts`:
 ```tsx
 import { useEffect, useState } from 'react';
 import { usePage } from '@inertiajs/react';
+import type { SharedData } from '@/types';
 
 interface TicketAssignedPayload {
     ticket_id: number;
@@ -3715,7 +3718,7 @@ interface TicketAssignedPayload {
 }
 
 export function useTicketNotifications() {
-    const { auth } = usePage<any>().props;
+    const { auth } = usePage<SharedData>().props;
     const [latestNotification, setLatestNotification] = useState<TicketAssignedPayload | null>(null);
 
     useEffect(() => {

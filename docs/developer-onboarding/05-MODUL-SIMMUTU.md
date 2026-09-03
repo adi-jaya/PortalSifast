@@ -25,15 +25,15 @@ erDiagram
 ```
 
 ### A. Model Entitas Utama
-* **[`MutuCategory`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Models/MutuCategory.php):** Kategori mutu (INM, IMP-RS, IM-Unit).
-* **[`MutuIndicator`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Models/MutuIndicator.php):**
+* **[`MutuCategory`](../../app/Models/MutuCategory.php):** Kategori mutu (INM, IMP-RS, IM-Unit).
+* **[`MutuIndicator`](../../app/Models/MutuIndicator.php):**
   * `name`, `code`, `description`.
   * `target_operator` (`>=`, `<=`, `=`, `range`).
   * `target_value` (misal: `100.00` untuk 100%, atau `5.00` untuk toleransi kesalahan < 5%).
   * `numerator_label` (label pembilang, misal: *Jumlah pasien yang diidentifikasi dengan benar*).
   * `denominator_label` (label penyebut, misal: *Total seluruh pasien yang diobservasi*).
   * `frequency` (`daily`, `monthly`, `quarterly`).
-* **[`MutuRealisation`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Models/MutuRealisation.php):**
+* **[`MutuRealisation`](../../app/Models/MutuRealisation.php):**
   * `date`, `dep_id`, `n_value` (numerator), `d_value` (denominator).
   * `score` — Dihitung otomatis: $(N / D) \times 100\%$.
   * `is_achieved` — Boolean apakah skor memenuhi `target_operator` dan `target_value`.

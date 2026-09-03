@@ -42,7 +42,7 @@ erDiagram
 ### B. Otomasi Penomoran Surat Dinamis
 Format penomoran naskah dinas mengikuti standar tata naskah Muhammadiyah / RS:
 $$\text{Nomor} = \text{[Urutan] / [Sifat] / [Unit Klasifikasi] / RS-ASF / [Bulan Romawi] / [Tahun]}$$
-* Dihitung secara *atomic* menggunakan tabel [`CounterNomorDokumen`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Models/CounterNomorDokumen.php) untuk mencegah duplikasi nomor meskipun dibuat secara bersamaan (*race condition*).
+* Dihitung secara *atomic* menggunakan tabel [`CounterNomorDokumen`](../../app/Models/CounterNomorDokumen.php) untuk mencegah duplikasi nomor meskipun dibuat secara bersamaan (*race condition*).
 
 ---
 
@@ -65,6 +65,6 @@ sequenceDiagram
 ```
 
 ### File Kunci Integrasi SSO:
-* [`SikatSsoTokenService.php`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Services/SikatSsoTokenService.php) — Generator dan validator token.
-* [`SikatInboundSsoController.php`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Http/Controllers/Integrations/SikatInboundSsoController.php) — Menerima login SSO masuk dari SIKAT ke Portal.
-* [`SikatSsoRedirectController.php`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Http/Controllers/Integrations/SikatSsoRedirectController.php) — Mengarahkan pengguna dari Portal ke SIKAT.
+* [`SikatSsoTokenService.php`](../../app/Services/SikatSsoTokenService.php) — Generator dan validator token.
+* [`SikatInboundSsoController.php`](../../app/Http/Controllers/Integrations/SikatInboundSsoController.php) — Menerima login SSO masuk dari SIKAT ke Portal.
+* [`SikatSsoRedirectController.php`](../../app/Http/Controllers/Integrations/SikatSsoRedirectController.php) — Mengarahkan pengguna dari Portal ke SIKAT.

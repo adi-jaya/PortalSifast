@@ -20,7 +20,7 @@ flowchart TD
 ```
 
 ### A. Rincian Komponen Gaji (`EmployeeSalary`)
-Tabel [`EmployeeSalary`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Models/EmployeeSalary.php) menyimpan detail komponen penghasilan dan potongan secara lengkap:
+Tabel [`EmployeeSalary`](../../app/Models/EmployeeSalary.php) menyimpan detail komponen penghasilan dan potongan secara lengkap:
 * **Komponen Penerimaan:** Gaji Pokok, Tunjangan Jabatan, Tunjangan Fungsional, Tunjangan Keluarga, Tunjangan Transport & Makan, Tunjangan Kehadiran, Insentif Kinerja, Lembur.
 * **Komponen Potongan:** BPJS Kesehatan, BPJS Ketenagakerjaan, PPh 21, Potongan Keterlambatan, Potongan Ijin/Cuti, Potongan Koperasi, Potongan Lainnya.
 * **Perhitungan Otomatis:** $\text{Take Home Pay} = \sum \text{Penerimaan} - \sum \text{Potongan}$.
@@ -51,7 +51,7 @@ graph LR
 
 ### A. Integrasi Tianji Server Monitoring
 * Mengambil status *uptime*, *latency*, insiden gangguan jaringan, dan performa server pusat dari instans **Tianji** melalui API token.
-* Controller: [`TianjiLaporanController.php`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Http/Controllers/TianjiLaporanController.php).
+* Controller: [`TianjiLaporanController.php`](../../app/Http/Controllers/TianjiLaporanController.php).
 
 ### B. Daemon Pemantau PC RS (`rs-agent`)
 * Aplikasi daemon kecil (`rs-agent`) dipasang di komputer operasional rumah sakit (PC Pendaftaran, PC Poliklinik, PC Kasir).

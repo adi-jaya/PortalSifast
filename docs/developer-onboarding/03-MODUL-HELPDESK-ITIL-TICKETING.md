@@ -32,14 +32,14 @@ erDiagram
 ## 2. Struktur Master Data & SLA Engine
 
 ### A. Master Entitas
-1. **[`TicketType`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Models/TicketType.php):**
+1. **[`TicketType`](../../app/Models/TicketType.php):**
    * Membedakan jenis tiket (misal: *Incident*, *Service Request*, *Change Request*, *Preventive Maintenance*).
-2. **[`TicketCategory`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Models/TicketCategory.php) & [`TicketSubcategory`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Models/TicketSubcategory.php):**
+2. **[`TicketCategory`](../../app/Models/TicketCategory.php) & [`TicketSubcategory`](../../app/Models/TicketSubcategory.php):**
    * Dihubungkan ke kode departemen (`dep_id`) seperti `IT`, `IPSRS`, `ELEKTROMEDIS`.
    * Memiliki flag `is_development` untuk tiket kebutuhan pengembangan software.
-3. **[`TicketPriority`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Models/TicketPriority.php):**
+3. **[`TicketPriority`](../../app/Models/TicketPriority.php):**
    * Menentukan `response_hours` (batas respon awal) dan `resolution_hours` (batas penyelesaian).
-4. **[`TicketStatus`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Models/TicketStatus.php):**
+4. **[`TicketStatus`](../../app/Models/TicketStatus.php):**
    * Mengatur urutan display pada Kanban Board serta flag `is_closed`.
 
 ### B. Mekanisme SLA Calculation
@@ -92,11 +92,11 @@ stateDiagram-v2
 * **`TicketVendorCost`:** Mencatat invoice pihak ketiga jika perbaikan dialihkan ke vendor luar RS (nama vendor, nomor invoice, deskripsi biaya, total nominal).
 
 ### C. Bantuan AI & Dokumentasi Otomatis
-* **[`AiRecommendationService`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Services/AiRecommendationService.php):** Menganalisis riwayat tiket masa lalu yang serupa dan memberikan saran perbaikan awal bagi teknisi.
-* **[`TicketDocumentationService`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Services/TicketDocumentationService.php):** Secara otomatis mengompilasi kronologi, komentar resolusi, lampiran, dan suku cadang menjadi laporan berita acara formal format Markdown/PDF.
+* **[`AiRecommendationService`](../../app/Services/AiRecommendationService.php):** Menganalisis riwayat tiket masa lalu yang serupa dan memberikan saran perbaikan awal bagi teknisi.
+* **[`TicketDocumentationService`](../../app/Services/TicketDocumentationService.php):** Secara otomatis mengompilasi kronologi, komentar resolusi, lampiran, dan suku cadang menjadi laporan berita acara formal format Markdown/PDF.
 
 ### D. Notifikasi & Bot Telegram
-* **[`TicketTelegramGroupNotifier`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Services/TicketTelegramGroupNotifier.php):** Mengirim alert instan ke grup Telegram teknisi saat tiket baru berprioritas tinggi dibuat.
+* **[`TicketTelegramGroupNotifier`](../../app/Services/TicketTelegramGroupNotifier.php):** Mengirim alert instan ke grup Telegram teknisi saat tiket baru berprioritas tinggi dibuat.
 * **Artisan Commands Terjadwal:**
   * `php artisan tickets:work-nudge` — Mengirim pengingat harian ke teknisi mengenai tiket yang masih berstatus Open/InProgress.
   * `php artisan tickets:daily-it-report` — Mengirim rekapitulasi harian SLA tiket ke grup manajemen IT.

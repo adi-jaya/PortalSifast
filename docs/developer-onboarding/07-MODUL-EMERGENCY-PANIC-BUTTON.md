@@ -54,10 +54,10 @@ Hasil kalkulasi jarak (dalam meter atau kilometer) dikirimkan ke frontend Comman
 
 ## 3. Komponen Kunci Backend
 
-* **[`EmergencyFcmService.php`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Services/EmergencyFcmService.php):**
+* **[`EmergencyFcmService.php`](../../app/Services/EmergencyFcmService.php):**
   * Bertanggung jawab mengirim notifikasi multi-target ke perangkat yang terdaftar di tabel `fcm_device_tokens`.
   * Menggunakan channel *Emergency Alert* dengan volume penuh dan vibration pattern panjang.
-* **[`CheckPendingPanicCommand.php`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Console/Commands/CheckPendingPanicCommand.php):**
+* **[`CheckPendingPanicCommand.php`](../../app/Console/Commands/CheckPendingPanicCommand.php):**
   * Dijalankan secara otomatis oleh scheduler.
   * Memeriksa apakah ada laporan darurat berstatus `open` yang belum direspon lebih dari 2 menit, lalu memicu notifikasi eskalasi ulang.
 * **Throttle Khusus Officer:**
