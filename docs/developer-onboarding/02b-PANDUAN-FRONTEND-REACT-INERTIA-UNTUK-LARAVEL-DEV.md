@@ -11,7 +11,7 @@ Modul ini dirancang khusus untuk menjembatani pergeseran paradigma dari pola mon
 | Entitas | Rincian |
 | :--- | :--- |
 | **Kode Dokumen** | `MOD-02B-FE-REACT-INERTIA` |
-| **Versi Dokumen** | 1.2.0 (Tahap Fondasi, Bab 1, Bab 2, & Bab 3 Tutorial Hands-on CRUD Lengkap) |
+| **Versi Dokumen** | 1.3.0 (Tahap Fondasi, Bab 1, Bab 2, Bab 3 CRUD Lengkap, & Bab 4 Arsitektur Styling & Radix UI) |
 | **Status Dokumen** | Produksi Aktif / Terverifikasi |
 | **Tanggal Pembaruan** | 2026-09-03 |
 | **Tech Stack Utama** | React 19, Inertia.js v2, TypeScript 5+, Tailwind CSS v4, Radix UI Primitives, Laravel Wayfinder |
@@ -2138,8 +2138,914 @@ Sebagai panduan praktis harian saat Anda membangun modul CRUD baru di Portal Sif
 | **4. Konfirmasi Hapus Modern** | Hindari `confirm()`. Gunakan komponen `<ConfirmDialog>` dengan state `deleteTarget` dan Radix UI accessible modal. | [`resources/js/components/confirm-dialog.tsx`](../../resources/js/components/confirm-dialog.tsx) |
 | **5. Formulir & Notifikasi** | Gunakan `useForm({ ... })`, tampilkan `<InputError message={errors.field} />`, pasang `disabled={processing}`, dan andalkan `<FlashMessage />` untuk toast sukses. | [`resources/js/pages/projects/create.tsx`](../../resources/js/pages/projects/create.tsx)<br/>[`resources/js/components/flash-message.tsx`](../../resources/js/components/flash-message.tsx) |
 
+## Bab 4: Arsitektur Styling & Desain Antarmuka (Tailwind CSS v4, Radix UI Primitives & Helper `cn`)
+
+Bagi developer Laravel yang terbiasa menggunakan Bootstrap 5 (dengan class `.btn .btn-primary`), Tailwind v3 (dengan file konfigurasi JavaScript `tailwind.config.js`), atau styling CSS global monolitik, arsitektur antarmuka di Portal Sifast menghadirkan lompatan paradigma modern.
+
+Portal Sifast mengadopsi standar **Tailwind CSS v4** berbasis arsitektur *CSS-first*, komponen *headless accessible* dari **Radix UI Primitives**, serta utilitas penggabungan kelas **`cn()`** (`clsx` + `tailwind-merge`). Kombinasi ini memberikan kebebasan desain 100% tanpa batas, kinerja kompilasi kilat, konsistensi token identitas visual rumah sakit, dan aksesibilitas berstandar internasional (*WCAG 2.1 AA*) secara otomatis.
+
 ---
 
-*Lanjutkan membaca ke [Bab 4: Arsitektur Styling & Komponen UI](#bab-4-arsitektur-styling--komponen-ui-tailwind-v4-radix-ui-dan-cn-helper) (segera hadir di Task 6).*
+### 4.1 TL;DR Matrix: Paradigma Styling Lama vs Modern di Sifast
+
+Tabel berikut merangkum perbedaan mendasar antara pendekatan styling tradisional dengan standar modern yang berlaku di Portal Sifast:
+
+| Dimensi / Aspek | Pendekatan Tradisional (Bootstrap / Tailwind v3) | Standar Modern Portal Sifast (Tailwind CSS v4 & Radix) | Rationale & Dampak bagi Developer |
+| :--- | :--- | :--- | :--- |
+| **Pusat Konfigurasi Tema** | Berkas JavaScript terpisah: `tailwind.config.js` atau variabel SASS `_variables.scss`. | **CSS-First Murni:** Directif `@theme` langsung di dalam [`resources/css/app.css`](../../resources/css/app.css). | Zero JS config. Lebih cepat diparsing oleh Lightning CSS di Vite, auto-complete CSS variable native. |
+| **Definisi Token Tipografi** | Properti `theme.extend.fontSize` di file JS. | Token CSS native di `@theme`: `--font-sans`, `--text-h1` s.d `--text-h6`, `--text-display-*`. | Menghasilkan utilitas seperti `text-h1`, `text-display-md`, dan `font-sans` tanpa overhead JavaScript. |
+| **Varian Dark Mode** | Konfigurasi JS: `darkMode: 'class'` atau selector manual `:global(.dark)`. | Directif kustom CSS: `@custom-variant dark (&:is(.dark *));`. | Mendukung selector CSS modern `:is()` untuk kompilasi lebih ringkas dan spesifisitas stabil. |
+| **Pencegahan Kedipan Layar (FOUC)** | Skrip manual di blade atau sering terlewat sehingga layar berkedip putih saat reload. | **Triple-Guard FOUC:** Blade `@class` + inline blocking `<script>` + inline `<style>` background di [`resources/views/app.blade.php`](../../resources/views/app.blade.php). | Layar tidak pernah berkedip putih saat staf membuka portal di malam hari atau ruangan redup. |
+| **Komponen UI Interaktif** | jQuery plugins (`$('#modal').modal()`) atau library kaku ber-CSS bawaan (Bootstrap/MUI). | **Headless Radix UI Primitives** di [`resources/js/components/ui/`](../../resources/js/components/ui/). | Logika state interaktif & ARIA accessibility terpisah penuh dari styling Tailwind visual. |
+| **Penggabungan Class Dinamis** | Template literals biasa: `className={`btn ${isActive ? 'active' : ''}`}`. | Helper pintar **`cn()`** (`clsx` + `twMerge`) di [`resources/js/lib/utils.ts`](../../resources/js/lib/utils.ts). | Mencegah konflik spesifisitas CSS Tailwind (misal: `p-4` ditimpa `p-6` secara deterministik). |
+| **Pewarnaan Status Rumah Sakit** | Hardcoded color classes acak (`bg-red-500`, `bg-yellow-400`, `bg-green-600`). | Semantic Status Tokens: `bg-urgent`, `bg-warning`, `bg-normal`, `bg-info`, `bg-follow-up` di `@theme`. | Otomatis berganti saturasi antara Light Mode dan Dark Mode tanpa penulisan duplikat. |
+
+---
+
+### 4.2 Tailwind CSS v4: Arsitektur CSS-First (Misteri Hilangnya `tailwind.config.js`)
+
+Banyak pengembang yang baru bergabung dengan repositori Sifast mencari berkas `tailwind.config.js` di root project dan terkejut mendapati file tersebut **sama sekali tidak ada**.
+
+#### 1. Mengapa `tailwind.config.js` Ditiadakan?
+Pada versi Tailwind CSS v4, tim pengembang Tailwind memperkenalkan **CSS-First Architecture**. Seluruh konfigurasi proyek, pemetaan token, kustomisasi breakpoint, hingga penambahan varian tidak lagi menggunakan file konfigurasi JavaScript (`tailwind.config.js`), melainkan dideklarasikan langsung di dalam file CSS utama menggunakan sintaks CSS standar modern.
+
+Keuntungan arsitektur *CSS-First*:
+1. **Performa Build 10x Lebih Cepat:** Vite memanfaatkan compiler berbasis Rust (Lightning CSS) yang memproses CSS secara native tanpa overhead parsing JavaScript/Node.js VM.
+2. **Kesesuaian Standar Web Modern:** Memanfaatkan fitur native CSS seperti `@theme`, `@import`, dan CSS Custom Properties (`var(--...)`).
+3. **Single Source of Truth:** Seluruh aturan visual berada di satu tempat: [`resources/css/app.css`](../../resources/css/app.css).
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│             Struktur Berkas Styling Portal Sifast           │
+│                                                             │
+│   resources/css/app.css ─── CSS-First Configuration         │
+│     ├── @import 'tailwindcss'                               │
+│     ├── @import 'tw-animate-css'                            │
+│     ├── @source directives                                  │
+│     ├── @custom-variant dark                                │
+│     ├── @theme { --font-sans, --text-h1, --color-* }        │
+│     ├── :root (Light Theme CSS Variables)                   │
+│     ├── .dark (Dark Theme CSS Variables)                    │
+│     └── @layer base & Hospital Custom Components            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 2. Bedah Anatomi Berkas [`resources/css/app.css`](../../resources/css/app.css)
+
+Mari kita bedah baris demi baris arsitektur yang terdapat di [`resources/css/app.css`](../../resources/css/app.css):
+
+##### a. Impor Inti & Ekstensi Animasi
+```css
+/* Baris 1-9 di resources/css/app.css */
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/* AOS — Animate On Scroll untuk landing & dashboard */
+@import 'aos/dist/aos.css';
+
+/* Leaflet CSS untuk Modul Emergency Map / Tracking Ambulans */
+@import 'leaflet/dist/leaflet.css';
+```
+* `@import 'tailwindcss';`: Menggantikan direktif `@tailwind base; @tailwind components; @tailwind utilities;` dari Tailwind v3.
+* `@import 'tw-animate-css';`: Menyediakan utilitas animasi modern seperti `animate-in`, `fade-in`, `zoom-in-95`, dan `slide-in-from-*` yang digunakan oleh dialog modal, dropdown, dan alert toast.
+* `@import 'leaflet/dist/leaflet.css';`: Mendukung komponen peta kegawatdaruratan dan ambulans ([`emergency-map.tsx`](../../resources/js/components/ui/emergency-map.tsx)).
+
+##### b. Direktif Pelacakan Template (`@source`)
+```css
+/* Baris 11-12 di resources/css/app.css */
+@source '../views';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+```
+Tailwind v4 secara otomatis memindai file proyek yang berada di dekat file CSS. Namun untuk file Blade di luar direktori CSS atau pagination bawaan Laravel Framework di folder `vendor/`, direktif `@source` secara eksplisit mendaftarkannya agar class Tailwind yang digunakan di view Blade tidak tereliminasi (*purged*) saat proses build.
+
+---
+
+#### 3. Peta Token Tema di Dalam Blok `@theme`
+
+Di Tailwind v4, seluruh variabel desain kustom didefinisikan di dalam blok `@theme`. Token yang dideklarasikan di sini otomatis dikonversi oleh Tailwind menjadi class utilitas Tailwind yang dapat langsung digunakan di JSX:
+
+```css
+/* Cuplikan dari resources/css/app.css:16-140 */
+@theme {
+    /* Inter — primary typeface */
+    --font-sans:
+        Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+        Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace;
+
+    /* Font weights */
+    --font-weight-thin: 100;
+    --font-weight-extralight: 200;
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --font-weight-extrabold: 800;
+
+    /* Display Typography Scale */
+    --text-display-2xl: 4.5rem;
+    --text-display-2xl--line-height: 5rem;
+    --text-display-xl: 3.75rem;
+    --text-display-xl--line-height: 4.25rem;
+    --text-display-lg: 3rem;
+    --text-display-lg--line-height: 3.5rem;
+    --text-display-md: 2.25rem;
+    --text-display-md--line-height: 2.75rem;
+    --text-display-sm: 1.875rem;
+    --text-display-sm--line-height: 2.375rem;
+
+    /* Heading Typography Scale */
+    --text-h1: 3rem;
+    --text-h1--line-height: 3.5rem;
+    --text-h2: 2.5rem;
+    --text-h2--line-height: 3rem;
+    --text-h3: 2rem;
+    --text-h3--line-height: 2.5rem;
+    --text-h4: 1.75rem;
+    --text-h4--line-height: 2.25rem;
+    --text-h5: 1.5rem;
+    --text-h5--line-height: 2rem;
+    --text-h6: 1.25rem;
+    --text-h6--line-height: 1.75rem;
+
+    /* Body Text Overrides */
+    --text-lg: 1.125rem;
+    --text-lg--line-height: 1.75rem;
+    --text-base: 1rem;
+    --text-base--line-height: 1.5rem;
+    --text-sm: 0.875rem;
+    --text-sm--line-height: 1.25rem;
+    --text-xs: 0.75rem;
+    --text-xs--line-height: 1.125rem;
+
+    /* Radius Tokens */
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+
+    /* Semantic Color Tokens (terikat ke CSS variables dinamis) */
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    /* Sidebar Brand Colors */
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+
+    /* Design Palette Sifast (Clean White + Fresh Blue) */
+    --color-ink: #0F172A;
+    --color-ink-muted: #64748B;
+    --color-ink-subtle: #94A3B8;
+    --color-canvas: #FFFFFF;
+    --color-surface-1: #F8FAFC;
+    --color-surface-2: #F1F5F9;
+    --color-border-strong: #CBD5E1;
+    --color-primary-light: #DBEAFE;
+    --color-primary-hover: #1D4ED8;
+
+    /* Semantic Status Colors Rumah Sakit */
+    --color-urgent: var(--urgent);
+    --color-urgent-bg: var(--urgent-bg);
+    --color-warning: var(--warning);
+    --color-warning-bg: var(--warning-bg);
+    --color-normal: var(--normal);
+    --color-normal-bg: var(--normal-bg);
+    --color-follow-up: var(--follow-up);
+    --color-follow-up-bg: var(--follow-up-bg);
+    --color-info: var(--info);
+    --color-info-bg: var(--info-bg);
+}
+```
+
+##### Bagaimana Token `@theme` Menjadi Class di JSX?
+Definisi token di atas secara otomatis menghasilkan class utilitas Tailwind:
+* `--font-sans` $\rightarrow$ Class `font-sans`
+* `--text-h1` $\rightarrow$ Class `text-h1` (dengan ukuran 3rem dan line-height 3.5rem terikat otomatis)
+* `--text-display-md` $\rightarrow$ Class `text-display-md`
+* `--color-urgent` $\rightarrow$ Class `bg-urgent`, `text-urgent`, `border-urgent`
+* `--color-urgent-bg` $\rightarrow$ Class `bg-urgent-bg`
+* `--color-surface-1` $\rightarrow$ Class `bg-surface-1`
+
+```tsx
+// Contoh penggunaan di React:
+<div className="bg-surface-1 p-6 rounded-lg border border-border">
+    <h1 className="text-h2 font-bold text-ink">Dashboard Manajemen Rumah Sakit</h1>
+    <span className="bg-urgent-bg text-urgent px-2.5 py-1 rounded-full text-xs font-semibold">
+        Insiden Darurat
+    </span>
+</div>
+```
+
+---
+
+#### 4. Palet Warna Dinamis: Light Theme vs Dark Theme
+
+Portal Sifast tidak menggunakan teknik *color inversion* sembarangan (yang seringkali membuat teks menjadi silau atau kontras abu-abu yang buruk). Sistem tema Sifast menggunakan **Paired Slate & Blue Palette**:
+
+| Kategori Token | Light Theme (`:root`) | Dark Theme (`.dark`) | Peranan & Contoh Penggunaan di Sifast |
+| :--- | :--- | :--- | :--- |
+| **`--background`** | `#F8FAFC` (Slate 50) | `#0F172A` (Slate 900) | Latar belakang kanvas aplikasi utama. |
+| **`--foreground`** | `#0F172A` (Slate 900) | `#F8FAFC` (Slate 50) | Warna teks tulisan standar (body text). |
+| **`--card`** | `#FFFFFF` (Murni Putih) | `#1E293B` (Slate 800) | Latar belakang kartu kontainer, form section, dan modal dialog. |
+| **`--primary`** | `#2563EB` (Blue 600) | `#3B82F6` (Blue 500) | Warna identitas aksi utama (tombol simpan, link aktif, focus ring). |
+| **`--sidebar`** | `#1D4ED8` (Solid Fresh Blue) | `#1E3A8A` (Deep Blue 900) | Warna latar bilah navigasi kiri (Sidebar Sifast). |
+| **`--urgent` / `--urgent-bg`** | `#DC2626` / `#FEF2F2` (Red 600 / Red 50) | `#EF4444` / `#450A0A` (Red 500 / Red 950) | Status prioritas darurat / tiket critical / error validasi. |
+| **`--warning` / `--warning-bg`** | `#D97706` / `#FFFBEB` (Amber 600 / Amber 50) | `#F59E0B` / `#422006` (Amber 500 / Amber 950) | Status pending tiket / peringatan masa garansi aset habis. |
+| **`--normal` / `--normal-bg`** | `#16A34A` / `#F0FDF4` (Green 600 / Green 50) | `#22C55E` / `#052E16` (Green 500 / Green 950) | Status selesai / approval sukses / aset beroperasi baik. |
+| **`--follow-up` / `--follow-up-bg`**| `#7C3AED` / `#F5F3FF` (Purple 600 / Purple 50)| `#8B5CF6` / `#2E1065` (Purple 500 / Purple 950)| Status verifikasi tindak lanjut / penugasan vendor pihak ketiga. |
+| **`--info` / `--info-bg`** | `#2563EB` / `#EFF6FF` (Blue 600 / Blue 50) | `#60A5FA` / `#1E3A8A` (Blue 400 / Blue 900) | Status informasi umum / broadcast pengumuman manajemen. |
+
+---
+
+#### 5. Utilitas Khusus & Desain "Soft Shell Data Table"
+
+Di dalam [`resources/css/app.css:360-482`](../../resources/css/app.css), Portal Sifast menetapkan standar desain tabel data institusional bernama **Soft Shell Data Table** (`.data-table`):
+
+```css
+/* Cuplikan dari resources/css/app.css */
+.data-table {
+    @apply overflow-hidden rounded-2xl border border-primary/20 bg-white shadow-xs;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.06), 0 0 0 1px rgba(37, 99, 235, 0.04);
+}
+
+.data-table thead tr {
+    background-image: linear-gradient(90deg, #EFF6FF 0%, #DBEAFE 55%, #E0F2FE 100%) !important;
+    @apply border-b border-primary/25;
+}
+
+.data-table tbody tr:nth-child(even) {
+    @apply !bg-sky-50/60; /* Baris zebra halus agar tabel data medis mudah dibaca */
+}
+
+.dark .data-table thead tr {
+    background-image: linear-gradient(90deg, #1E3A8A 0%, #1E40AF 55%, #1E3A8A 100%) !important;
+    @apply border-primary/40;
+}
+```
+
+Fitur-fitur utilitas kustom lainnya yang siap pakai di seluruh halaman:
+* `.page-container`: Standarisasi wrapper halaman dalam dengan `flex flex-col gap-4 sm:gap-6`.
+* `.form-section`: Kontainer formulir transaksi dengan rounded border halus dan shadow seragam.
+* `.card-refined`: Kontainer kartu putih dengan hover shadow lembut 200ms.
+* `.avatar-initials`: Badge lingkaran inisial nama dokter/staf dengan pewarnaan primary dinamis.
+* `@keyframes fade-in` & `.animate-fade-in`: Efek transisi halus saat halaman berpindah.
+* `@media (prefers-reduced-motion: reduce)`: Menghentikan animasi otomatis bagi pengguna yang sensitif terhadap gerakan.
+
+---
+
+### 4.3 Mekanisme Dark Mode & Pencegahan FOUC (Flash of Unstyled Content)
+
+Salah satu masalah paling menjengkelkan dalam antarmuka mode gelap adalah **Flash of Unstyled Content (FOUC)**: layar browser berkedip putih terang selama beberapa milidetik saat halaman dimuat ulang di malam hari sebelum JavaScript React sempat membaca preferensi pengguna dari `localStorage`.
+
+Portal Sifast memecahkan masalah ini secara tuntas melalui sinergi arsitektur 3 lapis antara CSS, Blade Shell, dan React Hook.
+
+#### 1. Directif Varian Kustom: `@custom-variant dark (&:is(.dark *));`
+
+Di baris 14 [`resources/css/app.css`](../../resources/css/app.css), terdapat directif:
+```css
+@custom-variant dark (&:is(.dark *));
+```
+
+**Mengapa ini penting?**
+Pada Tailwind v3, mode gelap diaktifkan dengan konfigurasi JavaScript `darkMode: 'class'`, yang menghasilkan selector `.dark .elemen`. Di Tailwind CSS v4, kita menggunakan directif modern CSS `@custom-variant dark (&:is(.dark *));`. 
+Directif ini memberitahu compiler Tailwind: *"Kapan pun ada elemen di dalam subtree yang memiliki class `.dark`, aktifkan utility `dark:*` pada elemen tersebut."*
+
+Sintaks modern `:is(.dark *)` ini sangat efisien karena:
+* Menjaga bobot spesifisitas CSS tetap seragam.
+* Mendukung penataan komponen di dalam portal (seperti Dialog dan Popover Radix yang di-render di luar `#app` tepat di bawah elemen `<body>`).
+
+---
+
+#### 2. Rantai Pencegahan FOUC di [`resources/views/app.blade.php`](../../resources/views/app.blade.php)
+
+Perhatikan bagaimana [`resources/views/app.blade.php`](../../resources/views/app.blade.php) mengeksekusi pencegahan kedipan putih secara sinkron sebelum DOM di-render:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Pengguna (Malam Hari / Dark Mode)
+    participant Server as Laravel Backend
+    participant Blade as resources/views/app.blade.php
+    participant Browser as Browser Layout Engine
+    participant React as React 19 & useAppearance
+
+    User->>Server: HTTP Request GET /tickets
+    Server->>Blade: Render HTML dengan cookie 'appearance'
+    Note over Blade: Lapis 1: Blade @class(['dark' => ...]) pasang class 'dark' di <html>
+    Blade-->>Browser: Kirim HTML Stream awal
+    Note over Browser: Lapis 2: Inline <script> di <head> dieksekusi SECARA SINKRON<br/>Deteksi matchMedia('(prefers-color-scheme: dark)')
+    Note over Browser: Lapis 3: Inline <style> pasang background #0F172A ke <html>
+    Browser->>Browser: Render kanvas pertama ➔ SUDAH GELAP SEJAK PIKSEL PERTAMA (Tanpa FOUC!)
+    Browser->>React: Bootstrapping JavaScript Bundle
+    React->>React: initializeTheme() sinkronkan state via useSyncExternalStore
+```
+
+Mari kita periksa kode nyata di [`resources/views/app.blade.php:2-31`](../../resources/views/app.blade.php):
+
+```blade
+<!-- 1. Lapis Pertama: Server-Side Tag Attribute via Cookie Laravel -->
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['dark' => ($appearance ?? 'system') == 'dark'])>
+    <head>
+        <!-- 2. Lapis Kedua: Synchronous Inline Blocking Script -->
+        <script>
+            (function() {
+                const appearance = '{{ $appearance ?? "system" }}';
+
+                if (appearance === 'system') {
+                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+                    if (prefersDark) {
+                        document.documentElement.classList.add('dark');
+                    }
+                }
+            })();
+        </script>
+
+        <!-- 3. Lapis Ketiga: Inline Background Color Matcher -->
+        <style>
+            html {
+                background: #F8FAFC;
+            }
+
+            html.dark {
+                background: #0F172A;
+            }
+        </style>
+        ...
+```
+
+* **Lapis 1 (Blade `@class`):** Jika cookie `appearance` bernilai `'dark'`, server Laravel langsung mengirim tag `<html class="dark">`. Browser tidak perlu menunggu JavaScript apa pun.
+* **Lapis 2 (Inline `<script>` Sinkron):** Jika preferensi bernilai `'system'`, script mini tanpa dependensi ini langsung berjalan di `<head>` sebelum tag `<body>` diparsing. Script membaca preferensi OS pengguna via `window.matchMedia` dan langsung menambahkan class `.dark` jika diperlukan.
+* **Lapis 3 (Inline `<style>` Background):** Sebelum file bundle CSS utama [`resources/css/app.css`](../../resources/css/app.css) selesai diunduh dari jaringan, browser telah mengecat background kanvas dengan warna `#0F172A`. Hasilnya: **Nol Kedipan Layar (*Zero FOUC*)**.
+
+---
+
+#### 3. Integrasi Reaktif di Client: Hook [`useAppearance`](../../resources/js/hooks/use-appearance.tsx)
+
+Setelah browser memuat bundle React, pengelolaan tema diserahkan kepada hook reaktif [`resources/js/hooks/use-appearance.tsx`](../../resources/js/hooks/use-appearance.tsx):
+
+```tsx
+// Cuplikan dari resources/js/hooks/use-appearance.tsx
+export function useAppearance(): UseAppearanceReturn {
+    // Memanfaatkan useSyncExternalStore (React 18/19 native) untuk konsistensi state
+    const appearance: Appearance = useSyncExternalStore(
+        subscribe,
+        () => currentAppearance,
+        () => 'system',
+    );
+
+    const resolvedAppearance: ResolvedAppearance = useMemo(
+        () => (isDarkMode(appearance) ? 'dark' : 'light'),
+        [appearance],
+    );
+
+    const updateAppearance = useCallback((mode: Appearance): void => {
+        currentAppearance = mode;
+        localStorage.setItem('appearance', mode); // Simpan di client
+        setCookie('appearance', mode);            // Simpan di cookie untuk respon Blade berikutnya
+        applyTheme(mode);
+        notify();
+    }, []);
+
+    return { appearance, resolvedAppearance, updateAppearance } as const;
+}
+```
+
+Saat pengguna menukar tema di pengaturan profil (System, Light, atau Dark):
+1. `updateAppearance` langsung menukar class `.dark` pada `<html>`.
+2. Menyimpan preferensi ke `localStorage` untuk sesi browser saat ini.
+3. Menyimpan preferensi ke `cookie` HTTP `appearance` agar navigasi atau reload berikutnya dapat langsung diproses oleh Blade Shell di Lapis 1.
+
+---
+
+### 4.4 Komponen Primitif UI (`resources/js/components/ui/`) & Filosofi Headless UI
+
+Di folder [`resources/js/components/ui/`](../../resources/js/components/ui/), Anda akan menemukan 30 komponen antarmuka yang siap digunakan.
+
+#### 1. Mengapa Memilih Filosofi "Headless UI" Berbasis Radix UI?
+
+Bagi pengembang yang terbiasa dengan Bootstrap atau Material UI (MUI), pertanyaan umum yang muncul adalah: *Mengapa kita tidak memakai library komponen yang sudah lengkap dengan desainnya?*
+
+> [!NOTE]
+> **Filosofi Headless UI:**
+> *Headless UI* adalah pustaka komponen yang menyediakan **100% fungsionalitas, logika interaksi, manajemen state internal, dan aksesibilitas (WAI-ARIA)** tanpa memaksakan **tampilan visual (HTML styling) apa pun**.
+> 
+> Radix UI Primitives tidak menyertakan file CSS bawaan. Tanggung jawab desain visual diserahkan sepenuhnya kepada kita melalui class utilitas **Tailwind CSS v4**.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Arsitektur Komponen UI                   │
+│                                                             │
+│   [Radix UI Primitive] ─── Logika ARIA, Keyboard, Trapping  │
+│            │                                                │
+│            ▼                                                │
+│   [CVA (Class Variance Authority)] ── Variant & Size Matrix │
+│            │                                                │
+│            ▼                                                │
+│   [Tailwind CSS v4 (@theme)] ── Token Visual Sifast         │
+│            │                                                │
+│            ▼                                                │
+│   [Helper cn()] ── Smart Specificity Merge                  │
+│            │                                                │
+│            ▼                                                │
+│   Komponen Siap Pakai: <Button>, <Dialog>, <Select>, dsb.   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+Keuntungan pendekatan ini di Portal Sifast:
+1. **Bebas Pembengkakan CSS (*Zero CSS Bloat*):** Tidak ada CSS override berantai seperti `!important` yang biasa kita temukan saat mencoba mengkustomisasi Bootstrap atau Ant Design.
+2. **Kepatuhan Aksesibilitas Internasional (A11y):** Radix UI dibangun memenuhi standar W3C WAI-ARIA. Pengguna tunanetra yang memakai *screen reader* atau staf medis yang bernavigasi murni dengan keyboard dapat mengoperasikan aplikasi rumah sakit tanpa kendala.
+
+---
+
+#### 2. Aspek Aksesibilitas (A11y) Out-of-the-Box
+
+Saat Anda menggunakan komponen dari `resources/js/components/ui/`, Anda secara otomatis mendapatkan fitur-fitur aksesibilitas canggih berikut:
+
+1. **Navigasi Keyboard Penuh:**
+   * Menekan `Tab` dan `Shift + Tab` untuk berpindah antar elemen interaktif.
+   * Menekan tombol `Panah Atas / Bawah` untuk memilih opsi di `<Select>` atau `<DropdownMenu>`.
+   * Menekan tombol `Escape` untuk menutup jendela modal `<Dialog>` atau menu terbuka.
+   * Menekan `Enter` atau `Space` untuk mengaktifkan item menu dan tombol.
+2. **Focus Trapping & Focus Restoration:**
+   * Saat `<Dialog>` dibuka, fokus keyboard terkunci (*trapped*) di dalam dialog sehingga pengguna tidak sengaja menekan elemen di balik overlay latar belakang.
+   * Saat `<Dialog>` ditutup, fokus keyboard secara otomatis dikembalikan (*restored*) ke tombol yang memicu pembukaan dialog tersebut.
+3. **Penyematan Atribut ARIA Otomatis:**
+   * Atribut `role="dialog"`, `aria-modal="true"`, `aria-expanded="true/false"`, `aria-haspopup="menu"`, dan `aria-invalid` disuntikkan secara dinamis sesuai state interaksi komponen.
+
+---
+
+#### 3. Bedah 7 Komponen Esensial Sifast
+
+Mari kita telaah implementasi dan cara pemakaian 7 komponen esensial yang paling sering digunakan dalam pengembangan modul di Portal Sifast:
+
+##### a. `Button` ([`resources/js/components/ui/button.tsx`](../../resources/js/components/ui/button.tsx)): Slot Pattern & CVA
+Komponen tombol memadukan library **Class Variance Authority (`cva`)** untuk variasi gaya visual dan **Radix `Slot` (`asChild`)** untuk polimorfisme elemen:
+
+```tsx
+// Cuplikan dari resources/js/components/ui/button.tsx
+const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 ...",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+        destructive: "bg-destructive text-white shadow-xs hover:bg-destructive/90 ...",
+        outline: "border border-input bg-background shadow-xs hover:bg-accent ...",
+        secondary: "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-9 px-4 py-2 has-[>svg]:px-3",
+        sm: "h-8 rounded-md px-3 has-[>svg]:px-2.5",
+        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
+        icon: "size-9",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+);
+```
+
+> [!TIP]
+> **Pola Radix `asChild` (Polimorfisme Elemen JSX):**
+> Seringkali kita ingin sebuah tautan Inertia `<Link href="/tickets">` berpenampilan persis seperti tombol primary, namun membuat `<button><Link>...</Link></button>` adalah pelanggaran standar HTML (elemen interaktif di dalam elemen interaktif).
+> 
+> Dengan properti `asChild`, Radix `Slot` menggabungkan props dan class tombol langsung ke komponen anak tanpa merender elemen `<button>` pembungkus:
+> ```tsx
+> import { Button } from '@/components/ui/button';
+> import { Link } from '@inertiajs/react';
+> 
+> // ✅ Me-render tag <a> Inertia dengan seluruh class & behavior Button
+> <Button variant="outline" asChild>
+>     <Link href="/tickets">Kembali ke Daftar</Link>
+> </Button>
+> ```
+
+##### b. `Input` ([`resources/js/components/ui/input.tsx`](../../resources/js/components/ui/input.tsx)): State Focus & Indikator Validasi
+Komponen input teks yang terstandarisasi dengan ring focus dan penanganan visual error validasi server Laravel:
+
+```tsx
+// Cuplikan dari resources/js/components/ui/input.tsx
+function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+  return (
+    <input
+      type={type}
+      data-slot="input"
+      className={cn(
+        "border-input placeholder:text-muted-foreground flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs outline-none transition-[color,box-shadow]",
+        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+        "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+```
+* Perhatikan aturan `aria-invalid:border-destructive`: Ketika Laravel mengembalikan error validasi dan Anda memasang `aria-invalid={!!errors.title}`, garis batas input secara otomatis berubah menjadi merah dengan ring peringatan halus tanpa perlu menulis class CSS kustom tambahan.
+
+##### c. `Dialog` ([`resources/js/components/ui/dialog.tsx`](../../resources/js/components/ui/dialog.tsx)): Modal Dialog Accessible
+Membungkus kumpulan primitif `@radix-ui/react-dialog` (`Dialog`, `DialogTrigger`, `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogDescription`, `DialogFooter`, `DialogClose`):
+
+```tsx
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+
+export function ModalPeringatan() {
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button variant="destructive">Hapus Rekam Medis</Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Konfirmasi Penghapusan</DialogTitle>
+                    <DialogDescription>
+                        Aksi ini tidak dapat dibatalkan. Berkas akan diarsipkan permanen.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <Button variant="outline">Batal</Button>
+                    <Button variant="destructive">Ya, Hapus</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+```
+Komponen ini secara otomatis menangani render portal di luar pohon DOM utama, animasi masuk (*fade-in* dan *zoom-in-95*), penutupan via tombol Esc, serta penguncian scroll layar belakang.
+
+##### d. `DropdownMenu` ([`resources/js/components/ui/dropdown-menu.tsx`](../../resources/js/components/ui/dropdown-menu.tsx)): Menu Aksi Baris & Navigasi Keyboard
+Membungkus `@radix-ui/react-dropdown-menu` untuk menyajikan menu kontekstual (misalnya tombol aksi `...` pada setiap baris tabel):
+
+```tsx
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+
+export function ActionMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <MoreHorizontal className="size-4" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Tindakan</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={onEdit}>
+                    <Edit className="size-4 mr-2" /> Ubah Data
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onDelete} variant="destructive">
+                    <Trash2 className="size-4 mr-2" /> Hapus
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+```
+
+##### e. `Badge` ([`resources/js/components/ui/badge.tsx`](../../resources/js/components/ui/badge.tsx)): Label Indikator Status Rumah Sakit
+Komponen badge yang secara cerdas memetakan status operasional rumah sakit ke token warna `@theme` yang telah kita konfigurasikan:
+
+```tsx
+// Cuplikan varian dari resources/js/components/ui/badge.tsx
+variants: {
+  variant: {
+    default: "border-transparent bg-primary text-primary-foreground",
+    secondary: "border-transparent bg-secondary text-secondary-foreground",
+    destructive: "border-transparent bg-destructive text-white",
+    outline: "border-gray-200 bg-gray-50 text-gray-700",
+    success: "border-transparent bg-normal-bg text-normal",
+    warning: "border-transparent bg-warning-bg text-warning",
+    info: "border-transparent bg-info-bg text-info",
+    urgent: "border-transparent bg-urgent-bg text-urgent",
+    "follow-up": "border-transparent bg-follow-up-bg text-follow-up",
+    neutral: "border-transparent bg-gray-100 text-gray-700",
+  },
+}
+```
+Penggunaan di halaman tiket atau antrean poli:
+```tsx
+<Badge variant="urgent">Gawat Darurat</Badge>
+<Badge variant="warning">Menunggu Konfirmasi Dokter</Badge>
+<Badge variant="success">Resep Obat Selesai</Badge>
+```
+
+##### f. `Select` ([`resources/js/components/ui/select.tsx`](../../resources/js/components/ui/select.tsx)): Dropdown Pilihan Kustom Accessible
+Membungkus `@radix-ui/react-select`. Menggantikan elemen `<select>` HTML bawaan browser yang kaku dan sulit diberi gaya visual:
+
+```tsx
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+
+export function PilihDepartemen({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+    return (
+        <Select value={value} onValueChange={onChange}>
+            <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Pilih Instalasi..." />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="igd">Instalasi Gawat Darurat</SelectItem>
+                <SelectItem value="farmasi">Farmasi & Apotek</SelectItem>
+                <SelectItem value="radiologi">Radiologi</SelectItem>
+                <SelectItem value="it">Teknologi Informasi</SelectItem>
+            </SelectContent>
+        </Select>
+    );
+}
+```
+
+##### g. `Textarea` ([`resources/js/components/ui/textarea.tsx`](../../resources/js/components/ui/textarea.tsx)): Input Multiline dengan ForwardRef
+Komponen area teks serbaguna untuk deskripsi keluhan pasien, laporan investigasi insiden, atau catatan resep dokter:
+
+```tsx
+// Cuplikan dari resources/js/components/ui/textarea.tsx
+const Textarea = React.forwardRef<HTMLTextAreaElement, React.ComponentProps<"textarea">>(
+    function Textarea({ className, ...props }, ref) {
+        return (
+            <textarea
+                ref={ref}
+                data-slot="textarea"
+                className={cn(
+                    "border-input placeholder:text-muted-foreground selection:bg-primary flex min-h-[80px] w-full rounded-md border bg-transparent px-3 py-2 text-base shadow-xs outline-none transition-[color,box-shadow]",
+                    "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+                    "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+                    className
+                )}
+                {...props}
+            />
+        );
+    }
+);
+Textarea.displayName = "Textarea";
+```
+
+---
+
+### 4.5 Helper Utility `cn()` (`clsx` + `tailwind-merge`)
+
+Di setiap komponen UI Portal Sifast, Anda akan selalu melihat pemanggilan fungsi `cn(...)`. Berkas ini berada di [`resources/js/lib/utils.ts`](../../resources/js/lib/utils.ts).
+
+#### 1. Analisis Berkas [`resources/js/lib/utils.ts`](../../resources/js/lib/utils.ts)
+
+```typescript
+// Cuplikan nyata dari resources/js/lib/utils.ts:1-7
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+export function cn(...inputs: ClassValue[]) {
+    return twMerge(clsx(inputs));
+}
+```
+
+Fungsi ini sangat ringkas (hanya 3 baris), namun merupakan fondasi paling krusial dalam sistem styling komponen React di Sifast. Fungsi ini menggabungkan dua library:
+1. **`clsx`**: Utility untuk menangani logika kondisional penulisan class JavaScript.
+2. **`tailwind-merge` (`twMerge`)**: Mesin resolusi cerdas untuk menyelesaikan konflik benturan spesifisitas class Tailwind CSS.
+
+---
+
+#### 2. Mengapa Penggabungan String Biasa Menimbulkan Bug Spesifisitas CSS?
+
+Bagi pengembang yang belum terbiasa dengan Tailwind, godaan terbesar adalah menggabungkan class menggunakan template literal string biasa:
+
+```tsx
+// ⚠️ CONTOH JEBAKAN PEMULA: Menggabungkan string biasa
+function AlertBox({ className, children }: { className?: string; children: React.ReactNode }) {
+    // Komponen menetapkan padding default p-4
+    return <div className={`p-4 bg-blue-100 rounded ${className}`}>{children}</div>;
+}
+
+// Kemudian pemanggil ingin memperlebar padding menjadi p-8:
+<AlertBox className="p-8">Halo Pasien</AlertBox>
+```
+
+**Apa yang terjadi di browser?**
+Elemen HTML akan terender sebagai:
+```html
+<div class="p-4 bg-blue-100 rounded p-8">Halo Pasien</div>
+```
+
+> [!CAUTION]
+> **Hukum Spesifisitas CSS yang Sering Disalahpahami:**
+> Banyak developer mengira bahwa class `p-8` akan menang karena ditulis paling akhir di atribut `class="..."`. **Anggapan ini 100% keliru dalam spesifikasi CSS!**
+> 
+> Di CSS, prioritas aturan class ditentukan oleh **urutan pendeklarasian aturan di file stylesheet CSS (`app.css`) yang dikompilasi**, BUKAN urutan kata di atribut HTML.
+> 
+> Jika di dalam CSS hasil kompilasi aturan `.p-4` kebetulan dideklarasikan setelah `.p-8`, maka gaya `padding: 1rem` dari `.p-4` yang akan selalu aktif selamanya! Nilai `p-8` yang Anda oper dari luar akan diabaikan oleh browser.
+
+---
+
+#### 3. Sinergi Cerdas `clsx` dan `tailwind-merge` (`twMerge`)
+
+Mari kita lihat bagaimana `cn()` memecahkan masalah ini dengan elegan:
+
+1. **Tahap 1: `clsx` Mengevaluasi Logika Kondisional**
+   `clsx` mengizinkan kita mengoper objek, array, atau kondisi boolean tanpa menghasilkan string kotor seperti `"undefined"` atau `"false"`:
+   ```typescript
+   clsx('p-4', isActive && 'text-blue-600', isError ? 'border-red-500' : null)
+   // Menghasilkan: "p-4 text-blue-600 border-red-500"
+   ```
+
+2. **Tahap 2: `twMerge` Menyelesaikan Benturan Kelas Tailwind**
+   `twMerge` memahami pohon semantik utilitas Tailwind. Ia mengenali bahwa `p-4` (padding) dan `p-8` (padding) menargetkan properti CSS yang identik (`padding`).
+   ```typescript
+   twMerge('p-4 p-8')
+   // Menghasilkan: "p-8" (p-4 otomatis dihapus secara cerdas!)
+   ```
+
+##### Contoh Kasus Resolusi Konflik Lainnya:
+* **Konflik Background:** `cn('bg-red-500', 'bg-blue-500')` $\rightarrow$ `'bg-blue-500'`
+* **Konflik Spacing Parsial:** `cn('px-4 py-2', 'p-6')` $\rightarrow$ `'p-6'` (menimpa padding horizontal dan vertikal)
+* **Konflik Ukuran Teks:** `cn('text-sm', 'text-lg')` $\rightarrow$ `'text-lg'`
+* **Konflik Radius:** `cn('rounded-md', 'rounded-full')` $\rightarrow$ `'rounded-full'`
+
+---
+
+#### 4. Matriks Perbandingan: String Biasa vs `clsx` vs `cn()`
+
+| Skenario Penggunaan | Template Literal Biasa (`` `...` ``) | Library `clsx` Saja | Utility `cn()` (`clsx` + `twMerge`) |
+| :--- | :--- | :--- | :--- |
+| **Kondisi Boolean `isActive && 'btn-active'`** | Berisiko menghasilkan teks literal `"false"` di DOM jika falsy. | Bersih: nilai falsy dibuang otomatis. | Bersih: nilai falsy dibuang otomatis. |
+| **Nilai `undefined` atau `null`** | Berisiko menghasilkan teks `"undefined"` di atribut class. | Dieliminasi otomatis. | Dieliminasi otomatis. |
+| **Override Class Padding (`p-4` ditimpa `p-6`)** | ❌ Gagal: Tergantung urutan kompilasi CSS. | ❌ Gagal: Keduanya dimasukkan ke DOM. | ✅ **Berhasil Sempurna:** `p-4` dibersihkan, `p-6` menang. |
+| **Override Warna Tombol (`bg-blue` ditimpa `bg-red`)**| ❌ Gagal: Menghasilkan benturan warna tak terduga. | ❌ Gagal: Konflik di browser. | ✅ **Berhasil Sempurna:** `bg-red` menang secara deterministik. |
+
+---
+
+#### 5. Pola Standar Komponen Kustom dengan `cn()`
+
+Di Portal Sifast, seluruh komponen kustom yang menerima properti `className` **wajib** menggunakan pola berikut:
+
+```tsx
+import { cn } from '@/lib/utils';
+import React from 'react';
+
+type PatientCardProps = {
+    namaPasien: string;
+    noRm: string;
+    isEmergency?: boolean;
+    className?: string; // Opsional: mengizinkan styling tambahan dari parent
+};
+
+export function PatientCard({ namaPasien, noRm, isEmergency, className }: PatientCardProps) {
+    return (
+        <div
+            className={cn(
+                // 1. Gaya Dasar (Default Styles)
+                "p-4 rounded-xl border bg-card text-card-foreground shadow-xs transition-colors",
+                // 2. Gaya Kondisional Berdasarkan State / Props
+                isEmergency && "border-urgent bg-urgent-bg text-urgent",
+                // 3. Gaya Override dari Luar (Parent ClassName) - Selalu di Posisi Terakhir!
+                className
+            )}
+        >
+            <div className="text-sm font-semibold">{namaPasien}</div>
+            <div className="text-xs text-muted-foreground">No. RM: {noRm}</div>
+        </div>
+    );
+}
+```
+
+Dengan pola di atas:
+* Komponen memiliki tampilan default yang cantik dan stabil.
+* Komponen merespon state lokal (`isEmergency`).
+* Pengembang lain dapat menggunakan komponen ini dan melakukan *custom override* (misal `<PatientCard className="shadow-lg p-6" ... />`) tanpa khawatir styling default akan merusak tampilan.
+
+---
+
+### 4.6 Panduan Praktis: Membangun Komponen Baru Mengikuti Standar Sifast
+
+Sebagai ringkasan implementasi arsitektur styling di Portal Sifast, mari kita lihat studi kasus penerapan langsung saat membuat komponen baru.
+
+#### 1. Studi Kasus Pembuatan Komponen `IncidentPriorityBadge`
+
+Bayangkan Anda diminta membuat komponen badge prioritas insiden SIMRS yang mendukung 4 level keparahan:
+
+```tsx
+import { cva, type VariantProps } from 'class-variance-authority';
+import * as React from 'react';
+import { cn } from '@/lib/utils';
+
+// 1. Definisikan varian menggunakan CVA dan token tema @theme Sifast
+const incidentBadgeVariants = cva(
+    "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide transition-colors",
+    {
+        variants: {
+            priority: {
+                low: "bg-surface-2 text-ink-muted border border-border",
+                medium: "bg-info-bg text-info border border-info/20",
+                high: "bg-warning-bg text-warning border border-warning/20",
+                critical: "bg-urgent-bg text-urgent border border-urgent/30 animate-pulse",
+            },
+            size: {
+                sm: "text-[11px] px-2 py-0.2",
+                default: "text-xs px-2.5 py-0.5",
+                lg: "text-sm px-3 py-1",
+            },
+        },
+        defaultVariants: {
+            priority: "medium",
+            size: "default",
+        },
+    }
+);
+
+export interface IncidentBadgeProps
+    extends React.HTMLAttributes<HTMLSpanElement>,
+        VariantProps<typeof incidentBadgeVariants> {}
+
+export function IncidentPriorityBadge({
+    priority,
+    size,
+    className,
+    children,
+    ...props
+}: IncidentBadgeProps) {
+    return (
+        <span
+            className={cn(incidentBadgeVariants({ priority, size }), className)}
+            {...props}
+        >
+            <span className="size-1.5 rounded-full bg-current shrink-0" />
+            {children}
+        </span>
+    );
+}
+```
+
+Komponen di atas langsung memenuhi seluruh kriteria arsitektur Sifast:
+* Terintegrasi dengan token `@theme` (`bg-urgent-bg`, `text-urgent`, `bg-info-bg`, dsb.).
+* Otomatis beradaptasi sempurna di Light Mode maupun Dark Mode tanpa penulisan duplikat class `dark:bg-...`.
+* Aman dari konflik spesifisitas via `cn()`.
+* Fully type-safe dengan auto-complete TypeScript untuk properti `priority` dan `size`.
+
+---
+
+#### 2. Checklist Desain UI & Styling bagi Developer Sifast
+
+Sebelum menyerahkan pull request atau mengajukan fitur baru ke review tim, pastikan kode antarmuka Anda memenuhi 6 poin checklist berikut:
+
+| No | Poin Pemeriksaan | Kriteria Sukses |
+| :---: | :--- | :--- |
+| 1 | **Tanpa `tailwind.config.js`** | Konfigurasi token tema baru ditulis di blok `@theme` pada [`resources/css/app.css`](../../resources/css/app.css). |
+| 2 | **Wajib Memakai Helper `cn()`** | Seluruh penggabungan class string atau conditional class menggunakan `cn(...)` dari [`resources/js/lib/utils.ts`](../../resources/js/lib/utils.ts). |
+| 3 | **Kompatibilitas Dark Mode** | Menggunakan semantic token (`bg-card`, `text-foreground`, `bg-urgent-bg`) sehingga elemen otomatis indah di mode terang dan gelap. |
+| 4 | **Dukungan Polimorfisme `asChild`** | Gunakan `asChild` saat merender tombol yang bertindak sebagai link navigasi Inertia (`<Button asChild><Link ... /></Button>`). |
+| 5 | **Aksesibilitas WAI-ARIA** | Komponen modal, dropdown, dan pilihan selalu memanfaatkan primitif Radix UI di [`resources/js/components/ui/`](../../resources/js/components/ui/) untuk navigasi keyboard otomatis. |
+| 6 | **Validasi Indikator Visual** | Pasangkan atribut `aria-invalid={!!errors.field}` pada komponen `<Input>` atau `<Textarea>` agar border kesalahan berwarna merah secara otomatis. |
+
+---
+
+*Lanjutkan membaca ke [Bab 5: Reaktivitas Real-Time & WebSockets](#) (segera hadir di Task 7).*
+
 
 
