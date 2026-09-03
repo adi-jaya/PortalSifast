@@ -11,7 +11,7 @@ Modul ini dirancang khusus untuk menjembatani pergeseran paradigma dari pola mon
 | Entitas | Rincian |
 | :--- | :--- |
 | **Kode Dokumen** | `MOD-02B-FE-REACT-INERTIA` |
-| **Versi Dokumen** | 1.4.0 (Fondasi, Bab 1, Bab 2, Bab 3 CRUD, Bab 4 Styling, & Bab 5 Real-Time WebSockets) |
+| **Versi Dokumen** | 2.0.0 (Lengkap Seluruh 6 Bab: Fondasi, Kasus Nyata, CRUD, Styling, WebSockets, & Debugging Toolkit) |
 | **Status Dokumen** | Produksi Aktif / Terverifikasi |
 | **Tanggal Pembaruan** | 2026-09-03 |
 | **Tech Stack Utama** | React 19, Inertia.js v2, TypeScript 5+, Tailwind CSS v4, Radix UI Primitives, Laravel Wayfinder |
@@ -3823,8 +3823,565 @@ Sebelum mengajukan Pull Request yang menyertakan fitur WebSocket atau Reverb, pa
 
 ---
 
-*Lanjutkan membaca ke [Bab 6: Anti-Patterns, Gotchas & Debugging Toolkit](#) (segera hadir di Task 8).*
+## Bab 6: Anti-Patterns, Gotchas & Debugging Toolkit
 
+Sebagai penutup dari modul panduan frontend ini, bab ini didedikasikan untuk menyelamatkan waktu Anda dari kesalahan-kesalahan yang paling sering menghabiskan waktu berjam-jam saat bermigrasi dari ekosistem Blade & jQuery ke React 19 dan Inertia.js v2.
 
+Bab ini terbagi menjadi lima bagian esensial:
+1. **Daftar Larangan Keras bagi Developer Transisi jQuery:** Tiga kebiasaan lama yang wajib ditinggalkan karena merusak siklus hidup Virtual DOM.
+2. **Katalog Gotchas & Solusi Cepat (Penyelamat Developer Junior):** Daftar error paling umum (input form beku, invalid object as React child, White Screen of Death) beserta panduan langkah demi langkah mengatasinya.
+3. **Catatan Performa untuk Developer Senior (React 19 Compiler Deep Dive):** Penjelasan bagaimana `babel-plugin-react-compiler` di Portal Sifast mengotomatisasi memoization tanpa manual `useMemo` dan `useCallback`.
+4. **Toolkit & Trik Debugging Efisien:** Cara menginspeksi payload XHR Inertia, memanfaatkan React DevTools, dan menjalankan shortcut verifikasi tipe harian.
+5. **Bagian Penutup & Navigasi Silang Dokumen:** Peta rujukan ke modul-modul dokumentasi sistem lainnya.
 
+---
 
+### 6.1 Daftar Larangan Keras bagi Developer Transisi jQuery (Strict Anti-Patterns)
+
+Dalam paradigma lama Blade + jQuery, browser bertindak sebagai repositori state utama (*DOM-as-state*). Jika teks tombol berubah, Anda mencari elemen dan menimpa teksnya. Jika form disubmit, Anda membaca nilai elemen input satu per satu via selector.
+
+Di React 19, antarmuka adalah **proyeksi murni dari state**: $\text{UI} = f(\text{state})$. Menyuntikkan manipulasi DOM secara manual di luar kendali React merusak sinkronisasi Virtual DOM dan memicu bug render ghaib (*ghost renders*).
+
+Berikut adalah tiga larangan keras yang **diharamkan** di Portal Sifast:
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│               TIGA LARANGAN KERAS DI CODEBASE PORTAL SIFAST            │
+│                                                                        │
+│  ❌ 1. document.getElementById / jQuery $('#id')                       │
+│     ➔ Hancurkan kebiasaan manipulasi DOM langsung! Gunakan State-Driven.│
+│                                                                        │
+│  ❌ 2. Mutasi State Langsung (data.title = 'baru')                     │
+│     ➔ React tidak mendeteksi mutasi in-place! Wajib gunakan setData.  │
+│                                                                        │
+│  ❌ 3. Hardcoded URL String ('/tickets/' + id)                         │
+│     ➔ Rawan typo & 404! Wajib gunakan fungsi Wayfinder.                │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Larangan 1: ❌ Dilarang Keras Memakai `document.getElementById` atau jQuery `$('#id')`
+
+```tsx
+// ❌ CONTOH ANTIPATTERN (GAYA JQUERY / IMPERATIVE DOM)
+function BadTicketStatus({ ticket }: { ticket: Ticket }) {
+    const handleCloseTicket = () => {
+        // Manipulasi DOM langsung secara imperatif!
+        const badge = document.getElementById('status-badge');
+        if (badge) {
+            badge.innerText = 'Closed';
+            badge.className = 'badge bg-gray-500 text-white';
+        }
+        // Masalah: Saat React melakukan re-render komponen induk,
+        // manipulasi DOM manual di atas akan DIHAPUS dan ditimpa kembali
+        // oleh Virtual DOM, membingungkan pengguna!
+    };
+
+    return (
+        <div>
+            <span id="status-badge" className="badge bg-green-500">Open</span>
+            <button onClick={handleCloseTicket}>Tutup Tiket</button>
+        </div>
+    );
+}
+
+// ✅ CONTOH BENAR & SESUAI STANDAR SIFAST (STATE-DRIVEN UI)
+function GoodTicketStatus({ initialStatus }: { initialStatus: string }) {
+    const [status, setStatus] = useState(initialStatus);
+
+    const handleCloseTicket = () => {
+        // Cukup ubah datanya! React yang mengurus pembaruan DOM secara presisi
+        setStatus('Closed');
+    };
+
+    return (
+        <div>
+            <Badge variant={status === 'Closed' ? 'secondary' : 'default'}>
+                {status}
+            </Badge>
+            <Button onClick={handleCloseTicket} variant="outline" size="sm">
+                Tutup Tiket
+            </Button>
+        </div>
+    );
+}
+```
+
+> [!CAUTION]
+> **Kapan `useRef` Boleh Digunakan sebagai Escape Hatch?**
+> React menyediakan hook `useRef` untuk merujuk pada elemen DOM riil. Di Portal Sifast, penggunaan `useRef` hanya dibenarkan untuk **tindakan imperatif non-visual**:
+> 1. Memberikan fokus kursor ke input form saat modal dibuka (`inputRef.current?.focus()`).
+> 2. Mengukur dimensi fisik elemen (`ref.current?.getBoundingClientRect()`).
+> 3. Mengintegrasikan pustaka canvas pihak ketiga non-React (seperti barcode scanner atau grafik audio WebRTC).
+> 
+> Dilarang keras menggunakan `useRef` untuk mengubah teks, menambahkan class CSS, atau menyembunyikan elemen!
+
+---
+
+#### Larangan 2: ❌ Dilarang Melakukan Mutasi State Langsung (*Direct State Mutation*)
+
+React mendeteksi apakah suatu komponen perlu dirender ulang dengan membandingkan referensi objek lama dan baru menggunakan algoritma kesetaraan dangkal (*shallow comparison* / `Object.is`).
+
+```tsx
+// ❌ CONTOH ANTIPATTERN (MUTASI IN-PLACE LANGSUNG)
+const { data, setData } = useForm({
+    title: '',
+    tags: [] as string[],
+});
+
+const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // FATAL: Memutasi properti objek state secara langsung!
+    data.title = e.target.value;
+    // HASIL: Referensi objek `data` tidak berubah di memori.
+    // React menganggap data tidak berubah, sehingga input tidak merender karakter baru!
+};
+
+const handleAddTag = (newTag: string) => {
+    // FATAL: Memutasi array menggunakan push!
+    data.tags.push(newTag);
+    // HASIL: Komponen daftar tag tidak akan ter-render ulang!
+};
+
+// ✅ CONTOH BENAR & SESUAI STANDAR SIFAST
+const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Gunakan fungsi helper setData dari useForm Inertia
+    setData('title', e.target.value);
+};
+
+const handleAddTag = (newTag: string) => {
+    // Hasilkan array baru yang immutable via operator spread (...)
+    setData('tags', [...data.tags, newTag]);
+};
+```
+
+| Operasi Data | ❌ Dilarang (Mutasi Langsung) | ✅ Wajib (Immutable Update) |
+| :--- | :--- | :--- |
+| **Mengubah Properti Objek** | `data.title = 'Baru'` | `setData('title', 'Baru')` atau `setUser(prev => ({ ...prev, name: 'Baru' }))` |
+| **Menambah Elemen Array** | `tags.push(item)` | `setData('tags', [...data.tags, item])` |
+| **Menghapus Elemen Array** | `tags.splice(index, 1)` | `setData('tags', data.tags.filter(t => t.id !== id))` |
+| **Mengubah Elemen Array** | `items[0].qty = 5` | `setItems(items.map(i => i.id === id ? { ...i, qty: 5 } : i))` |
+
+---
+
+#### Larangan 3: ❌ Dilarang Hardcode URL String untuk Navigasi & Endpoint
+
+Dalam proyek berskala besar seperti Portal Sifast, rute Laravel dapat mengalami refactoring, pengelompokan prefix (`/itil/...`), atau perubahan nama parameter.
+
+```tsx
+// ❌ CONTOH ANTIPATTERN (STRING URL KERAS / HARDCODED)
+// 1. Pada router Inertia:
+router.delete('/tickets/' + ticket.id);
+
+// 2. Pada komponen tautan Link:
+<Link href={`/projects/${project.id}/edit`}>Ubah Proyek</Link>
+
+// 3. Pada pengiriman Form:
+post('/tickets/' + ticket.id + '/comments');
+```
+
+**Mengapa ini berbahaya?**
+* **Nol Validasi Compile-Time:** Jika rute di `routes/web.php` diubah menjadi `/helpdesk/tickets/{ticket}`, compiler TypeScript tidak akan memberi tahu Anda. Tautan rusak (*broken 404*) baru meledak saat staf rumah sakit mengkliknya di ruang tindakan medis.
+* **Typo Fatal:** Penulisan manual rawan salah ketik parameter (misal `/tickets/` vs `/ticket/`).
+
+```tsx
+// ✅ CONTOH BENAR & SESUAI STANDAR SIFAST (LARAVEL WAYFINDER)
+import { destroy, comments } from '@/routes/tickets';
+import { edit } from '@/routes/projects';
+
+// 1. Pada router Inertia: Type-safe & autocompletion parameter ID
+router.delete(destroy(ticket).url);
+
+// 2. Pada komponen tautan Link:
+<Link href={edit(project).url}>Ubah Proyek</Link>
+
+// 3. Pada pengiriman Form:
+post(comments.store(ticket).url);
+```
+
+> [!TIP]
+> **Keunggulan Wayfinder di Portal Sifast:**
+> Fungsi helper Wayfinder secara cerdas dapat menerima baik ID primitif numerik (`destroy(101).url`) maupun seluruh instance objek model TypeScript (`destroy(ticket).url`). Wayfinder akan secara otomatis mengekstrak properti `.id` model tanpa Anda perlu mengetik `.id` secara manual!
+
+---
+
+### 6.2 Katalog Gotchas & Solusi Cepat (Penyelamat Developer Junior)
+
+Bagian ini merangkum tiga jebakan mental paling populer yang kerap membingungkan programmer yang baru pertama kali menyentuh React:
+
+```mermaid
+graph TD
+    Bug([Terjadi Masalah di Layar]) --> Check{Apa Gejalanya?}
+    
+    Check -->|Input Form Membeku / Tidak Bisa Diketik| G1["🧊 Gotcha 1: Controlled Input Tanpa onChange<br/>Solusi: Pasang onChange={e => setData('field', e.target.value)}"]
+    Check -->|Layar Merah: Objects are not valid as child| G2["📦 Gotcha 2: Merender Objek Langsung di JSX<br/>Solusi: Render properti teks {user.name} bukan objek {user}"]
+    Check -->|Layar Putih Bersih / Kosong Total| G3["👻 Gotcha 3: White Screen of Death (WSOD)<br/>Solusi: Buka Console DevTools, cek null pointer via Optional Chaining (?.)"]
+```
+
+---
+
+#### Gotcha 1: "Input Form Tidak Bisa Diketik / Membeku (*Frozen Input*)"
+
+* **Gejala:** Anda membuka halaman form tambah tiket. Kotak input judul tiket tampak normal. Namun saat Anda mencoba mengetikkan tombol keyboard, kursor tidak bergerak dan tidak ada satu huruf pun yang muncul di layar.
+* **Penyebab:** Anda membuat *Controlled Component* dengan menetapkan properti `value`, namun lupa memasang atribut event `onChange`.
+
+```tsx
+// ❌ KODE PENYEBAB MASALAH
+export function BadFormInput() {
+    const { data, setData } = useForm({ title: '' });
+
+    return (
+        <div>
+            <Label>Judul Gangguan</Label>
+            {/* React mengunci isi input ini pada nilai data.title ('').
+                Tanpa onChange, setiap kali tuts keyboard ditekan,
+                React langsung merender ulang input dengan nilai state lama! */}
+            <Input value={data.title} />
+        </div>
+    );
+}
+```
+
+* **Solusi Cepat:** Pasang selalu handler `onChange` yang memanggil `setData` untuk memperbarui nilai state:
+
+```tsx
+// ✅ KODE SOLUSI
+export function GoodFormInput() {
+    const { data, setData } = useForm({ title: '' });
+
+    return (
+        <div>
+            <Label>Judul Gangguan</Label>
+            <Input
+                value={data.title}
+                onChange={(e) => setData('title', e.target.value)}
+                placeholder="Ketik judul insiden..."
+            />
+        </div>
+    );
+}
+```
+
+> [!NOTE]
+> **Aturan Emas Input Controlled:**
+> Di React, atribut `value` dan handler `onChange` adalah sepasang sahabat karib yang tidak boleh dipisahkan. Jika Anda menetapkan `value`, Anda **wajib** menyertakan `onChange`.
+
+---
+
+#### Gotcha 2: "Error *Objects are not valid as a React child*"
+
+* **Gejala:** Halaman mendadak terhenti dan jendela dialog merah (*Red Error Overlay*) muncul di browser:
+  ```
+  Uncaught Error: Objects are not valid as a React child (found: object with keys {id, name, slug}).
+  If you meant to render a collection of children, use an array instead.
+  ```
+* **Penyebab:** JSX hanya mengizinkan rendering nilai-nilai primitif (string, number, boolean) atau elemen React lainnya. Error ini muncul saat Anda tidak sengaja meletakkan objek JavaScript/Eloquent utuh di dalam tag JSX.
+
+```tsx
+// ❌ KODE PENYEBAB MASALAH
+export function BadTicketDetail({ ticket }: { ticket: Ticket }) {
+    return (
+        <div className="card">
+            <h3>{ticket.title}</h3>
+            {/* FATAL: ticket.category adalah objek Eloquent { id: 1, name: 'Hardware', slug: 'hardware' }
+                JSX tidak tahu cara merender objek JavaScript secara langsung ke teks! */}
+            <p>Kategori: {ticket.category}</p>
+        </div>
+    );
+}
+
+// ✅ KODE SOLUSI
+export function GoodTicketDetail({ ticket }: { ticket: Ticket }) {
+    return (
+        <div className="card">
+            <h3>{ticket.title}</h3>
+            {/* Benar: Akses properti string yang ingin ditampilkan */}
+            <p>Kategori: {ticket.category?.name ?? 'Tanpa Kategori'}</p>
+            
+            {/* Jika ingin merender kumpulan array objek, lakukan iterasi .map(): */}
+            <div className="flex gap-1">
+                {ticket.tags.map((tag) => (
+                    <Badge key={tag.id}>{tag.name}</Badge>
+                ))}
+            </div>
+        </div>
+    );
+}
+```
+
+---
+
+#### Gotcha 3: "Layar Putih Kosong (*White Screen of Death / WSOD*)"
+
+* **Gejala:** Saat berpindah halaman atau me-refresh tab, tampilan layar menjadi putih bersih kosong tanpa elemen visual apa pun (*White Screen of Death*). Di tab Network browser, respons HTTP dari Laravel berstatus **200 OK**.
+* **Penyebab:** Terjadi eksepsi JavaScript yang tidak tertangkap (*uncaught exception*) pada saat siklus rendering komponen React. Di Portal Sifast, 90% kasus ini dipicu oleh **Null Pointer Exception** saat mengakses relasi database yang bernilai `null`.
+
+```tsx
+// ❌ KODE PENYEBAB MASALAH
+export function BadTicketRow({ ticket }: { ticket: Ticket }) {
+    // Jika tiket baru dibuat dan belum ditugaskan ke staf IT mana pun,
+    // maka properti ticket.assignee bernilai `null` atau `undefined`.
+    // Mencoba mengakses .name dari null akan melempar TypeError:
+    // "Cannot read properties of null (reading 'name')"
+    return (
+        <tr>
+            <td>#{ticket.ticket_number}</td>
+            <td>{ticket.title}</td>
+            <td>{ticket.assignee.name}</td> {/* 💥 MELEDAK KETIKA ASSIGNEE NULL! */}
+        </tr>
+    );
+}
+```
+
+* **Langkah Diagnosa Cepat:**
+  1. Jangan panik! Tekan tombol **F12** (atau **Cmd + Option + I** pada macOS) untuk membuka Chrome/Firefox DevTools.
+  2. Buka tab **Console**.
+  3. Cari pesan error berwarna merah tebal: `TypeError: Cannot read properties of null (reading 'name')`.
+  4. Periksa baris stack trace di sebelah kanan pesan error untuk mengetahui file dan nomor baris persis di mana error tersebut meledak.
+
+```tsx
+// ✅ KODE SOLUSI: DEFENSIVE PROGRAMMING DENGAN OPTIONAL CHAINING
+export function GoodTicketRow({ ticket }: { ticket: Ticket }) {
+    return (
+        <tr>
+            <td>#{ticket.ticket_number}</td>
+            <td>{ticket.title}</td>
+            {/* Gunakan Optional Chaining (?.) dan Nullish Coalescing (??) */}
+            <td>{ticket.assignee?.name ?? <span className="text-muted-foreground italic">Belum Ditugaskan</span>}</td>
+        </tr>
+    );
+}
+```
+
+> [!TIP]
+> **Kiat Pro untuk Developer Laravel:**
+> Ingatlah bahwa relasi Eloquent opsional (`belongsTo` nullable) selalu datang sebagai `null` di JavaScript jika belum terisi. Selalu gunakan operator `?.` (*optional chaining*) saat menelusuri relasi objek dari backend!
+
+---
+
+### 6.3 Catatan Performa untuk Developer Senior: React 19 Compiler Deep Dive
+
+Salah satu inovasi terbesar dalam stack Portal Sifast adalah adopsi **React 19 Compiler** (sebelumnya dikenal dalam tim riset React dengan nama sandi *React Forget*).
+
+#### 1. Konfigurasi Produksi di Codebase Portal Sifast
+
+Dukungan compiler diaktifkan secara native pada bundler Vite melalui plugin Babel di [`vite.config.ts`](../../vite.config.ts#L14-L18):
+
+```typescript
+// Cuplikan dari vite.config.ts:14-18
+react({
+    babel: {
+        plugins: ['babel-plugin-react-compiler'],
+    },
+}),
+```
+
+Serta terdaftar sebagai dev dependency pada [`package.json`](../../package.json#L19):
+```json
+"babel-plugin-react-compiler": "^1.0.0",
+```
+
+#### 2. Bagaimana React 19 Compiler Bekerja Under-the-Hood?
+
+Di era React 16 hingga 18, React mengadopsi model eksekusi yang naif: setiap kali state suatu komponen berubah, React akan mengeksekusi ulang seluruh fungsi komponen tersebut beserta seluruh anak-anaknya (*re-render cascade*).
+
+Untuk mencegah perhitungan komputasi ulang yang boros atau render ulang anak komponen yang tidak perlu, developer terdahulu dipaksa menjadi "manajer memori manual" dengan menulis kode defensif:
+* `useMemo`: Mencache hasil komputasi berat antar render.
+* `useCallback`: Menjaga identitas referensi fungsi callback agar tidak memicu render ulang child component.
+* `React.memo`: Membungkus komponen anak agar tidak di-render jika props tidak berubah.
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        ERA REACT 18 VS REACT 19                        │
+│                                                                        │
+│  [React 18: Manual Mental Burden]                                      │
+│  Developer ➔ Tulis useMemo(...) ➔ Salah isi deps ➔ Bug Stale Closure!  │
+│  Developer ➔ Tulis useCallback() ➔ Kode kembung berantakan!             │
+│                                                                        │
+│  [React 19 Compiler di Portal Sifast]                                  │
+│  Developer ➔ Tulis kode JavaScript murni biasa yang bersih & ekspresif │
+│  Vite Build ➔ Babel Compiler menganalisis AST & alur dependency        │
+│  Hasil Akhir ➔ Bytecode ter-memoize otomatis pada level mikro!         │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+React 19 Compiler bertindak sebagai compiler pengoptimal statis. Pada saat `vite build` atau HMR dev server berjalan, compiler:
+1. Menganalisis *Abstract Syntax Tree* (AST) dari setiap komponen dan custom hook.
+2. Memahami batas-batas mutabilitas dan dependensi variabel sesuai aturan resmi React (*Rules of React*).
+3. Menyuntikkan blok instruksi caching memori atomik internal (*memoization slots*) secara otomatis di sekeliling ekspresi JSX, nilai terhitung, dan fungsi callback.
+
+#### 3. Dampak Praktis bagi Developer Portal Sifast
+
+Dengan adanya React 19 Compiler di Portal Sifast:
+* **Tidak Perlu Lagi `useCallback` untuk Event Handlers Biasa:**
+  ```tsx
+  // Tidak perlu lagi membungkus fungsi onClick dengan useCallback!
+  // Compiler menjamin referensi fungsi stabil di level build.
+  const handleToggle = () => setIsOpen(!isOpen);
+  ```
+* **Tidak Perlu Lagi `useMemo` untuk Filter Array Standar:**
+  ```tsx
+  // Kode bersih tanpa wrapper useMemo yang melelahkan
+  const activeTickets = tickets.filter(t => t.status === 'open');
+  ```
+* **Bebas dari Bug Klasik "Stale Closures":** Kesalahan paling sering di React 18 (lupa memasukkan variabel ke array dependency `[]`) dieliminasi total karena compiler menganalisis grafik dependensi kode secara deterministik.
+
+#### 4. Kapan Manual `useMemo` / `useCallback` Masih Diperlukan? (The 5% Escape Hatch)
+
+Meskipun 95% komponen di Portal Sifast tidak lagi memerlukan hooks memoization manual, manual `useMemo` tetap diperbolehkan untuk skenario *extreme escape hatch*:
+1. **Komputasi Algoritmik Sangat Berat:** Pemrosesan ribuan baris log JSON mentah, parsing format citra medis DICOM di browser, atau transformasi matriks data statistik tahunan rumah sakit yang memakan waktu >16 milidetik pada CPU thread.
+2. **Direktif `'use no memo'`:** Jika Anda mengintegrasikan komponen warisan pihak ketiga yang melanggar aturan mutabilitas React sehingga compiler gagal mengoptimalkannya, Anda dapat menyertakan string `'use no memo';` di baris pertama fungsi untuk menonaktifkan compiler khusus pada fungsi tersebut.
+
+---
+
+### 6.4 Toolkit & Trik Debugging Efisien
+
+Ketika antarmuka tidak berjalan sesuai ekspektasi, jangan menebak-nebak (*guessing*). Gunakan tiga toolkit utama berikut untuk mendiagnosa akar masalah secara ilmiah:
+
+#### 1. Inspeksi Payload JSON Inertia via Network Tab Browser
+
+Sebagai arsitektur berbasis XHR, cara tercepat mengetahui mengapa sebuah data tidak muncul di layar adalah memeriksa apa yang sebenarnya dikirimkan oleh backend Laravel ke browser.
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│               ALUR INVESTIGASI BUG DATA: BACKEND ATAU FRONTEND?        │
+│                                                                        │
+│  Data di layar salah / kosong                                          │
+│         │                                                              │
+│         ▼                                                              │
+│  Buka Browser DevTools ➔ Tab Network ➔ Filter: Fetch/XHR               │
+│         │                                                              │
+│         ▼                                                              │
+│  Klik nama request (misal: "tickets") ➔ Tab Response / Preview         │
+│         │                                                              │
+│         ├─► Data TIDAK ADA di JSON ➔ Akar masalah di Controller PHP    │
+│         │   (Cek query Eloquent, klausa where, atau policy Laravel)    │
+│         │                                                              │
+│         └─► Data ADA di JSON ➔ Akar masalah di Komponen React          │
+│             (Cek nama props destructuring, typo interface, atau render)│
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+Langkah-langkah praktis:
+1. Buka browser dan buka DevTools (**F12**).
+2. Pilih tab **Network**, lalu aktifkan tombol filter **Fetch/XHR**.
+3. Lakukan interaksi (misal klik filter prioritas atau navigasi halaman).
+4. Klik entri request yang muncul pada daftar.
+5. Buka tab **Preview** atau **Response**. Anda akan melihat objek JSON resmi Inertia:
+   ```json
+   {
+     "component": "tickets/index",
+     "props": {
+       "tickets": {
+         "data": [
+           { "id": 101, "title": "Printer Farmasi Macet", "status": "open" }
+         ],
+         "total": 1
+       },
+       "filters": { "search": "farmasi" },
+       "auth": { "user": { "id": 12, "name": "Adijaya", "role": "admin" } }
+     },
+     "url": "/tickets?search=farmasi",
+     "version": "b47e2a9"
+   }
+   ```
+6. **Periksa Properti `props`:** Bandingkan nama properti di JSON ini dengan nama variabel yang Anda destructuring di komponen React (`export default function TicketsIndex({ tickets, filters }: Props)`). Kesalahan huruf besar/kecil (*case-sensitivity*) atau typo langsung terungkap dalam hitungan detik!
+
+---
+
+#### 2. React Developer Tools Extension
+
+Instal ekstensi resmi **React Developer Tools** pada browser pengembangan Anda (tersedia gratis di Chrome Web Store dan Firefox Add-ons).
+
+Ekstensi ini menambahkan dua tab baru di DevTools:
+* **Tab Components:**
+  * Menampilkan pohon hierarki komponen React persis seperti struktur HTML di DOM inspector.
+  * Anda dapat mengklik komponen apa pun (misal `<TicketsTable />`) untuk melihat state lokal yang sedang aktif, props yang diterima dari induknya, serta hook `useForm` yang sedang mengelola data.
+  * Dilengkapi tombol pencarian komponen berdasarkan nama komponen atau hook.
+* **Tab Profiler:**
+  * Merekam aktivitas rendering komponen saat pengguna berinteraksi.
+  * Menampilkan visual diagram batang (*flamegraph*) berwarna yang menunjukkan komponen mana yang memakan waktu render paling lama, memudahkan Anda menemukan komponen yang membutuhkan optimasi.
+
+---
+
+#### 3. Shortcut CLI Esensial untuk Verifikasi Kualitas Harian
+
+Sebelum Anda membuat commit Git atau membuka Pull Request, biasakan menjalankan tiga perintah pemeriksa kualitas di terminal:
+
+```bash
+# 1. Pemeriksaan Keamanan Tipe TypeScript (Zero Overhead)
+npm run types
+
+# 2. Linter & Formatting Otomatis Sesuai Standar Kode Sifast
+npm run lint
+
+# 3. Uji Coba Kompilasi Produksi Penuh
+npm run build
+```
+
+Mari kita bedah fungsi dan peranan masing-masing script:
+
+| Perintah NPM | Target Eksekusi | Kapan Wajib Dijalankan? | Manfaat Bagi Developer |
+| :--- | :--- | :--- | :--- |
+| `npm run types` | `tsc --noEmit` | **Setiap kali selesai mengubah kode** (1-2 detik) | Memindai seluruh berkas `.ts` dan `.tsx` di proyek. Memastikan tidak ada properti bertipe salah, parameter fungsi hilang, atau akses objek null yang lolos tanpa build penuh. |
+| `npm run lint` | `eslint . --fix` | **Sebelum staging Git (`git add`)** | Memeriksa kepatuhan aturan React hooks (*Rules of Hooks*), mengurutkan impor modul, dan membersihkan variabel tidak terpakai secara otomatis. |
+| `npm run build` | `vite build` | **Sebelum melakukan `git push` ke repositori** | Memastikan React 19 Compiler, Tailwind CSS v4, dan plugin Wayfinder berhasil mengompilasi bundel produksi tanpa kegagalan sintaks. |
+
+Serta dua perintah Artisan pendamping dari sisi backend:
+```bash
+# Mengecek seluruh rute yang terdaftar beserta nama controller-nya
+php artisan route:list --path=tickets
+
+# Memperbarui modul helper Wayfinder jika Anda baru menambah rute di routes/web.php
+php artisan wayfinder:generate
+```
+
+---
+
+### 6.5 Bagian Penutup & Navigasi Silang Dokumen
+
+Selamat! Anda telah menyelesaikan seluruh rangkaian **Modul 02b: Panduan Frontend React 19 & Inertia.js v2 untuk Developer Laravel**.
+
+Dengan menuntaskan 6 bab panduan ini, Anda kini memiliki fondasi yang kokoh mengenai:
+1. Cara berpikir deklaratif berbasis state (*UI = f(state)*).
+2. Alur data controller ke props React tanpa API terpisah.
+3. Manajemen formulir berskala besar dengan `useForm` dan modal interaktif aksesibel Radix UI.
+4. Tata kelola desain terpadu dengan Tailwind CSS v4 dan arsitektur tema rumah sakit.
+5. Penyiaran peristiwa real-time via WebSocket Reverb dan proteksi memory leak.
+6. Teknik debugging ilmiah dan pemanfaatan React 19 Compiler.
+
+#### Peta Rujukan Silang Antar-Modul Onboarding
+
+Lanjutkan perjalanan onboarding Anda dengan mempelajari modul-modul sistem pendukung lainnya:
+
+```mermaid
+graph LR
+    M02b["Modul 02b<br/><b>Frontend React & Inertia</b><br/>(Anda Berada di Sini)"]
+    
+    M00["Modul 00<br/><b>Index & Silabus</b><br/>00-INDEX..."]
+    M01["Modul 01<br/><b>Arsitektur & Tech Stack</b><br/>01-ARSITEKTUR..."]
+    M02["Modul 02<br/><b>Struktur & Standar Kode</b><br/>02-STRUKTUR..."]
+    M03["Modul 03<br/><b>Tiket ITIL Helpdesk</b><br/>03-MODUL-HELPDESK..."]
+    M11["Modul 11<br/><b>Real-Time & Presensi</b><br/>11-REALTIME..."]
+
+    M02b --> M00
+    M02b --> M01
+    M02b --> M02
+    M02b --> M03
+    M02b --> M11
+```
+
+* 🧭 **[`00-INDEX-DAN-PANDUAN-MEMBACA.md`](./00-INDEX-DAN-PANDUAN-MEMBACA.md):** Peta silabus lengkap 12 modul orientasi developer dan panduan alur membaca sesuai tingkatan pengalaman Anda.
+* 🏛️ **[`01-ARSITEKTUR-DAN-TECH-STACK.md`](./01-ARSITEKTUR-DAN-TECH-STACK.md):** Gambaran makro arsitektur sistem monolit modern Portal Sifast, konfigurasi Docker container, PostgreSQL, Redis, dan server Linux.
+* 📐 **[`02-STRUKTUR-PROJECT-DAN-STANDAR-KODE.md`](./02-STRUKTUR-PROJECT-DAN-STANDAR-KODE.md):** Konvensi tata letak direktori, aturan penamaan berkas komponen, standar PHP PSR-12, dan integrasi Laravel Wayfinder.
+* 🎫 **[`03-MODUL-HELPDESK-ITIL-TICKETING.md`](./03-MODUL-HELPDESK-ITIL-TICKETING.md):** Spesifikasi fungsional dan model bisnis modul tiket insiden TI/IPS rumah sakit (alur SLA, eskalasi, dan histori penanganan).
+* ⚡ **[`11-REALTIME-WEBSOCKET-DAN-PRESENSI.md`](./11-REALTIME-WEBSOCKET-DAN-PRESENSI.md):** Arsitektur backend siaran Reverb, konfigurasi supervisor server produksi, serta integrasi tombol panik IGD (*Panic Button*).
+
+#### Checklist Akhir Kesiapan Developer Baru di Portal Sifast
+
+Sebagai pegangan praktis dalam pekerjaan sehari-hari Anda di RS Aisyiyah Siti Fatimah Tulangan, ingatlah **6 Prinsip Emas Frontend Sifast**:
+
+1. **State-Driven, Never DOM-Driven:** Jangan pernah mencari atau mengubah elemen DOM secara langsung. Ubah state, biarkan React yang merender.
+2. **Type-Safe Routing:** Selalu gunakan helper fungsi dari `@/routes/...` (Wayfinder), hindari penulisan string URL manual.
+3. **Inertia Over REST API:** Jangan membuat controller API terpisah jika hanya untuk menyajikan data halaman. Gunakan `Inertia::render()`.
+4. **Defensive Against Nulls:** Selalu gunakan optional chaining (`?.`) saat mengakses relasi data yang nullable.
+5. **Always Clean Up Listeners:** Kembalikan fungsi pembersih `leaveChannel()` pada hook WebSocket untuk mencegah memory leak.
+6. **Verify Before Commit:** Jalankan `npm run types` dan `npm run lint` sebelum setiap commit Git untuk menjaga basis kode tetap bersih dan handal.
