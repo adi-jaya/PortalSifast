@@ -1,122 +1,147 @@
 # 📐 Spesifikasi Desain: Panduan Frontend React & Inertia untuk Developer Laravel (Transisi dari Blade & jQuery) serta Koreksi Audit Onboarding
 
 **Tanggal Dokumen:** 2026-09-03  
-**Status:** Disetujui (Approved)  
-**Target Pembaca:** Developer Laravel yang memiliki latar belakang Blade & jQuery / Vanilla JS yang akan mengembangkan atau memelihara Portal Sifast (RS Aisyiyah Siti Fatimah Tulangan).
+**Status:** Direvisi (Inkorporasi Pendekatan Dual-Audience: Junior-Friendly & Senior-Engaging)  
+**Target Pembaca:** 
+1. **Junior Developer:** Membutuhkan analogi intuitif, diagram alur visual, penjelasan baris demi baris, serta penanganan error/gotchas yang jelas.
+2. **Senior Developer:** Membutuhkan *TL;DR Cheatsheet*, pemahaman arsitektur *under the hood*, *design rationale* (mengapa memilih teknologi X dibanding Y), dan pola kode produksi nyata tanpa bertele-tele.
 
 ---
 
-## 1. Latar Belakang & Tujuan
+## 1. Latar Belakang & Filosofi Penulisan
 
-Portal Sifast dibangun dengan arsitektur modern full-stack menggunakan **Laravel 12**, **Inertia.js v2**, **React 19**, **TypeScript**, **Tailwind CSS v4**, **Radix UI**, dan **Laravel Wayfinder**. 
+Portal Sifast dibangun dengan arsitektur modern full-stack: **Laravel 12**, **Inertia.js v2**, **React 19**, **TypeScript**, **Tailwind CSS v4**, **Radix UI**, dan **Laravel Wayfinder**. 
 
-Bagi developer yang selama ini terbiasa dengan pola monolitik tradisional Laravel (Blade templates, form submits, manipulasi DOM berbasis jQuery `$('#id')`, serta routing Ziggy `route()`), arsitektur ini menghadirkan perubahan paradigma yang signifikan:
-1. Tidak ada file `.blade.php` untuk halaman konten aplikasi; hanya ada satu berkas root template shell: [`resources/views/app.blade.php`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/resources/views/app.blade.php).
-2. Tampilan bersifat deklaratif berbasis komponen dan *State* React, menggantikan manipulasi DOM langsung (`document.getElementById` atau `$`).
-3. Interaksi data server-klien tidak menggunakan AJAX manual (`$.ajax()`) atau perenderan ulang halaman penuh (*full page reload*), melainkan dikelola oleh Inertia.js (`Inertia::render()`, `useForm()`, `router.visit()`).
-4. Type safety ketat dengan TypeScript dan penamaan rute modular via Wayfinder (`@/routes/*`), bukan `route('...')` global.
+Bagi developer Laravel yang terbiasa dengan pola monolitik tradisional (Blade templates, jQuery `$('#id')`, manual AJAX, dan routing Ziggy `route()`), transisi ini menghadirkan perubahan paradigma besar. 
 
-Tujuan dari pekerjaan ini adalah:
-1. Membuat dokumen panduan baru yang komprehensif: [`docs/developer-onboarding/02b-PANDUAN-FRONTEND-REACT-INERTIA-UNTUK-LARAVEL-DEV.md`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/docs/developer-onboarding/02b-PANDUAN-FRONTEND-REACT-INERTIA-UNTUK-LARAVEL-DEV.md).
-2. Menerapkan alur belajar bertahap: **Tahap 1 Bedah Kode & Kamus Padanan** (membedah modul tiket [`TicketController.php`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Http/Controllers/TicketController.php) dan [`resources/js/pages/tickets/`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/resources/js/pages/tickets/)), dilanjutkan dengan **Tahap 2 Praktik Mandiri CRUD Step-by-Step** (menggunakan modul proyek [`ProjectController.php`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Http/Controllers/ProjectController.php) dan [`resources/js/pages/projects/`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/resources/js/pages/projects/)).
-3. Memperbaiki ketidakakuratan dan celah informasi pada dokumen onboarding existing ([`00`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/docs/developer-onboarding/00-INDEX-DAN-PANDUAN-MEMBACA.md), [`01`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/docs/developer-onboarding/01-ARSITEKTUR-DAN-TECH-STACK.md), [`02`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/docs/developer-onboarding/02-STRUKTUR-PROJECT-DAN-STANDAR-KODE.md), [`11`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/docs/developer-onboarding/11-REALTIME-WEBSOCKET-DAN-PRESENSI.md)) berdasarkan hasil audit Gemini 3.8 Flash terhadap codebase aktual.
+### Prinsip Desain Dual-Audience ("Skim or Deep Dive"):
+Dokumentasi ini dirancang dengan struktur lapis ganda (*Dual-Layer Information Architecture*):
+* **Bagi Developer Senior (Fast-Track / Skim-Friendly):**
+  * Di setiap awal bab disediakan **"TL;DR & Quick Reference Table"** berisi padanan sintaks instan. Senior dapat memindai tabel dalam 10 detik dan langsung produktif.
+  * Dilengkapi callout **"Under the Hood & Architectural Rationale"**: Mengapa Wayfinder alih-alih Ziggy? Mengapa React 19 Compiler alih-alih manual `useMemo`? Bagaimana mekanisme protokol Inertia XHR bekerja?
+* **Bagi Developer Junior (Guided / Intuitive-Friendly):**
+  * Disertai **analogi dunia nyata** yang menjembatani kebiasaan lama di Blade & jQuery.
+  * **Diagram alur visual (Mermaid)** untuk memahami siklus request-response dan perpindahan state.
+  * Anotasi kode **baris demi baris** pada studi kasus nyata.
+  * Bagian khusus **"Gotchas & Jebakan Pemula"** yang merinci pesan error umum (misal: *"Objects are not valid as a React child"*, *"Why is my page blank?"*, *"Why is my input frozen?"*) beserta solusinya.
 
 ---
 
 ## 2. Struktur Modul Baru: `02b-PANDUAN-FRONTEND-REACT-INERTIA-UNTUK-LARAVEL-DEV.md`
 
-Modul `02b` akan berisi 6 bab berurutan:
+Modul `02b` disusun ke dalam 6 bab komprehensif dengan pola *Dual-Layer*:
 
-### Bab 1: Pergeseran Paradigma (Mental Model Shift) & Kamus Padanan
-* **Arsitektur Single Blade Shell:** Mengapa `resources/views/app.blade.php` adalah satu-satunya template web, dan bagaimana `@inertia` menjadi titik kait (*mount point*) aplikasi React.
-* **Kamus Padanan Lengkap:** Tabel komparasi langsung antara Blade/jQuery dengan React 19/Inertia v2 (perenderan view, passing data props, layouting, syntax JSX vs Blade directive, penanganan form, dsb.).
-* **Anatomi dan Paradigma React Hooks:**
-  * Apa itu Hook (`use...`) bagi developer Blade/jQuery.
-  * Padanan `useState` terhadap variabel lokal dan pembaruan DOM.
-  * Padanan `useEffect` terhadap `$(document).ready()` dan pembersih (*cleanup*).
-  * Manfaat Inertia Hooks: `useForm` (pengganti `$('form').serialize()`) dan `usePage` (pengganti pemanggilan global `auth()->user()`).
-  * Custom Hooks Portal Sifast (`useEcho`, `useUserPresence`, `useAppearance`).
-* **Konsep Kunci React Tambahan:**
-  * Aturan JSX/TSX (`className`, `htmlFor`, wajib self-closing `<input />`, Fragment `<> ... </>`).
-  * Komponen & Props (mengapa bersifat read-only / immutable).
-  * Controlled vs Uncontrolled Input.
-  * Lifting State Up.
-  * Atribut wajib `key` pada perulangan data (`.map()`).
-  * React Context untuk data global lintas komponen (`resources/js/contexts/`).
-  * Dasar TypeScript untuk komponen (definisi `type Props = { ... }`).
+```mermaid
+graph TD
+    subgraph Modul02b ["02b: Panduan Frontend React & Inertia"]
+        direction TB
+        B1["Bab 1: Pergeseran Paradigma & Kamus Padanan<br/><i>(Mental Model Shift, Hooks, & Konsep Inti React)</i>"]
+        B2["Bab 2: Bedah Kasus Nyata Modul Tiket<br/><i>(Alur Data Controller -> React Props -> Live Filter)</i>"]
+        B3["Bab 3: Tutorial Hands-on CRUD Step-by-Step<br/><i>(Studi Kasus Modul Projects dari Nol)</i>"]
+        B4["Bab 4: Arsitektur Styling & Komponen UI<br/><i>(Tailwind v4 @theme, Radix Primitives, Helper cn)</i>"]
+        B5["Bab 5: Reaktivitas Real-Time & WebSockets<br/><i>(Reverb, Echo, Presence Tracking, Dual-Source Config)</i>"]
+        B6["Bab 6: Anti-Patterns, Gotchas & Debugging Toolkit<br/><i>(Error Catalog Pemula & Performance Insights Senior)</i>"]
+    end
+```
 
-### Bab 2: Bedah Kasus Nyata Modul Helpdesk Tiket (Tahap 1: Analisis)
-* **Alur End-to-End Controller ke React:**
-  * Analisis method `TicketController::index` baris 83 yang memanggil `Inertia::render('tickets/index', [...])`.
-  * Penerimaan data pada `resources/js/pages/tickets/index.tsx` via `type Props`.
-* **Mekanisme Filter & Pencarian Tanpa Reload:**
-  * Penggunaan `useState` untuk menyimpan string pencarian.
-  * Eksekusi `router.get('/tickets', newFilters, { preserveState: true, replace: true })`.
-* **Bedah Form Pembuatan Tiket:**
-  * Analisis `resources/js/pages/tickets/create.tsx` yang menggunakan `useForm()`.
-  * Input controlled, binding data via `setData()`, submit form dengan `post()`, dan penanganan error validasi via `<InputError message={errors.title} />`.
-* **Penggunaan Wayfinder Routing Aktual:**
-  * Menunjukkan cara import modular dari `@/routes/tickets` dan pemanggilan `show(id).url`.
+---
 
-### Bab 3: Tutorial Hands-on CRUD Step-by-Step (Tahap 2: Praktik)
-* **Studi Kasus Modul Proyek / Rencana Kerja (`projects`):**
-  * **Langkah 1 (Backend):** Controller `ProjectController` yang me-render halaman Inertia dan menerima request form.
-  * **Langkah 2 (TypeScript Types):** Mendefinisikan tipe data `ProjectItem`, `PaginatedProjects`, dan `Props`.
-  * **Langkah 3 (Halaman Index):** Membangun tabel daftar data dengan `<AppLayout>`, perulangan `.map()`, dan filter live.
-  * **Langkah 4 (Halaman Form Create):** Membangun form dengan `useForm`, input controlled, handling validasi Laravel FormRequest, dan status loading `processing`.
-  * **Langkah 5 (Feedback):** Mengambil flash message sukses dari Laravel via `usePage().props.flash`.
+### Rincian Isi Bab:
 
-### Bab 4: Arsitektur Styling & Komponen Antarmuka
-* **Tailwind CSS v4 (CSS-First Architecture):**
-  * Penjelasan mengapa tidak ada `tailwind.config.js`.
-  * Konfigurasi tema dan token warna di `@theme` pada `resources/css/app.css`.
-  * Mekanisme Dark Mode via varian `@custom-variant dark`.
-* **Katalog Komponen UI Primitif (`resources/js/components/ui/`):**
-  * Standar Shadcn / Radix: Button, Input, Dialog, Select, DropdownMenu, Badge.
-  * Penggunaan helper `cn(...)` (`clsx` + `tailwind-merge`) untuk komposisi class styling yang aman dari konflik class.
+#### Bab 1: Pergeseran Paradigma & Kamus Padanan
+* **TL;DR Matrix (Untuk Senior):** Tabel ringkas padanan fitur Blade/jQuery vs React 19/Inertia v2.
+* **Arsitektur Single Blade Shell:** Mengapa Portal Sifast hanya memiliki satu file HTML induk ([`resources/views/app.blade.php`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/resources/views/app.blade.php)) dan bagaimana Inertia me-mount React ke DOM melalui direktif `@inertia`.
+* **Anatomi & Intuisi React Hooks:**
+  * *Analogi:* Hook adalah "colokan listrik" yang menyambungkan fungsi JavaScript biasa ke siklus hidup reaktif browser.
+  * `useState`: State reaktif vs manipulasi DOM manual.
+  * `useEffect`: Siklus hidup komponen, padanan `$(document).ready()`, dan fungsi *cleanup* pencegah memory leak.
+  * `useForm` (Inertia): Form state management, submit handling, progress tracking, dan error mapping otomatis.
+  * `usePage` (Inertia): Akses data global shared props (`auth.user`, `flash`, `errors`) tanpa *prop drilling*.
+  * Custom Hooks Portal Sifast: `useEcho`, `useUserPresence`, `useAppearance`.
+* **Konsep Inti React yang Wajib Dipahami:**
+  * Aturan sintaks JSX/TSX (`className`, `htmlFor`, self-closing tag `<input />`, Fragment `<> ... </>`).
+  * Komponen & Props (mengapa Props bersifat *Read-Only / Immutable*).
+  * Controlled vs Uncontrolled Components (mengapa input form tidak bisa diketik jika state-nya tidak diupdate).
+  * Lifting State Up (koordinasi data antar-komponen bersaudara).
+  * Atribut wajib `key` pada looping `.map()` dan cara kerja Virtual DOM Diffing.
+  * React Context sebagai bus data global ringan.
+  * TypeScript dasar untuk komponen (antarmuka `type Props = { ... }`).
+* **Under the Hood (Untuk Senior):** Bagaimana Inertia menangani navigasi tanpa full reload via header HTTP `X-Inertia`, partial reloads dengan opsi `only: [...]`, serta penanganan browser history (`pushState` vs `replaceState`).
 
-### Bab 5: Reaktivitas Real-Time & WebSockets
-* Integrasi **Laravel Reverb** dan **Laravel Echo** di sisi frontend.
-* Cara kerja penyuntikan konfigurasi dari Blade: `window.REVERB_CONFIG` di `resources/views/app.blade.php` dibaca oleh `resources/js/echo.js`.
-* Penggunaan hook `useEcho` dan channel `presence-online-users` / `private-chat.{id}`.
+#### Bab 2: Bedah Kasus Nyata Modul Tiket ITIL (Tahap 1: Analisis)
+* **Peta Alur Data Controller ke React:**
+  * Mengambil contoh baris nyata dari [`TicketController.php`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Http/Controllers/TicketController.php) baris 83 (`Inertia::render('tickets/index', [...])`).
+  * Membedah bagaimana data Eloquent, pagination, dan filter dipetakan ke prop komponen pada [`resources/js/pages/tickets/index.tsx`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/resources/js/pages/tickets/index.tsx).
+* **Live Search & Filter Tanpa Reload:**
+  * Analisis fungsi `applyFilters` menggunakan `router.get('/tickets', newFilters, { preserveState: true, replace: true })`.
+  * Mengapa `preserveState: true` menjaga scroll posisi dan input fokus user tetap utuh.
+* **Bedah Form Kompleks (`tickets/create.tsx`):**
+  * Analisis hook `useForm` dengan belasan field input, relasi kategori-subkategori dinamis, dan multi-select tags.
+  * Integrasi komponen `<InputError message={errors.field} />` yang otomatis membaca validasi `StoreTicketRequest`.
+* **Wayfinder Routing Aktual:**
+  * Menunjukkan sintaks impor modular dari `@/routes/tickets` dan penggunaan fungsi type-safe `show(ticket.id).url`.
 
-### Bab 6: Anti-Patterns, Tips Produktivitas & Debugging
-* **Daftar Larangan Keras bagi Mantan Pengguna jQuery:**
-  * Dilarang menggunakan `document.getElementById`, `document.querySelector`, atau jQuery `$('#id')` untuk mengubah isi atau visibilitas elemen.
-  * Dilarang melakukan mutasi variabel state secara langsung (misal: `data.title = 'baru'` tanpa `setData`).
-* **React 19 Compiler:** Penjelasan bahwa compiler secara otomatis menangani memoization fungsi dan variabel kalkulasi, sehingga developer tidak perlu menulis `useMemo` / `useCallback` untuk kebutuhan umum.
+#### Bab 3: Tutorial Hands-on CRUD Step-by-Step (Tahap 2: Praktik)
+Studi kasus konkret menggunakan modul **Proyek / Rencana Kerja (`projects`)** ([`ProjectController.php`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Http/Controllers/ProjectController.php) & [`resources/js/pages/projects/`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/resources/js/pages/projects/)):
+* **Langkah 1 (Backend Controller):** Menyusun method `index`, `create`, `store`, dan `destroy` yang mengembalikan response Inertia.
+* **Langkah 2 (TypeScript Definition):** Mendefinisikan interface data `ProjectItem`, `PaginatedProjects`, dan `Props` secara disiplin.
+* **Langkah 3 (Halaman Index):** Membangun tabel data dengan layout `<AppLayout>`, tombol aksi, filter search bar, dan modal konfirmasi hapus `<ConfirmDialog>`.
+* **Langkah 4 (Halaman Form Create):** Membangun form controlled dengan `useForm`, mengaitkan input teks & select option, menampilkan error validasi server, serta proteksi tombol submit saat `processing`.
+* **Langkah 5 (Flash Notification):** Menangkap feedback sukses dari redirect controller via `usePage().props.flash`.
+
+#### Bab 4: Arsitektur Styling & Desain Antarmuka (Tailwind v4 & Radix)
+* **Tailwind CSS v4 (CSS-First):**
+  * Penjelasan arsitektur baru: mengapa file `tailwind.config.js` tidak ada.
+  * Peta token tema di `@theme` pada [`resources/css/app.css`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/resources/css/app.css).
+  * Mekanisme Dark Mode menggunakan class `.dark` pada tag `<html>`.
+* **Komponen Primitif UI (`resources/js/components/ui/`):**
+  * Penggunaan komponen standar: `Button`, `Input`, `Dialog`, `DropdownMenu`, `Badge`, `Select`.
+  * Helper `cn()` (`clsx` + `tailwind-merge`): Mengapa kita wajib menggunakan `cn()` saat menggabungkan class Tailwind agar tidak terjadi konflik spesifisitas CSS.
+
+#### Bab 5: Reaktivitas Real-Time & WebSockets
+* Arsitektur integrasi **Laravel Reverb** dan **Laravel Echo** di React.
+* **Dual-Source Config Pattern:** Mengapa `resources/js/echo.js` mengutamakan objek `window.REVERB_CONFIG` yang disuntikkan dari Blade `resources/views/app.blade.php` (menghindari bug mismatch environment Vite antara local vs production HTTPS/WSS).
+* Contoh praktis penggunaan hook `useEcho` untuk mendengarkan channel `presence-online-users` dan `private-chat.{id}`.
+
+#### Bab 6: Anti-Patterns, Gotchas & Debugging Toolkit
+* **Daftar Larangan Keras bagi Developer Transisi jQuery:**
+  * ❌ Dilarang keras memakai `document.getElementById` atau `$('#id')` untuk manipulasi DOM.
+  * ❌ Dilarang melakukan mutasi state langsung (`data.title = 'baru'`; wajib gunakan `setData`).
+* **Katalog Gotchas & Solusi Cepat (Penyelamat Developer Junior):**
+  * *Gotcha 1:* Input form tidak bisa diketik -> Lupa memasang `onChange` handler pada controlled component.
+  * *Gotcha 2:* Error *"Objects are not valid as a React child"* -> Mencoba merender objek `{user}` langsung alih-alih `{user.name}`.
+  * *Gotcha 3:* Layar putih kosong (*White Screen of Death*) -> Memeriksa tab Console browser untuk melihat error sintaks/props undefined.
+* **Catatan Performa untuk Developer Senior:**
+  * **React 19 Compiler:** Penjelasan bahwa Vite mengaktifkan `babel-plugin-react-compiler`. Compiler melakukan auto-memoization AST otomatis, sehingga manual `useMemo` dan `useCallback` tidak lagi diperlukan untuk 95% use-case.
 * **Toolkit Debugging:**
-  * Memeriksa props dan state menggunakan tab Network (melihat payload JSON XHR Inertia).
-  * Penggunaan React Developer Tools & Inertia DevTools.
+  * Cara inspect payload JSON Inertia via Network Tab browser (`XHR/Fetch`).
+  * Menggunakan React Developer Tools dan Inertia DevTools.
 
 ---
 
 ## 3. Rencana Koreksi Audit Dokumen Existing
 
 ### A. [`docs/developer-onboarding/00-INDEX-DAN-PANDUAN-MEMBACA.md`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/docs/developer-onboarding/00-INDEX-DAN-PANDUAN-MEMBACA.md)
-1. Menambahkan baris modul `02b` pada tabel direktori dokumen onboarding.
-2. Memperbarui jadwal belajar developer baru pada Hari ke-1 / Hari ke-2 untuk menyertakan modul `02b` sebelum mempelajari modul-modul bisnis.
+* Menambahkan modul `02b` pada tabel daftar modul.
+* Menyesuaikan peta alur belajar: Menempatkan `02b` di Hari ke-1/ke-2 tepat setelah `02` agar developer memahami frontend sebelum masuk ke modul bisnis.
 
 ### B. [`docs/developer-onboarding/01-ARSITEKTUR-DAN-TECH-STACK.md`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/docs/developer-onboarding/01-ARSITEKTUR-DAN-TECH-STACK.md)
-1. Menambahkan sub-poin **React 19 Compiler** (`babel-plugin-react-compiler`) pada daftar tech stack frontend.
-2. Memperjelas arsitektur **Tailwind CSS v4** yang menggunakan sistem CSS-first (`@theme` di `resources/css/app.css`) tanpa file `tailwind.config.js`.
-3. Menjelaskan status **Single Blade Shell** (`resources/views/app.blade.php`) dan peruntukan file blade cetak/email lainnya.
+* Menambahkan rincian **React 19 Compiler** (`babel-plugin-react-compiler`).
+* Memperjelas arsitektur **Tailwind CSS v4 (CSS-first)** via `@theme` di `app.css`.
+* Menegaskan status **Single Blade Shell** (`resources/views/app.blade.php`).
 
 ### C. [`docs/developer-onboarding/02-STRUKTUR-PROJECT-DAN-STANDAR-KODE.md`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/docs/developer-onboarding/02-STRUKTUR-PROJECT-DAN-STANDAR-KODE.md)
-1. **Memperbaiki sintaks Wayfinder** di Bagian 3:
-   * Menghapus contoh salah ala Ziggy: `import { route } from '@/wayfinder'; route('tickets.show', ...)`.
-   * Menggantinya dengan contoh kode nyata Wayfinder: `import { show, resolve } from '@/routes/tickets';` dan pemanggilan `show(ticket.id).url`.
+* **Koreksi Kritis Sintaks Wayfinder:** Menghapus sintaks tiruan Ziggy (`import { route } from '@/wayfinder'`) dan menggantinya dengan sintaks resmi Wayfinder di codebase ini (`import { show } from '@/routes/tickets'; show(id).url`).
 
 ### D. [`docs/developer-onboarding/11-REALTIME-WEBSOCKET-DAN-PRESENSI.md`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/docs/developer-onboarding/11-REALTIME-WEBSOCKET-DAN-PRESENSI.md)
-1. Memperbarui cuplikan kode inisialisasi client pada Bagian 4 agar selaras dengan implementasi nyata di `resources/js/echo.js`.
-2. Menjelaskan strategi injeksi `window.REVERB_CONFIG` dari `resources/views/app.blade.php` untuk mencegah kesalahan URL/port WebSocket antara localhost dan domain produksi.
+* Memperbarui cuplikan kode client Echo agar akurat dengan `resources/js/echo.js` dan menjelaskan peran `window.REVERB_CONFIG` dari `resources/views/app.blade.php`.
 
 ---
 
 ## 4. Kriteria Keberhasilan (Acceptance Criteria)
 
-1. Berkas [`docs/developer-onboarding/02b-PANDUAN-FRONTEND-REACT-INERTIA-UNTUK-LARAVEL-DEV.md`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/docs/developer-onboarding/02b-PANDUAN-FRONTEND-REACT-INERTIA-UNTUK-LARAVEL-DEV.md) terbuat dengan seluruh 6 bab lengkap, tanpa placeholder `TODO` atau `TBD`.
-2. Penjelasan konsep React (JSX, Props, Hooks, Controlled Component, Virtual DOM) disajikan dengan perbandingan nyata terhadap sintaks Blade dan jQuery.
-3. Contoh kode yang dicantumkan bersumber langsung dan terverifikasi dari modul tiket (`tickets`) dan modul proyek (`projects`) di repositori ini.
-4. Sintaks Wayfinder dan inisialisasi Echo pada dokumen `00`, `01`, `02`, dan `11` sudah terkoreksi dan konsisten dengan codebase.
-5. Dokumen spesifikasi desain ini dikomit ke dalam repositori Git.
+1. Modul [`docs/developer-onboarding/02b-PANDUAN-FRONTEND-REACT-INERTIA-UNTUK-LARAVEL-DEV.md`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/docs/developer-onboarding/02b-PANDUAN-FRONTEND-REACT-INERTIA-UNTUK-LARAVEL-DEV.md) selesai ditulis dengan format *Dual-Layer* (TL;DR untuk senior, visual & step-by-step untuk junior).
+2. Memuat katalog Gotchas pemula dan catatan performa arsitektural senior.
+3. Seluruh contoh kode bersumber langsung dan terverifikasi dari modul tiket dan proyek di repositori ini.
+4. Dokumen `00`, `01`, `02`, dan `11` terupdate dan bebas dari kesalahan fakta/sintaks.
+5. Dokumen spesifikasi desain ini dikomit ke dalam Git.
