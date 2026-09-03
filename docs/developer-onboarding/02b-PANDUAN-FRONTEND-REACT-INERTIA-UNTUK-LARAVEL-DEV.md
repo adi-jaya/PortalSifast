@@ -11,7 +11,7 @@ Modul ini dirancang khusus untuk menjembatani pergeseran paradigma dari pola mon
 | Entitas | Rincian |
 | :--- | :--- |
 | **Kode Dokumen** | `MOD-02B-FE-REACT-INERTIA` |
-| **Versi Dokumen** | 1.3.0 (Tahap Fondasi, Bab 1, Bab 2, Bab 3 CRUD Lengkap, & Bab 4 Arsitektur Styling & Radix UI) |
+| **Versi Dokumen** | 1.4.0 (Fondasi, Bab 1, Bab 2, Bab 3 CRUD, Bab 4 Styling, & Bab 5 Real-Time WebSockets) |
 | **Status Dokumen** | Produksi Aktif / Terverifikasi |
 | **Tanggal Pembaruan** | 2026-09-03 |
 | **Tech Stack Utama** | React 19, Inertia.js v2, TypeScript 5+, Tailwind CSS v4, Radix UI Primitives, Laravel Wayfinder |
@@ -3045,7 +3045,786 @@ Sebelum menyerahkan pull request atau mengajukan fitur baru ke review tim, pasti
 
 ---
 
-*Lanjutkan membaca ke [Bab 5: Reaktivitas Real-Time & WebSockets](#) (segera hadir di Task 7).*
+## Bab 5: Reaktivitas Real-Time & WebSockets (Laravel Reverb & Echo di React)
+
+Dalam sistem informasi rumah sakit seperti Portal Sifast, kecepatan respons informasi dapat menentukan kelancaran penanganan medis dan respon operasional. Panggilan darurat (*code blue*, *code red*), pelaporan insiden darurat IGD, pembaruan lokasi ambulans, tiket gangguan perangkat vital (seperti printer resep obat di instalasi farmasi atau monitor hemodialisa), hingga pelacakan presensi dokter jaga memerlukan penyampaian data instan tanpa staf harus menekan tombol refresh (F5) secara manual di browser.
+
+Laravel 11+ memperkenalkan **Laravel Reverb**, server WebSocket bawaan resmi (*first-party WebSocket server*) yang dibangun langsung di atas ekosistem PHP dan terintegrasi mulus dengan Laravel Echo di frontend React 19.
+
+---
+
+### 5.1 Arsitektur Integrasi Reverb & Echo di React (Event Broadcasting Lifecycle)
+
+Sebelum menyelami detail kode, penting bagi pengembang untuk memahami bagaimana aliran data penyiaran (*event broadcasting*) mengalir dari backend Laravel hingga memicu pembaruan state reaktif di layar browser.
+
+#### 1. Diagram Alur Siklus Hidup Event Broadcasting
+
+Diagram Mermaid berikut menggambarkan siklus hidup lengkap penyiaran event real-time di Portal Sifast:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant App as Laravel Backend (Controller / Service)
+    participant Queue as Redis / Database Queue
+    participant Reverb as Reverb WebSocket Server (:8080)
+    participant Echo as Browser Client (Laravel Echo & Pusher-js)
+    participant Hook as React Hook (useEmergencyBroadcast / useUserPresence)
+    participant DOM as React Component (Virtual DOM)
+
+    App->>App: Event Terjadi: event(new EmergencyReportCreated($report))
+    Note over App: Event implements ShouldBroadcast
+    App->>Queue: Push broadcast job ke queue antrean
+    Queue->>Reverb: Kirim payload JSON event via HTTP/Unix Socket internal
+    Reverb->>Echo: Broadcast frame WebSocket ke channel yang relevan
+    Note over Echo: window.Echo mendengarkan via WebSocket (ws:// / wss://)
+    Echo->>Hook: Memicu event callback listener (.listen() / .joining())
+    Hook->>Hook: Mutasi state lokal (setPresence / setReports)
+    Hook->>DOM: React 19 me-render ulang UI deklaratif
+    DOM-->>DOM: Badge, tabel, atau suara alarm berbunyi instan
+```
+
+#### 2. Peran Masing-Masing Komponen Arsitektur
+
+1. **Laravel Event (`ShouldBroadcast`):**
+   Event di Laravel mengimplementasikan antarmuka `Illuminate\Contracts\Broadcasting\ShouldBroadcast`. Antarmuka ini menginstruksikan Laravel untuk tidak hanya menjalankan event listener lokal, melainkan juga men-serialize data publik event dan mengirimkannya ke driver broadcasting default (`reverb`).
+2. **Reverb WebSocket Daemon (Port 8080):**
+   Reverb berjalan sebagai background daemon process (biasanya dipantau via Supervisor atau Docker di port `8080`). Reverb bertindak sebagai message broker berperforma tinggi yang mengelola ribuan koneksi WebSocket persisten terbuka dari browser staf tanpa membebani PHP-FPM web server.
+3. **Browser Client (`window.Echo` & `pusher-js`):**
+   Di frontend, library `laravel-echo` berpasangan dengan `pusher-js` bertindak sebagai client WebSocket. Meskipun namanya `pusher-js`, library ini berkomunikasi langsung dengan server Reverb milik sendiri tanpa bergantung pada server pihak ketiga Pusher Cloud berbayar.
+4. **React Hook State Update:**
+   Listener event dihubungkan ke siklus hidup React melalui custom hook (seperti [`useEmergencyBroadcast`](../../resources/js/hooks/use-emergency-broadcast.ts) atau [`useUserPresence`](../../resources/js/hooks/use-user-presence.ts)). Ketika payload diterima, hook memanggil fungsi updater `useState`, memicu pembaruan Virtual DOM secara presisi tanpa sentuhan langsung ke elemen DOM browser.
+
+---
+
+### 5.2 Dual-Source Config Pattern Tangguh ([`resources/js/echo.js`](../../resources/js/echo.js))
+
+Salah satu tantangan arsitektural terbesar dalam mengintegrasikan WebSocket pada aplikasi SPA modern adalah **konfigurasi koneksi jaringan yang rapuh antara lingkungan lokal (*development*), staging, dan produksi**.
+
+#### 1. Mengapa Pola Konvensional (`import.meta.env` Saja) Sangat Rapuh?
+
+Sebagian besar panduan standar menyarankan inisialisasi Echo hanya dengan membaca variabel lingkungan Vite:
+```javascript
+// ❌ POLA KONVENSIONAL YANG RAPUH (JANGAN DIGUNAKAN DI SIFAST)
+new Echo({
+    broadcaster: 'reverb',
+    key: import.meta.env.VITE_REVERB_APP_KEY,
+    wsHost: import.meta.env.VITE_REVERB_HOST,
+    wsPort: import.meta.env.VITE_REVERB_PORT,
+    forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
+});
+```
+
+Pola konvensional di atas menyimpan 3 kelemahan fatal saat diaplikasikan pada infrastruktur rumah sakit nyata:
+
+1. **Static Build-Time Baking vs Runtime Dynamics:**
+   Variabel `import.meta.env.*` dibekukan (*baked-in*) ke dalam bundle JavaScript statis saat perintah `npm run build` dijalankan. Jika sistem di-deploy ke server staging dengan IP/domain yang berbeda dari server production, atau jika port reverse proxy diubah di file `.env` server, bundle JavaScript tidak akan mengetahuinya dan tetap mencoba menghubungi host lama yang sudah mati.
+2. **Jebakan Bind Address `0.0.0.0`:**
+   Pada server Linux produksi atau container Docker, daemon Reverb seringkali dikonfigurasi dengan `REVERB_SERVER_HOST=0.0.0.0` agar dapat mendengarkan paket dari seluruh network interface. Namun, **`0.0.0.0` adalah bind address server, bukan host yang dapat dihubungi oleh browser client!** Jika frontend mencoba membuka koneksi ke `ws://0.0.0.0:8080`, browser akan menolaknya dengan error `ERR_ADDRESS_INVALID`.
+3. **Pelanggaran Keamanan Mixed Content (HTTP vs HTTPS):**
+   Jika aplikasi rumah sakit diakses melalui protokol aman `https://portalsifast.rsasitifatimah.com`, browser modern (Chrome, Edge, Safari, Firefox) secara mutlak memblokir koneksi WebSocket tidak aman (`ws://`). Konfigurasi harus dapat mendeteksi protokol halaman secara real-time dan memaksa penggunaan WebSocket aman (`wss://`).
+
+#### 2. Bedah Mekanisme Injeksi Blade Shell ([`resources/views/app.blade.php:49-79`](../../resources/views/app.blade.php#L49-L79))
+
+Untuk mengatasi kerapuhan tersebut, Portal Sifast menerapkan **Dual-Source Config Pattern**: backend Laravel menyuntikkan konfigurasi jaringan runtime yang valid ke dalam variabel global `window.REVERB_CONFIG` di dalam shell HTML sebelum script JavaScript dieksekusi.
+
+Perhatikan cuplikan implementasi di [`resources/views/app.blade.php`](../../resources/views/app.blade.php#L49-L79):
+
+```blade
+{{-- Reverb/WebSocket config from Laravel (avoids Vite env not expanding .env vars) --}}
+@if(config('broadcasting.default') === 'reverb')
+@php
+    // Browser must connect to a host it can reach (same as page or REVERB_CLIENT_HOST).
+    // 0.0.0.0 is server bind only, not valid for client. Strip port; wsPort is set separately.
+    $reverbHost = config('broadcasting.connections.reverb.options.client_host')
+        ?? request()->getHost();
+    $reverbHost = str_contains($reverbHost, ':') ? explode(':', $reverbHost)[0] : $reverbHost;
+
+    $reverbPort = config('broadcasting.connections.reverb.options.client_port')
+        ?? (int) config('broadcasting.connections.reverb.options.port', 8080);
+
+    $reverbScheme = config('broadcasting.connections.reverb.options.client_scheme')
+        ?? (config('broadcasting.connections.reverb.options.scheme') ?? 'http');
+    // Jika halaman diakses via HTTPS, browser wajib pakai wss (bukan ws)
+    if (request()->secure()) {
+        $reverbScheme = 'https';
+    }
+
+    $reverbConfig = [
+        'key' => config('broadcasting.connections.reverb.key'),
+        'host' => $reverbHost,
+        'port' => (int) $reverbPort,
+        'scheme' => $reverbScheme,
+    ];
+@endphp
+<script>
+    window.REVERB_CONFIG = @json($reverbConfig);
+</script>
+@else
+<script>window.REVERB_CONFIG = null;</script>
+@endif
+```
+
+**Penjelasan Kunci Logika Blade:**
+* **Host Sanitization:** Mengambil host yang sedang diakses browser (`request()->getHost()`) atau override dari `client_host`, lalu memotong port jika ada (`explode(':', $reverbHost)[0]`) agar tidak terjadi duplikasi host seperti `example.com:8080:8080`.
+* **Port Flexibility:** Mengutamakan port klien (`client_port` jika melalui Nginx reverse proxy port 443/80) atau fallback ke internal port (8080).
+* **Mixed-Content Prevention:** Pengecekan `request()->secure()` memastikan jika staf mengakses via HTTPS, skema otomatis dinaikkan ke `'https'` (yang memicu TLS/WSS).
+* **Safe Fallback:** Jika driver broadcasting bukan Reverb (misalnya mode `log` saat testing unit lokal), variabel `window.REVERB_CONFIG` di-set ke `null`.
+
+#### 3. Bedah Inisialisasi Tangguh di [`resources/js/echo.js`](../../resources/js/echo.js)
+
+File [`resources/js/echo.js`](../../resources/js/echo.js) mengonsumsi variabel global tersebut dan menyediakan fallback cerdas ke `import.meta.env` jika script berjalan di luar konteks Blade (misalnya dalam unit testing Vitest atau server-side utilities):
+
+```javascript
+import Echo from 'laravel-echo';
+import Pusher from 'pusher-js';
+
+window.Pusher = Pusher;
+
+try {
+    // 1. Prioritaskan config dari Laravel Blade shell (window.REVERB_CONFIG)
+    const fromLaravel = typeof window !== 'undefined' && window.REVERB_CONFIG;
+    let wsHost = fromLaravel
+        ? window.REVERB_CONFIG.host
+        : (import.meta.env.VITE_REVERB_APP_HOST ?? import.meta.env.VITE_REVERB_HOST ?? window.location.hostname);
+    
+    // Cegah bind address 0.0.0.0 bocor ke client browser
+    if (typeof window !== 'undefined' && (wsHost === '0.0.0.0' || !wsHost)) {
+        wsHost = window.location.hostname;
+    }
+
+    const wsPort = fromLaravel
+        ? window.REVERB_CONFIG.port
+        : (Number(import.meta.env.VITE_REVERB_APP_PORT ?? import.meta.env.VITE_REVERB_PORT) || 8080);
+    
+    const scheme = fromLaravel
+        ? window.REVERB_CONFIG.scheme
+        : (import.meta.env.VITE_REVERB_APP_SCHEME ?? import.meta.env.VITE_REVERB_SCHEME ?? 'http');
+    
+    const key = fromLaravel
+        ? window.REVERB_CONFIG.key
+        : (import.meta.env.VITE_REVERB_APP_KEY || 'production-key');
+
+    const forceTLS = scheme === 'https';
+
+    // Peringatan sanitasi karakter key
+    if (typeof key === 'string' && key.includes('@')) {
+        console.warn(
+            'Echo/Reverb: REVERB_APP_KEY jangan pakai karakter @ (merusak URL WebSocket). Gunakan hanya huruf/angka.',
+        );
+    }
+
+    // 2. Inisialisasi instance global Echo
+    window.Echo = new Echo({
+        broadcaster: 'reverb',
+        key,
+        wsHost,
+        wsPort,
+        wssPort: wsPort,
+        forceTLS,
+        enabledTransports: forceTLS ? ['wss'] : ['ws', 'wss'],
+        disableStats: true,
+        authEndpoint: '/broadcasting/auth',
+    });
+
+    console.log('Echo initialized:', {
+        fromLaravel: !!fromLaravel,
+        wsHost,
+        wsPort,
+        scheme,
+        forceTLS,
+    });
+
+    // 3. Solusi Pusher Lazy Connection
+    const pusher = window.Echo?.connector?.pusher;
+    if (typeof pusher?.connect === 'function') {
+        setTimeout(() => {
+            pusher.connect();
+            // Subscribe channel publik agar Pusher connection manager membuka socket
+            try {
+                window.Echo.channel('connection-check').subscribed(() => {
+                    console.log('Echo: koneksi shared aktif (channel connection-check)');
+                });
+            } catch {
+                // ignore
+            }
+        }, 0);
+    }
+} catch (error) {
+    console.error('Failed to initialize Echo:', error);
+}
+```
+
+> [!TIP]
+> **Mengapa Perlu Trik "Pusher Lazy Connection"?**
+> Pusher client JS secara bawaan mengadopsi mekanisme *lazy connection*—artinya Pusher tidak akan membuka koneksi WebSocket fisik ke server sebelum ada panggilan `Echo.channel()` atau `Echo.private()`. Di `echo.js`, kita secara sengaja memanggil `pusher.connect()` dan berlangganan ke channel publik ringan `connection-check`. Hal ini memastikan koneksi WebSocket terbuka sejak detik pertama staf membuka aplikasi, sehingga ketika user berpindah ke modul darurat atau presensi, soket sudah berada dalam status `connected`.
+
+---
+
+### 5.3 Tiga Jenis Channel & Konfigurasi Backend ([`routes/channels.php`](../../routes/channels.php))
+
+Laravel Broadcasting membagi saluran transmisi data menjadi 3 jenis channel dengan tingkat keamanan dan kapabilitas yang berbeda:
+
+| Jenis Channel | Karakteristik Autentikasi | Endpoint Otorisasi | Metode di Frontend (`window.Echo`) | Skenario Penggunaan di Sifast |
+| :--- | :--- | :--- | :--- | :--- |
+| **Public Channel** | Terbuka untuk umum, tanpa otentikasi atau otorisasi. | *Tidak ada* | `Echo.channel('nama-channel')` | Pengecekan status koneksi (`connection-check`), siaran darurat massal rumah sakit, pengumuman pemeliharaan server. |
+| **Private Channel** | Wajib login. Memerlukan evaluasi callback otorisasi di backend. | `POST /broadcasting/auth` | `Echo.private('nama-channel')` | Notifikasi personal staf (`App.Models.User.{id}`), ruang percakapan tiket/chat (`conversation.{id}` atau `private-chat.{id}`), pemantauan darurat (`emergency.command-center`). |
+| **Presence Channel** | Wajib login. Selain otorisasi, menyiarkan daftar anggota online secara real-time. | `POST /broadcasting/auth` | `Echo.join('nama-channel')` | Pelacakan staf aktif (`presence.users` / `presence-online-users`), indikator dokter jaga online, kolaborasi catatan medis bersama. |
+
+#### 1. Bedah Konfigurasi Otorisasi di [`routes/channels.php`](../../routes/channels.php)
+
+File [`routes/channels.php`](../../routes/channels.php) bertindak seperti file middleware routing khusus untuk koneksi WebSocket. Setiap kali frontend memanggil `Echo.private()` atau `Echo.join()`, client mengirimkan request HTTP POST ke endpoint `/broadcasting/auth`. Laravel menjalankan callback yang didefinisikan di `routes/channels.php` untuk menentukan apakah user berhak mendengarkan channel tersebut:
+
+```php
+<?php
+
+use App\Broadcasting\Channels\UserPresenceChannel;
+use App\Models\Conversation;
+use Illuminate\Support\Facades\Broadcast;
+
+// 1. Channel Notifikasi Personal User
+Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
+    return (int) $user->id === (int) $id;
+});
+
+// 2. Presence Channel untuk Melacak Staf Online
+Broadcast::channel('presence.users', UserPresenceChannel::class);
+
+// 3. Private Channel Percakapan Chat (conversation.{conversationId} / private-chat.{id}):
+// Hanya peserta percakapan yang diizinkan mendengarkan pesan
+Broadcast::channel('conversation.{conversationId}', function ($user, $conversationId) {
+    if ($user === null) {
+        return false;
+    }
+    try {
+        return Conversation::find($conversationId)?->participants()->where('user_id', $user->id)->exists() ?? false;
+    } catch (\Throwable) {
+        return false;
+    }
+});
+
+// 4. Command Center Darurat: Terbuka untuk seluruh Admin dan Staff IT/Medis
+Broadcast::channel('emergency.command-center', function ($user) {
+    if ($user === null) {
+        return false;
+    }
+    return $user->isAdmin() || $user->isStaff();
+});
+
+// 5. Channel Laporan Darurat Spesifik: Pelapor, Operator Tertugaskan, atau Admin/Staff
+Broadcast::channel('emergency.report.{reportId}', function ($user, $reportId) {
+    if ($user === null) {
+        return false;
+    }
+    try {
+        $report = \App\Models\EmergencyReport::where('report_id', $reportId)->first();
+        if (!$report) {
+            return false;
+        }
+        return $report->user_id === $user->id
+            || $report->assigned_operator_id === $user->id
+            || $user->isAdmin()
+            || $user->isStaff();
+    } catch (\Throwable) {
+        return false;
+    }
+});
+```
+
+#### 2. Bedah Channel Class: [`app/Broadcasting/Channels/UserPresenceChannel.php`](../../app/Broadcasting/Channels/UserPresenceChannel.php)
+
+Untuk presence channel (seperti `presence.users` atau konsep `presence-online-users`), alih-alih mengembalikan nilai boolean `true`/`false`, callback otorisasi harus mengembalikan **array metadata user** yang akan disiarkan ke pengguna lain di channel tersebut:
+
+```php
+namespace App\Broadcasting\Channels;
+
+use App\Models\User;
+
+class UserPresenceChannel
+{
+    /**
+     * Authenticate the user's access to the channel.
+     *
+     * @return array<string, mixed>|false
+     */
+    public function join(?User $user): array|false
+    {
+        if ($user === null) {
+            return false; // Tolak user unauthenticated
+        }
+
+        // Data yang dikembalikan di sini akan diterima oleh frontend di event .here() dan .joining()
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'avatar' => $user->avatar_url ?? null,
+            'last_seen' => now()->toISOString(),
+        ];
+    }
+}
+```
+
+Jika method `join()` mengembalikan `false`, koneksi ditolak dengan status HTTP 403 Forbidden. Jika mengembalikan array data, pengguna resmi terdaftar di presence channel dan array tersebut disebarkan ke seluruh anggota lain di ruangan tersebut.
+
+---
+
+### 5.4 Bedah Custom Hooks Real-Time di Sifast
+
+Di frontend React Portal Sifast, kita tidak memanggil `window.Echo` secara imperatif langsung di dalam komponen presentasional. Seluruh interaksi WebSocket dienkapsulasi ke dalam React Hooks terdedikasi untuk menjamin keterbacaan kode, kemudahan pengujian, dan manajemen siklus hidup koneksi yang disiplin.
+
+#### 1. Hook Pelacakan Staf Online: `useUserPresence` ([`resources/js/hooks/use-user-presence.ts`](../../resources/js/hooks/use-user-presence.ts))
+
+Hook ini bertugas mengelola kehadiran staf atau dokter yang sedang aktif secara real-time melalui presence channel (`presence.users` / `presence-online-users`):
+
+```tsx
+import { useState, useEffect } from 'react';
+
+export interface OnlineUser {
+  id: number;
+  name: string;
+  email: string;
+  avatar?: string;
+  last_seen: string;
+}
+
+export interface UserPresence {
+  online: boolean;
+  users: OnlineUser[];
+  count: number;
+}
+
+export function useUserPresence() {
+  const [presence, setPresence] = useState<UserPresence>({
+    online: false,
+    users: [],
+    count: 0,
+  });
+
+  useEffect(() => {
+    // 1. Validasi ketersediaan instance Echo
+    if (!window.Echo) {
+      console.warn('Echo is not available');
+      return;
+    }
+
+    let channel: any = null;
+
+    try {
+      // 2. Bergabung ke presence channel (contoh: 'presence.users' / 'presence-online-users')
+      channel = window.Echo.join('presence.users');
+
+      if (channel && typeof channel.here === 'function') {
+        // Event .here(): Diterima sekali saat pertama kali bergabung.
+        // Berisi array seluruh pengguna yang SUDAH LEBIH DULU aktif di channel ini.
+        channel.here((users: OnlineUser[]) => {
+          setPresence(prev => ({
+            ...prev,
+            users: users || [],
+            count: users?.length || 0,
+            online: true,
+          }));
+        });
+
+        // Event .joining(): Diterima ketika ada staf lain yang baru saja membuka aplikasi/login.
+        channel.joining((user: OnlineUser) => {
+          setPresence(prev => {
+            // Idempotensi: Cegah duplikasi jika user membuka beberapa tab browser
+            const existingUser = prev.users.find(u => u.id === user.id);
+            if (existingUser) return prev;
+            
+            return {
+              ...prev,
+              users: [...prev.users, user],
+              count: prev.count + 1,
+            };
+          });
+        });
+
+        // Event .leaving(): Diterima saat user menutup tab browser atau logout.
+        channel.leaving((user: OnlineUser) => {
+          setPresence(prev => ({
+            ...prev,
+            users: prev.users.filter(u => u.id !== user.id),
+            count: Math.max(0, prev.count - 1),
+          }));
+        });
+
+        // Event .subscribed(): Sukses berlangganan
+        channel.subscribed(() => {
+          setPresence(prev => ({ ...prev, online: true }));
+        });
+
+        // Event .error(): Gagal otorisasi / endpoint error
+        channel.error((error: any) => {
+          console.error('Presence channel error:', error);
+          setPresence(prev => ({ ...prev, online: false }));
+        });
+      }
+    } catch (error) {
+      console.error('Error setting up presence channel:', error);
+      setPresence(prev => ({ ...prev, online: false }));
+    }
+
+    // 3. Cleanup Function saat komponen unmount
+    return () => {
+      try {
+        if (channel && typeof channel.leave === 'function') {
+          channel.leave();
+        }
+      } catch (error) {
+        console.error('Error leaving presence channel:', error);
+      }
+    };
+  }, []);
+
+  return presence;
+}
+```
+
+**Contoh Penerapan di Komponen UI Header / Status Bar:**
+```tsx
+import { useUserPresence } from '@/hooks/use-user-presence';
+
+export function ActiveStaffPresenceWidget() {
+    const { online, users, count } = useUserPresence();
+
+    return (
+        <div className="flex items-center gap-3 px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border rounded-lg">
+            <div className="flex items-center gap-1.5">
+                <span className={`size-2.5 rounded-full ${online ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                    {count} Staf Online
+                </span>
+            </div>
+            
+            <div className="flex -space-x-2 overflow-hidden">
+                {users.slice(0, 4).map((user) => (
+                    <img
+                        key={user.id}
+                        src={user.avatar || '/images/default-avatar.png'}
+                        alt={user.name}
+                        title={`${user.name} (${user.email})`}
+                        className="inline-block size-6 rounded-full ring-2 ring-white dark:ring-slate-900 object-cover"
+                    />
+                ))}
+            </div>
+        </div>
+    );
+}
+```
+
+#### 2. Hook Siaran Darurat IGD: `useEmergencyBroadcast` ([`resources/js/hooks/use-emergency-broadcast.ts`](../../resources/js/hooks/use-emergency-broadcast.ts))
+
+Hook ini digunakan oleh Dashboard Command Center IGD untuk menangani peristiwa kritis rumah sakit:
+* Mendengarkan event `EmergencyReportCreated` (laporan darurat baru dari staf atau masyarakat).
+* Mendengarkan event `EmergencyReportStatusChanged` (pembaruan status penanganan oleh dokter/perawat).
+* Mendengarkan event `OfficerLocationUpdated` (pemantauan koordinat GPS ambulans yang sedang menuju lokasi pasien).
+* Mengelola koneksi private channel `emergency.command-center` lengkap dengan handling CSRF header `X-CSRF-Token` pada authorizer `/broadcasting/auth`.
+
+#### 3. Hook Pemantau Status Koneksi: `useWebSocketStatus` ([`resources/js/hooks/use-websocket-status.ts`](../../resources/js/hooks/use-websocket-status.ts))
+
+Memberikan indikator kesehatan koneksi kepada staf rumah sakit:
+* Mengetahui apakah Reverb sedang berstatus `connecting`, `connected`, `disconnected`, atau `unavailable`.
+* Menampilkan visual badge di status bar sistem (titik hijau berkedip saat tersambung, kuning saat rekoneksi, dan merah jika jaringan intranet terputus).
+
+---
+
+### 5.5 Pola Wajib: Pembersihan Listener & Pencegahan Memory Leak (`leaveChannel`)
+
+Dalam pengembangan aplikasi berbasis Blade tradisional, setiap kali user mengklik tautan (`<a href="/tickets">`), browser membuang seluruh heap memori JavaScript lama dan memuat dokumen HTML baru dari nol. **Di aplikasi SPA berbasis Inertia.js v2, browser tidak pernah membuang memori secara otomatis saat berpindah halaman!**
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        BAHAYA ZOMBIE LISTENERS                         │
+│                                                                        │
+│  User Buka Tiket #101 ──> Echo.private('conversation.101').listen(...) │
+│         │                                                              │
+│  User Navigasi ke #102 ──> (Lupa panggil Echo.leaveChannel!)           │
+│         │                                                              │
+│  User Buka Tiket #102 ──> Echo.private('conversation.102').listen(...) │
+│         │                                                              │
+│  HASIL: Listener #101 masih hidup di background!                       │
+│  Jika ada pesan baru di #101, browser mengeksekusi callback, memicu    │
+│  notifikasi salah, dan menaikkan konsumsi RAM browser secara drastis!  │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+#### 1. Perbedaan Metode Pembersihan: `leave` vs `leaveChannel` vs `stopListening`
+
+Laravel Echo menyediakan metode pembersihan dengan kegunaan yang berbeda:
+
+1. **`Echo.leaveChannel('nama-channel')` atau `Echo.leave('nama-channel')`:**
+   Metode ini **membatalkan langganan (*unsubscribe*) sepenuhnya dari channel tersebut** di level WebSocket server Reverb dan membuang seluruh event listener yang terdaftar di channel tersebut. Gunakan saat komponen unmount.
+2. **`channel.stopListening('.EventName')`:**
+   Hanya menghentikan pendengaran pada event tertentu, namun koneksi channel ke Reverb tetap dipertahankan.
+3. **`channel.leave()` (khusus Presence Channel):**
+   Memerintahkan client untuk mengirim frame keluar ke Reverb sehingga user lain menerima event `.leaving()`, lalu menutup channel presence tersebut.
+
+#### 2. Aturan Emas: Selalu Sertakan Cleanup di `useEffect`
+
+Setiap kali Anda mendaftarkan listener WebSocket di dalam komponen React, Anda **wajib** mengembalikan fungsi pembersih (*cleanup function*) yang memanggil `Echo.leaveChannel(...)` atau `Echo.leave(...)`:
+
+```tsx
+// ❌ CONTOH ANTIPATTERN (MEMBOCORKAN MEMORI & MENDUPLIKASI NOTIFIKASI)
+export function BadTicketChat({ ticketId }: { ticketId: number }) {
+    useEffect(() => {
+        // Listener dipasang, tetapi TIDAK PERNAH DILEPAS saat komponen ditutup!
+        window.Echo.private(`conversation.${ticketId}`)
+            .listen('MessageSent', (e: any) => {
+                alert(`Pesan baru: ${e.message}`);
+            });
+    }, [ticketId]);
+
+    return <div>Diskusi Tiket #{ticketId}</div>;
+}
+
+// ✅ CONTOH BENAR & SESUAI STANDAR SIFAST
+export function GoodTicketChat({ ticketId }: { ticketId: number }) {
+    useEffect(() => {
+        const channelName = `conversation.${ticketId}`;
+        const channel = window.Echo.private(channelName);
+
+        channel.listen('MessageSent', (e: any) => {
+            console.log('Pesan baru diterima:', e.message);
+        });
+
+        // Wajib: Kembalikan fungsi cleanup untuk membersihkan listener saat unmount
+        return () => {
+            console.log(`Meninggalkan channel: ${channelName}`);
+            // Panggil leaveChannel untuk mencabut subscription dan menghapus seluruh listener
+            window.Echo.leaveChannel(channelName);
+            // Atau: window.Echo.leave(channelName);
+        };
+    }, [ticketId]);
+
+    return <div>Diskusi Tiket #{ticketId}</div>;
+}
+```
+
+> [!CAUTION]
+> **Dampak Fatal Menghilangkan `leaveChannel` pada Modul Alarm IGD:**
+> Pada modul IGD, event `EmergencyReportCreated` memicu suara sirene alarm (`new Audio('/sounds/alarm.mp3').play()`). Jika staf berpindah halaman antar-menu sebanyak 5 kali tanpa cleanup, maka ketika 1 insiden darurat dilaporkan, browser akan membunyikan file audio alarm sebanyak **5 kali bertumpuk dengan delay milidetik**, menghasilkan suara dengung keras dan membebani audio buffer sistem operasi. Selalu pastikan `leaveChannel` terpanggil pada cleanup return function.
+
+---
+
+### 5.6 Tutorial Hands-on: Menambahkan Fitur Broadcast Baru Step-by-Step
+
+Mari kita pelajari alur kerja lengkap membangun fitur penyiaran real-time baru di Portal Sifast: kita akan membuat siaran notifikasi darurat penugasan tiket ITIL kepada teknisi yang sedang bertugas.
+
+#### Langkah 1: Buat Event di Laravel dengan Interface `ShouldBroadcast`
+
+Jalankan perintah Artisan di terminal:
+```bash
+php artisan make:event TicketAssigned
+```
+
+Edit file event yang dihasilkan di `app/Events/TicketAssigned.php`:
+```php
+namespace App\Events;
+
+use App\Models\Ticket;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
+
+class TicketAssigned implements ShouldBroadcast
+{
+    use Dispatchable, SerializesModels;
+
+    public function __construct(
+        public Ticket $ticket,
+        public int $technicianId
+    ) {}
+
+    /**
+     * Saluran broadcast yang dituju.
+     */
+    public function broadcastOn(): array
+    {
+        // Broadcast ke channel personal teknisi yang ditugaskan
+        return [
+            new PrivateChannel('App.Models.User.' . $this->technicianId),
+        ];
+    }
+
+    /**
+     * Nama event kustom yang didengar oleh Echo di frontend.
+     */
+    public function broadcastAs(): string
+    {
+        return 'TicketAssignedEvent';
+    }
+
+    /**
+     * Payload data yang dikirimkan ke client WebSocket.
+     */
+    public function broadcastWith(): array
+    {
+        return [
+            'ticket_id' => $this->ticket->id,
+            'ticket_number' => $this->ticket->ticket_number,
+            'title' => $this->ticket->title,
+            'priority' => $this->ticket->priority?->name ?? 'Normal',
+            'assigned_at' => now()->toIso8601String(),
+        ];
+    }
+}
+```
+
+#### Langkah 2: Daftarkan Otorisasi Channel di [`routes/channels.php`](../../routes/channels.php)
+
+Pastikan channel private tersebut telah memiliki aturan otorisasi:
+```php
+Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
+    return (int) $user->id === (int) $id;
+});
+```
+
+#### Langkah 3: Picu Event di Controller Laravel
+
+Di dalam `TicketController.php` pada method penugasan teknisi:
+```php
+use App\Events\TicketAssigned;
+
+public function assign(Request $request, Ticket $ticket)
+{
+    $technicianId = (int) $request->input('technician_id');
+    $ticket->update(['assigned_to' => $technicianId]);
+
+    // Picu event broadcast ke Reverb
+    broadcast(new TicketAssigned($ticket, $technicianId))->toOthers();
+
+    return back()->with('success', 'Teknisi berhasil ditugaskan.');
+}
+```
+
+#### Langkah 4: Tangkap Event di Komponen React dengan Custom Hook
+
+Buat hook di `resources/js/hooks/use-ticket-notifications.ts`:
+```tsx
+import { useEffect, useState } from 'react';
+import { usePage } from '@inertiajs/react';
+
+interface TicketAssignedPayload {
+    ticket_id: number;
+    ticket_number: string;
+    title: string;
+    priority: string;
+    assigned_at: string;
+}
+
+export function useTicketNotifications() {
+    const { auth } = usePage<any>().props;
+    const [latestNotification, setLatestNotification] = useState<TicketAssignedPayload | null>(null);
+
+    useEffect(() => {
+        if (!auth?.user?.id || !window.Echo) return;
+
+        const channelName = `App.Models.User.${auth.user.id}`;
+        const channel = window.Echo.private(channelName);
+
+        // Perhatikan tanda titik (.) di awal jika menggunakan broadcastAs kustom di Laravel
+        channel.listen('.TicketAssignedEvent', (data: TicketAssignedPayload) => {
+            console.log('Tiket baru ditugaskan ke Anda:', data);
+            setLatestNotification(data);
+            
+            // Tampilkan browser notification jika diizinkan
+            if (Notification.permission === 'granted') {
+                new Notification(`Tiket Baru: #${data.ticket_number}`, {
+                    body: `${data.title} (${data.priority})`,
+                    icon: '/favicon.ico',
+                });
+            }
+        });
+
+        // Wajib panggil leaveChannel saat unmount
+        return () => {
+            window.Echo.leaveChannel(channelName);
+        };
+    }, [auth?.user?.id]);
+
+    return { latestNotification, clearNotification: () => setLatestNotification(null) };
+}
+```
+
+#### Langkah 5: Pasang Notifikasi di UI Layout / Navbar
+
+Gunakan hook di komponen layout atau navbar:
+```tsx
+import { useTicketNotifications } from '@/hooks/use-ticket-notifications';
+
+export function TicketNotificationToast() {
+    const { latestNotification, clearNotification } = useTicketNotifications();
+
+    if (!latestNotification) return null;
+
+    return (
+        <div className="fixed bottom-4 right-4 z-50 bg-teal-900 text-white p-4 rounded-xl shadow-2xl flex items-start gap-3 border border-teal-700 animate-in fade-in slide-in-from-bottom-5">
+            <div className="p-2 bg-teal-800 rounded-lg text-lg">
+                🔔
+            </div>
+            <div>
+                <p className="text-xs font-semibold text-teal-300">PENUGASAN TIKET BARU</p>
+                <h4 className="font-bold text-sm">#{latestNotification.ticket_number} - {latestNotification.title}</h4>
+                <p className="text-xs text-teal-200 mt-1">Prioritas: {latestNotification.priority}</p>
+            </div>
+            <button onClick={clearNotification} className="text-teal-400 hover:text-white text-sm ml-2">✕</button>
+        </div>
+    );
+}
+```
+
+---
+
+### 5.7 Katalog Gotchas & Solusi Troubleshooting Reverb / Echo
+
+Berikut adalah rangkuman kendala paling umum saat mengintegrasikan WebSocket di Portal Sifast beserta solusinya:
+
+#### 1. Error 403 Forbidden / 419 Authentication Error pada `/broadcasting/auth`
+* **Gejala:** Channel private atau presence menolak koneksi dengan status HTTP 403 atau 419 di tab Network browser.
+* **Penyebab:** Request otorisasi `/broadcasting/auth` tidak menyertakan token CSRF yang valid atau sesi cookie gagal disahkan (misalnya domain/subdomain mismatch).
+* **Solusi:** Pastikan tag `<meta name="csrf-token" content="{{ csrf_token() }}">` tersedia di `<head>` shell Blade dan konfigurasikan `X-CSRF-Token` pada authorizer Echo. Di [`resources/js/echo.js`](../../resources/js/echo.js), Echo dikonfigurasi menggunakan endpoint bawaan `/broadcasting/auth` yang otomatis membaca cookie `XSRF-TOKEN` via Axios / fetch credentials.
+
+#### 2. Mixed Content Warning: Browser Menolak `ws://` di Halaman HTTPS
+* **Gejala:** Konsol browser mencetak pesan: `The page at 'https://...' was loaded over HTTPS, but attempted to connect to the insecure WebSocket endpoint 'ws://...'. This request has been blocked.`
+* **Penyebab:** Halaman web diakses via HTTPS sedangkan konfigurasi Reverb masih memakai skema tidak aman `http` / `ws://`.
+* **Solusi:** Pola Dual-Source di [`resources/views/app.blade.php`](../../resources/views/app.blade.php#L63-L65) otomatis menangani ini dengan mendeteksi `request()->secure()` dan memaksakan skema ke `https`, sehingga Echo secara otomatis beralih ke transport `wss`.
+
+#### 3. Bind Host `0.0.0.0` vs Client Host
+* **Gejala:** Echo di browser mencoba menghubungi `ws://0.0.0.0:8080` dan koneksi langsung gagal (`ERR_ADDRESS_INVALID`).
+* **Penyebab:** Nilai `REVERB_SERVER_HOST=0.0.0.0` di server Linux terbawa tanpa disaring ke browser client.
+* **Solusi:** Di [`resources/views/app.blade.php`](../../resources/views/app.blade.php#L53-L55) dan [`resources/js/echo.js`](../../resources/js/echo.js#L13-L15), nilai `0.0.0.0` secara otomatis dicegat dan diganti dengan `window.location.hostname` atau `request()->getHost()`.
+
+#### 4. Peringatan Karakter `@` pada `REVERB_APP_KEY`
+* **Gejala:** URL koneksi WebSocket korup atau parsing URI gagal di sisi Pusher-js.
+* **Penyebab:** Karakter `@` dalam string key disalahartikan oleh parser URL browser sebagai pemisah kredensial autentikasi HTTP (`user:pass@host`).
+* **Solusi:** Gunakan string alfanumerik murni (misalnya hasil `bin2hex(random_bytes(16))`) untuk nilai `REVERB_APP_KEY` di file `.env`.
+
+#### 5. Pusher Lazy Connection (Koneksi Menggantung Tanpa Error)
+* **Gejala:** Indikator koneksi WebSocket selalu berada di status `connecting` dan tidak kunjung `connected`.
+* **Penyebab:** Pusher client tidak akan membuka soket fisik sebelum ada channel yang di-subscribe.
+* **Solusi:** Trik auto-subscribe channel publik `connection-check` di [`resources/js/echo.js`](../../resources/js/echo.js#L54-L68) memastikan koneksi fisik segera dibuka saat aplikasi pertama kali dimuat.
+
+---
+
+### 5.8 Checklist Standar Real-Time bagi Pengembang Sifast
+
+Sebelum mengajukan Pull Request yang menyertakan fitur WebSocket atau Reverb, pastikan kode Anda lulus 6 poin verifikasi berikut:
+
+| No | Poin Pemeriksaan | Kriteria Keberhasilan |
+| :---: | :--- | :--- |
+| 1 | **Dual-Source Config Aktif** | Inisialisasi Echo di [`resources/js/echo.js`](../../resources/js/echo.js) mengutamakan `window.REVERB_CONFIG` dari Blade shell. |
+| 2 | **Pembersihan Wajib (`leaveChannel`)** | Seluruh hook atau komponen yang memanggil `Echo.channel`, `Echo.private`, atau `Echo.join` memiliki fungsi cleanup pembersihan saat unmount. |
+| 3 | **Otorisasi Channel Teruji** | Setiap channel private/presence terdaftar di [`routes/channels.php`](../../routes/channels.php) dengan validasi role/hak akses yang ketat. |
+| 4 | **Dukungan TLS / HTTPS (`wss://`)** | Memastikan koneksi otomatis menggunakan `wss` saat diakses via HTTPS tanpa memicu mixed-content error. |
+| 5 | **Serialisasi Payload Efisien** | Event Laravel menggunakan method `broadcastWith()` untuk mengirimkan data yang dibutuhkan saja tanpa membocorkan atribut sensitif model database. |
+| 6 | **Pencegahan Zombie Listeners** | Memverifikasi di Network tab browser (filter WS) bahwa frame WebSocket tidak terduplikasi saat berpindah halaman via Inertia navigasi. |
+
+---
+
+*Lanjutkan membaca ke [Bab 6: Anti-Patterns, Gotchas & Debugging Toolkit](#) (segera hadir di Task 8).*
+
 
 
 
