@@ -60,14 +60,14 @@ resources/js/
 │   ├── tickets/             # ITIL Helpdesk Ticketing Board & List
 │   └── web-official/        # CMS Website RS
 ├── types/                   # TypeScript interface & type definitions
-└── wayfinder/               # Auto-generated route functions dari Laravel
+└── routes/                  # Auto-generated type-safe route functions dari Laravel
 ```
 
 ---
 
 ## 2. Model Autentikasi dan Otorisasi (RBAC + Granular Flags)
 
-Portal Sifast menggabungkan **Role Tingkat Tinggi** dengan **Flag Hak Akses Granular** pada model [`User`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Models/User.php):
+Portal Sifast menggabungkan **Role Tingkat Tinggi** dengan **Flag Hak Akses Granular** pada model [`User`](../../app/Models/User.php):
 
 ### A. Role Utama (`role`)
 1. `admin` — Administrator sistem / Koordinator IT / Manajemen Operasional.
@@ -103,20 +103,20 @@ Untuk memberikan fleksibilitas lintas departemen tanpa mengubah role utama:
 
 ## 3. Integrasi Rute Type-Safe (Laravel Wayfinder)
 
-Portal Sifast menggunakan paket `@laravel/vite-plugin-wayfinder` yang secara otomatis meng-generate fungsi rute TypeScript setiap kali ada rute Laravel baru di `routes/web.php` atau `routes/api.php`.
+Portal Sifast menggunakan paket `@laravel/vite-plugin-wayfinder` yang secara otomatis meng-generate fungsi rute TypeScript setiap kali ada rute Laravel baru di `routes/web.php` atau `routes/api.php`. Setiap controller atau kelompok rute Laravel menghasilkan modul TypeScript di `@/routes/<controller-path>` (contoh: `@/routes/tickets`) dengan method `.url` dan helper form type-safe.
 
 ### Cara Penggunaan di Frontend React:
 ```tsx
-import { route } from '@/wayfinder';
-import { router, Link } from '@inertiajs/react';
+import { show } from '@/routes/tickets';
+import { Link, router } from '@inertiajs/react';
 
-// 1. Menggunakan komponen Link
-<Link href={route('tickets.show', { ticket: ticket.id })}>
+// 1. Menggunakan komponen Link dengan fungsi rute Wayfinder
+<Link href={show(ticket.id).url}>
     Lihat Detail Tiket #{ticket.ticket_number}
 </Link>
 
-// 2. Menggunakan Inertia Router
-router.post(route('tickets.resolve', { ticket: ticket.id }), {
+// 2. Menggunakan Inertia Router untuk mutasi data
+router.post(show(ticket.id).url, {
     resolution_notes: notes,
 });
 ```

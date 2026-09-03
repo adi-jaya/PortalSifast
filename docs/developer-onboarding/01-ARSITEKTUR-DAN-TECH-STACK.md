@@ -85,10 +85,12 @@ graph TB
 ### 🎨 Frontend
 * **Framework & UI Core:**
   * `React` (`^19.2.0`) & `React-DOM` (`^19.2.0`).
+  * **React 19 Compiler (`babel-plugin-react-compiler`):** Vite secara otomatis melakukan optimasi AST auto-memoization, sehingga pemanggilan manual `useMemo` dan `useCallback` tidak diperlukan pada 95% komponen UI.
+  * **Single Blade Shell ([`resources/views/app.blade.php`](../../resources/views/app.blade.php)):** Aplikasi murni *Client-Side Rendered (CSR)* yang di-mount melalui `@inertia` dan `@inertiaHead` tanpa arsitektur SSR.
   * `Inertia.js React` (`^2.3.7`) — Arsitektur Single Page Application (SPA) tanpa perlu membangun GraphQL/REST API redundan untuk view web.
   * `TypeScript` (`^5.7.2`) — Strict typing di seluruh komponen, hooks, types, dan props.
 * **Styling & Design System:**
-  * `Tailwind CSS` (`^4.0.0`) dengan `@tailwindcss/vite` (`^4.1.11`).
+  * `Tailwind CSS` (`^4.0.0`) dengan `@tailwindcss/vite` (`^4.1.11`) — Arsitektur **Tailwind CSS v4 (CSS-First)**: Tidak lagi memerlukan `tailwind.config.js`, seluruh token tema didefinisikan melalui `@theme` pada [`resources/css/app.css`](../../resources/css/app.css).
   * `@radix-ui/*` & `@headlessui/react` — Komponen headless accessible (Dialog, Dropdown Menu, Select, Collapsible, Tooltip, Avatar).
   * `lucide-react` (`^0.475.0`) — Standard ikon grafis antarmuka.
   * `clsx` & `tailwind-merge` (`twMerge`) — Utility class composing.
@@ -144,7 +146,7 @@ graph LR
      ```php
      protected $connection = 'dbsimrs';
      ```
-   * Contoh Model SIMRS: [`Pegawai`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Models/Pegawai.php), [`Dokter`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Models/Dokter.php), [`Inventaris`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Models/Inventaris.php), [`Departemen`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/app/Models/Departemen.php).
+   * Contoh Model SIMRS: [`Pegawai`](../../app/Models/Pegawai.php), [`Dokter`](../../app/Models/Dokter.php), [`Inventaris`](../../app/Models/Inventaris.php), [`Departemen`](../../app/Models/Departemen.php).
    * **Aturan Kritis:** Jangan pernah menjalankan migrasi alter tabel pada koneksi `dbsimrs`. Koneksi ini sifatnya *read-only* atau lookup untuk integrasi.
 
 ---
