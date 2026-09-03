@@ -11,7 +11,7 @@ Modul ini dirancang khusus untuk menjembatani pergeseran paradigma dari pola mon
 | Entitas | Rincian |
 | :--- | :--- |
 | **Kode Dokumen** | `MOD-02B-FE-REACT-INERTIA` |
-| **Versi Dokumen** | 1.0.0 (Tahap Fondasi & Bab 1 Lengkap) |
+| **Versi Dokumen** | 1.1.0 (Tahap Fondasi, Bab 1 & Bab 2 Bedah Kasus Lengkap) |
 | **Status Dokumen** | Produksi Aktif / Terverifikasi |
 | **Tanggal Pembaruan** | 2026-09-03 |
 | **Tech Stack Utama** | React 19, Inertia.js v2, TypeScript 5+, Tailwind CSS v4, Radix UI Primitives, Laravel Wayfinder |
@@ -752,4 +752,459 @@ Inertia memanfaatkan HTML5 History API untuk memperbarui address bar browser tan
 
 ---
 
-*Lanjutkan membaca ke [Bab 2: Bedah Kasus Nyata Modul Tiket ITIL](#bab-2-bedah-kasus-nyata-modul-tiket-itil-tahap-1-analisis) (segera hadir di Task 4).*
+## Bab 2: Bedah Kasus Nyata Modul Tiket ITIL (Tahap 1: Analisis)
+
+Modul Tiket ITIL (*Information Technology Infrastructure Library*) di Portal Sifast merupakan salah satu modul operasional paling aktif dan kompleks di RS Aisyiyah Siti Fatimah Tulangan. Modul ini melayani pencatatan insiden perangkat keras medis, gangguan jaringan intranet antar-instalasi, perbaikan printer kasir/farmasi, hingga permohonan pengembangan modul baru SIMRS oleh para kepala unit rumah sakit.
+
+Pada bab ini, kita akan membedah arsitektur produksi nyata dari modul tiket ini: mulai dari bagaimana controller Laravel mengalirkan data ke komponen React tanpa endpoint REST terpisah, bagaimana fitur live search dan filter multi-kriteria berjalan instan tanpa reload, bagaimana form kompleks dengan 17 state field dan upload file dikelola dengan `useForm`, hingga bagaimana Laravel Wayfinder memberikan routing yang aman (*type-safe*).
+
+---
+
+### 2.1 Peta Alur Data Controller ke React (End-to-End Data Flow)
+
+Dalam arsitektur monolitik Blade klasik, controller menyiapkan data lalu merendernya ke view HTML via `view('tickets.index', compact('tickets', ...))`. Di Inertia.js v2, pola tersebut dipertahankan hampir 100% identik dari sisi mental model controller, namun alih-alih merender file HTML di server, method `Inertia::render()` mengubah payload PHP menjadi respons JSON terstruktur yang diserahkan ke komponen React.
+
+#### 1. Titik Tolak Backend: [`TicketController.php`](../../app/Http/Controllers/TicketController.php#L83-L94)
+
+Perhatikan method `index()` pada controller utama modul tiket di Portal Sifast:
+
+```php
+// Cuplikan nyata dari app/Http/Controllers/TicketController.php:83-94
+return Inertia::render('tickets/index', [
+    'tickets' => $tickets,
+    'statuses' => TicketStatus::active()->ordered()->get(),
+    'priorities' => TicketPriority::active()->ordered()->get(),
+    'tags' => TicketTag::where('is_active', true)->orderBy('name')->get(['id', 'name', 'slug']),
+    'filters' => $request->only(['status', 'priority', 'department', 'assignee', 'search', 'tag', 'category', 'subcategory', 'project', 'created_from', 'created_to', 'closed_from', 'closed_to', 'resolved_only', 'include_closed', 'draft']),
+    'categories' => $this->getCategoriesForTicketList($user),
+    'projects' => Project::query()->orderBy('name')->get(['id', 'name']),
+    'canExport' => $user->isAdmin() || $user->isStaff(),
+    'canDelete' => $tickets->getCollection()->contains(fn (Ticket $ticket) => $ticket->can_delete),
+]);
+```
+
+Mari kita bedah peranan dan transformasi setiap kunci array yang dikirimkan oleh backend:
+
+| Kunci Array Backend | Tipe Data PHP / Laravel | Peranan & Transformasi di Frontend React |
+| :--- | :--- | :--- |
+| `'tickets'` | `LengthAwarePaginator` | Menyuplai objek paginasi utama tabel tiket (`data: Ticket[]`, `current_page`, `last_page`, `links`, `total`). Koleksi telah di-enrich dengan nama departemen pemohon dan flag otorisasi `can_delete`. |
+| `'statuses'` | `Collection<TicketStatus>` | Daftar master status tiket (Open, In Progress, Pending, Resolved, Closed) yang aktif dan berurutan untuk mengisi opsi dropdown filter status. |
+| `'priorities'` | `Collection<TicketPriority>` | Daftar tingkat prioritas (Low, Medium, High, Urgent) dengan metadata warna hex/badge untuk menandai tingkat kegentingan gangguan rumah sakit. |
+| `'tags'` | `Collection<TicketTag>` | Daftar tag label ringan (`['id', 'name', 'slug']`) untuk memfilter insiden spesifik seperti *#printer*, *#jaringan*, *#bpjs*, atau *#farmasi*. |
+| `'filters'` | `array` | Nilai parameter query string saat ini dari HTTP request. Memastikan input pencarian dan dropdown filter di UI tetap sinkron (*persisted*) dengan URL address bar. |
+| `'categories'` | `Collection<TicketCategory>` | Daftar kategori beserta relasi `subcategories`, telah disaring sesuai batasan departemen staf yang sedang login (`dep_id`). |
+| `'projects'` | `Collection<Project>` | Daftar inisiatif strategis rumah sakit untuk mengelompokkan tiket penugasan proyek TI. |
+| `'canExport'` | `bool` | Flag otorisasi UI: hanya user dengan role Admin atau Staff IT/IPS yang diperbolehkan melihat tombol *Export CSV*. |
+| `'canDelete'` | `bool` | Flag boolean dinamis: bernilai `true` jika koleksi tiket yang sedang ditampilkan di halaman aktif mengandung setidaknya satu tiket yang boleh dihapus oleh user saat ini. |
+
+#### 2. Titik Temu Frontend: [`resources/js/pages/tickets/index.tsx`](../../resources/js/pages/tickets/index.tsx#L100-L110)
+
+Di sisi frontend React, perhatikan bagaimana komponen `TicketsIndex` menerima data dari Laravel melalui mekanisme **Parameter Destructuring**:
+
+```tsx
+// Cuplikan dari resources/js/pages/tickets/index.tsx:46-56 (Definisi Props)
+type Props = {
+    tickets: PaginatedTickets;
+    statuses: TicketStatus[];
+    priorities: TicketPriority[];
+    tags: TicketTag[];
+    categories: TicketCategory[];
+    filters: TicketFilters;
+    projects?: ProjectOption[];
+    canExport?: boolean;
+    canDelete?: boolean;
+};
+
+// Cuplikan dari resources/js/pages/tickets/index.tsx:100-110 (Komponen Utama)
+export default function TicketsIndex({
+    tickets,
+    statuses,
+    priorities,
+    tags = [],
+    categories = [],
+    filters,
+    projects = [],
+    canExport = false,
+    canDelete = false,
+}: Props) {
+    // Komponen langsung siap merender tabel, dropdown, dan toolbar!
+    // ...
+}
+```
+
+> [!NOTE]
+> **Mengapa Ini Merupakan "Game Changer" bagi Laravel Developer?**
+> Perhatikan bahwa di React kita **TIDAK PERLU**:
+> 1. Menulis `useEffect` manual untuk melakukan `axios.get('/api/tickets')`.
+> 2. Mengelola state loading awal (`const [isLoading, setIsLoading] = useState(true)`).
+> 3. Mengkhawatirkan token autentikasi Bearer API yang kadaluarsa atau CORS error.
+> 
+> Seluruh data yang disiapkan oleh method `index()` di `TicketController.php` disuntikkan secara instan ke props komponen `TicketsIndex`. Hubungan ini bersifat **1-to-1, deterministik, dan type-safe**.
+
+#### 3. Diagram Alur Data End-to-End
+
+Diagram urutan berikut menggambarkan alur siklus penuh data dari aksi pengguna hingga pembaruan layar:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Staff as Staf RS (Browser)
+    participant InertiaClient as Client Inertia (React 19)
+    participant NginxLaravel as Laravel Web Server
+    participant Controller as TicketController::index()
+    participant Database as Database PostgreSQL / MySQL
+
+    Staff->>InertiaClient: Buka URL /tickets (atau klik Navigasi Sidebar)
+    InertiaClient->>NginxLaravel: GET /tickets (Header: X-Inertia: true)
+    NginxLaravel->>Controller: Eksekusi TicketController::index($request)
+    
+    Controller->>Database: Query tickets (filter, search, pagination)
+    Controller->>Database: Query master statuses, priorities, tags, categories
+    Database-->>Controller: Return Eloquent Models & Collections
+    
+    Controller->>Controller: Cek Policy & Otorisasi ($user->can('delete', ...))
+    Controller-->>NginxLaravel: Inertia::render('tickets/index', $payloadArray)
+    
+    NginxLaravel-->>InertiaClient: HTTP 200 OK (JSON Props Payload)
+    Note over InertiaClient: Inertia mencocokkan string 'tickets/index'<br/>ke resources/js/pages/tickets/index.tsx
+    InertiaClient->>InertiaClient: Destructuring props ({ tickets, statuses, filters, ... })
+    InertiaClient->>Staff: Render Virtual DOM -> Tampilan Tabel Tiket Lengkap
+```
+
+---
+
+### 2.2 Live Search & Filter Tanpa Reload (`preserveState: true`)
+
+Salah satu kendala terbesar antarmuka tabel data berbasis server-side filtering di Blade konvensional adalah **pengalaman pengguna (UX) yang patah-patah**:
+* Saat form filter di-submit, browser melakukan refresh penuh (*white-flash*).
+* Posisi scrollbar melompat kembali ke puncak halaman.
+* Kursor input pencarian terlepas (*blur*), sehingga user harus mengklik ulang kotak input setiap kali ingin memperpanjang kata kunci.
+* Riwayat browser (*back button*) dipenuhi puluhan entri URL yang tidak diinginkan.
+
+Inertia.js memecahkan kendala ini secara elegan melalui method `router.get()` yang dipadukan dengan opsi `preserveState: true` dan `replace: true`.
+
+#### 1. Analisis Mendalam Fungsi `applyFilters` di [`resources/js/pages/tickets/index.tsx`](../../resources/js/pages/tickets/index.tsx#L130-L139)
+
+Mari kita bedah fungsi filter aktual pada baris 130-139:
+
+```tsx
+// Cuplikan dari resources/js/pages/tickets/index.tsx:130-139
+const applyFilters = useCallback(
+    (newFilters: Partial<TicketFilters>) => {
+        router.get(
+            '/tickets',
+            { ...filters, ...newFilters },
+            { preserveState: true, replace: true }
+        );
+    },
+    [filters]
+);
+```
+
+Fungsi di atas kemudian dipanggil oleh berbagai kontrol antarmuka:
+* **Pencarian Kata Kunci (Search Input):**
+  ```tsx
+  // Baris 141-144
+  const handleSearch = (e: React.FormEvent) => {
+      e.preventDefault();
+      applyFilters({ search });
+  };
+  ```
+* **Dropdown Filter Status / Prioritas / Kategori:**
+  ```tsx
+  // Mengubah filter status langsung memicu request parsial ke server
+  <Select 
+      value={filters.status || 'all'} 
+      onValueChange={(val) => applyFilters({ status: val === 'all' ? undefined : val })}
+  >
+      <SelectTrigger className="w-36">
+          <SelectValue placeholder="Semua Status" />
+      </SelectTrigger>
+      {/* ... */}
+  </Select>
+  ```
+* **Pembersihan Filter (Clear Filters):**
+  ```tsx
+  // Baris 146-149
+  const clearFilters = () => {
+      setSearch('');
+      router.get('/tickets', {}, { preserveState: true, replace: true });
+  };
+  ```
+
+#### 2. Mengapa Opsi `preserveState: true` Sangat Krusial?
+
+Secara default, saat Inertia menerima respons baru dari server, Inertia menganggap halaman telah diganti dengan instance baru dan **mereset seluruh state lokal komponen**.
+
+Dengan menyertakan `{ preserveState: true }`:
+1. **Mempertahankan State Komponen Lokal:** State lokal seperti teks yang sedang diketik pada input pencarian (`const [search, setSearch] = useState(filters.search || '')`), status buka-tutup accordion filter (`showFilters`), atau tab aktif tetap bertahan utuh.
+2. **Mencegah Hilangnya Fokus Kursor:** Kursor pengguna tetap berada di dalam input pencarian tanpa interupsi, sehingga staf rumah sakit dapat mengetik dengan mulus.
+3. **Mencegah Lompatan Scroll (Scroll Jump):** Halaman tidak akan bergulir (*jump*) ke atas, menjaga orientasi pandangan mata pengguna saat memeriksa baris tabel di bagian bawah.
+
+#### 3. Mengapa Opsi `replace: true` Wajib Digunakan pada Filter?
+
+Secara default, navigasi browser menambahkan entri baru ke riwayat peramban (`window.history.pushState`). Jika opsi `replace: true` tidak disertakan:
+* Jika staf mengetik kata kunci "p-r-i-n-t-e-r" atau mengganti filter status 5 kali berturut-turut, riwayat browser akan mencatat 5 entri baru.
+* Ketika staf menekan tombol **Back** di peramban, mereka terpaksa mengklik tombol tersebut 5 kali berturut-turut hanya untuk keluar dari halaman daftar tiket!
+* Dengan `{ replace: true }`, Inertia mengeksekusi `window.history.replaceState`. Alamat URL di address bar browser tetap terbarui (sehingga URL dapat disalin atau di-bookmark dengan filter yang presisi), namun riwayat navigasi browser tetap bersih dan bersahabat.
+
+---
+
+### 2.3 Bedah Form Kompleks ([`resources/js/pages/tickets/create.tsx`](../../resources/js/pages/tickets/create.tsx))
+
+Halaman pembuatan tiket insiden (`/tickets/create`) di Portal Sifast adalah contoh formulir transaksional berskala besar. Formulir ini tidak hanya mengumpulkan teks biasa, melainkan juga mengelola relasi hierarkis dinamis, lampiran multi-berkas (*multi-file attachments*), dan integrasi inventaris sarana rumah sakit.
+
+#### 1. Manajemen 17 State Field dengan Hook `useForm`
+
+Perhatikan inisialisasi state pada baris 76-97 di [`resources/js/pages/tickets/create.tsx`](../../resources/js/pages/tickets/create.tsx#L76-L97):
+
+```tsx
+// Cuplikan dari resources/js/pages/tickets/create.tsx:76-97
+const { data, setData, post, processing, errors, transform } = useForm({
+    ticket_type_id: '',
+    dep_id: '' as '' | 'IT' | 'IPS',
+    ticket_category_id: '',
+    ticket_subcategory_id: '',
+    ticket_priority_id: '',
+    title: '',
+    description: '',
+    related_ticket_id: '',
+    asset_id: initialAssetId as number | null,
+    asset_no_inventaris: initialAssetNoInventaris,
+    tag_ids: [] as number[],
+    requester_id: null as number | null,
+    created_at: '' as string,
+    project_id: (initialProjectId ?? '') as string | number,
+    is_draft: false,
+    plan_ideas: '',
+    plan_tools: '',
+    budget_estimate: '',
+    budget_notes: '',
+    attachments: [] as File[],
+});
+```
+
+> [!TIP]
+> **Pelajaran TypeScript Penting untuk Developer Laravel:**
+> Perhatikan penggunaan *type assertion* pada nilai awal:
+> * `attachments: [] as File[]` secara eksplisit menegaskan kepada TypeScript bahwa array ini khusus menampung objek berkas binary `File`, bukan array tanpa tipe `never[]`.
+> * `dep_id: '' as '' | 'IT' | 'IPS'` membatasi nilai departemen penanggung jawab insiden hanya pada dua unit layanan sarana rumah sakit: IT (Teknologi Informasi) atau IPS (Instalasi Pemeliharaan Sarana).
+
+#### 2. Kategori & Subkategori Dinamis via `useEffect`
+
+Di Blade + jQuery, ketergantungan antar dropdown (misal: memilih kategori "Jaringan Medis" memicu pemuatan subkategori "Kabel LAN", "Access Point Ruang Operasi", "Switch Farmasi") biasanya ditangani dengan memanggil AJAX endpoint terpisah saat event `$('#category_id').on('change', ...)` dipicu.
+
+Di React dan Inertia, seluruh hierarki kategori dan subkategori telah disertakan oleh controller di prop `categories`. Keterkaitan antar dropdown dikelola secara deklaratif menggunakan `useEffect` ([`resources/js/pages/tickets/create.tsx:220-239`](../../resources/js/pages/tickets/create.tsx#L220-L239)):
+
+```tsx
+// Cuplikan dari resources/js/pages/tickets/create.tsx:220-239
+useEffect(() => {
+    if (data.ticket_category_id) {
+        // Cari objek kategori yang dipilih dari array master categories
+        const category = categories.find((c) => c.id === parseInt(data.ticket_category_id));
+        setSelectedCategory(category || null);
+
+        // Validasi protektif: Jika user mengubah kategori induk,
+        // periksa apakah subkategori yang sebelumnya dipilih masih terdaftar di bawah kategori baru
+        if (category && data.ticket_subcategory_id) {
+            const hasSubcategory = category.subcategories?.some(
+                (s) => s.id === parseInt(data.ticket_subcategory_id)
+            );
+            // Jika subkategori lama tidak cocok dengan kategori baru, otomatis reset ke string kosong!
+            if (!hasSubcategory) {
+                setData('ticket_subcategory_id', '');
+            }
+        }
+    } else {
+        setSelectedCategory(null);
+        setData('ticket_subcategory_id', '');
+    }
+}, [data.ticket_category_id, categories]);
+```
+
+Manfaat dari pendekatan deklaratif ini:
+* **Nol Latensi Jaringan:** Pergantian subkategori berlangsung instan tanpa menunggu request HTTP tambahan ke server.
+* **Integritas Data Terjamin:** Mencegah anomali data di database (misalnya tersimpan tiket berkategori "Perangkat Keras" namun bersubkategori "Kabel FO Terputus").
+
+#### 3. Unggah Berkas & Transformasi Payload (`forceFormData`)
+
+Ketika formulir menyertakan file binary (seperti foto kerusakan fisik komputer atau hasil scan memo permohonan), payload HTTP tidak boleh dikirim sebagai format JSON biasa.
+
+Perhatikan bagaimana method `handleSubmit` pada baris 241-279 mengorkestrasi pengiriman data:
+
+```tsx
+// Cuplikan dari resources/js/pages/tickets/create.tsx:241-279
+const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const hasAttachments = data.attachments.length > 0;
+
+    // Transformasi payload sebelum diserahkan ke Laravel FormRequest
+    transform((formData) => {
+        const payload: Record<string, unknown> = {
+            ...formData,
+            ticket_subcategory_id: formData.ticket_subcategory_id === '_none' ? '' : formData.ticket_subcategory_id,
+        };
+        
+        // Sanitasi nilai numerik & relasi
+        payload.asset_id = formData.asset_id || null;
+        payload.budget_estimate = String(formData.budget_estimate).trim() !== '' 
+            ? parseInt(String(formData.budget_estimate), 10) 
+            : null;
+
+        // Sertakan berkas lampiran hanya jika staf memilih file
+        if (hasAttachments) {
+            payload.attachments = formData.attachments;
+        } else {
+            delete payload.attachments;
+        }
+
+        return payload;
+    });
+
+    post('/tickets', {
+        preserveScroll: true,
+        forceFormData: hasAttachments, // Otomatis beralih ke multipart/form-data jika ada berkas
+    });
+};
+```
+
+Opsi `forceFormData: hasAttachments` memastikan bahwa bila terdapat berkas pada state `attachments`, Inertia secara otomatis mengonversi seluruh payload ke objek browser `FormData` standar sehingga Laravel dapat memprosesnya menggunakan method `$request->file('attachments')`.
+
+#### 4. Penanganan Pesan Error Server dengan Komponen `<InputError />`
+
+Saat validasi di Laravel `TicketStoreRequest` gagal, Laravel mengembalikan HTTP 422 Unprocessable Entity beserta objek JSON berisi daftar error per field. Hook `useForm` menangkap pesan error ini secara otomatis dan memetakannya ke objek `errors`.
+
+Di antarmuka form, kita menampilkan error menggunakan komponen reusable [`InputError`](../../resources/js/components/input-error.tsx):
+
+```tsx
+// Penggunaan di resources/js/pages/tickets/create.tsx
+<div>
+    <Label htmlFor="title">Judul Tiket Gangguan *</Label>
+    <Input
+        id="title"
+        value={data.title}
+        onChange={(e) => setData('title', e.target.value)}
+        placeholder="Contoh: Printer cetak label di Farmasi Rawat Jalan macet"
+    />
+    {/* Tampilkan pesan validasi otomatis dari Laravel FormRequest */}
+    <InputError message={errors.title} className="mt-1" />
+</div>
+```
+
+Mari kita bedah implementasi komponen [`resources/js/components/input-error.tsx`](../../resources/js/components/input-error.tsx):
+
+```tsx
+// Cuplikan lengkap dari resources/js/components/input-error.tsx
+import type { HTMLAttributes } from 'react';
+import { cn } from '@/lib/utils';
+
+function normalizeMessage(message?: string | string[]): string | undefined {
+    if (message == null) return undefined;
+    if (Array.isArray(message)) return message[0];
+    return message;
+}
+
+export default function InputError({
+    message,
+    className = '',
+    ...props
+}: HTMLAttributes<HTMLParagraphElement> & { message?: string | string[] }) {
+    const text = normalizeMessage(message);
+    return text ? (
+        <p
+            {...props}
+            className={cn('text-sm text-red-600 dark:text-red-400', className)}
+        >
+            {text}
+        </p>
+    ) : null;
+}
+```
+
+Komponen ini menormalisasi tipe pesan: baik Laravel mengirimkan string tunggal (`"Judul tiket wajib diisi."`) maupun array string pesan error (`["Format berkas tidak valid.", "Ukuran maksimal 5MB."]`), komponen akan mengekstrak pesan pertama dan merendernya dengan warna merah yang harmonis pada tema terang maupun gelap (*dark mode*). Pola ini sepenuhnya menggantikan direktif Blade `@error('title') ... @enderror`.
+
+---
+
+### 2.4 Wayfinder Routing Aktual pada Modul Tiket
+
+Dalam pengembangan aplikasi Laravel konvensional maupun arsitektur SPA lama, developer sering dihadapkan pada dua pilihan pengelolaan URL di frontend:
+1. **Hardcoded String URL:**
+   ```tsx
+   // ❌ RAPUH: Rentan salah ketik dan tidak terdeteksi saat compile
+   router.get('/tickets/' + ticket.id);
+   <Link href={`/tickets/${ticket.id}/edit`}>Ubah Tiket</Link>
+   ```
+   Jika suatu saat tim backend mengubah pola URL di `routes/web.php` (misalnya menjadi `/itil/tickets/{id}`), tidak ada peringatan dari compiler TypeScript. Bug link putus (*broken link 404*) baru akan meledak di produksi saat diklik oleh pengguna.
+2. **Ziggy Global Helper (`route(...)`):**
+   ```tsx
+   // ⚠️ KURANG OPTIMAL: Masih berbasis string dinamis dan memuat seluruh rute aplikasi
+   <Link href={route('tickets.show', ticket.id)}>Detail</Link>
+   ```
+   Meskipun lebih baik daripada string mentah, Ziggy mengharuskan seluruh definisi rute aplikasi diserialisasi ke dalam payload JSON global yang besar di browser. Selain itu, parameter rute tidak memiliki autocompletion tipe data yang ketat.
+
+#### 1. Solusi Modern di Portal Sifast: Laravel Wayfinder
+
+Portal Sifast menggunakan **Laravel Wayfinder**, toolchain modern yang menganalisis file rute Laravel secara berkala dan menghasilkan modul fungsi helper TypeScript murni di direktori `resources/js/routes/`.
+
+Untuk modul tiket ITIL, fungsi rute diimpor langsung dari modul Wayfinder ([`resources/js/routes/tickets/index.ts`](../../resources/js/routes/tickets/index.ts)):
+
+```tsx
+// Impor fungsi rute spesifik yang dibutuhkan saja (Tree-shakeable & Zero Overhead)
+import { index, create, show } from '@/routes/tickets';
+```
+
+#### 2. Sintaks Pembuatan URL Dinamis yang Aman (Type-Safe)
+
+Perhatikan fleksibilitas dan keamanan tipe yang ditawarkan oleh fungsi helper rute Wayfinder:
+
+```tsx
+// Contoh Penggunaan 1: Mengoper ID primitif secara langsung
+const urlDetail1 = show(ticket.id).url;
+// Output string: '/tickets/101'
+
+// Contoh Penggunaan 2: Mengoper objek model Ticket secara langsung
+// Wayfinder secara cerdas mendeteksi properti .id pada objek model!
+const urlDetail2 = show(ticket).url;
+// Output string: '/tickets/101'
+
+// Contoh Penggunaan 3: Mengoper query parameters untuk filter
+const urlFilter = index({ query: { status: 'open', priority: 2 } }).url;
+// Output string: '/tickets?status=open&priority=2'
+
+// Contoh Penggunaan 4: Pada elemen navigasi Inertia <Link>
+<Link href={show(ticket).url} className="text-teal-600 hover:underline">
+    #{ticket.ticket_number} - {ticket.title}
+</Link>
+```
+
+#### 3. Komparasi Mendalam 3 Pendekatan Routing di Laravel
+
+Tabel berikut membandingkan secara komprehensif keunggulan Wayfinder dibandingkan metode lawas:
+
+| Parameter Evaluasi | 1. Hardcoded String (`'/tickets/' + id`) | 2. Ziggy (`route('tickets.show', id)`) | 3. Laravel Wayfinder di Sifast (`show(id).url`) |
+| :--- | :--- | :--- | :--- |
+| **Type Safety saat Compile** | ❌ Nol (String murni) | ❌ Lemah (Nama rute tetap string) | ✅ **Penuh (Fungsi TypeScript murni)** |
+| **Pendeteksian Error Typo** | Muncul saat runtime di browser (404) | Muncul saat runtime di browser | **Muncul seketika di IDE (garis merah) & Build Vite gagal** |
+| **IDE Autocompletion** | ❌ Tidak ada | ⚠️ Terbatas pada plugin tertentu | ✅ **Penuh (Parameter type, docs, dan return type)** |
+| **Navigasi Kode (Go-to-Definition)** | ❌ Tidak bisa | ❌ Tidak bisa | ✅ **Bisa (Klik fungsi langsung membuka file rute & controller)** |
+| **Beban Ukuran Bundle (Bundle Size)** | Nol | ⚠️ Besar (Membawa kamus seluruh rute aplikasi) | ✅ **Minimal (Hanya mengimpor fungsi yang dipakai / tree-shaken)** |
+| **Integrasi JSDoc ke Backend** | ❌ Tidak ada | ❌ Tidak ada | ✅ **Menampilkan anotasi controller PHP dan baris kodenya** |
+
+#### 4. Fitur JSDoc Cerdas & Lompatan Kode ke Controller PHP
+
+Salah satu fitur paling produktif dari Wayfinder bagi pengembang adalah anotasi JSDoc yang disertakan pada setiap fungsi helper. Saat Anda mengarahkan kursor (*hover*) ke fungsi `show()` di IDE Anda (Cursor / VS Code):
+
+```typescript
+/**
+* @see \App\Http\Controllers\TicketController::show
+* @see app/Http/Controllers/TicketController.php:811
+* @route '/tickets/{ticket}'
+*/
+```
+
+Anda cukup menekan **Ctrl+Klik** (atau **Cmd+Klik** di macOS) pada referensi file di tooltip JSDoc tersebut untuk langsung membuka baris 811 pada `TicketController.php`. Jembatan ini menyatukan pengalaman pengembangan frontend dan backend menjadi satu ekosistem yang terintegrasi secara harmonis.
+
+---
+
+*Lanjutkan membaca ke [Bab 3: Tutorial Hands-on CRUD Step-by-Step](#bab-3-tutorial-hands-on-crud-step-by-step-studi-kasus-modul-projects) (segera hadir di Task 5).*
+
