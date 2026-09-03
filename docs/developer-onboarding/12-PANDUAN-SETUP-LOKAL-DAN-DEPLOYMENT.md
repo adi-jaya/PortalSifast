@@ -67,8 +67,14 @@ VITE_REVERB_SCHEME="${REVERB_SCHEME}"
 ### Langkah 3: Install Dependensi PHP & Frontend
 ```bash
 composer install
-npm install
+npm ci
 ```
+
+> [!TIP]
+> **Mengapa `npm ci` dan bukan `npm install`?**
+> * `npm ci` (*Clean Install*) menginstal dependensi secara **100% deterministik** berdasarkan file [`package-lock.json`](../../package-lock.json) tanpa mengubah versi package, mencegah terjadinya *version drift* antar komputer developer dan server produksi.
+> * Gunakan `npm ci` saat **setup awal / onboarding** dan pada **pipeline CI/CD & deployment server**.
+> * Gunakan `npm install <nama-package>` hanya saat Anda secara eksplisit ingin menambahkan atau memperbarui library baru.
 
 ### Langkah 4: Generate Application Key & Storage Link
 ```bash
