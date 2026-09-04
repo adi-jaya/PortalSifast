@@ -653,14 +653,14 @@ Berikut diagram urutan navigasi request Inertia:
 sequenceDiagram
     autonumber
     actor User as Pengguna (Browser)
-    participant Link as Inertia Client (<Link>)
+    participant InertiaLink as Inertia Client (<Link>)
     participant Middleware as Laravel HandleInertiaRequests
     participant Controller as Laravel TicketController
     participant React as React 19 Root
 
-    User->>Link: Klik <Link href="/tickets">
-    Note over Link: Cegat event default browser (e.preventDefault)
-    Link->>Middleware: HTTP GET /tickets (Header: X-Inertia: true)
+    User->>InertiaLink: Klik <Link href="/tickets">
+    Note over InertiaLink: Cegat event default browser (e.preventDefault)
+    InertiaLink->>Middleware: HTTP GET /tickets (Header: X-Inertia: true)
     
     alt Request Inertia Pertama (Full Page Load)
         Middleware->>Controller: Eksekusi index()
@@ -670,10 +670,10 @@ sequenceDiagram
     else Navigasi Inertia Berikutnya (AJAX / XHR)
         Middleware->>Controller: Eksekusi index()
         Controller-->>Middleware: Inertia::render('tickets/index', $props)
-        Middleware-->>Link: HTTP 200 JSON Payload ({ component, props, url, version })
-        Note over Link: Periksa kecocokan version aset Vite
-        Link->>React: Tukar komponen halaman aktif & serahkan props baru
-        Link->>User: Update URL browser via window.history.pushState
+        Middleware-->>InertiaLink: HTTP 200 JSON Payload ({ component, props, url, version })
+        Note over InertiaLink: Periksa kecocokan version aset Vite
+        InertiaLink->>React: Tukar komponen halaman aktif & serahkan props baru
+        InertiaLink->>User: Update URL browser via window.history.pushState
     end
 ```
 
