@@ -23,6 +23,7 @@ use App\Http\Controllers\AsetPublicController;
 use App\Http\Controllers\AsetRuangController;
 use App\Http\Controllers\AsetSinkronController;
 use App\Http\Controllers\AuditAsetController;
+use App\Http\Controllers\BerkasKepegawaian\MasterBerkasPegawaiController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\DailyActivityReportController;
 use App\Http\Controllers\DashboardController;
@@ -362,6 +363,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('berkas-kepegawaian', fn () => inertia('berkas-kepegawaian/index', [
             'pegawai' => ['data' => [], 'links' => [], 'total' => 0],
         ]))->name('berkas-kepegawaian.index');
+
+        Route::get('berkas-kepegawaian/master', [MasterBerkasPegawaiController::class, 'index'])
+            ->name('berkas-kepegawaian.master.index');
+        Route::post('berkas-kepegawaian/master', [MasterBerkasPegawaiController::class, 'store'])
+            ->name('berkas-kepegawaian.master.store');
+        Route::put('berkas-kepegawaian/master/{kode}', [MasterBerkasPegawaiController::class, 'update'])
+            ->name('berkas-kepegawaian.master.update')
+            ->where('kode', '[A-Za-z0-9._-]+');
+        Route::delete('berkas-kepegawaian/master/{kode}', [MasterBerkasPegawaiController::class, 'destroy'])
+            ->name('berkas-kepegawaian.master.destroy')
+            ->where('kode', '[A-Za-z0-9._-]+');
     });
 
     // Rencana / Project (tracking per project)
