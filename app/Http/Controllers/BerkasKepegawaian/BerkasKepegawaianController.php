@@ -113,6 +113,7 @@ class BerkasKepegawaianController extends Controller
 
     public function store(StoreBerkasPegawaiRequest $request, string $nik): RedirectResponse
     {
+        $this->findAktifPegawaiOrFail($nik);
         $data = $request->validated();
 
         try {
@@ -131,6 +132,7 @@ class BerkasKepegawaianController extends Controller
 
     public function replace(ReplaceBerkasPegawaiRequest $request, string $nik, string $kode): RedirectResponse
     {
+        $this->findAktifPegawaiOrFail($nik);
         $data = $request->validated();
 
         try {
@@ -149,6 +151,8 @@ class BerkasKepegawaianController extends Controller
 
     public function destroy(string $nik, string $kode): RedirectResponse
     {
+        $this->findAktifPegawaiOrFail($nik);
+
         try {
             $this->service->delete($nik, $kode);
         } catch (InvalidArgumentException|RuntimeException $e) {
@@ -156,5 +160,13 @@ class BerkasKepegawaianController extends Controller
         }
 
         return back()->with('success', 'Berkas berhasil dihapus.');
+    }
+
+    private function findAktifPegawaiOrFail(string $nik): Pegawai
+    {
+        return Pegawai::query()
+            ->where('nik', $nik)
+            ->where('stts_aktif', 'AKTIF')
+            ->firstOrFail();
     }
 }

@@ -217,7 +217,66 @@ it('compensates by deleting remote when db insert fails', function (): void {
     $service = app(BerkasKepegawaianService::class);
 
     expect(fn () => $service->upload('__nik_tidak_ada__', '__kode_tidak_ada__', $file, now()->toDateString()))
-        ->toThrow(Exception::class);
+        ->toThrow(RuntimeException::class, 'Gagal menyimpan data berkas ke database.');
 
     Http::assertSentCount(2);
+});
+
+it('compensates by deleting new remote when db update fails on replace', function (): void {
+    if (! berkasKepegawaianWriteAllowed()) {
+        $this->markTestSkipped('dbsimrs user cannot write berkas_pegawai.');
+    }
+
+    Http::fake([
+        'http://webapps.test/receiveberkaspegawai.php' => Http::sequence()
+            ->push(['success' => true, 'filename' => 'new.pdf'], 200)
+            ->push(['success' => true, 'filename' => 'new.pdf'], 200),
+    ]);
+
+    $suffix = Str::lower(Str::random(6));
+    $kode = 'C'.$suffix;
+    $nik = Pegawai::query()->where('stts_aktif', 'AKTIF')->value('nik');
+    if (! $nik) {
+        $this->markTestSkipped('No active pegawai in dbsimrs');
+    }
+
+    MasterBerkasPegawai::query()->create([
+        'kode' => $kode,
+        'nama_berkas' => 'Compensate '.$suffix,
+        'kategori' => 'Tenaga Non Klinis',
+        'no_urut' => 995,
+    ]);
+
+    BerkasPegawai::query()->create([
+        'nik' => $nik,
+        'tgl_uploud' => now()->toDateString(),
+        'kode_berkas' => $kode,
+        'berkas' => 'pages/berkaspegawai/berkas/old_'.$suffix.'.pdf',
+    ]);
+
+    $connection = DB::connection('dbsimrs');
+    $connection->beforeExecuting(function (string $query): void {
+        if (str_contains(strtolower($query), 'update') && str_contains(strtolower($query), 'berkas_pegawai')) {
+            throw new RuntimeException('Simulated DB update failure.');
+        }
+    });
+
+    try {
+        $file = UploadedFile::fake()->createWithContent('baru.pdf', '%PDF-1.4 baru content');
+
+        expect(fn () => app(BerkasKepegawaianService::class)->replace((string) $nik, $kode, $file, now()->toDateString()))
+            ->toThrow(RuntimeException::class, 'Gagal memperbarui data berkas di database.');
+
+        Http::assertSentCount(2);
+
+        $row = BerkasPegawai::query()->where('nik', $nik)->where('kode_berkas', $kode)->first();
+        expect($row)->not->toBeNull()
+            ->and($row->berkas)->toEndWith('old_'.$suffix.'.pdf');
+    } finally {
+        $callbacks = new ReflectionProperty($connection, 'beforeExecutingCallbacks');
+        $callbacks->setValue($connection, []);
+
+        BerkasPegawai::query()->where('nik', $nik)->where('kode_berkas', $kode)->delete();
+        MasterBerkasPegawai::query()->where('kode', $kode)->delete();
+    }
 });

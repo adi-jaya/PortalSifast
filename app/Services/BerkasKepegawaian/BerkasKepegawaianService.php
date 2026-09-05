@@ -6,6 +6,7 @@ use App\Models\BerkasPegawai;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
+use RuntimeException;
 use Throwable;
 
 class BerkasKepegawaianService
@@ -33,7 +34,7 @@ class BerkasKepegawaianService
         } catch (Throwable $e) {
             $this->client->delete($filename);
 
-            throw $e;
+            throw new RuntimeException('Gagal menyimpan data berkas ke database.', 0, $e);
         }
 
         return $this->findRowOrFail($nik, $kodeBerkas);
@@ -54,13 +55,19 @@ class BerkasKepegawaianService
 
         $this->client->upload($file, $filename);
 
-        BerkasPegawai::query()
-            ->where('nik', $nik)
-            ->where('kode_berkas', $kodeBerkas)
-            ->update([
-                'tgl_uploud' => $tglUploud,
-                'berkas' => $relativePath,
-            ]);
+        try {
+            BerkasPegawai::query()
+                ->where('nik', $nik)
+                ->where('kode_berkas', $kodeBerkas)
+                ->update([
+                    'tgl_uploud' => $tglUploud,
+                    'berkas' => $relativePath,
+                ]);
+        } catch (Throwable $e) {
+            $this->client->delete($filename);
+
+            throw new RuntimeException('Gagal memperbarui data berkas di database.', 0, $e);
+        }
 
         if ($oldBasename !== '' && $oldBasename !== $filename) {
             try {
@@ -90,10 +97,14 @@ class BerkasKepegawaianService
             $this->client->delete($path);
         }
 
-        BerkasPegawai::query()
-            ->where('nik', $nik)
-            ->where('kode_berkas', $kodeBerkas)
-            ->delete();
+        try {
+            BerkasPegawai::query()
+                ->where('nik', $nik)
+                ->where('kode_berkas', $kodeBerkas)
+                ->delete();
+        } catch (Throwable $e) {
+            throw new RuntimeException('Gagal menghapus data berkas dari database.', 0, $e);
+        }
     }
 
     public function buildFilename(string $nik, string $kodeBerkas, UploadedFile $file): string

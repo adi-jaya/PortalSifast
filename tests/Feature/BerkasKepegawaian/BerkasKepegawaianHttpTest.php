@@ -125,6 +125,43 @@ it('rejects png on store via validation', function (): void {
         ->assertSessionHasErrors('dokumen');
 });
 
+it('returns 404 when mutating berkas for missing or non-aktif pegawai', function (): void {
+    $admin = User::factory()->admin()->create();
+    $file = UploadedFile::fake()->createWithContent('dok.pdf', '%PDF-1.4 test content');
+
+    actingAs($admin)
+        ->post('/berkas-kepegawaian/__nik_tidak_ada__', [
+            'kode_berkas' => 'XX',
+            'tgl_uploud' => now()->toDateString(),
+            'dokumen' => $file,
+        ])
+        ->assertNotFound();
+
+    $nonAktifNik = Pegawai::query()->where('stts_aktif', '!=', 'AKTIF')->value('nik');
+    if (! $nonAktifNik) {
+        return;
+    }
+
+    actingAs($admin)
+        ->post("/berkas-kepegawaian/{$nonAktifNik}", [
+            'kode_berkas' => 'XX',
+            'tgl_uploud' => now()->toDateString(),
+            'dokumen' => $file,
+        ])
+        ->assertNotFound();
+
+    actingAs($admin)
+        ->post("/berkas-kepegawaian/{$nonAktifNik}/XX/replace", [
+            'tgl_uploud' => now()->toDateString(),
+            'dokumen' => $file,
+        ])
+        ->assertNotFound();
+
+    actingAs($admin)
+        ->delete("/berkas-kepegawaian/{$nonAktifNik}/XX")
+        ->assertNotFound();
+});
+
 it('can store replace and destroy berkas with http fake', function (): void {
     if (! berkasKepegawaianHttpWriteAllowed()) {
         $this->markTestSkipped('dbsimrs user cannot write berkas_pegawai.');
