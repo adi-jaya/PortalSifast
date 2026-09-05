@@ -23,6 +23,7 @@ use App\Http\Controllers\AsetPublicController;
 use App\Http\Controllers\AsetRuangController;
 use App\Http\Controllers\AsetSinkronController;
 use App\Http\Controllers\AuditAsetController;
+use App\Http\Controllers\BerkasKepegawaian\BerkasKepegawaianController;
 use App\Http\Controllers\BerkasKepegawaian\MasterBerkasPegawaiController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\DailyActivityReportController;
@@ -360,9 +361,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::middleware('berkas-kepegawaian.access')->group(function (): void {
-        Route::get('berkas-kepegawaian', fn () => inertia('berkas-kepegawaian/index', [
-            'pegawai' => ['data' => [], 'links' => [], 'total' => 0],
-        ]))->name('berkas-kepegawaian.index');
+        Route::get('berkas-kepegawaian', [BerkasKepegawaianController::class, 'index'])
+            ->name('berkas-kepegawaian.index');
 
         Route::get('berkas-kepegawaian/master', [MasterBerkasPegawaiController::class, 'index'])
             ->name('berkas-kepegawaian.master.index');
@@ -373,6 +373,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->where('kode', '[A-Za-z0-9._-]+');
         Route::delete('berkas-kepegawaian/master/{kode}', [MasterBerkasPegawaiController::class, 'destroy'])
             ->name('berkas-kepegawaian.master.destroy')
+            ->where('kode', '[A-Za-z0-9._-]+');
+
+        Route::get('berkas-kepegawaian/{nik}', [BerkasKepegawaianController::class, 'show'])
+            ->name('berkas-kepegawaian.show')
+            ->where('nik', '(?!master$)[A-Za-z0-9._-]+');
+        Route::post('berkas-kepegawaian/{nik}', [BerkasKepegawaianController::class, 'store'])
+            ->name('berkas-kepegawaian.store')
+            ->where('nik', '(?!master$)[A-Za-z0-9._-]+');
+        Route::post('berkas-kepegawaian/{nik}/{kode}/replace', [BerkasKepegawaianController::class, 'replace'])
+            ->name('berkas-kepegawaian.replace')
+            ->where('nik', '(?!master$)[A-Za-z0-9._-]+')
+            ->where('kode', '[A-Za-z0-9._-]+');
+        Route::delete('berkas-kepegawaian/{nik}/{kode}', [BerkasKepegawaianController::class, 'destroy'])
+            ->name('berkas-kepegawaian.destroy')
+            ->where('nik', '(?!master$)[A-Za-z0-9._-]+')
             ->where('kode', '[A-Za-z0-9._-]+');
     });
 
