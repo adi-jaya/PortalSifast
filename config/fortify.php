@@ -129,6 +129,7 @@ return [
     */
 
     'limiters' => [
+        // Keep a generous HTTP safety throttle; progressive lockout is enforced in the login pipeline.
         'login' => 'login',
         'two-factor' => 'two-factor',
     ],

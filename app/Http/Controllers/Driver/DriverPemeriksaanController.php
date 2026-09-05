@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Driver;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Driver\StoreDriverPemeriksaanBatchRequest;
 use App\Http\Requests\Driver\StoreDriverPemeriksaanRequest;
 use App\Models\DriverChecklistItem;
 use App\Models\DriverKendaraan;
@@ -12,6 +13,7 @@ use App\Services\Driver\BatalkanPemeriksaanDriver;
 use App\Services\Driver\BuatPemeriksaanDriver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -20,6 +22,8 @@ class DriverPemeriksaanController extends Controller
     public function index(Request $request): Response
     {
         abort_unless($request->user()?->canCreateDriverPemeriksaan(), 403);
+
+        $maxPerDay = (int) config('driver.max_inspection_per_day', 2);
 
         $kendaraan = DriverKendaraan::query()
             ->where('status', DriverKendaraan::STATUS_AKTIF)
@@ -33,19 +37,57 @@ class DriverPemeriksaanController extends Controller
             ->groupBy('driver_kendaraan_id')
             ->pluck('total', 'driver_kendaraan_id');
 
-        $maxPerDay = (int) config('driver.max_inspection_per_day', 2);
+        $items = DriverChecklistItem::query()
+            ->where('aktif', true)
+            ->orderBy('urutan')
+            ->get(['id', 'nama', 'kategori', 'urutan']);
+
+        $pivots = DriverKendaraanItem::query()
+            ->whereIn('driver_kendaraan_id', $kendaraan->pluck('id'))
+            ->get()
+            ->groupBy('driver_kendaraan_id');
+
+        $matrixKendaraan = $kendaraan
+            ->filter(fn (DriverKendaraan $k) => (int) ($todayCounts[$k->id] ?? 0) < $maxPerDay)
+            ->values()
+            ->map(function (DriverKendaraan $k) use ($todayCounts, $items, $pivots) {
+                $kendaraanPivots = $pivots->get($k->id, collect());
+                $pivotByItem = $kendaraanPivots->keyBy('driver_checklist_item_id');
+                $hasPivotConfig = $kendaraanPivots->isNotEmpty();
+
+                return [
+                    'id' => $k->id,
+                    'nama' => $k->nama,
+                    'no_polisi' => $k->no_polisi,
+                    'merk' => $k->merk,
+                    'model' => $k->model,
+                    'foto_url' => $k->fotoUrl(),
+                    'jumlah_hari_ini' => (int) ($todayCounts[$k->id] ?? 0),
+                    'pemeriksaan_ke' => (int) ($todayCounts[$k->id] ?? 0) + 1,
+                    'cells' => $items->map(function (DriverChecklistItem $item) use ($pivotByItem, $hasPivotConfig) {
+                        $berlaku = $hasPivotConfig
+                            ? (bool) ($pivotByItem->get($item->id)?->berlaku ?? false)
+                            : true;
+
+                        return [
+                            'driver_checklist_item_id' => $item->id,
+                            'berlaku' => $berlaku,
+                        ];
+                    })->values(),
+                ];
+            });
 
         return Inertia::render('driver/pemeriksaan/index', [
-            'kendaraan' => $kendaraan->map(fn (DriverKendaraan $k) => [
-                'id' => $k->id,
-                'nama' => $k->nama,
-                'no_polisi' => $k->no_polisi,
-                'merk' => $k->merk,
-                'model' => $k->model,
-                'jumlah_hari_ini' => (int) ($todayCounts[$k->id] ?? 0),
-                'bisa_buat_baru' => (int) ($todayCounts[$k->id] ?? 0) < $maxPerDay,
-                'pemeriksaan_ke_berikutnya' => (int) ($todayCounts[$k->id] ?? 0) + 1,
+            'items' => $items->map(fn (DriverChecklistItem $item) => [
+                'id' => $item->id,
+                'nama' => $item->nama,
+                'kategori' => $item->kategori,
+                'urutan' => $item->urutan,
             ]),
+            'kendaraan' => $matrixKendaraan,
+            'tanggal' => now()->translatedFormat('d F Y'),
+            'waktu' => now()->format('H:i'),
+            'petugas' => $request->user()?->name,
             'maxPerDay' => $maxPerDay,
         ]);
     }
@@ -115,6 +157,33 @@ class DriverPemeriksaanController extends Controller
         return redirect()
             ->route('driver.pemeriksaan.show', $pemeriksaan)
             ->with('success', 'Pemeriksaan berhasil disimpan.');
+    }
+
+    public function storeBatch(StoreDriverPemeriksaanBatchRequest $request, BuatPemeriksaanDriver $service): RedirectResponse
+    {
+        $rows = $request->validated('pemeriksaan');
+
+        $created = DB::transaction(function () use ($rows, $request, $service) {
+            $hasil = [];
+
+            foreach ($rows as $row) {
+                $kendaraan = DriverKendaraan::query()->findOrFail($row['driver_kendaraan_id']);
+                $hasil[] = $service->handle(
+                    $kendaraan,
+                    $request->user(),
+                    $row['items'],
+                    $row['catatan'] ?? null,
+                );
+            }
+
+            return $hasil;
+        });
+
+        $count = count($created);
+
+        return redirect()
+            ->route('driver.dashboard')
+            ->with('success', "{$count} pemeriksaan berhasil disimpan.");
     }
 
     public function show(Request $request, DriverPemeriksaan $pemeriksaan): Response

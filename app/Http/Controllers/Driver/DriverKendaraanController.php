@@ -12,6 +12,7 @@ use App\Models\DriverKendaraanItem;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -43,6 +44,7 @@ class DriverKendaraanController extends Controller
                 'model' => $item->model,
                 'tahun' => $item->tahun,
                 'status' => $item->status,
+                'foto_url' => $item->fotoUrl(),
             ]);
 
         return Inertia::render('driver/kendaraan/index', [
@@ -53,7 +55,13 @@ class DriverKendaraanController extends Controller
 
     public function store(StoreDriverKendaraanRequest $request): RedirectResponse
     {
-        DriverKendaraan::query()->create($request->validated());
+        $data = collect($request->validated())->except('foto')->all();
+
+        if ($request->hasFile('foto')) {
+            $data['foto_path'] = $request->file('foto')->store('driver-kendaraan', 'public');
+        }
+
+        DriverKendaraan::query()->create($data);
 
         return redirect()
             ->route('driver.kendaraan.index')
@@ -62,7 +70,21 @@ class DriverKendaraanController extends Controller
 
     public function update(UpdateDriverKendaraanRequest $request, DriverKendaraan $kendaraan): RedirectResponse
     {
-        $kendaraan->update($request->validated());
+        $data = collect($request->validated())->except(['foto', 'hapus_foto'])->all();
+
+        if ($request->boolean('hapus_foto') && $kendaraan->foto_path) {
+            Storage::disk('public')->delete($kendaraan->foto_path);
+            $data['foto_path'] = null;
+        }
+
+        if ($request->hasFile('foto')) {
+            if ($kendaraan->foto_path) {
+                Storage::disk('public')->delete($kendaraan->foto_path);
+            }
+            $data['foto_path'] = $request->file('foto')->store('driver-kendaraan', 'public');
+        }
+
+        $kendaraan->update($data);
 
         return redirect()
             ->route('driver.kendaraan.index')

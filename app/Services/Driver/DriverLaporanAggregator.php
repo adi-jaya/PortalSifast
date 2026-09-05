@@ -64,6 +64,7 @@ class DriverLaporanAggregator
             $rows[] = [
                 'kendaraan_id' => $kendaraan->id,
                 'nama' => $kendaraan->nama,
+                'foto_url' => $kendaraan->fotoUrl(),
                 'check_1' => $check1 !== null,
                 'check_2' => $check2 !== null,
                 'temuan' => $temuanCount,
@@ -142,6 +143,7 @@ class DriverLaporanAggregator
             $rows[] = [
                 'kendaraan_id' => $kendaraan->id,
                 'nama' => $kendaraan->nama,
+                'foto_url' => $kendaraan->fotoUrl(),
                 'target' => $target,
                 'aktual' => $aktual,
                 'hari_terpenuhi' => $hariTerpenuhi,

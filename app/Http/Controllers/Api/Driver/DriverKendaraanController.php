@@ -45,6 +45,7 @@ class DriverKendaraanController extends Controller
                     'merk' => $kendaraan->merk,
                     'model' => $kendaraan->model,
                     'tahun' => $kendaraan->tahun,
+                    'foto_url' => $kendaraan->fotoUrl(),
                     'jumlah_hari_ini' => $count,
                     'bisa_buat_baru' => $count < $maxPerDay,
                     'pemeriksaan_ke_berikutnya' => $count < $maxPerDay ? $count + 1 : null,

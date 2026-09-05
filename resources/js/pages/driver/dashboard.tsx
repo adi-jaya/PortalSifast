@@ -7,6 +7,7 @@ import type { BreadcrumbItem } from '@/types';
 type Card = {
     kendaraan_id: number;
     nama: string;
+    foto_url?: string | null;
     check_1: boolean;
     check_2: boolean;
     temuan: number;
@@ -85,19 +86,26 @@ export default function DriverDashboard({ tanggal, summary, kendaraan, canCreate
                     {kendaraan.map((row) => (
                         <div key={row.kendaraan_id} className={`rounded-lg border p-4 ${statusColor(row.status)}`}>
                             <div className="flex flex-wrap items-start justify-between gap-2">
-                                <div>
-                                    <div className="font-semibold">{row.nama}</div>
-                                    <div className="text-sm opacity-80">{row.status}</div>
-                                    <div className="text-xs opacity-70">
-                                        {row.jumlah_pemeriksaan}× hari ini
-                                        {row.temuan > 0 ? ` · ${row.temuan} temuan` : ''}
+                                <div className="flex items-start gap-3">
+                                    {row.foto_url ? (
+                                        <img
+                                            src={row.foto_url}
+                                            alt={row.nama}
+                                            className="h-14 w-20 shrink-0 rounded-md border object-cover"
+                                        />
+                                    ) : null}
+                                    <div>
+                                        <div className="font-semibold">{row.nama}</div>
+                                        <div className="text-sm opacity-80">{row.status}</div>
+                                        <div className="text-xs opacity-70">
+                                            {row.jumlah_pemeriksaan}× hari ini
+                                            {row.temuan > 0 ? ` · ${row.temuan} temuan` : ''}
+                                        </div>
                                     </div>
                                 </div>
                                 {canCreate && row.bisa_buat_baru && (
                                     <Button asChild size="sm">
-                                        <Link href={`/driver/pemeriksaan/buat/${row.kendaraan_id}`}>
-                                            Periksa
-                                        </Link>
+                                        <Link href="/driver/pemeriksaan">Periksa</Link>
                                     </Button>
                                 )}
                             </div>

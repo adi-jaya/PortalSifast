@@ -558,6 +558,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('pemeriksaan', [DriverPemeriksaanController::class, 'index'])->name('pemeriksaan.index');
         Route::get('pemeriksaan/buat/{kendaraan}', [DriverPemeriksaanController::class, 'create'])->name('pemeriksaan.create');
+        Route::post('pemeriksaan/batch', [DriverPemeriksaanController::class, 'storeBatch'])->name('pemeriksaan.store-batch');
         Route::post('pemeriksaan', [DriverPemeriksaanController::class, 'store'])->name('pemeriksaan.store');
         Route::get('pemeriksaan/{pemeriksaan}', [DriverPemeriksaanController::class, 'show'])->name('pemeriksaan.show');
         Route::delete('pemeriksaan/{pemeriksaan}', [DriverPemeriksaanController::class, 'destroy'])->name('pemeriksaan.destroy');

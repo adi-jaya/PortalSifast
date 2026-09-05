@@ -30,6 +30,7 @@ class StoreDriverKendaraanRequest extends FormRequest
             'model' => ['nullable', 'string', 'max:80'],
             'tahun' => ['nullable', 'integer', 'min:1980', 'max:2100'],
             'status' => ['required', 'in:aktif,nonaktif'],
+            'foto' => ['nullable', 'image', 'max:5120'],
         ];
     }
 
@@ -41,6 +42,8 @@ class StoreDriverKendaraanRequest extends FormRequest
         return [
             'nama.required' => 'Nama kendaraan wajib diisi.',
             'status.in' => 'Status kendaraan tidak valid.',
+            'foto.image' => 'File foto harus berupa gambar.',
+            'foto.max' => 'Ukuran foto maksimal 5 MB.',
         ];
     }
 }

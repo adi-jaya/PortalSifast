@@ -28,6 +28,7 @@ class DriverKendaraan extends Model
         'model',
         'tahun',
         'status',
+        'foto_path',
     ];
 
     /**
@@ -38,6 +39,15 @@ class DriverKendaraan extends Model
         return [
             'tahun' => 'integer',
         ];
+    }
+
+    public function fotoUrl(): ?string
+    {
+        if (! filled($this->foto_path)) {
+            return null;
+        }
+
+        return asset('storage/'.$this->foto_path);
     }
 
     public function checklistItems(): BelongsToMany

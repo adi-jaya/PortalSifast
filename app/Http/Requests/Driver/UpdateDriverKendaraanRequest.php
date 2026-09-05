@@ -16,6 +16,12 @@ class UpdateDriverKendaraanRequest extends FormRequest
         if ($this->input('tahun') === '' || $this->input('tahun') === null) {
             $this->merge(['tahun' => null]);
         }
+
+        if ($this->has('hapus_foto')) {
+            $this->merge([
+                'hapus_foto' => filter_var($this->input('hapus_foto'), FILTER_VALIDATE_BOOLEAN),
+            ]);
+        }
     }
 
     /**
@@ -30,6 +36,8 @@ class UpdateDriverKendaraanRequest extends FormRequest
             'model' => ['nullable', 'string', 'max:80'],
             'tahun' => ['nullable', 'integer', 'min:1980', 'max:2100'],
             'status' => ['required', 'in:aktif,nonaktif'],
+            'foto' => ['nullable', 'image', 'max:5120'],
+            'hapus_foto' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -41,6 +49,8 @@ class UpdateDriverKendaraanRequest extends FormRequest
         return [
             'nama.required' => 'Nama kendaraan wajib diisi.',
             'status.in' => 'Status kendaraan tidak valid.',
+            'foto.image' => 'File foto harus berupa gambar.',
+            'foto.max' => 'Ukuran foto maksimal 5 MB.',
         ];
     }
 }

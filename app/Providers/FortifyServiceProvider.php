@@ -2,16 +2,26 @@
 
 namespace App\Providers;
 
+use App\Actions\Auth\AttemptLoginWithProgressiveLock;
+use App\Actions\Auth\EnsureLoginIsNotProgressivelyLocked;
+use App\Actions\Auth\RedirectIfTwoFactorAuthenticatable;
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Auth\ProgressiveLoginRateLimiter;
+use App\Http\Responses\ProgressiveLockoutResponse;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Laravel\Fortify\Actions\CanonicalizeUsername;
+use Laravel\Fortify\Actions\PrepareAuthenticatedSession;
+use Laravel\Fortify\Contracts\LockoutResponse as LockoutResponseContract;
+use Laravel\Fortify\Contracts\RedirectsIfTwoFactorAuthenticatable as RedirectsIfTwoFactorAuthenticatableContract;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
+use Laravel\Fortify\LoginRateLimiter;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -20,7 +30,7 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(LoginRateLimiter::class, ProgressiveLoginRateLimiter::class);
     }
 
     /**
@@ -28,9 +38,13 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->app->singleton(LockoutResponseContract::class, ProgressiveLockoutResponse::class);
+        $this->app->singleton(RedirectsIfTwoFactorAuthenticatableContract::class, RedirectIfTwoFactorAuthenticatable::class);
+
         $this->configureActions();
         $this->configureViews();
         $this->configureRateLimiting();
+        $this->configureLoginPipeline();
     }
 
     /**
@@ -82,10 +96,29 @@ class FortifyServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($request->session()->get('login.id'));
         });
 
+        // Safety net against request floods; progressive lockout handles auth failures.
         RateLimiter::for('login', function (Request $request) {
-            $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
+            $throttleKey = Str::transliterate(Str::lower((string) $request->input(Fortify::username())).'|'.$request->ip());
 
-            return Limit::perMinute(5)->by($throttleKey);
+            return Limit::perMinute(30)->by($throttleKey);
+        });
+    }
+
+    /**
+     * Use progressive lockout instead of Fortify's fixed 5/minute LoginRateLimiter.
+     */
+    private function configureLoginPipeline(): void
+    {
+        Fortify::authenticateThrough(function (Request $request) {
+            return array_filter([
+                EnsureLoginIsNotProgressivelyLocked::class,
+                config('fortify.lowercase_usernames') ? CanonicalizeUsername::class : null,
+                Features::enabled(Features::twoFactorAuthentication())
+                    ? RedirectsIfTwoFactorAuthenticatableContract::class
+                    : null,
+                AttemptLoginWithProgressiveLock::class,
+                PrepareAuthenticatedSession::class,
+            ]);
         });
     }
 }
