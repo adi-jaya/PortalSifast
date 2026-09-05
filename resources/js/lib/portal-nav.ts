@@ -33,6 +33,7 @@ import {
     Boxes,
     BarChart3,
     Car,
+    FileStack,
 } from 'lucide-react';
 import { buildSikatNavGroup } from '@/lib/build-sikat-nav-group';
 import { buildSimmutuNavGroup } from '@/lib/build-simmutu-nav-group';
@@ -69,6 +70,7 @@ export type PortalNavPermissions = {
     can_manage_driver_master?: boolean;
     can_access_monitoring?: boolean;
     can_manage_monitoring_kategori?: boolean;
+    can_access_berkas_kepegawaian?: boolean;
     simmutu?: {
         can_view?: boolean;
         can_manage?: boolean;
@@ -400,6 +402,29 @@ export const moduleGroups: PortalNavGroup[] = [
         ],
     },
     {
+        id: 'berkas-kepegawaian',
+        label: 'Berkas Kepegawaian',
+        icon: FileStack,
+        items: [
+            {
+                id: 'berkas-kepegawaian-list',
+                label: 'Daftar Pegawai',
+                href: '/berkas-kepegawaian',
+                icon: Users,
+                isActive: (path) =>
+                    path === '/berkas-kepegawaian' ||
+                    (/^\/berkas-kepegawaian\/.+/.test(path) && !path.startsWith('/berkas-kepegawaian/master')),
+            },
+            {
+                id: 'berkas-kepegawaian-master',
+                label: 'Master Jenis Berkas',
+                href: '/berkas-kepegawaian/master',
+                icon: Tags,
+                isActive: (path) => path.startsWith('/berkas-kepegawaian/master'),
+            },
+        ],
+    },
+    {
         id: 'inventaris',
         label: 'Inventaris Portal',
         icon: Boxes,
@@ -568,6 +593,7 @@ export function buildVisibleModuleGroups(permissions?: PortalNavPermissions): Po
         canManageDriverMaster;
     const canAccessMonitoring = Boolean(permissions?.can_access_monitoring);
     const canManageMonitoringKategori = Boolean(permissions?.can_manage_monitoring_kategori);
+    const canAccessBerkasKepegawaian = Boolean(permissions?.can_access_berkas_kepegawaian);
 
     const base = moduleGroups
         .filter((group) => {
@@ -582,6 +608,9 @@ export function buildVisibleModuleGroups(permissions?: PortalNavPermissions): Po
             }
             if (group.id === 'monitoring') {
                 return canAccessMonitoring;
+            }
+            if (group.id === 'berkas-kepegawaian') {
+                return canAccessBerkasKepegawaian;
             }
 
             return true;

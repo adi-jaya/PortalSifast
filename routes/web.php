@@ -358,6 +358,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('laporan-tianji.export.detail');
     });
 
+    Route::middleware('berkas-kepegawaian.access')->group(function (): void {
+        Route::get('berkas-kepegawaian', fn () => inertia('berkas-kepegawaian/index', [
+            'pegawai' => ['data' => [], 'links' => [], 'total' => 0],
+        ]))->name('berkas-kepegawaian.index');
+    });
+
     // Rencana / Project (tracking per project)
     Route::resource('projects', ProjectController::class);
 

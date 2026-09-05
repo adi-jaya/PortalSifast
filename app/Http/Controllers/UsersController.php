@@ -71,6 +71,7 @@ class UsersController extends Controller
         $canManagePatroliAccess = request()->user()?->canManagePatroliAccess() ?? false;
         $canManageDriverAccess = request()->user()?->canManageDriverAccess() ?? false;
         $canManageMonitoringAccess = request()->user()?->canManageMonitoringAccess() ?? false;
+        $canManageBerkasKepegawaianAccess = request()->user()?->canManageBerkasKepegawaianAccess() ?? false;
         $canManageMutuAccess = request()->user()?->canManageMutuAccess() ?? false;
         $canManageWebOfficialAccess = request()->user()?->canManageWebOfficialAccess() ?? false;
 
@@ -127,6 +128,7 @@ class UsersController extends Controller
             'canManagePatroliAccess' => $canManagePatroliAccess,
             'canManageDriverAccess' => $canManageDriverAccess,
             'canManageMonitoringAccess' => $canManageMonitoringAccess,
+            'canManageBerkasKepegawaianAccess' => $canManageBerkasKepegawaianAccess,
             'canManageMutuAccess' => $canManageMutuAccess,
             'canManageWebOfficialAccess' => $canManageWebOfficialAccess,
         ]);
@@ -138,6 +140,7 @@ class UsersController extends Controller
         $canManagePatroliAccess = $request->user()?->canManagePatroliAccess() ?? false;
         $canManageDriverAccess = $request->user()?->canManageDriverAccess() ?? false;
         $canManageMonitoringAccess = $request->user()?->canManageMonitoringAccess() ?? false;
+        $canManageBerkasKepegawaianAccess = $request->user()?->canManageBerkasKepegawaianAccess() ?? false;
         $canManageMutuAccess = $request->user()?->canManageMutuAccess() ?? false;
         $canManageWebOfficialAccess = $request->user()?->canManageWebOfficialAccess() ?? false;
 
@@ -168,6 +171,9 @@ class UsersController extends Controller
             'can_manage_monitoring_kategori' => $canManageMonitoringAccess
                 ? (bool) $request->boolean('can_manage_monitoring_kategori')
                 : false,
+            'can_access_berkas_kepegawaian' => $canManageBerkasKepegawaianAccess
+                ? (bool) $request->boolean('can_access_berkas_kepegawaian')
+                : false,
             'can_manage_mutu' => $canManageMutuAccess
                 ? (bool) $request->boolean('can_manage_mutu')
                 : false,
@@ -191,6 +197,7 @@ class UsersController extends Controller
         $canManagePatroliAccess = request()->user()?->canManagePatroliAccess() ?? false;
         $canManageDriverAccess = request()->user()?->canManageDriverAccess() ?? false;
         $canManageMonitoringAccess = request()->user()?->canManageMonitoringAccess() ?? false;
+        $canManageBerkasKepegawaianAccess = request()->user()?->canManageBerkasKepegawaianAccess() ?? false;
         $canManageMutuAccess = request()->user()?->canManageMutuAccess() ?? false;
         $canManageWebOfficialAccess = request()->user()?->canManageWebOfficialAccess() ?? false;
 
@@ -203,30 +210,37 @@ class UsersController extends Controller
             ]);
         }
 
+        $userFields = [
+            'id',
+            'name',
+            'email',
+            'phone',
+            'role',
+            'dep_id',
+            'can_access_payroll',
+            'can_access_patroli',
+            'can_access_checklist_kendaraan',
+            'can_coordinate_checklist_kendaraan',
+            'can_access_monitoring',
+            'can_manage_monitoring_kategori',
+            'can_manage_mutu',
+            'can_input_mutu',
+            'can_view_mutu_dashboard',
+            'can_manage_web_official',
+        ];
+
+        if ($canManageBerkasKepegawaianAccess) {
+            $userFields[] = 'can_access_berkas_kepegawaian';
+        }
+
         return Inertia::render('users/edit', [
-            'user' => $user->only([
-                'id',
-                'name',
-                'email',
-                'phone',
-                'role',
-                'dep_id',
-                'can_access_payroll',
-                'can_access_patroli',
-                'can_access_checklist_kendaraan',
-                'can_coordinate_checklist_kendaraan',
-                'can_access_monitoring',
-                'can_manage_monitoring_kategori',
-                'can_manage_mutu',
-                'can_input_mutu',
-                'can_view_mutu_dashboard',
-                'can_manage_web_official',
-            ]),
+            'user' => $user->only($userFields),
             'departments' => $departments,
             'canManagePayrollAccess' => $canManagePayrollAccess,
             'canManagePatroliAccess' => $canManagePatroliAccess,
             'canManageDriverAccess' => $canManageDriverAccess,
             'canManageMonitoringAccess' => $canManageMonitoringAccess,
+            'canManageBerkasKepegawaianAccess' => $canManageBerkasKepegawaianAccess,
             'canManageMutuAccess' => $canManageMutuAccess,
             'canManageWebOfficialAccess' => $canManageWebOfficialAccess,
         ]);
@@ -238,6 +252,7 @@ class UsersController extends Controller
         $canManagePatroliAccess = $request->user()?->canManagePatroliAccess() ?? false;
         $canManageDriverAccess = $request->user()?->canManageDriverAccess() ?? false;
         $canManageMonitoringAccess = $request->user()?->canManageMonitoringAccess() ?? false;
+        $canManageBerkasKepegawaianAccess = $request->user()?->canManageBerkasKepegawaianAccess() ?? false;
         $canManageMutuAccess = $request->user()?->canManageMutuAccess() ?? false;
         $canManageWebOfficialAccess = $request->user()?->canManageWebOfficialAccess() ?? false;
 
@@ -265,6 +280,10 @@ class UsersController extends Controller
         if ($canManageMonitoringAccess) {
             $data['can_access_monitoring'] = (bool) $request->boolean('can_access_monitoring');
             $data['can_manage_monitoring_kategori'] = (bool) $request->boolean('can_manage_monitoring_kategori');
+        }
+
+        if ($canManageBerkasKepegawaianAccess) {
+            $data['can_access_berkas_kepegawaian'] = (bool) $request->boolean('can_access_berkas_kepegawaian');
         }
 
         if ($canManageMutuAccess) {

@@ -54,6 +54,8 @@ class HandleInertiaRequests extends Middleware
                 'can_access_monitoring' => $request->user()?->canAccessMonitoring() ?? false,
                 'can_manage_monitoring_kategori' => $request->user()?->canManageMonitoringKategori() ?? false,
                 'can_manage_monitoring_access' => $request->user()?->canManageMonitoringAccess() ?? false,
+                'can_access_berkas_kepegawaian' => $request->user()?->canAccessBerkasKepegawaian() ?? false,
+                'can_manage_berkas_kepegawaian_access' => $request->user()?->canManageBerkasKepegawaianAccess() ?? false,
                 'simmutu' => [
                     'can_view' => $request->user()?->canAccessSimmutuModule() ?? false,
                     'can_manage' => $request->user()?->canManageMutu() ?? false,

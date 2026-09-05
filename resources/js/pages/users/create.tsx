@@ -42,6 +42,7 @@ type Props = {
     canManagePatroliAccess: boolean;
     canManageDriverAccess: boolean;
     canManageMonitoringAccess: boolean;
+    canManageBerkasKepegawaianAccess: boolean;
     canManageMutuAccess: boolean;
     canManageWebOfficialAccess: boolean;
 };
@@ -53,6 +54,7 @@ export default function UsersCreate({
     canManagePatroliAccess,
     canManageDriverAccess,
     canManageMonitoringAccess,
+    canManageBerkasKepegawaianAccess,
     canManageMutuAccess,
     canManageWebOfficialAccess,
 }: Props) {
@@ -71,6 +73,7 @@ export default function UsersCreate({
         can_coordinate_checklist_kendaraan: false,
         can_access_monitoring: false,
         can_manage_monitoring_kategori: false,
+        can_access_berkas_kepegawaian: false,
         can_manage_mutu: false,
         can_input_mutu: false,
         can_view_mutu_dashboard: false,
@@ -367,6 +370,29 @@ export default function UsersCreate({
                             </p>
                             <InputError message={errors.can_access_monitoring} />
                             <InputError message={errors.can_manage_monitoring_kategori} />
+                        </div>
+                    )}
+
+                    {canManageBerkasKepegawaianAccess && (
+                        <div className="grid gap-3 rounded-lg border border-border p-4">
+                            <p className="text-sm font-medium">Berkas Kepegawaian</p>
+                            <div className="flex items-center gap-3">
+                                <Checkbox
+                                    id="can_access_berkas_kepegawaian"
+                                    checked={Boolean(data.can_access_berkas_kepegawaian)}
+                                    onCheckedChange={(checked) =>
+                                        setData('can_access_berkas_kepegawaian', checked === true)
+                                    }
+                                />
+                                <Label htmlFor="can_access_berkas_kepegawaian" className="cursor-pointer">
+                                    Izinkan akses Berkas Kepegawaian
+                                </Label>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                Role admin otomatis punya akses. Flag ini untuk staff. Hanya admin yang
+                                dapat mengatur.
+                            </p>
+                            <InputError message={errors.can_access_berkas_kepegawaian} />
                         </div>
                     )}
 
