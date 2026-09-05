@@ -2,17 +2,22 @@ package ocr
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
+
+const DefaultTimeout = 60 * time.Second
 
 // Engine runs Tesseract CLI against image (or PDF if build supports it).
 type Engine struct {
 	TesseractPath string
 	Languages     string
+	Timeout       time.Duration
 }
 
 func (e *Engine) Recognize(filePath string) (string, error) {
@@ -38,13 +43,22 @@ func (e *Engine) Recognize(filePath string) (string, error) {
 	if langs == "" {
 		langs = "ind+eng"
 	}
+	timeout := e.Timeout
+	if timeout <= 0 {
+		timeout = DefaultTimeout
+	}
 
-	// stdout: tesseract <file> stdout -l langs
-	cmd := exec.Command(e.TesseractPath, filePath, "stdout", "-l", langs, "--psm", "3")
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, e.TesseractPath, filePath, "stdout", "-l", langs, "--psm", "3")
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			return "", fmt.Errorf("tesseract timed out after %s", timeout)
+		}
 		msg := strings.TrimSpace(stderr.String())
 		if msg == "" {
 			msg = err.Error()

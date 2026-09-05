@@ -3,6 +3,7 @@ package pipeline
 import (
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -46,9 +47,13 @@ func (r *Runner) processOne(path string) error {
 	text, ocrErr := r.OCR.Recognize(path)
 	result := classify.Classify(text)
 	if ocrErr != nil {
-		r.Log.Printf("ocr warning %s: %v (continue with empty/partial text)", filepath.Base(path), ocrErr)
+		r.Log.Printf("ocr warning %s: %v", filepath.Base(path), ocrErr)
+		result.OCRFailed = true
 		if text == "" {
-			result = classify.Classify("")
+			result.OCRExcerpt = ""
+			result.SuggestedKode = ""
+			result.SuggestedLabel = ""
+			result.Confidence = 0
 		}
 	}
 
@@ -57,9 +62,14 @@ func (r *Runner) processOne(path string) error {
 	}
 
 	if _, err := watch.MoveUnique(path, r.Cfg.ProcessedDir); err != nil {
-		return fmt.Errorf("move processed: %w", err)
+		// Portal already accepted the file — remove inbox copy to avoid duplicate re-upload.
+		r.Log.Printf("move processed failed after portal upload (%v); removing inbox copy to avoid duplicate", err)
+		if rmErr := os.Remove(path); rmErr != nil {
+			return fmt.Errorf("portal ok but failed to clear inbox file: %w", rmErr)
+		}
+		return nil
 	}
-	r.Log.Printf("ok %s → kode=%s conf=%.2f", filepath.Base(path), result.SuggestedKode, result.Confidence)
+	r.Log.Printf("ok %s → kode=%s conf=%.2f ocr_failed=%v", filepath.Base(path), result.SuggestedKode, result.Confidence, result.OCRFailed)
 	return nil
 }
 

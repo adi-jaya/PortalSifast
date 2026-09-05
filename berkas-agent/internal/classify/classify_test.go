@@ -39,6 +39,20 @@ func TestClassifyUnknown(t *testing.T) {
 	}
 }
 
+func TestClassifyDoesNotMarkOfficialDocAsKTP(t *testing.T) {
+	r := Classify("REPUBLIK INDONESIA SURAT TANDA REGISTRASI TENAGA KESEHATAN NIK 1234567890")
+	if r.SuggestedKode != "STR" {
+		t.Fatalf("kode=%q want STR (not KTP false positive)", r.SuggestedKode)
+	}
+}
+
+func TestClassifyKTP(t *testing.T) {
+	r := Classify("KARTU TANDA PENDUDUK Republik Indonesia NIK berlaku hingga 2030")
+	if r.SuggestedKode != "KTP" {
+		t.Fatalf("kode=%q want KTP", r.SuggestedKode)
+	}
+}
+
 func TestExcerptTruncated(t *testing.T) {
 	long := strings.Repeat("kata ", 200)
 	r := Classify(long + " STR ")

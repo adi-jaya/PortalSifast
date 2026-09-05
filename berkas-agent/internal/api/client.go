@@ -60,6 +60,7 @@ func (c *Client) PostInbox(filePath string, result classify.Result) (*InboxRespo
 	_ = w.WriteField("suggested_label", result.SuggestedLabel)
 	_ = w.WriteField("confidence", strconv.FormatFloat(result.Confidence, 'f', 4, 64))
 	_ = w.WriteField("ocr_excerpt", result.OCRExcerpt)
+	_ = w.WriteField("ocr_failed", strconv.FormatBool(result.OCRFailed))
 	_ = w.WriteField("agent_label", c.AgentLabel)
 	_ = w.WriteField("original_filename", filepath.Base(filePath))
 	if err := w.Close(); err != nil {

@@ -11,6 +11,7 @@ type Result struct {
 	SuggestedLabel string  `json:"suggested_label"`
 	Confidence     float64 `json:"confidence"`
 	OCRExcerpt     string  `json:"ocr_excerpt"`
+	OCRFailed      bool    `json:"ocr_failed"`
 }
 
 type rule struct {
@@ -23,22 +24,22 @@ type rule struct {
 // Portal/HR may remap to master_berkas_pegawai.kode on confirm.
 var defaultRules = []rule{
 	{Kode: "STR", Label: "Surat Tanda Registrasi", Keywords: []string{
-		"surat tanda registrasi", "tanda registrasi", " str ", "str/", "str-",
+		"surat tanda registrasi", "tanda registrasi tenaga", " str ",
 	}},
 	{Kode: "SIP", Label: "Surat Izin Praktik", Keywords: []string{
-		"surat izin praktik", "izin praktik", " sip ", "sip/", "sip-",
+		"surat izin praktik", "izin praktik", " sip ",
 	}},
 	{Kode: "IJAZAH", Label: "Ijazah", Keywords: []string{
-		"ijazah", "transkrip", "wisuda", "diploma",
+		"ijazah", "transkrip nilai", "wisuda",
 	}},
 	{Kode: "KTP", Label: "KTP", Keywords: []string{
-		"kartu tanda penduduk", "nik:", "republik indonesia", "kementerian dalam negeri",
+		"kartu tanda penduduk", "nik berlaku hingga", "gol darah",
 	}},
 	{Kode: "NPWP", Label: "NPWP", Keywords: []string{
-		"npwp", "nomor pokok wajib pajak", "dirjen pajak",
+		"npwp", "nomor pokok wajib pajak", "direktorat jenderal pajak",
 	}},
 	{Kode: "BPJS", Label: "Kartu BPJS", Keywords: []string{
-		"bpjs", "badan penyelenggara jaminan sosial",
+		"bpjs kesehatan", "badan penyelenggara jaminan sosial", "bpjs ketenagakerjaan",
 	}},
 }
 
