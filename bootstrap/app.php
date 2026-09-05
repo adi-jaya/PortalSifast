@@ -34,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'driver.access' => \App\Http\Middleware\EnsureDriverChecklistAccess::class,
             'monitoring.access' => \App\Http\Middleware\EnsureMonitoringAccess::class,
             'monitoring.kategori' => \App\Http\Middleware\EnsureMonitoringKategoriAccess::class,
+            'berkas-kepegawaian.access' => \App\Http\Middleware\EnsureBerkasKepegawaianAccess::class,
             'simmutu.view' => \App\Http\Middleware\EnsureSimmutuViewAccess::class,
             'simmutu.manage' => \App\Http\Middleware\EnsureSimmutuManageAccess::class,
             'simmutu.input' => \App\Http\Middleware\EnsureSimmutuInputAccess::class,

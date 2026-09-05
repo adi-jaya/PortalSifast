@@ -33,6 +33,7 @@ class StoreUserRequest extends FormRequest
             'can_access_checklist_kendaraan' => ['nullable', 'boolean'],
             'can_coordinate_checklist_kendaraan' => ['nullable', 'boolean'],
             'can_access_monitoring' => ['nullable', 'boolean'],
+            'can_access_berkas_kepegawaian' => ['nullable', 'boolean'],
             'can_manage_monitoring_kategori' => ['nullable', 'boolean'],
             'can_manage_mutu' => ['nullable', 'boolean'],
             'can_input_mutu' => ['nullable', 'boolean'],

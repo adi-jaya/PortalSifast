@@ -41,6 +41,7 @@ class User extends Authenticatable
         'can_access_checklist_kendaraan',
         'can_coordinate_checklist_kendaraan',
         'can_access_monitoring',
+        'can_access_berkas_kepegawaian',
         'can_manage_monitoring_kategori',
         'can_manage_mutu',
         'can_input_mutu',
@@ -82,6 +83,7 @@ class User extends Authenticatable
             'can_access_checklist_kendaraan' => 'boolean',
             'can_coordinate_checklist_kendaraan' => 'boolean',
             'can_access_monitoring' => 'boolean',
+            'can_access_berkas_kepegawaian' => 'boolean',
             'can_manage_monitoring_kategori' => 'boolean',
             'can_manage_mutu' => 'boolean',
             'can_input_mutu' => 'boolean',
@@ -259,6 +261,18 @@ class User extends Authenticatable
     }
 
     public function canManageMonitoringAccess(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin();
+    }
+
+    public function canAccessBerkasKepegawaian(): bool
+    {
+        return $this->isSuperAdmin()
+            || $this->isAdmin()
+            || (bool) $this->can_access_berkas_kepegawaian;
+    }
+
+    public function canManageBerkasKepegawaianAccess(): bool
     {
         return $this->isSuperAdmin() || $this->isAdmin();
     }
