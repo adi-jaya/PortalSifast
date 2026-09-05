@@ -2,6 +2,10 @@
 
 use App\Http\Controllers\Api\ApiAuthSessionController;
 use App\Http\Controllers\Api\ApiTicketController;
+use App\Http\Controllers\Api\Driver\DriverHariIniController;
+use App\Http\Controllers\Api\Driver\DriverKendaraanController as ApiDriverKendaraanController;
+use App\Http\Controllers\Api\Driver\DriverMeController as ApiDriverMeController;
+use App\Http\Controllers\Api\Driver\DriverPemeriksaanController as ApiDriverPemeriksaanController;
 use App\Http\Controllers\Api\EmergencyDashboardController;
 use App\Http\Controllers\Api\EmergencyReportController;
 use App\Http\Controllers\Api\EmployeeSalaryController;
@@ -306,6 +310,18 @@ Route::prefix('patroli')->middleware('auth:sanctum')->group(function (): void {
     Route::get('/checkin/{checkin}', [ApiPatroliCheckinController::class, 'show']);
     Route::get('/laporan', [ApiPatroliLaporanController::class, 'index']);
     Route::get('/laporan/export', [ApiPatroliLaporanController::class, 'export']);
+});
+
+// Driver — Checklist Kendaraan (mobile petugas)
+Route::prefix('sifast/driver')->middleware('auth:sanctum')->group(function (): void {
+    Route::get('/me', ApiDriverMeController::class);
+    Route::get('/hari-ini', DriverHariIniController::class);
+    Route::get('/kendaraan', [ApiDriverKendaraanController::class, 'index']);
+    Route::get('/kendaraan/{kendaraan}/form', [ApiDriverKendaraanController::class, 'form']);
+    Route::get('/pemeriksaan', [ApiDriverPemeriksaanController::class, 'index']);
+    Route::post('/pemeriksaan', [ApiDriverPemeriksaanController::class, 'store']);
+    Route::get('/pemeriksaan/{pemeriksaan}', [ApiDriverPemeriksaanController::class, 'show']);
+    Route::delete('/pemeriksaan/{pemeriksaan}', [ApiDriverPemeriksaanController::class, 'destroy']);
 });
 
 // Officer login (tanpa auth — mengembalikan token)

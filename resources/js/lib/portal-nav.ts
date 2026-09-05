@@ -32,6 +32,7 @@ import {
     Wallet,
     Boxes,
     BarChart3,
+    Car,
 } from 'lucide-react';
 import { buildSikatNavGroup } from '@/lib/build-sikat-nav-group';
 import { buildSimmutuNavGroup } from '@/lib/build-simmutu-nav-group';
@@ -62,6 +63,12 @@ export type PortalNavGroup = {
 export type PortalNavPermissions = {
     can_access_payroll?: boolean;
     can_access_patroli?: boolean;
+    can_access_checklist_kendaraan?: boolean;
+    can_create_driver_pemeriksaan?: boolean;
+    can_coordinate_checklist_kendaraan?: boolean;
+    can_manage_driver_master?: boolean;
+    can_access_monitoring?: boolean;
+    can_manage_monitoring_kategori?: boolean;
     simmutu?: {
         can_view?: boolean;
         can_manage?: boolean;
@@ -309,6 +316,56 @@ export const moduleGroups: PortalNavGroup[] = [
         ],
     },
     {
+        id: 'driver',
+        label: 'Driver',
+        icon: Car,
+        hint: 'Checklist kendaraan',
+        items: [
+            {
+                id: 'driver-dashboard',
+                label: 'Checklist Hari Ini',
+                href: '/driver',
+                icon: ClipboardCheck,
+                isActive: (path) => path === '/driver',
+            },
+            {
+                id: 'driver-pemeriksaan',
+                label: 'Pemeriksaan',
+                href: '/driver/pemeriksaan',
+                icon: ListTodo,
+                isActive: (path) => path.startsWith('/driver/pemeriksaan'),
+            },
+            {
+                id: 'driver-riwayat',
+                label: 'Riwayat',
+                href: '/driver/riwayat',
+                icon: FileText,
+                isActive: (path) => path.startsWith('/driver/riwayat'),
+            },
+            {
+                id: 'driver-laporan',
+                label: 'Laporan',
+                href: '/driver/laporan',
+                icon: BarChart3,
+                isActive: (path) => path.startsWith('/driver/laporan'),
+            },
+            {
+                id: 'driver-kendaraan',
+                label: 'Master Kendaraan',
+                href: '/driver/kendaraan',
+                icon: Car,
+                isActive: (path) => path.startsWith('/driver/kendaraan'),
+            },
+            {
+                id: 'driver-item-checklist',
+                label: 'Item Checklist',
+                href: '/driver/item-checklist',
+                icon: Tags,
+                isActive: (path) => path.startsWith('/driver/item-checklist'),
+            },
+        ],
+    },
+    {
         id: 'monitoring',
         label: 'Monitoring',
         icon: Activity,
@@ -501,17 +558,69 @@ export const moduleGroups: PortalNavGroup[] = [
 export function buildVisibleModuleGroups(permissions?: PortalNavPermissions): PortalNavGroup[] {
     const canAccessPayroll = Boolean(permissions?.can_access_payroll);
     const canAccessPatroli = Boolean(permissions?.can_access_patroli);
+    const canCreateDriverPemeriksaan = Boolean(permissions?.can_create_driver_pemeriksaan);
+    const canCoordinateDriver = Boolean(permissions?.can_coordinate_checklist_kendaraan);
+    const canManageDriverMaster = Boolean(permissions?.can_manage_driver_master);
+    const canAccessDriver =
+        Boolean(permissions?.can_access_checklist_kendaraan) ||
+        canCreateDriverPemeriksaan ||
+        canCoordinateDriver ||
+        canManageDriverMaster;
+    const canAccessMonitoring = Boolean(permissions?.can_access_monitoring);
+    const canManageMonitoringKategori = Boolean(permissions?.can_manage_monitoring_kategori);
 
-    const base = moduleGroups.filter((group) => {
-        if (group.id === 'payroll') {
-            return canAccessPayroll;
-        }
-        if (group.id === 'patroli') {
-            return canAccessPatroli;
-        }
+    const base = moduleGroups
+        .filter((group) => {
+            if (group.id === 'payroll') {
+                return canAccessPayroll;
+            }
+            if (group.id === 'patroli') {
+                return canAccessPatroli;
+            }
+            if (group.id === 'driver') {
+                return canAccessDriver;
+            }
+            if (group.id === 'monitoring') {
+                return canAccessMonitoring;
+            }
 
-        return true;
-    });
+            return true;
+        })
+        .map((group) => {
+            if (group.id === 'driver') {
+                return {
+                    ...group,
+                    items: group.items.filter((item) => {
+                        if (item.id === 'driver-pemeriksaan') {
+                            return canCreateDriverPemeriksaan;
+                        }
+                        if (item.id === 'driver-laporan') {
+                            return canCoordinateDriver || canManageDriverMaster;
+                        }
+                        if (item.id === 'driver-kendaraan' || item.id === 'driver-item-checklist') {
+                            return canManageDriverMaster;
+                        }
+
+                        return true;
+                    }),
+                };
+            }
+
+            if (group.id === 'monitoring') {
+                return {
+                    ...group,
+                    items: group.items.filter((item) => {
+                        if (item.id === 'monitoring-kategori') {
+                            return canManageMonitoringKategori;
+                        }
+
+                        return true;
+                    }),
+                };
+            }
+
+            return group;
+        });
 
     const sikatGroup = buildSikatNavGroup(permissions?.sikat?.enabled);
     if (sikatGroup) {

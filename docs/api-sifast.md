@@ -15,6 +15,7 @@ Dokumen ini menyatukan **semua endpoint API** yang dipakai frontend Sifast (apli
 - ✅ **Emergency Reports:** Sudah tersedia dan berjalan
 - ✅ **Officer Tracking:** Sudah diimplementasikan (login officer, update lokasi, get officer-location)
 - ✅ **SIMMUTU Input API:** Sudah tersedia dan lengkap — lihat [API-SIMMUTU.md](./API-SIMMUTU.md)
+- ✅ **Driver (checklist kendaraan):** Sudah tersedia — **pola NIK sama tiket/payroll** (token service + `?nik=`), gate flag `can_create_driver_pemeriksaan` — lihat [DRIVER-API-ANDROID.md](./DRIVER-API-ANDROID.md)
 
 | Fitur | Method | Endpoint |
 |-------|--------|----------|
@@ -38,7 +39,8 @@ Dokumen ini menyatukan **semua endpoint API** yang dipakai frontend Sifast (apli
 3. Format response konsisten: `{ "success": true|false, "data": {...}, "message": "...", "errors": {...} }`.
 4. Untuk detail lengkap endpoint ticketing, lihat `docs/API-TICKETING.md`.
 5. **Payroll:** identitas pegawai **sama seperti tiket** — Bearer token yang sama + **`nik`** (`GET /api/sifast/payroll?nik=...`, atau `?simrs_nik=...`, atau header **`X-Sifast-Nik` / `X-Nik`** jika tidak ingin NIK di URL). Tanpa salah satu ini, token service akan ditolak. Detail response/import: `docs/api-documentation.md`.
-6. Officer Tracking (Section 4): petugas internal pakai **login yang ada**; endpoint login NIK/badge_id tersedia untuk integrasi eksternal (mis. aplikasi mobile).
+6. **Driver (checklist kendaraan):** token + NIK **sama seperti tiket/payroll**. Cek dulu `GET /api/sifast/driver/me?nik=...` — butuh flag portal `can_create_driver_pemeriksaan`. Detail: [DRIVER-API-ANDROID.md](./DRIVER-API-ANDROID.md). Jangan mengartikan 403/404 sebagai CORS jika modul tiket dari app yang sama sudah jalan.
+7. Officer Tracking (Section 4): petugas internal pakai **login yang ada**; endpoint login NIK/badge_id tersedia untuk integrasi eksternal (mis. aplikasi mobile).
 
 ---
 
@@ -74,10 +76,14 @@ Endpoint berikut **sudah tersedia** dan dipakai untuk ticketing + user.
 | **Daftar gaji (milik NIK)** | GET | `/api/sifast/payroll?nik={nik}&page=1&per_page=12` — **wajib `nik`** (sama token + pola seperti tiket) |
 | **Detail gaji** | GET | `/api/sifast/payroll/{id}` — setelah daftar, pakai `id` dari item |
 | **Import gaji (admin)** | POST | `/api/sifast/payroll/import` — lihat [api-documentation.md](./api-documentation.md) |
+| **Cek akses Driver** | GET | `/api/sifast/driver/me?nik={nik}` — wajib `nik`; baca `can_create_driver_pemeriksaan` |
+| **Checklist hari ini** | GET | `/api/sifast/driver/hari-ini?nik={nik}` |
+| **Form pemeriksaan** | GET | `/api/sifast/driver/kendaraan/{id}/form?nik={nik}` |
+| **Simpan pemeriksaan** | POST | `/api/sifast/driver/pemeriksaan?nik={nik}` |
 
 Format response yang dipakai: `{ "success": true, "data": { ... }, "message": "..." }`. Error validasi: `{ "message": "...", "errors": { "field": ["..."] } }`.
 
-**Dokumentasi lengkap:** tiket & pola NIK → **`docs/API-TICKETING.md`** (termasuk bagian *Payroll*). Format pagination payroll, `period`, terbilang → **`docs/api-documentation.md`**.
+**Dokumentasi lengkap:** tiket & pola NIK → **`docs/API-TICKETING.md`** (termasuk bagian *Payroll*). Format pagination payroll, `period`, terbilang → **`docs/api-documentation.md`**. Driver → **`docs/DRIVER-API-ANDROID.md`**.
 
 ---
 

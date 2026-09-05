@@ -38,6 +38,10 @@ class User extends Authenticatable
         'dep_id',
         'can_access_payroll',
         'can_access_patroli',
+        'can_access_checklist_kendaraan',
+        'can_coordinate_checklist_kendaraan',
+        'can_access_monitoring',
+        'can_manage_monitoring_kategori',
         'can_manage_mutu',
         'can_input_mutu',
         'can_view_mutu_dashboard',
@@ -75,6 +79,10 @@ class User extends Authenticatable
             'two_factor_confirmed_at' => 'datetime',
             'can_access_payroll' => 'boolean',
             'can_access_patroli' => 'boolean',
+            'can_access_checklist_kendaraan' => 'boolean',
+            'can_coordinate_checklist_kendaraan' => 'boolean',
+            'can_access_monitoring' => 'boolean',
+            'can_manage_monitoring_kategori' => 'boolean',
             'can_manage_mutu' => 'boolean',
             'can_input_mutu' => 'boolean',
             'can_view_mutu_dashboard' => 'boolean',
@@ -200,6 +208,61 @@ class User extends Authenticatable
         return $this->isSuperAdmin();
     }
 
+    public function canAccessChecklistKendaraan(): bool
+    {
+        return $this->isSuperAdmin() || (bool) $this->can_access_checklist_kendaraan;
+    }
+
+    public function canCreateDriverPemeriksaan(): bool
+    {
+        return $this->canAccessChecklistKendaraan() || $this->canManageDriverMaster();
+    }
+
+    public function canCoordinateChecklistKendaraan(): bool
+    {
+        return $this->isSuperAdmin()
+            || $this->isAdmin()
+            || (bool) $this->can_coordinate_checklist_kendaraan;
+    }
+
+    public function canAccessDriverModule(): bool
+    {
+        return $this->canAccessChecklistKendaraan()
+            || $this->canCoordinateChecklistKendaraan()
+            || $this->canManageDriverMaster();
+    }
+
+    public function canManageDriverMaster(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin();
+    }
+
+    public function canManageDriverAccess(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin();
+    }
+
+    public function canAccessMonitoring(): bool
+    {
+        return $this->isSuperAdmin()
+            || $this->isAdmin()
+            || (bool) $this->can_access_monitoring;
+    }
+
+    public function canManageMonitoringKategori(): bool
+    {
+        if ($this->isSuperAdmin() || $this->isAdmin()) {
+            return true;
+        }
+
+        return (bool) $this->can_manage_monitoring_kategori && $this->canAccessMonitoring();
+    }
+
+    public function canManageMonitoringAccess(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin();
+    }
+
     public function canManageWebOfficial(): bool
     {
         return $this->isSuperAdmin()
@@ -227,6 +290,10 @@ class User extends Authenticatable
             'dep_id' => $this->dep_id,
             'can_manage_web_official' => $this->canManageWebOfficial(),
             'can_access_patroli' => $this->canAccessPatroli(),
+            'can_access_checklist_kendaraan' => $this->canAccessChecklistKendaraan(),
+            'can_create_driver_pemeriksaan' => $this->canCreateDriverPemeriksaan(),
+            'can_access_monitoring' => $this->canAccessMonitoring(),
+            'can_manage_monitoring_kategori' => $this->canManageMonitoringKategori(),
         ];
     }
 

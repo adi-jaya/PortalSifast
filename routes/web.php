@@ -28,6 +28,13 @@ use App\Http\Controllers\DailyActivityReportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentReportController;
 use App\Http\Controllers\DepartmentReportPrintController;
+use App\Http\Controllers\Driver\DriverChecklistItemController;
+use App\Http\Controllers\Driver\DriverDashboardController;
+use App\Http\Controllers\Driver\DriverKendaraanController;
+use App\Http\Controllers\Driver\DriverLaporanController;
+use App\Http\Controllers\Driver\DriverLaporanPrintController;
+use App\Http\Controllers\Driver\DriverPemeriksaanController;
+use App\Http\Controllers\Driver\DriverRiwayatController;
 use App\Http\Controllers\EmergencyReportWebController;
 use App\Http\Controllers\EmployeeSalaryWebImportController;
 use App\Http\Controllers\Integrations\SikatInboundSsoController;
@@ -318,33 +325,38 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('aset/{aset}/foto-sumber', [AsetFotoController::class, 'showSumber'])->name('aset.foto-sumber');
     Route::resource('aset', AsetController::class)->parameters(['aset' => 'aset']);
 
-    Route::get('monitoring', [MonitoringDeviceController::class, 'index'])->name('monitoring.index');
-    Route::get('monitoring/pengaturan-kategori', [MonitoringKategoriSettingsController::class, 'edit'])
-        ->name('monitoring.pengaturan-kategori.edit');
-    Route::put('monitoring/pengaturan-kategori', [MonitoringKategoriSettingsController::class, 'update'])
-        ->name('monitoring.pengaturan-kategori.update');
-    Route::get('monitoring/{device}', [MonitoringDeviceController::class, 'show'])->name('monitoring.show');
-    Route::get('monitoring/{device}/desktop', [MonitoringDeviceController::class, 'desktop'])
-        ->name('monitoring.desktop');
-    Route::post('monitoring/{device}/commands', [MonitoringDeviceController::class, 'storeCommand'])
-        ->name('monitoring.commands.store');
-    Route::patch('monitoring/{device}/aset', [MonitoringDeviceController::class, 'updateAset'])
-        ->name('monitoring.aset.update');
-    Route::delete('monitoring/{device}', [MonitoringDeviceController::class, 'destroy'])
-        ->name('monitoring.destroy');
+    Route::middleware('monitoring.kategori')->group(function (): void {
+        Route::get('monitoring/pengaturan-kategori', [MonitoringKategoriSettingsController::class, 'edit'])
+            ->name('monitoring.pengaturan-kategori.edit');
+        Route::put('monitoring/pengaturan-kategori', [MonitoringKategoriSettingsController::class, 'update'])
+            ->name('monitoring.pengaturan-kategori.update');
+    });
 
-    Route::get('infrastruktur', [TianjiLaporanController::class, 'index'])->name('infrastruktur.index');
-    Route::redirect('laporan-tianji', '/infrastruktur');
-    Route::get('laporan-tianji/export/ringkasan', [TianjiLaporanController::class, 'exportRingkasan'])
-        ->name('laporan-tianji.export.ringkasan');
-    Route::get('laporan-tianji/export/harian', [TianjiLaporanController::class, 'exportHarian'])
-        ->name('laporan-tianji.export.harian');
-    Route::get('laporan-tianji/export/gangguan', [TianjiLaporanController::class, 'exportGangguan'])
-        ->name('laporan-tianji.export.gangguan');
-    Route::get('laporan-tianji/export/agent', [TianjiLaporanController::class, 'exportAgent'])
-        ->name('laporan-tianji.export.agent');
-    Route::get('laporan-tianji/export/detail', [TianjiLaporanController::class, 'exportDetail'])
-        ->name('laporan-tianji.export.detail');
+    Route::middleware('monitoring.access')->group(function (): void {
+        Route::get('monitoring', [MonitoringDeviceController::class, 'index'])->name('monitoring.index');
+        Route::get('monitoring/{device}', [MonitoringDeviceController::class, 'show'])->name('monitoring.show');
+        Route::get('monitoring/{device}/desktop', [MonitoringDeviceController::class, 'desktop'])
+            ->name('monitoring.desktop');
+        Route::post('monitoring/{device}/commands', [MonitoringDeviceController::class, 'storeCommand'])
+            ->name('monitoring.commands.store');
+        Route::patch('monitoring/{device}/aset', [MonitoringDeviceController::class, 'updateAset'])
+            ->name('monitoring.aset.update');
+        Route::delete('monitoring/{device}', [MonitoringDeviceController::class, 'destroy'])
+            ->name('monitoring.destroy');
+
+        Route::get('infrastruktur', [TianjiLaporanController::class, 'index'])->name('infrastruktur.index');
+        Route::redirect('laporan-tianji', '/infrastruktur');
+        Route::get('laporan-tianji/export/ringkasan', [TianjiLaporanController::class, 'exportRingkasan'])
+            ->name('laporan-tianji.export.ringkasan');
+        Route::get('laporan-tianji/export/harian', [TianjiLaporanController::class, 'exportHarian'])
+            ->name('laporan-tianji.export.harian');
+        Route::get('laporan-tianji/export/gangguan', [TianjiLaporanController::class, 'exportGangguan'])
+            ->name('laporan-tianji.export.gangguan');
+        Route::get('laporan-tianji/export/agent', [TianjiLaporanController::class, 'exportAgent'])
+            ->name('laporan-tianji.export.agent');
+        Route::get('laporan-tianji/export/detail', [TianjiLaporanController::class, 'exportDetail'])
+            ->name('laporan-tianji.export.detail');
+    });
 
     // Rencana / Project (tracking per project)
     Route::resource('projects', ProjectController::class);
@@ -538,6 +550,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('area/{area}/ruang/{ruang}/label', [PatroliAreaController::class, 'labelPrint'])->name('area.ruang.label');
 
         Route::redirect('titik', '/patroli/area');
+    });
+
+    // Driver — Checklist Kendaraan
+    Route::middleware('driver.access')->prefix('driver')->name('driver.')->group(function (): void {
+        Route::get('/', DriverDashboardController::class)->name('dashboard');
+
+        Route::get('pemeriksaan', [DriverPemeriksaanController::class, 'index'])->name('pemeriksaan.index');
+        Route::get('pemeriksaan/buat/{kendaraan}', [DriverPemeriksaanController::class, 'create'])->name('pemeriksaan.create');
+        Route::post('pemeriksaan', [DriverPemeriksaanController::class, 'store'])->name('pemeriksaan.store');
+        Route::get('pemeriksaan/{pemeriksaan}', [DriverPemeriksaanController::class, 'show'])->name('pemeriksaan.show');
+        Route::delete('pemeriksaan/{pemeriksaan}', [DriverPemeriksaanController::class, 'destroy'])->name('pemeriksaan.destroy');
+
+        Route::get('riwayat', DriverRiwayatController::class)->name('riwayat');
+
+        Route::get('laporan', DriverLaporanController::class)->name('laporan');
+        Route::get('laporan/print', DriverLaporanPrintController::class)->name('laporan.print');
+
+        Route::get('kendaraan', [DriverKendaraanController::class, 'index'])->name('kendaraan.index');
+        Route::post('kendaraan', [DriverKendaraanController::class, 'store'])->name('kendaraan.store');
+        Route::put('kendaraan/{kendaraan}', [DriverKendaraanController::class, 'update'])->name('kendaraan.update');
+        Route::get('kendaraan/{kendaraan}/item', [DriverKendaraanController::class, 'editItems'])->name('kendaraan.items.edit');
+        Route::put('kendaraan/{kendaraan}/item', [DriverKendaraanController::class, 'syncItems'])->name('kendaraan.items.sync');
+
+        Route::get('item-checklist', [DriverChecklistItemController::class, 'index'])->name('item-checklist.index');
+        Route::post('item-checklist', [DriverChecklistItemController::class, 'store'])->name('item-checklist.store');
+        Route::put('item-checklist/{itemChecklist}', [DriverChecklistItemController::class, 'update'])->name('item-checklist.update');
     });
 });
 
