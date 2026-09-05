@@ -1,0 +1,11 @@
+{
+  "portal_url": "https://portalsifast.rsaisyiyahsitifatimah.com",
+  "api_token": "ganti-dengan-token-agent",
+  "inbox_dir": "C:\\BerkasScan\\inbox",
+  "processed_dir": "C:\\BerkasScan\\processed",
+  "error_dir": "C:\\BerkasScan\\error",
+  "tesseract_path": "C:\\Program Files\\Tesseract-OCR\\tesseract.exe",
+  "languages": "ind+eng",
+  "poll_seconds": 3,
+  "agent_label": "hr-plustek-1"
+}
