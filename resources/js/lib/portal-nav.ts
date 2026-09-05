@@ -412,15 +412,7 @@ export const moduleGroups: PortalNavGroup[] = [
                 href: '/berkas-kepegawaian',
                 icon: Users,
                 isActive: (path) =>
-                    path === '/berkas-kepegawaian' ||
-                    (/^\/berkas-kepegawaian\/.+/.test(path) && !path.startsWith('/berkas-kepegawaian/master')),
-            },
-            {
-                id: 'berkas-kepegawaian-master',
-                label: 'Master Jenis Berkas',
-                href: '/berkas-kepegawaian/master',
-                icon: Tags,
-                isActive: (path) => path.startsWith('/berkas-kepegawaian/master'),
+                    path === '/berkas-kepegawaian' || /^\/berkas-kepegawaian\/.+/.test(path),
             },
         ],
     },

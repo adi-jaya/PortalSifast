@@ -48,3 +48,26 @@ test('admin can assign berkas kepegawaian access flag when editing user', functi
 
     expect($staff->can_access_berkas_kepegawaian)->toBeTrue();
 });
+
+test('staff cannot assign berkas kepegawaian access flag when editing user', function (): void {
+    $staffEditor = User::factory()->staff()->create([
+        'can_access_berkas_kepegawaian' => true,
+    ]);
+    $target = User::factory()->staff()->create([
+        'can_access_berkas_kepegawaian' => false,
+    ]);
+
+    actingAs($staffEditor)
+        ->put("/users/{$target->id}", [
+            'name' => $target->name,
+            'email' => $target->email,
+            'role' => 'staff',
+            'dep_id' => $target->dep_id,
+            'can_access_berkas_kepegawaian' => true,
+        ])
+        ->assertRedirect(route('users.index'));
+
+    $target->refresh();
+
+    expect($target->can_access_berkas_kepegawaian)->toBeFalse();
+});
