@@ -1,7 +1,9 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { Pencil, Plus, Search, Trash2 } from 'lucide-react';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
+import { CreatableSearchSelect } from '@/components/creatable-search-select';
 import InputError from '@/components/input-error';
+import { SearchSelect, type SearchSelectOption } from '@/components/search-select';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -58,6 +60,21 @@ export default function MasterBerkasPegawaiIndex({ items, filters, kategoriOptio
         kategori: '',
         no_urut: 0,
     });
+
+    const kategoriFilterOptions = useMemo<SearchSelectOption[]>(
+        () => kategoriOptions.map((kategori) => ({ value: kategori, label: kategori })),
+        [kategoriOptions],
+    );
+
+    const kategoriFormOptions = useMemo<SearchSelectOption[]>(() => {
+        const base = kategoriFilterOptions;
+        const current = form.data.kategori.trim();
+        if (current !== '' && !base.some((o) => o.value === current)) {
+            return [...base, { value: current, label: current }];
+        }
+
+        return base;
+    }, [kategoriFilterOptions, form.data.kategori]);
 
     const applyFilters = (e?: FormEvent) => {
         e?.preventDefault();
@@ -179,21 +196,17 @@ export default function MasterBerkasPegawaiIndex({ items, filters, kategoriOptio
                             />
                         </div>
                     </div>
-                    <div className="w-full space-y-1.5 sm:w-56">
+                    <div className="w-full space-y-1.5 sm:w-64">
                         <Label htmlFor="kategori">Kategori</Label>
-                        <select
-                            id="kategori"
+                        <SearchSelect
+                            inputId="kategori"
+                            options={kategoriFilterOptions}
                             value={kategoriFilter}
-                            onChange={(e) => setKategoriFilter(e.target.value)}
-                            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                        >
-                            <option value="">Semua kategori</option>
-                            {kategoriOptions.map((kategori) => (
-                                <option key={kategori} value={kategori}>
-                                    {kategori}
-                                </option>
-                            ))}
-                        </select>
+                            onChange={setKategoriFilter}
+                            placeholder="Semua kategori..."
+                            isClearable
+                            noOptionsMessage="Kategori tidak ditemukan"
+                        />
                     </div>
                     <Button type="submit">Terapkan</Button>
                 </form>
@@ -305,20 +318,19 @@ export default function MasterBerkasPegawaiIndex({ items, filters, kategoriOptio
                             <InputError message={form.errors.nama_berkas} />
                         </div>
                         <div className="space-y-1.5">
-                            <Label htmlFor="kategori">Kategori</Label>
-                            <Input
-                                id="kategori"
+                            <Label htmlFor="kategori-form">Kategori</Label>
+                            <CreatableSearchSelect
+                                inputId="kategori-form"
+                                options={kategoriFormOptions}
                                 value={form.data.kategori}
-                                onChange={(e) => form.setData('kategori', e.target.value)}
-                                list="kategori-suggestions"
-                                required
-                                maxLength={100}
+                                onChange={(value) => form.setData('kategori', value)}
+                                onCreateOption={async (inputValue) => ({
+                                    value: inputValue,
+                                    label: inputValue,
+                                })}
+                                placeholder="Pilih atau ketik kategori baru..."
+                                hasError={Boolean(form.errors.kategori)}
                             />
-                            <datalist id="kategori-suggestions">
-                                {kategoriOptions.map((kategori) => (
-                                    <option key={kategori} value={kategori} />
-                                ))}
-                            </datalist>
                             <InputError message={form.errors.kategori} />
                         </div>
                         <div className="space-y-1.5">
@@ -327,6 +339,7 @@ export default function MasterBerkasPegawaiIndex({ items, filters, kategoriOptio
                                 id="no_urut"
                                 type="number"
                                 min={0}
+                                max={255}
                                 value={form.data.no_urut}
                                 onChange={(e) => form.setData('no_urut', Number(e.target.value))}
                                 required

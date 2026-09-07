@@ -270,6 +270,12 @@ Route::prefix('agent')->group(function () {
         ->middleware('auth.agent');
 });
 
+// Berkas scan agent (Plustek OCR inbox) — dedicated static token
+Route::prefix('berkas-scan')->middleware('auth.berkas-scan-agent')->group(function (): void {
+    Route::post('/inbox', [\App\Http\Controllers\Api\BerkasScanInboxController::class, 'store']);
+    Route::get('/jenis', [\App\Http\Controllers\Api\BerkasScanInboxController::class, 'jenis']);
+});
+
 // Telegram bot webhook (tanpa auth — dipanggil oleh Telegram)
 Route::post('/telegram/webhook', TelegramWebhookController::class)->name('api.telegram.webhook');
 

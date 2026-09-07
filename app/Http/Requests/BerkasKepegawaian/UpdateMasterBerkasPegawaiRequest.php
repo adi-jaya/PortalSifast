@@ -27,7 +27,7 @@ class UpdateMasterBerkasPegawaiRequest extends FormRequest
         return [
             'nama_berkas' => ['required', 'string', 'max:150'],
             'kategori' => ['required', 'string', 'max:100'],
-            'no_urut' => ['required', 'integer', 'min:0'],
+            'no_urut' => ['required', 'integer', 'min:0', 'max:255'],
         ];
     }
 
@@ -44,6 +44,7 @@ class UpdateMasterBerkasPegawaiRequest extends FormRequest
             'no_urut.required' => 'No urut wajib diisi.',
             'no_urut.integer' => 'No urut harus berupa angka.',
             'no_urut.min' => 'No urut minimal 0.',
+            'no_urut.max' => 'No urut maksimal 255.',
         ];
     }
 }

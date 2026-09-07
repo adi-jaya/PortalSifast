@@ -24,7 +24,9 @@ use App\Http\Controllers\AsetRuangController;
 use App\Http\Controllers\AsetSinkronController;
 use App\Http\Controllers\AuditAsetController;
 use App\Http\Controllers\BerkasKepegawaian\BerkasKepegawaianController;
+use App\Http\Controllers\BerkasKepegawaian\BerkasScanInboxController;
 use App\Http\Controllers\BerkasKepegawaian\MasterBerkasPegawaiController;
+use App\Http\Controllers\BerkasKepegawaian\ReferensiKepegawaianController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\DailyActivityReportController;
 use App\Http\Controllers\DashboardController;
@@ -364,6 +366,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('berkas-kepegawaian', [BerkasKepegawaianController::class, 'index'])
             ->name('berkas-kepegawaian.index');
 
+        Route::get('berkas-kepegawaian/inbox', [BerkasScanInboxController::class, 'index'])
+            ->name('berkas-kepegawaian.inbox.index');
+        Route::get('berkas-kepegawaian/inbox/{inbox}/preview', [BerkasScanInboxController::class, 'preview'])
+            ->name('berkas-kepegawaian.inbox.preview');
+        Route::post('berkas-kepegawaian/inbox/{inbox}/confirm', [BerkasScanInboxController::class, 'confirm'])
+            ->name('berkas-kepegawaian.inbox.confirm');
+        Route::post('berkas-kepegawaian/inbox/{inbox}/reject', [BerkasScanInboxController::class, 'reject'])
+            ->name('berkas-kepegawaian.inbox.reject');
+
         Route::get('berkas-kepegawaian/master', [MasterBerkasPegawaiController::class, 'index'])
             ->name('berkas-kepegawaian.master.index');
         Route::post('berkas-kepegawaian/master', [MasterBerkasPegawaiController::class, 'store'])
@@ -375,19 +386,85 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('berkas-kepegawaian.master.destroy')
             ->where('kode', '[A-Za-z0-9._-]+');
 
+        Route::get('berkas-kepegawaian/referensi', [ReferensiKepegawaianController::class, 'index'])
+            ->name('berkas-kepegawaian.referensi.index');
+
         Route::get('berkas-kepegawaian/{nik}', [BerkasKepegawaianController::class, 'show'])
             ->name('berkas-kepegawaian.show')
-            ->where('nik', '(?!master$)[A-Za-z0-9._-]+');
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::put('berkas-kepegawaian/{nik}/profil', [BerkasKepegawaianController::class, 'updateProfil'])
+            ->name('berkas-kepegawaian.profil.update')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::post('berkas-kepegawaian/{nik}/riwayat/surat-peringatan', [BerkasKepegawaianController::class, 'storeSuratPeringatan'])
+            ->name('berkas-kepegawaian.riwayat.surat-peringatan.store')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::put('berkas-kepegawaian/{nik}/riwayat/surat-peringatan', [BerkasKepegawaianController::class, 'updateSuratPeringatan'])
+            ->name('berkas-kepegawaian.riwayat.surat-peringatan.update')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::delete('berkas-kepegawaian/{nik}/riwayat/surat-peringatan', [BerkasKepegawaianController::class, 'destroySuratPeringatan'])
+            ->name('berkas-kepegawaian.riwayat.surat-peringatan.destroy')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+
+        Route::post('berkas-kepegawaian/{nik}/riwayat/penghargaan', [BerkasKepegawaianController::class, 'storePenghargaan'])
+            ->name('berkas-kepegawaian.riwayat.penghargaan.store')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::put('berkas-kepegawaian/{nik}/riwayat/penghargaan', [BerkasKepegawaianController::class, 'updatePenghargaan'])
+            ->name('berkas-kepegawaian.riwayat.penghargaan.update')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::delete('berkas-kepegawaian/{nik}/riwayat/penghargaan', [BerkasKepegawaianController::class, 'destroyPenghargaan'])
+            ->name('berkas-kepegawaian.riwayat.penghargaan.destroy')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+
+        Route::post('berkas-kepegawaian/{nik}/riwayat/pendidikan', [BerkasKepegawaianController::class, 'storePendidikan'])
+            ->name('berkas-kepegawaian.riwayat.pendidikan.store')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::put('berkas-kepegawaian/{nik}/riwayat/pendidikan', [BerkasKepegawaianController::class, 'updatePendidikan'])
+            ->name('berkas-kepegawaian.riwayat.pendidikan.update')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::delete('berkas-kepegawaian/{nik}/riwayat/pendidikan', [BerkasKepegawaianController::class, 'destroyPendidikan'])
+            ->name('berkas-kepegawaian.riwayat.pendidikan.destroy')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+
+        Route::post('berkas-kepegawaian/{nik}/riwayat/jabatan', [BerkasKepegawaianController::class, 'storeJabatan'])
+            ->name('berkas-kepegawaian.riwayat.jabatan.store')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::put('berkas-kepegawaian/{nik}/riwayat/jabatan', [BerkasKepegawaianController::class, 'updateJabatan'])
+            ->name('berkas-kepegawaian.riwayat.jabatan.update')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::delete('berkas-kepegawaian/{nik}/riwayat/jabatan', [BerkasKepegawaianController::class, 'destroyJabatan'])
+            ->name('berkas-kepegawaian.riwayat.jabatan.destroy')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+
+        Route::post('berkas-kepegawaian/{nik}/riwayat/seminar', [BerkasKepegawaianController::class, 'storeSeminar'])
+            ->name('berkas-kepegawaian.riwayat.seminar.store')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::put('berkas-kepegawaian/{nik}/riwayat/seminar', [BerkasKepegawaianController::class, 'updateSeminar'])
+            ->name('berkas-kepegawaian.riwayat.seminar.update')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::delete('berkas-kepegawaian/{nik}/riwayat/seminar', [BerkasKepegawaianController::class, 'destroySeminar'])
+            ->name('berkas-kepegawaian.riwayat.seminar.destroy')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+
+        Route::post('berkas-kepegawaian/{nik}/riwayat/penelitian', [BerkasKepegawaianController::class, 'storePenelitian'])
+            ->name('berkas-kepegawaian.riwayat.penelitian.store')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::put('berkas-kepegawaian/{nik}/riwayat/penelitian', [BerkasKepegawaianController::class, 'updatePenelitian'])
+            ->name('berkas-kepegawaian.riwayat.penelitian.update')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::delete('berkas-kepegawaian/{nik}/riwayat/penelitian', [BerkasKepegawaianController::class, 'destroyPenelitian'])
+            ->name('berkas-kepegawaian.riwayat.penelitian.destroy')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+
         Route::post('berkas-kepegawaian/{nik}', [BerkasKepegawaianController::class, 'store'])
             ->name('berkas-kepegawaian.store')
-            ->where('nik', '(?!master$)[A-Za-z0-9._-]+');
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
         Route::post('berkas-kepegawaian/{nik}/{kode}/replace', [BerkasKepegawaianController::class, 'replace'])
             ->name('berkas-kepegawaian.replace')
-            ->where('nik', '(?!master$)[A-Za-z0-9._-]+')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+')
             ->where('kode', '[A-Za-z0-9._-]+');
         Route::delete('berkas-kepegawaian/{nik}/{kode}', [BerkasKepegawaianController::class, 'destroy'])
             ->name('berkas-kepegawaian.destroy')
-            ->where('nik', '(?!master$)[A-Za-z0-9._-]+')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+')
             ->where('kode', '[A-Za-z0-9._-]+');
     });
 

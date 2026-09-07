@@ -13,6 +13,7 @@ import {
     FolderKanban,
     HandCoins,
     HeartPulse,
+    Inbox,
     LayoutGrid,
     ListFilter,
     ListTodo,
@@ -414,7 +415,18 @@ export const moduleGroups: PortalNavGroup[] = [
                 isActive: (path) =>
                     path === '/berkas-kepegawaian' ||
                     (path.startsWith('/berkas-kepegawaian/') &&
-                        !path.startsWith('/berkas-kepegawaian/master')),
+                        !path.startsWith('/berkas-kepegawaian/master') &&
+                        !path.startsWith('/berkas-kepegawaian/inbox') &&
+                        !path.startsWith('/berkas-kepegawaian/referensi')),
+            },
+            {
+                id: 'berkas-kepegawaian-inbox',
+                label: 'Inbox Scan',
+                href: '/berkas-kepegawaian/inbox',
+                icon: Inbox,
+                isActive: (path) =>
+                    path === '/berkas-kepegawaian/inbox' ||
+                    path.startsWith('/berkas-kepegawaian/inbox/'),
             },
             {
                 id: 'berkas-kepegawaian-master',
@@ -424,6 +436,15 @@ export const moduleGroups: PortalNavGroup[] = [
                 isActive: (path) =>
                     path === '/berkas-kepegawaian/master' ||
                     path.startsWith('/berkas-kepegawaian/master/'),
+            },
+            {
+                id: 'berkas-kepegawaian-referensi',
+                label: 'Master Referensi',
+                href: '/berkas-kepegawaian/referensi',
+                icon: ListFilter,
+                isActive: (path) =>
+                    path === '/berkas-kepegawaian/referensi' ||
+                    path.startsWith('/berkas-kepegawaian/referensi/'),
             },
         ],
     },

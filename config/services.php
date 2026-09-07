@@ -136,4 +136,8 @@ return [
         'timeout' => (int) env('WEBAPPS_BERKAS_PEGAWAI_TIMEOUT', 30),
     ],
 
+    'berkas_scan' => [
+        'agent_token' => env('BERKAS_SCAN_AGENT_TOKEN'),
+    ],
+
 ];
