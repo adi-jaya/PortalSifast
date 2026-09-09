@@ -388,4 +388,24 @@ class User extends Authenticatable
     {
         return ! empty($this->telegram_chat_id);
     }
+
+    // ==================== PORTAL PELAPORAN RELATIONSHIPS ====================
+
+    /**
+     * Kredensial dan hak akses portal eksternal user ini
+     */
+    public function portalCredentials(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\UserPortalCredential::class, 'user_id');
+    }
+
+    /**
+     * Portal eksternal yang diakses oleh user ini melalui pivot credentials
+     */
+    public function portals(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(\App\Models\Portal::class, 'user_portal_credentials', 'user_id', 'portal_id')
+            ->withPivot(['id', 'credential_type', 'personal_username', 'personal_password', 'personal_extra_fields', 'is_active', 'notes'])
+            ->withTimestamps();
+    }
 }
