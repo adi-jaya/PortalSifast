@@ -81,3 +81,15 @@ it('verifies relationship from User to portalCredentials and portals', function 
         ->and($user->portals)->toHaveCount(1)
         ->and($user->portals->first()->name)->toBe('MPDN');
 });
+
+it('creates portal and credential records using factories', function (): void {
+    $portal = Portal::factory()->shared()->create();
+    expect($portal->auth_type)->toBe('shared')
+        ->and($portal->shared_username)->not->toBeEmpty();
+
+    $credential = UserPortalCredential::factory()->personal()->create();
+    expect($credential->credential_type)->toBe('personal')
+        ->and($credential->personal_username)->not->toBeEmpty()
+        ->and($credential->user)->not->toBeNull()
+        ->and($credential->portal)->not->toBeNull();
+});
