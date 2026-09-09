@@ -49,6 +49,7 @@ use App\Http\Controllers\PatroliLaporanController;
 use App\Http\Controllers\PatroliTemplateController;
 use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\PortalDispatchController;
+use App\Http\Controllers\PortalPersonalCredentialController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RequesterReportController;
@@ -121,6 +122,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Portal Pelaporan Eksternal
     Route::post('portal-pelaporan/{portal}/dispatch-token', [PortalDispatchController::class, 'dispatch'])
         ->name('portal-pelaporan.dispatch-token');
+    Route::put('portal-pelaporan/{portal}/personal-credentials', [PortalPersonalCredentialController::class, 'update'])
+        ->name('portal-pelaporan.personal-credentials.update');
 
     Route::get('users', [UsersController::class, 'index'])->name('users.index');
     Route::get('users/create', [UsersController::class, 'create'])->name('users.create');
