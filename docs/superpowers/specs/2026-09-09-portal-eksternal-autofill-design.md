@@ -219,7 +219,18 @@ rs-extension/
 ## 6. Antarmuka Pengguna (Frontend UI/UX)
 
 ### 6.1. Halaman Pengguna: Portal Pelaporan (`/portal-pelaporan`)
-* **Deteksi Ekstensi:** Memeriksa atribut `document.documentElement.dataset.sifastExtensionInstalled`. Jika aktif, menampilkan status `Ekstensi Aktif v1.0.0`. Jika tidak, menampilkan banner bantuan instalasi.
+* **Deteksi Ekstensi di DOM & Event Handshake:**
+  - `content-simrs.js` secara otomatis menginjeksi atribut dataset pada elemen `<html>`:
+    ```javascript
+    document.documentElement.dataset.sifastExtensionInstalled = "true";
+    document.documentElement.dataset.sifastExtensionVersion = "1.0.0";
+    ```
+  - Untuk mendukung navigasi SPA Inertia.js (di mana halaman tidak di-reload penuh), `content-simrs.js` juga memancarkan event:
+    `window.dispatchEvent(new CustomEvent('SIFAST_EXTENSION_READY', { detail: { version: "1.0.0" } }));`
+    dan merespons event ping dari React (`SIFAST_PING_EXTENSION` -> `SIFAST_PONG_EXTENSION`).
+  - **Tampilan Status UI React:**
+    - Jika terdeteksi: Menampilkan badge hijau `● Ekstensi Aktif (v${version})` di header.
+    - Jika tidak terdeteksi: Menampilkan banner bantuan instalasi dengan tombol unduh.
 * **Tampilan Kartu:** Grid kartu responsif dengan ikon, kategori, tombol "Buka Portal", dan indikator tipe kredensial yang digunakan.
 * **Modal Atur Akun Pribadi:** Memungkinkan staf memasukkan username & password pribadi mereka sendiri untuk portal yang mengizinkan akun personal.
 
