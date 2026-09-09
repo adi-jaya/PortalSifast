@@ -48,6 +48,7 @@ use App\Http\Controllers\PatroliCheckinController;
 use App\Http\Controllers\PatroliLaporanController;
 use App\Http\Controllers\PatroliTemplateController;
 use App\Http\Controllers\PegawaiController;
+use App\Http\Controllers\PortalDispatchController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RequesterReportController;
@@ -116,6 +117,10 @@ Broadcast::routes(['middleware' => ['web', 'auth']]);
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('integrations/sikat/go', SikatSsoRedirectController::class)
         ->name('integrations.sikat.go');
+
+    // Portal Pelaporan Eksternal
+    Route::post('portal-pelaporan/{portal}/dispatch-token', [PortalDispatchController::class, 'dispatch'])
+        ->name('portal-pelaporan.dispatch-token');
 
     Route::get('users', [UsersController::class, 'index'])->name('users.index');
     Route::get('users/create', [UsersController::class, 'create'])->name('users.create');
