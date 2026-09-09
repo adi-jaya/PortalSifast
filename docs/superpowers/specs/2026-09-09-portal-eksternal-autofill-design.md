@@ -64,6 +64,14 @@ Menghubungkan user SIMRS dengan portal yang berhak diaksesnya serta menyimpan kr
 
 **Unique Constraint:** `UNIQUE(user_id, portal_id)`
 
+### 2.3. Kebijakan Otorisasi vs Pengelolaan Kredensial Mandiri (Self-Service)
+* **Wewenang Akses (Wajib Dikelola Admin):**
+  - Petugas **tidak dapat** memberikan izin akses ke portal untuk dirinya sendiri. Seluruh penetapan hak akses (`user_portal_credentials`) diatur terpusat oleh Admin/IT melalui halaman Mapping Akses.
+* **Pengelolaan Kredensial Mandiri (*Self-Service*):**
+  - Jika seorang petugas **telah memiliki izin akses** ke suatu portal bertipe `personal` atau `both`, petugas tersebut berhak mengisi dan memperbarui `personal_username` dan `personal_password` miliknya sendiri secara mandiri.
+  - Hal ini mengakomodasi kebijakan ganti password berkala di portal Kemenkes/BKKBN tanpa perlu merepotkan tim Admin/IT.
+  - Endpoint: `PUT /portal-pelaporan/{portal}/personal-credentials` (dilindungi middleware auth dan policy verifikasi relasi `user_portal_credentials`).
+
 ---
 
 ## 3. Data Awal (Default Seeder) Portal Eksternal
