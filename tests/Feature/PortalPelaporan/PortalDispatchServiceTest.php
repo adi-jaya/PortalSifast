@@ -102,3 +102,15 @@ it('dispatches shared credentials for admin without explicit mapping', function 
         ->and($payload['credentials']['username'])->toBe('admin_shared')
         ->and($payload['credentials']['password'])->toBe('AdminSecret123');
 });
+
+it('throws AccessDeniedHttpException when admin accesses strictly personal portal without personal credentials', function (): void {
+    $admin = User::factory()->admin()->create();
+    $portal = Portal::factory()->create([
+        'name' => 'Personal Only Portal',
+        'slug' => 'personal-only',
+        'auth_type' => 'personal',
+        'is_active' => true,
+    ]);
+
+    $this->service->dispatch($admin, $portal);
+})->throws(AccessDeniedHttpException::class, 'Portal ini bertipe personal dan memerlukan konfigurasi akun personal.');

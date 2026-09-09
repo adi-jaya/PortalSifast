@@ -28,6 +28,10 @@ class PortalDispatchService
 
         // Admin diizinkan menggunakan shared credential jika belum memiliki mapping eksplisit
         if (! $credential && ($user->isAdmin() || $user->isSuperAdmin())) {
+            if (! $portal->supportsShared()) {
+                throw new AccessDeniedHttpException('Portal ini bertipe personal dan memerlukan konfigurasi akun personal.');
+            }
+
             return $this->buildSharedPayload($portal);
         }
 
