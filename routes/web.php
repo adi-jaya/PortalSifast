@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminPortalController;
+use App\Http\Controllers\Admin\AdminPortalMappingController;
 use App\Http\Controllers\Api\DashboardActivityController;
 use App\Http\Controllers\Api\DashboardAnalyticsController;
 use App\Http\Controllers\Api\DashboardNotificationController;
@@ -137,6 +138,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/{portal}', [AdminPortalController::class, 'update'])->name('update');
         Route::delete('/{portal}', [AdminPortalController::class, 'destroy'])->name('destroy');
         Route::patch('/{portal}/toggle-active', [AdminPortalController::class, 'toggleActive'])->name('toggle-active');
+
+        // Mapping Akses Petugas
+        Route::get('/mapping', [AdminPortalMappingController::class, 'index'])->name('mapping.index');
+        Route::post('/mapping/save-row', [AdminPortalMappingController::class, 'saveRow'])->name('mapping.save-row');
+        Route::post('/mapping/sync-portal', [AdminPortalMappingController::class, 'syncPortal'])->name('mapping.sync-portal');
+        Route::post('/mapping/sync-user', [AdminPortalMappingController::class, 'syncUser'])->name('mapping.sync-user');
+        Route::patch('/mapping/{credential}', [AdminPortalMappingController::class, 'updateCredential'])->name('mapping.update-credential');
+        Route::delete('/mapping/{credential}', [AdminPortalMappingController::class, 'destroyCredential'])->name('mapping.destroy-credential');
     });
 
     Route::get('users', [UsersController::class, 'index'])->name('users.index');
