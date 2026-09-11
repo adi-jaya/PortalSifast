@@ -42,6 +42,7 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'permissions' => [
+                'can_manage_portals' => $request->user()?->can('manage', \App\Models\Portal::class) ?? false,
                 'can_access_payroll' => $request->user()?->canAccessPayroll() ?? false,
                 'can_manage_payroll_access' => $request->user()?->canManagePayrollAccess() ?? false,
                 'can_access_patroli' => $request->user()?->canAccessPatroli() ?? false,

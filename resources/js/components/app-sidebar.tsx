@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import {
     Activity,
     BarChart3,
@@ -8,12 +8,14 @@ import {
     FilePenLine,
     FileText,
     FolderCog,
+    Globe,
     LayoutGrid,
     ListFilter,
     MapPin,
     Package,
     Server,
     Settings2,
+    ShieldCheck,
     Ticket,
     UserCircle,
     Users,
@@ -31,7 +33,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import type { NavItem } from '@/types';
+import type { NavItem, SharedData } from '@/types';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -138,7 +140,22 @@ const settingsNavItems: NavItem[] = [
     },
 ];
 
+const portalNavItems: NavItem[] = [
+    {
+        title: 'Master Portal',
+        href: '/admin/portals',
+        icon: Globe,
+    },
+    {
+        title: 'Mapping Akses',
+        href: '/admin/portals/mapping',
+        icon: ShieldCheck,
+    },
+];
+
 export function AppSidebar() {
+    const { permissions } = usePage<SharedData>().props;
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -155,6 +172,9 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <NavMain items={mainNavItems} />
+                {permissions?.can_manage_portals && (
+                    <NavMain items={portalNavItems} label="Portal Eksternal" />
+                )}
                 <NavMain items={monitoringNavItems} label="Monitoring" />
                 <NavMain items={settingsNavItems} label="Pengaturan" />
             </SidebarContent>
