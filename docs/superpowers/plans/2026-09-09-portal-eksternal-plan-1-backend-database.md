@@ -45,7 +45,9 @@ app/
 ├── Policies/
 │   └── PortalPolicy.php                            # Policy hak akses admin & dispatch kredensial
 └── Services/
-    └── PortalDispatchService.php                   # Business logic penentuan kredensial & decrypt
+    └── Portal/
+        ├── PortalDispatchService.php               # Business logic penentuan kredensial & decrypt
+        └── PortalPersonalCredentialService.php     # Business logic pembaruan kredensial personal staf
 database/
 ├── factories/
 │   ├── PortalFactory.php                           # Factory dummy portal
@@ -65,7 +67,8 @@ tests/
         ├── PortalSeederTest.php                    # Pengujian kelengkapan 8 website seeder
         ├── PortalDispatchServiceTest.php           # Pengujian resolusi shared vs personal
         ├── PortalDispatchApiTest.php               # Pengujian endpoint dispatch token
-        └── PortalPersonalCredentialApiTest.php     # Pengujian self-service update credential
+        ├── PortalPersonalCredentialApiTest.php     # Pengujian self-service update credential
+        └── PortalPersonalCredentialServiceTest.php # Pengujian service personal credential
 ```
 
 ---
@@ -1310,7 +1313,7 @@ git commit -m "feat(portal): seed 8 official reporting portals with robust selec
 ### Task 6: Portal Credential Dispatch Service (`PortalDispatchService`)
 
 **Files:**
-- Create: `app/Services/PortalDispatchService.php`
+- Create: `app/Services/Portal/PortalDispatchService.php`
 - Test: `tests/Feature/PortalPelaporan/PortalDispatchServiceTest.php`
 
 **Interfaces:**
@@ -1327,7 +1330,7 @@ Buat file `tests/Feature/PortalPelaporan/PortalDispatchServiceTest.php`:
 use App\Models\Portal;
 use App\Models\User;
 use App\Models\UserPortalCredential;
-use App\Services\PortalDispatchService;
+use App\Services\Portal\PortalDispatchService;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 beforeEach(function (): void {
@@ -1399,16 +1402,16 @@ it('throws AccessDeniedHttpException when user has no active mapping', function 
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `php artisan test tests/Feature/PortalPelaporan/PortalDispatchServiceTest.php`  
-Expected: FAIL dengan `Class "App\Services\PortalDispatchService" not found`.
+Expected: FAIL dengan `Class "App\Services\Portal\PortalDispatchService" not found`.
 
 - [ ] **Step 3: Write minimal implementation**
 
-Buat `app/Services/PortalDispatchService.php`:
+Buat `app/Services/Portal/PortalDispatchService.php`:
 
 ```php
 <?php
 
-namespace App\Services;
+namespace App\Services\Portal;
 
 use App\Models\Portal;
 use App\Models\User;
@@ -1602,18 +1605,22 @@ Buat `app/Http/Controllers/PortalDispatchController.php`:
 namespace App\Http\Controllers;
 
 use App\Models\Portal;
-use App\Services\PortalDispatchService;
+use App\Services\Portal\PortalDispatchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 class PortalDispatchController extends Controller
 {
-    public function dispatch(Request $request, Portal $portal, PortalDispatchService $service): JsonResponse
+    public function __construct(
+        private PortalDispatchService $dispatchService,
+    ) {}
+
+    public function dispatch(Request $request, Portal $portal): JsonResponse
     {
         Gate::authorize('dispatchToken', $portal);
 
-        $payload = $service->dispatch($request->user(), $portal);
+        $payload = $this->dispatchService->dispatch($request->user(), $portal);
 
         return response()->json($payload);
     }
@@ -1642,19 +1649,61 @@ git commit -m "feat(portal): add dispatch-token endpoint for browser extension a
 
 ---
 
-### Task 8: Self-Service Personal Credential Update Endpoint
+### Task 8: Self-Service Personal Credential Update Endpoint & Service
 
 **Files:**
 - Create: `app/Http/Requests/UpdatePersonalCredentialRequest.php`
+- Create: `app/Services/Portal/PortalPersonalCredentialService.php`
 - Create: `app/Http/Controllers/PortalPersonalCredentialController.php`
 - Modify: `routes/web.php`
+- Test: `tests/Feature/PortalPelaporan/PortalPersonalCredentialServiceTest.php`
 - Test: `tests/Feature/PortalPelaporan/PortalPersonalCredentialApiTest.php`
 
 **Interfaces:**
 - Consumes: `PUT /portal-pelaporan/{portal}/personal-credentials` (Auth middleware).
-- Produces: Pembaruan data `personal_username` dan `personal_password` terenkripsi pada `user_portal_credentials`.
+- Produces: Pembaruan data `personal_username` dan `personal_password` terenkripsi pada `user_portal_credentials` via `PortalPersonalCredentialService`.
 
 - [ ] **Step 1: Write the failing test**
+
+Buat file `tests/Feature/PortalPelaporan/PortalPersonalCredentialServiceTest.php`:
+
+```php
+<?php
+
+use App\Models\Portal;
+use App\Models\User;
+use App\Models\UserPortalCredential;
+use App\Services\Portal\PortalPersonalCredentialService;
+
+beforeEach(function (): void {
+    $this->service = new PortalPersonalCredentialService();
+    $this->user = User::factory()->staff()->create();
+    $this->portal = Portal::factory()->create([
+        'name' => 'MPDN Kemenkes',
+        'slug' => 'mpdn-kemenkes',
+        'auth_type' => 'both',
+        'is_active' => true,
+    ]);
+});
+
+it('updates personal username and password via service', function (): void {
+    $mapping = UserPortalCredential::factory()->create([
+        'user_id' => $this->user->id,
+        'portal_id' => $this->portal->id,
+        'credential_type' => 'use_shared',
+        'is_active' => true,
+    ]);
+
+    $updated = $this->service->updatePersonalCredential($this->user, $this->portal, [
+        'username' => 'dr.fatimah@rsasf.co.id',
+        'password' => 'PasswordBaruDokter#2026',
+    ]);
+
+    expect($updated->credential_type)->toBe('personal')
+        ->and($updated->personal_username)->toBe('dr.fatimah@rsasf.co.id')
+        ->and($updated->personal_password)->toBe('PasswordBaruDokter#2026');
+});
+```
 
 Buat file `tests/Feature/PortalPelaporan/PortalPersonalCredentialApiTest.php`:
 
@@ -1772,6 +1821,51 @@ class UpdatePersonalCredentialRequest extends FormRequest
 }
 ```
 
+Buat `app/Services/Portal/PortalPersonalCredentialService.php`:
+
+```php
+<?php
+
+namespace App\Services\Portal;
+
+use App\Models\Portal;
+use App\Models\User;
+use App\Models\UserPortalCredential;
+
+class PortalPersonalCredentialService
+{
+    /**
+     * Memperbarui kredensial akun personal milik staf untuk portal yang diizinkan.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function updatePersonalCredential(User $user, Portal $portal, array $data): UserPortalCredential
+    {
+        /** @var UserPortalCredential $credential */
+        $credential = UserPortalCredential::where('user_id', $user->id)
+            ->where('portal_id', $portal->id)
+            ->firstOrFail();
+
+        $updateData = [
+            'credential_type' => 'personal',
+            'personal_username' => $data['username'],
+        ];
+
+        if (filled($data['password'] ?? null)) {
+            $updateData['personal_password'] = $data['password'];
+        }
+
+        if (array_key_exists('extra_fields', $data)) {
+            $updateData['personal_extra_fields'] = $data['extra_fields'];
+        }
+
+        $credential->update($updateData);
+
+        return $credential;
+    }
+}
+```
+
 Buat `app/Http/Controllers/PortalPersonalCredentialController.php`:
 
 ```php
@@ -1781,35 +1875,21 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdatePersonalCredentialRequest;
 use App\Models\Portal;
-use App\Models\UserPortalCredential;
+use App\Services\Portal\PortalPersonalCredentialService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
 
 class PortalPersonalCredentialController extends Controller
 {
+    public function __construct(
+        private PortalPersonalCredentialService $credentialService,
+    ) {}
+
     public function update(UpdatePersonalCredentialRequest $request, Portal $portal): JsonResponse
     {
         Gate::authorize('updatePersonalCredential', $portal);
 
-        /** @var UserPortalCredential $credential */
-        $credential = UserPortalCredential::where('user_id', $request->user()->id)
-            ->where('portal_id', $portal->id)
-            ->firstOrFail();
-
-        $updateData = [
-            'credential_type' => 'personal',
-            'personal_username' => $request->validated('username'),
-        ];
-
-        if ($request->filled('password')) {
-            $updateData['personal_password'] = $request->validated('password');
-        }
-
-        if ($request->has('extra_fields')) {
-            $updateData['personal_extra_fields'] = $request->validated('extra_fields');
-        }
-
-        $credential->update($updateData);
+        $this->credentialService->updatePersonalCredential($request->user(), $portal, $request->validated());
 
         return response()->json([
             'success' => true,
