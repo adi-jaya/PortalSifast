@@ -3,18 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Models\Portal;
-use App\Services\PortalDispatchService;
+use App\Services\Portal\PortalDispatchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
 class PortalDispatchController extends Controller
 {
-    public function dispatch(Request $request, Portal $portal, PortalDispatchService $service): JsonResponse
+    public function __construct(
+        private PortalDispatchService $dispatchService,
+    ) {}
+
+    public function dispatch(Request $request, Portal $portal): JsonResponse
     {
         Gate::authorize('dispatchToken', $portal);
 
-        $payload = $service->dispatch($request->user(), $portal);
+        $payload = $this->dispatchService->dispatch($request->user(), $portal);
 
         return response()->json($payload);
     }

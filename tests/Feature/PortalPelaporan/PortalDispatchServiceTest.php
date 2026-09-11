@@ -3,7 +3,7 @@
 use App\Models\Portal;
 use App\Models\User;
 use App\Models\UserPortalCredential;
-use App\Services\PortalDispatchService;
+use App\Services\Portal\PortalDispatchService;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 beforeEach(function (): void {
