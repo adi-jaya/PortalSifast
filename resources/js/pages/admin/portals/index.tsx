@@ -79,6 +79,15 @@ export default function AdminPortalsIndex({
         applyFilters({ search });
     };
 
+    const clearFilters = () => {
+        setSearch('');
+        router.get(
+            '/admin/portals',
+            {},
+            { preserveState: true, replace: true },
+        );
+    };
+
     const handleToggleActive = (portal: Portal) => {
         router.patch(
             `/admin/portals/${portal.id}/toggle-active`,
@@ -187,7 +196,7 @@ export default function AdminPortalsIndex({
                             variant="ghost"
                             size="icon"
                             className="size-11"
-                            onClick={() => router.get('/admin/portals')}
+                            onClick={clearFilters}
                             aria-label="Reset Filter"
                         >
                             <X className="size-4" />
@@ -359,6 +368,7 @@ export default function AdminPortalsIndex({
                                                     >
                                                         <Link
                                                             href={`/admin/portals/${portal.id}/edit`}
+                                                            aria-label={`Edit portal ${portal.name}`}
                                                         >
                                                             <Pencil className="size-3.5" />
                                                         </Link>
@@ -370,6 +380,7 @@ export default function AdminPortalsIndex({
                                                             handleDelete(portal)
                                                         }
                                                         className="size-8 text-destructive hover:bg-destructive/10"
+                                                        aria-label={`Hapus portal ${portal.name}`}
                                                     >
                                                         <Trash2 className="size-3.5" />
                                                     </Button>

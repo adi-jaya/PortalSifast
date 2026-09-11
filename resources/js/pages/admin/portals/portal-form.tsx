@@ -72,8 +72,9 @@ export function PortalForm({
         sort_order: initialData?.sort_order ?? 0,
     });
 
-    const handleAutoSlug = () => {
+    const handleAutoSlug = (force = false) => {
         if (!data.name) return;
+        if (!force && (isEditing || data.slug)) return;
         const slugified = data.name
             .toLowerCase()
             .replace(/[^\w\s-]/g, '')
@@ -119,7 +120,7 @@ export function PortalForm({
                             id="name"
                             value={data.name}
                             onChange={(e) => setData('name', e.target.value)}
-                            onBlur={handleAutoSlug}
+                            onBlur={() => handleAutoSlug(false)}
                             placeholder="Contoh: SIRS Online Kemkes"
                             className="mt-1"
                             required
@@ -139,7 +140,7 @@ export function PortalForm({
                             </Label>
                             <button
                                 type="button"
-                                onClick={handleAutoSlug}
+                                onClick={() => handleAutoSlug(true)}
                                 className="flex items-center gap-1 text-xs text-primary hover:underline"
                             >
                                 <Sparkles className="size-3" /> Auto Slug
@@ -343,6 +344,11 @@ export function PortalForm({
                             </SelectItem>
                         </SelectContent>
                     </Select>
+                    {errors.auth_type && (
+                        <p className="mt-1 text-xs text-destructive">
+                            {errors.auth_type}
+                        </p>
+                    )}
                 </div>
 
                 {showSharedSection && (
@@ -375,6 +381,11 @@ export function PortalForm({
                                     placeholder="Username akun instansi..."
                                     className="mt-1"
                                 />
+                                {errors.shared_username && (
+                                    <p className="mt-1 text-xs text-destructive">
+                                        {errors.shared_username}
+                                    </p>
+                                )}
                             </div>
 
                             <div>
@@ -415,6 +426,11 @@ export function PortalForm({
                                             setShowPassword(!showPassword)
                                         }
                                         className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                        aria-label={
+                                            showPassword
+                                                ? 'Sembunyikan password'
+                                                : 'Tampilkan password'
+                                        }
                                     >
                                         {showPassword ? (
                                             <EyeOff className="size-4" />
@@ -423,6 +439,11 @@ export function PortalForm({
                                         )}
                                     </button>
                                 </div>
+                                {errors.shared_password && (
+                                    <p className="mt-1 text-xs text-destructive">
+                                        {errors.shared_password}
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>
