@@ -100,7 +100,7 @@ tests/
 - Consumes: `App\Models\Portal`, `App\Policies\PortalPolicy`.
 - Produces: `AdminPortalService` (business logic domain) & Route name `admin.portals.*` (`index`, `create`, `store`, `edit`, `update`, `destroy`, `toggle-active`).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Buat file `tests/Feature/PortalPelaporan/AdminPortalServiceTest.php`:
 
@@ -352,12 +352,12 @@ it('allows admin to delete a portal', function (): void {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `php artisan test tests/Feature/PortalPelaporan/AdminPortalServiceTest.php tests/Feature/PortalPelaporan/AdminPortalControllerTest.php`  
 Expected: FAIL dengan `Class "App\Services\Portal\AdminPortalService" not found` / `Route [admin.portals.index] not defined.`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Buat file `app/Http/Requests/Admin/PortalRequest.php`:
 
@@ -711,12 +711,12 @@ Daftarkan route di `routes/web.php` dalam grup `Route::middleware(['auth', 'veri
     });
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `php artisan test tests/Feature/PortalPelaporan/AdminPortalControllerTest.php`  
 Expected: PASS (7 passed)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/Http/Requests/Admin/PortalRequest.php app/Http/Controllers/Admin/AdminPortalController.php routes/web.php tests/Feature/PortalPelaporan/AdminPortalControllerTest.php
@@ -742,7 +742,7 @@ git commit -m "feat(portal): add admin portal controller, unified form request a
 - Consumes: `App\Models\Portal`, `App\Models\User`, `App\Models\UserPortalCredential`.
 - Produces: `AdminPortalMappingService` (business logic domain) & Route name `admin.portals.mapping.*` (`index`, `save-row`, `sync-portal`, `sync-user`, `update-credential`, `destroy-credential`).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Buat file `tests/Feature/PortalPelaporan/AdminPortalMappingServiceTest.php`:
 
@@ -1070,12 +1070,12 @@ it('saves single row assignment via saveRow endpoint (instant auto-save)', funct
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `php artisan test tests/Feature/PortalPelaporan/AdminPortalMappingServiceTest.php tests/Feature/PortalPelaporan/AdminPortalMappingControllerTest.php`  
 Expected: FAIL dengan `Class "App\Services\Portal\AdminPortalMappingService" not found` / `Route [admin.portals.mapping.index] not defined.`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Buat file `app/Http/Requests/Admin/SaveMappingRowRequest.php`:
 
@@ -1534,12 +1534,12 @@ Tambahkan rute pada `routes/web.php` di dalam grup `admin/portals`:
     });
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `php artisan test tests/Feature/PortalPelaporan/AdminPortalMappingControllerTest.php`  
 Expected: PASS (7 passed)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/Http/Requests/Admin/SaveMappingRowRequest.php app/Http/Requests/Admin/SyncPortalUsersRequest.php app/Http/Requests/Admin/SyncUserPortalsRequest.php app/Http/Requests/Admin/UpdateMappingCredentialRequest.php app/Http/Controllers/Admin/AdminPortalMappingController.php routes/web.php tests/Feature/PortalPelaporan/AdminPortalMappingControllerTest.php
