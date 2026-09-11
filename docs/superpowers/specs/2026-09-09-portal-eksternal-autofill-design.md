@@ -72,6 +72,40 @@ Menghubungkan user SIMRS dengan portal yang berhak diaksesnya serta menyimpan kr
   - Hal ini mengakomodasi kebijakan ganti password berkala di portal Kemenkes/BKKBN tanpa perlu merepotkan tim Admin/IT.
   - Endpoint: `PUT /portal-pelaporan/{portal}/personal-credentials` (dilindungi middleware auth dan policy verifikasi relasi `user_portal_credentials`).
 
+### 2.4. Arsitektur Backend & Service Class Layer (`App\Services\Portal\*`)
+Untuk menjaga prinsip *Single Responsibility* dan menghasilkan controller yang ramping (*thin controllers*), seluruh logika bisnis domain diisolasi ke dalam Service Class Layer dengan injeksi melalui **Constructor Injection**:
+
+```
+app/
+├── Http/
+│   ├── Controllers/
+│   │   ├── Admin/
+│   │   │   ├── AdminPortalController.php            # Constructor injection: AdminPortalService
+│   │   │   └── AdminPortalMappingController.php     # Constructor injection: AdminPortalMappingService
+│   │   ├── PortalDispatchController.php            # Constructor injection: PortalDispatchService
+│   │   ├── PortalPersonalCredentialController.php   # Constructor injection: PortalPersonalCredentialService
+│   │   └── PortalAggregatorController.php          # Constructor injection: PortalAggregatorService (Plan 4)
+│   └── Requests/
+│       ├── Admin/
+│       │   ├── PortalRequest.php
+│       │   ├── SyncPortalUsersRequest.php
+│       │   └── SyncUserPortalsRequest.php
+│       └── UpdatePersonalCredentialRequest.php
+└── Services/
+    └── Portal/
+        ├── AdminPortalService.php                  # CRUD master portal, filter, auto-slug, toggle aktif
+        ├── AdminPortalMappingService.php           # Matriks mapping, transactional sync massal, update/delete
+        ├── PortalDispatchService.php               # One-time credential payload builder & decryption
+        ├── PortalPersonalCredentialService.php     # Self-service credential update logic
+        └── PortalAggregatorService.php             # User aggregator data & extension bundle zip (Plan 4)
+```
+
+**Karakteristik Arsitektur:**
+1. **Auto-Wiring:** Semua service merupakan *concrete classes* sehingga otomatis di-resolve oleh Laravel Service Container tanpa pendaftaran manual di `AppServiceProvider`.
+2. **Constructor Injection:** Controller menerima instance service secara eksplisit via `__construct()`.
+3. **Database Transactions:** Operasi sinkronisasi massal (`syncPortalUsers`, `syncUserPortals`) dibungkus dalam `DB::transaction()` untuk menjamin integritas data.
+4. **Keamanan Kredensial:** Logika enkripsi, dekripsi, dan proteksi password kosong saat update sepenuhnya diatur dalam service layer tanpa membocorkan plaintext password ke lapisan view/Inertia props.
+
 ---
 
 ## 3. Data Awal (Default Seeder) Portal Eksternal
