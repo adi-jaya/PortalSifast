@@ -2187,7 +2187,7 @@ git commit -m "feat(portal): add interactive FormConfigEditor and SelectorTagInp
 - Consumes: `AppLayout`, `DataTableToolbar`, `DataTablePagination`, `FormConfigEditor`, `Portal` type.
 - Produces: Halaman CRUD master portal lengkap dengan filter kategori, toggle active, sort order, and form akun bersama RS.
 
-- [ ] **Step 1: Create `portal-form.tsx`**
+- [x] **Step 1: Create `portal-form.tsx`**
 
 Buat file `resources/js/pages/admin/portals/portal-form.tsx`:
 
@@ -2527,7 +2527,7 @@ export function PortalForm({ initialData, categories, isEditing = false }: Porta
 }
 ```
 
-- [ ] **Step 2: Create `index.tsx`**
+- [x] **Step 2: Create `index.tsx`**
 
 Buat file `resources/js/pages/admin/portals/index.tsx`:
 
@@ -2828,7 +2828,7 @@ export default function AdminPortalsIndex({ portals, categories, filters }: Prop
 }
 ```
 
-- [ ] **Step 3: Create `create.tsx` and `edit.tsx`**
+- [x] **Step 3: Create `create.tsx` and `edit.tsx`**
 
 Buat file `resources/js/pages/admin/portals/create.tsx`:
 
@@ -2905,12 +2905,12 @@ export default function AdminPortalsEdit({ portal, categories }: Props) {
 }
 ```
 
-- [ ] **Step 4: Verify TypeScript Types for Portal CRUD Pages**
+- [x] **Step 4: Verify TypeScript Types for Portal CRUD Pages**
 
 Run: `npm run types`  
 Expected: 0 errors.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add resources/js/pages/admin/portals/portal-form.tsx resources/js/pages/admin/portals/index.tsx resources/js/pages/admin/portals/create.tsx resources/js/pages/admin/portals/edit.tsx
