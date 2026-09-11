@@ -1766,7 +1766,7 @@ git commit -m "feat(portal): add shared inertia permission, typescript types and
 - Consumes: Radix UI Tabs, Input, Button, Badge, Switch, Textarea.
 - Produces: `<FormConfigEditor value={formConfig} onChange={setFormConfig} />` dengan dua mode: Visual Builder & Raw JSON Editor, lengkap dengan validasi sintaks.
 
-- [ ] **Step 1: Write component `selector-tag-input.tsx`**
+- [x] **Step 1: Write component `selector-tag-input.tsx`**
 
 Buat file `resources/js/components/portal/selector-tag-input.tsx`:
 
@@ -1886,7 +1886,7 @@ export function SelectorTagInput({
 }
 ```
 
-- [ ] **Step 2: Write component `form-config-editor.tsx`**
+- [x] **Step 2: Write component `form-config-editor.tsx`**
 
 Buat file `resources/js/components/portal/form-config-editor.tsx`:
 
@@ -2161,12 +2161,12 @@ export function FormConfigEditor({ value, onChange }: FormConfigEditorProps) {
 }
 ```
 
-- [ ] **Step 3: Verify TypeScript Types for Editor Components**
+- [x] **Step 3: Verify TypeScript Types for Editor Components**
 
 Run: `npm run types`  
 Expected: 0 errors.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add resources/js/components/portal/selector-tag-input.tsx resources/js/components/portal/form-config-editor.tsx
