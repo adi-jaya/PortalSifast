@@ -1564,7 +1564,7 @@ git commit -m "feat(portal): add admin portal mapping controller and access matr
   - TypeScript types: `Portal`, `UserPortalCredential`, `FormConfig`, `FormConfigSelectorField`, `FormConfigExtraField`, `PortalAuthType`, `CredentialType`.
   - Sidebar menu items for Master Portal & Mapping Akses.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Buat file `tests/Feature/PortalPelaporan/PortalInertiaPropsTest.php`:
 
@@ -1591,12 +1591,12 @@ it('shares can_manage_portals permission as true for admin and false for staff',
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `php artisan test tests/Feature/PortalPelaporan/PortalInertiaPropsTest.php`  
 Expected: FAIL dengan `Failed asserting that null is true.`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Edit `app/Http/Middleware/HandleInertiaRequests.php` pada method `share()` bagian `permissions`:
 
@@ -1742,12 +1742,12 @@ Dan render di `SidebarContent` dengan pengecekan `permissions.can_manage_portals
     </SidebarContent>
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `php artisan test tests/Feature/PortalPelaporan/PortalInertiaPropsTest.php`  
 Expected: PASS (1 passed)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/Http/Middleware/HandleInertiaRequests.php resources/js/types/portal.ts resources/js/types/index.ts resources/js/components/app-sidebar.tsx tests/Feature/PortalPelaporan/PortalInertiaPropsTest.php
