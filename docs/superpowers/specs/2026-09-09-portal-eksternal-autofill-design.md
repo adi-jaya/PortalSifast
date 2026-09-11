@@ -88,6 +88,7 @@ app/
 │   └── Requests/
 │       ├── Admin/
 │       │   ├── PortalRequest.php
+│       │   ├── SaveMappingRowRequest.php           # Validasi simpan baris tunggal (Instant Auto-Save)
 │       │   ├── SyncPortalUsersRequest.php
 │       │   └── SyncUserPortalsRequest.php
 │       └── UpdatePersonalCredentialRequest.php
@@ -281,8 +282,10 @@ rs-extension/
 * **Form Builder:** Input metadata portal, konfigurasi akun bersama RS, dan editor visual/JSON untuk form selector.
 
 ### 6.3. Halaman Admin: Mapping Akses (`/admin/portals/mapping`)
-* **Tampilan Matriks:** Mode filter per Portal atau per Pengguna.
-* **Aksi Massal:** Kemudahan mencentang akses portal untuk banyak pengguna sekaligus.
+* **Tampilan Matriks Dual-Mode:** Mode filter per Portal (*Portal-Centric*) atau per Pengguna (*User-Centric*).
+* **Arsitektur Hybrid (Instant Auto-Save & Batch Actions):**
+  - **Interaksi Baris Tunggal:** Menggunakan Radix `Switch` (Akses ON/OFF), `Select` (Tipe Akun), dan input catatan (`onBlur`) yang otomatis tersimpan seketika di background (`POST /admin/portals/mapping/save-row`) dengan *optimistic UI* dan mikro-indikator status (*Tersimpan*). Menghilangkan risiko data hilang saat navigasi paginasi.
+  - **Aksi Cepat Massal:** Toolbar menyediakan tombol massal (*"Izinkan Semua (Akun Bersama)"*, *"Izinkan Semua (Akun Personal)"*, *"Cabut Semua Akses"*) yang mengeksekusi 1 request transaksi DB (`POST /admin/portals/mapping/sync-portal` / `sync-user`).
 
 ### 6.4. Distribusi Ekstensi
 * Tersedia tombol unduh file `sifast-autofill-extension.zip` langsung dari SIMRS (dihasilkan secara otomatis oleh sistem atau di-host di storage lokal).
