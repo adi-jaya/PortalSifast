@@ -50,9 +50,19 @@ export function FormConfigEditor({ value, onChange }: FormConfigEditorProps) {
         const text = e.target.value;
         setRawJson(text);
         try {
-            const parsed = JSON.parse(text) as FormConfig;
+            const parsed = JSON.parse(text);
+            if (
+                typeof parsed !== 'object' ||
+                parsed === null ||
+                Array.isArray(parsed)
+            ) {
+                setJsonError(
+                    'Konfigurasi harus berupa object JSON valid ({}).',
+                );
+                return;
+            }
             setJsonError(null);
-            onChange(parsed);
+            onChange(parsed as FormConfig);
         } catch (err: unknown) {
             setJsonError((err as Error).message);
         }
@@ -282,6 +292,10 @@ export function FormConfigEditor({ value, onChange }: FormConfigEditorProps) {
                                                     e.target.value,
                                                 )
                                             }
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter')
+                                                    e.preventDefault();
+                                            }}
                                             placeholder="misal: kode_satker"
                                             className="mt-0.5 h-8 font-mono text-xs"
                                         />
@@ -293,6 +307,7 @@ export function FormConfigEditor({ value, onChange }: FormConfigEditorProps) {
                                         onClick={() =>
                                             handleRemoveExtraField(fIdx)
                                         }
+                                        aria-label={`Hapus field ${field.key || fIdx + 1}`}
                                         className="size-8 shrink-0 self-end text-destructive hover:bg-destructive/10"
                                     >
                                         <Trash2 className="size-4" />

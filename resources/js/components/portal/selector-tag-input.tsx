@@ -68,6 +68,7 @@ export function SelectorTagInput({
                             <button
                                 type="button"
                                 onClick={() => handleRemove(idx)}
+                                aria-label={`Hapus selector ${sel}`}
                                 className="cursor-pointer text-muted-foreground hover:text-destructive focus:outline-none"
                             >
                                 <X className="size-3" />
