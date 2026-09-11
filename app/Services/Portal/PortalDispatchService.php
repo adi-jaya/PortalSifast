@@ -53,6 +53,10 @@ class PortalDispatchService
             ];
         }
 
+        if (! $portal->supportsShared()) {
+            throw new AccessDeniedHttpException('Portal ini bertipe personal dan memerlukan konfigurasi kredensial personal.');
+        }
+
         return $this->buildSharedPayload($portal);
     }
 

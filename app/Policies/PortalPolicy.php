@@ -30,12 +30,12 @@ class PortalPolicy
      */
     public function view(User $user, Portal $portal): bool
     {
-        if (! $portal->is_active) {
-            return false;
-        }
-
         if ($user->isAdmin() || $user->isSuperAdmin()) {
             return true;
+        }
+
+        if (! $portal->is_active) {
+            return false;
         }
 
         return $portal->userCredentials()

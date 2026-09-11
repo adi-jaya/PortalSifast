@@ -79,7 +79,8 @@ it('verifies relationship from User to portalCredentials and portals', function 
     expect($user->portalCredentials)->toHaveCount(1)
         ->and($user->portalCredentials->first()->portal->id)->toBe($portal->id)
         ->and($user->portals)->toHaveCount(1)
-        ->and($user->portals->first()->name)->toBe('MPDN');
+        ->and($user->portals->first()->name)->toBe('MPDN')
+        ->and(array_key_exists('personal_password', $user->portals->first()->pivot->getAttributes()))->toBeFalse();
 });
 
 it('creates portal and credential records using factories', function (): void {

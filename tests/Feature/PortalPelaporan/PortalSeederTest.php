@@ -31,9 +31,11 @@ it('seeds all 8 portal groups idempotently with proper configurations', function
         ->and($sirs->form_config['username_field']['selectors'])->toContain("input[type='email']")
         ->and($sirs->form_config['password_field']['selectors'])->toContain("input[type='password']");
 
-    // Menjalankan seeder kedua kali tidak boleh menimbulkan error duplikasi
+    // Menjalankan seeder kedua kali tidak boleh menimbulkan error duplikasi dan tidak menimpa kredensial produksi
+    $sirs->update(['shared_password' => 'ProductionPasswordBaru123']);
     $this->seed(PortalSeeder::class);
-    expect(Portal::where('slug', 'sirs-online')->count())->toBe(1);
+    expect(Portal::where('slug', 'sirs-online')->count())->toBe(1)
+        ->and($sirs->fresh()->shared_password)->toBe('ProductionPasswordBaru123');
 });
 
 it('can be run through DatabaseSeeder', function (): void {

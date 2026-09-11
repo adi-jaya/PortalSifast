@@ -121,8 +121,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Portal Pelaporan Eksternal
     Route::post('portal-pelaporan/{portal}/dispatch-token', [PortalDispatchController::class, 'dispatch'])
+        ->middleware('throttle:30,1')
         ->name('portal-pelaporan.dispatch-token');
     Route::put('portal-pelaporan/{portal}/personal-credentials', [PortalPersonalCredentialController::class, 'update'])
+        ->middleware('throttle:30,1')
         ->name('portal-pelaporan.personal-credentials.update');
 
     Route::get('users', [UsersController::class, 'index'])->name('users.index');

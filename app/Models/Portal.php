@@ -53,7 +53,7 @@ class Portal extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'user_portal_credentials', 'portal_id', 'user_id')
-            ->withPivot(['id', 'credential_type', 'personal_username', 'personal_password', 'personal_extra_fields', 'is_active', 'notes'])
+            ->withPivot(['id', 'credential_type', 'personal_username', 'personal_extra_fields', 'is_active', 'notes'])
             ->withTimestamps();
     }
 

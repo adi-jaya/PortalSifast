@@ -32,10 +32,10 @@ it('allows user to view portal only if active mapping exists and portal is activ
     expect(Gate::forUser($this->staff)->allows('view', $portal))->toBeTrue()
         ->and(Gate::forUser($this->otherStaff)->allows('view', $portal))->toBeFalse();
 
-    // Inactive portal blocks view for regular staff
+    // Inactive portal blocks view for regular staff, but allows admin
     $portal->update(['is_active' => false]);
     expect(Gate::forUser($this->staff)->allows('view', $portal->fresh()))->toBeFalse()
-        ->and(Gate::forUser($this->admin)->allows('view', $portal->fresh()))->toBeFalse();
+        ->and(Gate::forUser($this->admin)->allows('view', $portal->fresh()))->toBeTrue();
 });
 
 it('allows dispatchToken only if portal is active and user mapping is active', function (): void {

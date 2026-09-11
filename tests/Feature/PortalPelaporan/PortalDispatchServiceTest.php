@@ -114,3 +114,21 @@ it('throws AccessDeniedHttpException when admin accesses strictly personal porta
 
     $this->service->dispatch($admin, $portal);
 })->throws(AccessDeniedHttpException::class, 'Portal ini bertipe personal dan memerlukan konfigurasi akun personal.');
+
+it('throws AccessDeniedHttpException when non-admin has use_shared mapping on strictly personal portal', function (): void {
+    $portal = Portal::factory()->create([
+        'name' => 'Personal Only Portal',
+        'slug' => 'personal-only-staff',
+        'auth_type' => 'personal',
+        'is_active' => true,
+    ]);
+
+    UserPortalCredential::create([
+        'user_id' => $this->user->id,
+        'portal_id' => $portal->id,
+        'credential_type' => 'use_shared',
+        'is_active' => true,
+    ]);
+
+    $this->service->dispatch($this->user, $portal);
+})->throws(AccessDeniedHttpException::class, 'Portal ini bertipe personal dan memerlukan konfigurasi kredensial personal.');

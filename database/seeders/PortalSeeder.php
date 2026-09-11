@@ -266,7 +266,7 @@ class PortalSeeder extends Seeder
         ];
 
         foreach ($portals as $portal) {
-            Portal::updateOrCreate(
+            Portal::firstOrCreate(
                 ['slug' => $portal['slug']],
                 $portal
             );

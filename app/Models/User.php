@@ -405,7 +405,7 @@ class User extends Authenticatable
     public function portals(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
         return $this->belongsToMany(\App\Models\Portal::class, 'user_portal_credentials', 'user_id', 'portal_id')
-            ->withPivot(['id', 'credential_type', 'personal_username', 'personal_password', 'personal_extra_fields', 'is_active', 'notes'])
+            ->withPivot(['id', 'credential_type', 'personal_username', 'personal_extra_fields', 'is_active', 'notes'])
             ->withTimestamps();
     }
 }
