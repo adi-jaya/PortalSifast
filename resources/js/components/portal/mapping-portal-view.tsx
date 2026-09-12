@@ -45,6 +45,10 @@ interface MappingPortalViewProps {
     selectedPortal: PortalItem;
     users: {
         data: UserItem[];
+        links?: { url: string | null; label: string; active: boolean }[];
+        current_page?: number;
+        last_page?: number;
+        total?: number;
     };
     portalCredentials: Record<string | number, UserPortalCredential>;
     departments: string[];

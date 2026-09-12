@@ -23,8 +23,10 @@
 ## Global Constraints
 
 - **Zero-Plaintext Leakage:** Password bersama (`shared_password`) TIDAK BOLEH dikirimkan dalam bentuk plaintext pada props halaman edit Inertia. Frontend hanya menerima flag boolean `has_shared_password`. Pada update, jika bidang password dikosongkan, password lama di database tidak boleh terhapus.
-- **Otorisasi Ketat:** Hanya pengguna dengan `role === 'admin'` atau yang memenuhi `isSuperAdmin()` yang diizinkan mengakses route `/admin/portals*` dan `/admin/portals/mapping*`. Pengguna non-admin yang mencoba mengakses harus ditolak dengan status HTTP 403 Forbidden atau diarahkan kembali.
+- **Otorisasi Ketat & Defense-in-Depth:** Hanya pengguna dengan `role === 'admin'` atau yang memenuhi `isSuperAdmin()` yang diizinkan mengakses route `/admin/portals*` dan `/admin/portals/mapping*`. Diproteksi langsung pada perimeter rute `routes/web.php` dengan `middleware('can:manage,App\Models\Portal')` serta otorisasi controller & FormRequest.
 - **Service Class Layer & Constructor Injection:** Seluruh query Eloquent, pemfilteran, sanitasi data, transaksi DB, dan mutasi model wajib dienkapsulasi di dalam `AdminPortalService` dan `AdminPortalMappingService`. Controller hanya memanggil method service melalui constructor injection.
+- **Explicit Note-Clearing Auto-Save:** Method `saveSingleAssignment` dan endpoint `saveRow` mendukung flag eksplisit `updateNotes` (`$request->has('notes')`). Toggle akses switch menjaga catatan lama tanpa menimpanya, sedangkan pengosongan input catatan secara sadar akan menghapus (*clear*) catatan di database menjadi `null`.
+- **Full Staff Reachability & Dynamic Pagination:** Matriks portal menyediakan navigasi `DataTablePagination`, dan `MappingUserView` menyediakan dataset `all_users` dengan input pencarian cepat berbasis klien (Nama/NIK/Unit) agar seluruh staf rumah sakit (100–300+ petugas) tetap dapat dipilih dan dikonfigurasi.
 - **Resilient Form Selector JSON:** Struktur `form_config` harus mematuhi format spesifikasi Bagian 4.1 (`is_spa`, `wait_timeout_ms`, `username_field`, `password_field`, `extra_fields`, `auto_submit`). Editor selector harus mendukung visual tag input dan raw JSON.
 - **Integrasi Bersih Tanpa Mengubah Skema `users`:** Seluruh pemetaan relasi hak akses petugas murni memanfaatkan tabel pivot `user_portal_credentials` dengan constraint `UNIQUE(user_id, portal_id)`.
 - **TDD Mandatory:** Setiap service class, controller, dan endpoint diuji terlebih dahulu menggunakan Pest 4 (`it(...)`, `expect(...)`, `assertForbidden()`, `assertInertia()`) sebelum implementasi diselesaikan.
@@ -700,7 +702,10 @@ Daftarkan route di `routes/web.php` dalam grup `Route::middleware(['auth', 'veri
 
 ```php
     // Master Portal Pelaporan Eksternal (Admin)
-    Route::prefix('admin/portals')->name('admin.portals.')->group(function (): void {
+    Route::prefix('admin/portals')
+        ->name('admin.portals.')
+        ->middleware('can:manage,App\Models\Portal')
+        ->group(function (): void {
         Route::get('/', [AdminPortalController::class, 'index'])->name('index');
         Route::get('/create', [AdminPortalController::class, 'create'])->name('create');
         Route::post('/', [AdminPortalController::class, 'store'])->name('store');
@@ -843,6 +848,43 @@ it('saves a single mapping assignment directly via saveSingleAssignment (instant
     $deleted = $this->service->saveSingleAssignment($this->portal1->id, $user->id, false);
     expect($deleted)->toBeNull()
         ->and(UserPortalCredential::where('portal_id', $this->portal1->id)->where('user_id', $user->id)->exists())->toBeFalse();
+});
+
+it('preserves existing notes when saveSingleAssignment is called with null notes', function (): void {
+    $user = User::factory()->create();
+
+    $cred = $this->service->saveSingleAssignment($this->portal1->id, $user->id, true, 'use_shared', 'Catatan Awal Tetap');
+    expect($cred->notes)->toBe('Catatan Awal Tetap');
+
+    // Update credential type with null notes -> existing notes must be preserved
+    $updated = $this->service->saveSingleAssignment($this->portal1->id, $user->id, true, 'personal', null);
+    expect($updated->credential_type)->toBe('personal')
+        ->and($updated->notes)->toBe('Catatan Awal Tetap');
+});
+
+it('clears existing notes when saveSingleAssignment is called with updateNotes true and null or empty notes', function (): void {
+    $user = User::factory()->create();
+
+    $cred = $this->service->saveSingleAssignment($this->portal1->id, $user->id, true, 'use_shared', 'Catatan Awal');
+    expect($cred->notes)->toBe('Catatan Awal');
+
+    // Explicitly update notes to empty string -> notes cleared
+    $updated = $this->service->saveSingleAssignment($this->portal1->id, $user->id, true, 'use_shared', '', true);
+    expect($updated->notes)->toBeNull();
+
+    // Explicitly update notes to null -> notes cleared
+    $updated2 = $this->service->saveSingleAssignment($this->portal1->id, $user->id, true, 'use_shared', null, true);
+    expect($updated2->notes)->toBeNull();
+});
+
+it('filters users by search in getMappingData', function (): void {
+    User::factory()->create(['name' => 'Dr. Specialist Alpha', 'email' => 'alpha@hospital.org']);
+    User::factory()->create(['name' => 'Dr. Normal Beta', 'email' => 'beta@hospital.org']);
+
+    $data = $this->service->getMappingData($this->portal1->id, null, 'portal', ['search' => 'Specialist Alpha']);
+
+    expect($data['users']->total())->toBe(1)
+        ->and($data['users']->first()->name)->toBe('Dr. Specialist Alpha');
 });
 ```
 
@@ -1225,10 +1267,11 @@ class AdminPortalMappingService
 
         $search = (string) ($filters['search'] ?? '');
         if ($search !== '') {
-            $usersQuery->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('simrs_nik', 'like', "%{$search}%");
+            $escapedSearch = addcslashes($search, '%_\\');
+            $usersQuery->where(function ($q) use ($escapedSearch) {
+                $q->where('name', 'like', "%{$escapedSearch}%")
+                    ->orWhere('email', 'like', "%{$escapedSearch}%")
+                    ->orWhere('simrs_nik', 'like', "%{$escapedSearch}%");
             });
         }
 
@@ -1244,6 +1287,7 @@ class AdminPortalMappingService
 
         $departments = User::query()
             ->whereNotNull('dep_id')
+            ->where('dep_id', '!=', '')
             ->distinct()
             ->orderBy('dep_id')
             ->pluck('dep_id');
@@ -1293,6 +1337,10 @@ class AdminPortalMappingService
                 'dep_id' => $selectedUser->dep_id,
             ] : null,
             'users' => $usersQuery->paginate(50)->withQueryString(),
+            'all_users' => User::query()
+                ->select(['id', 'name', 'email', 'simrs_nik', 'role', 'dep_id'])
+                ->orderBy('name')
+                ->get(),
             'portal_credentials' => $portalCredentials,
             'user_credentials' => $userCredentials,
             'departments' => $departments,
@@ -1378,19 +1426,31 @@ class AdminPortalMappingService
         return $credential;
     }
 
-    public function saveSingleAssignment(int $portalId, int $userId, bool $hasAccess, string $credentialType = 'use_shared', ?string $notes = null): ?UserPortalCredential
-    {
+    public function saveSingleAssignment(
+        int $portalId,
+        int $userId,
+        bool $hasAccess,
+        string $credentialType = 'use_shared',
+        ?string $notes = null,
+        ?bool $updateNotes = null
+    ): ?UserPortalCredential {
         if ($hasAccess) {
+            $attributes = [
+                'credential_type' => $credentialType,
+                'is_active' => true,
+            ];
+
+            $shouldUpdateNotes = $updateNotes !== null ? $updateNotes : ($notes !== null);
+            if ($shouldUpdateNotes) {
+                $attributes['notes'] = ($notes !== null && trim($notes) !== '') ? trim($notes) : null;
+            }
+
             return UserPortalCredential::updateOrCreate(
                 [
                     'portal_id' => $portalId,
                     'user_id' => $userId,
                 ],
-                [
-                    'credential_type' => $credentialType,
-                    'is_active' => true,
-                    'notes' => $notes,
-                ]
+                $attributes
             );
         }
 
@@ -1457,7 +1517,8 @@ class AdminPortalMappingController extends Controller
             (int) $request->validated('user_id'),
             (bool) $request->validated('has_access'),
             (string) ($request->validated('credential_type') ?? 'use_shared'),
-            $request->validated('notes')
+            $request->validated('notes'),
+            $request->has('notes')
         );
 
         if ($request->wantsJson()) {
@@ -1490,7 +1551,7 @@ class AdminPortalMappingController extends Controller
         $user = User::findOrFail($request->validated('user_id'));
         $this->mappingService->syncUserPortals($user, $request->validated('assignments'));
 
-        return back()->with('success', 'Hak akses portal petugas berhasil disimpan.');
+        return back()->with('success', 'Mapping hak akses petugas berhasil disimpan.');
     }
 
     public function updateCredential(UpdateMappingCredentialRequest $request, UserPortalCredential $credential): RedirectResponse
@@ -1515,7 +1576,10 @@ Tambahkan rute pada `routes/web.php` di dalam grup `admin/portals`:
 
 ```php
     // Master Portal Pelaporan Eksternal (Admin)
-    Route::prefix('admin/portals')->name('admin.portals.')->group(function (): void {
+    Route::prefix('admin/portals')
+        ->name('admin.portals.')
+        ->middleware('can:manage,App\Models\Portal')
+        ->group(function (): void {
         Route::get('/', [AdminPortalController::class, 'index'])->name('index');
         Route::get('/create', [AdminPortalController::class, 'create'])->name('create');
         Route::post('/', [AdminPortalController::class, 'store'])->name('store');
@@ -2531,10 +2595,10 @@ export function PortalForm({ initialData, categories, isEditing = false }: Porta
 
 Buat file `resources/js/pages/admin/portals/index.tsx`:
 
-```tsx
 import { Head, Link, router } from '@inertiajs/react';
 import { ExternalLink, Globe, KeyRound, Pencil, Plus, Search, ShieldCheck, Trash2, Users, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import { DataTableToolbar } from '@/components/data-table-toolbar';
 import { EmptyState } from '@/components/empty-state';
@@ -2578,16 +2642,23 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function AdminPortalsIndex({ portals, categories, filters }: Props) {
     const [search, setSearch] = useState(filters.search || '');
+    const [category, setCategory] = useState(filters.category || '_all');
+    const [status, setStatus] = useState(filters.status || '_all');
 
     const applyFilters = useCallback(
-        (newFilters: Partial<typeof filters>) => {
-            router.get(
-                '/admin/portals',
-                { ...filters, ...newFilters },
-                { preserveState: true, replace: true }
-            );
+        (newFilters: Record<string, string>) => {
+            const query = {
+                search,
+                category: category === '_all' ? '' : category,
+                status: status === '_all' ? '' : status,
+                ...newFilters,
+            };
+            Object.keys(query).forEach((key) => {
+                if (!query[key as keyof typeof query]) delete query[key as keyof typeof query];
+            });
+            router.get('/admin/portals', query, { preserveState: true, replace: true });
         },
-        [filters]
+        [search, category, status],
     );
 
     const handleSearch = (e: React.FormEvent) => {
@@ -2599,10 +2670,23 @@ export default function AdminPortalsIndex({ portals, categories, filters }: Prop
         router.patch(`/admin/portals/${portal.id}/toggle-active`, {}, { preserveScroll: true });
     };
 
+    const [portalToDelete, setPortalToDelete] = useState<Portal | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
     const handleDelete = (portal: Portal) => {
-        if (confirm(`Hapus portal "${portal.name}" beserta seluruh mapping akses petugasnya?`)) {
-            router.delete(`/admin/portals/${portal.id}`);
-        }
+        setPortalToDelete(portal);
+    };
+
+    const handleConfirmDelete = () => {
+        if (!portalToDelete) return;
+        setIsDeleting(true);
+        router.delete(`/admin/portals/${portalToDelete.id}`, {
+            preserveScroll: true,
+            onFinish: () => {
+                setIsDeleting(false);
+                setPortalToDelete(null);
+            },
+        });
     };
 
     return (
@@ -2823,6 +2907,18 @@ export default function AdminPortalsIndex({ portals, categories, filters }: Prop
                     {portals.last_page > 1 && <DataTablePagination links={portals.links} />}
                 </div>
             </div>
+
+            <ConfirmDialog
+                open={portalToDelete !== null}
+                onOpenChange={(open) => !open && setPortalToDelete(null)}
+                title="Hapus Master Portal"
+                description={`Apakah Anda yakin ingin menghapus portal "${portalToDelete?.name}"? Seluruh mapping hak akses petugas ke portal ini juga akan dihapus.`}
+                confirmLabel="Hapus Portal"
+                cancelLabel="Batal"
+                variant="destructive"
+                onConfirm={handleConfirmDelete}
+                loading={isDeleting}
+            />
         </AppLayout>
     );
 }
@@ -2972,8 +3068,18 @@ Buat file `resources/js/components/portal/mapping-portal-view.tsx`:
 
 ```tsx
 import { router } from '@inertiajs/react';
-import { AlertCircle, Check, CheckCircle2, CheckSquare, Loader2, Search, Shield, Users, XCircle } from 'lucide-react';
+import {
+    AlertCircle,
+    Check,
+    CheckCircle2,
+    CheckSquare,
+    Loader2,
+    Search,
+    Users,
+    XCircle,
+} from 'lucide-react';
 import React, { useState } from 'react';
+import { DataTablePagination } from '@/components/data-table-pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -2985,7 +3091,12 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import type { CredentialType, Portal, UserPortalCredential } from '@/types';
+import type {
+    CredentialType,
+    Portal,
+    PortalMappingSummary,
+    UserPortalCredential,
+} from '@/types';
 
 interface UserItem {
     id: number;
@@ -2996,13 +3107,19 @@ interface UserItem {
     dep_id: string | null;
 }
 
+type PortalItem = Portal | PortalMappingSummary;
+
 interface MappingPortalViewProps {
-    portals: Portal[];
-    selectedPortal: Portal;
+    portals: PortalItem[];
+    selectedPortal: PortalItem;
     users: {
         data: UserItem[];
+        links?: { url: string | null; label: string; active: boolean }[];
+        current_page?: number;
+        last_page?: number;
+        total?: number;
     };
-    portalCredentials: Record<string, UserPortalCredential>;
+    portalCredentials: Record<string | number, UserPortalCredential>;
     departments: string[];
     filters: {
         portal_id: number;
@@ -3010,6 +3127,16 @@ interface MappingPortalViewProps {
         department: string;
         role: string;
     };
+}
+
+function getCsrfToken(): string {
+    if (typeof document === 'undefined') return '';
+    const meta = document.querySelector(
+        'meta[name="csrf-token"]',
+    ) as HTMLMetaElement | null;
+    if (meta?.content) return meta.content;
+    const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/);
+    return match ? decodeURIComponent(match[1]) : '';
 }
 
 export function MappingPortalView({
@@ -3057,23 +3184,36 @@ export function MappingPortalView({
         );
     };
 
-    const autoSaveRow = async (userId: number, hasAccess: boolean, credType: CredentialType, notes: string) => {
+    const autoSaveRow = async (
+        userId: number,
+        hasAccess: boolean,
+        credType: CredentialType,
+        notes?: string,
+        explicitNotesUpdate: boolean = false,
+    ) => {
         setRowStatus((prev) => ({ ...prev, [userId]: 'saving' }));
         try {
+            const csrfToken = getCsrfToken();
+            const payload: Record<string, unknown> = {
+                portal_id: selectedPortal.id,
+                user_id: userId,
+                has_access: hasAccess,
+                credential_type: credType,
+            };
+
+            if (explicitNotesUpdate) {
+                payload.notes = notes && notes.trim() !== '' ? notes.trim() : null;
+            }
+
             const response = await fetch('/admin/portals/mapping/save-row', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
-                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-XSRF-TOKEN': csrfToken,
+                    Accept: 'application/json',
                 },
-                body: JSON.stringify({
-                    portal_id: selectedPortal.id,
-                    user_id: userId,
-                    has_access: hasAccess,
-                    credential_type: credType,
-                    notes: notes || null,
-                }),
+                body: JSON.stringify(payload),
             });
 
             if (!response.ok) throw new Error('Gagal menyimpan perubahan');
@@ -3100,10 +3240,19 @@ export function MappingPortalView({
         };
 
         setAssignments((prev) => ({ ...prev, [userId]: updated }));
-        autoSaveRow(userId, updated.has_access, updated.credential_type, updated.notes);
+        autoSaveRow(
+            userId,
+            updated.has_access,
+            updated.credential_type,
+            updated.notes,
+            false,
+        );
     };
 
-    const handleCredentialTypeChange = (userId: number, type: CredentialType) => {
+    const handleCredentialTypeChange = (
+        userId: number,
+        type: CredentialType,
+    ) => {
         const current = assignments[userId] || {
             has_access: true,
             credential_type: 'use_shared',
@@ -3116,13 +3265,25 @@ export function MappingPortalView({
         };
 
         setAssignments((prev) => ({ ...prev, [userId]: updated }));
-        autoSaveRow(userId, updated.has_access, updated.credential_type, updated.notes);
+        autoSaveRow(
+            userId,
+            updated.has_access,
+            updated.credential_type,
+            updated.notes,
+            false,
+        );
     };
 
     const handleNotesBlur = (userId: number, notes: string) => {
         const current = assignments[userId];
         if (!current) return;
-        autoSaveRow(userId, current.has_access, current.credential_type, notes);
+        autoSaveRow(
+            userId,
+            current.has_access,
+            current.credential_type,
+            notes,
+            true,
+        );
     };
 
     const handleNotesChange = (userId: number, notes: string) => {
@@ -3312,6 +3473,7 @@ export function MappingPortalView({
                                             <Switch
                                                 checked={current.has_access}
                                                 onCheckedChange={(checked) => handleToggleUser(user.id, checked)}
+                                                disabled={status === 'saving'}
                                             />
                                         </td>
                                         <td className="px-4 py-3">
@@ -3334,7 +3496,7 @@ export function MappingPortalView({
                                                 onValueChange={(val) =>
                                                     handleCredentialTypeChange(user.id, val as CredentialType)
                                                 }
-                                                disabled={!current.has_access}
+                                                disabled={!current.has_access || status === 'saving'}
                                             >
                                                 <SelectTrigger className="h-8 text-xs w-[180px]">
                                                     <SelectValue />
@@ -3361,7 +3523,7 @@ export function MappingPortalView({
                                                 onChange={(e) => handleNotesChange(user.id, e.target.value)}
                                                 onBlur={(e) => handleNotesBlur(user.id, e.target.value)}
                                                 placeholder="Catatan..."
-                                                disabled={!current.has_access}
+                                                disabled={!current.has_access || status === 'saving'}
                                                 className="h-8 text-xs"
                                             />
                                         </td>
@@ -3394,6 +3556,12 @@ export function MappingPortalView({
                     </tbody>
                 </table>
             </div>
+
+            {users.links && users.links.length > 3 && (
+                <div className="rounded-xl border border-border overflow-hidden">
+                    <DataTablePagination links={users.links} />
+                </div>
+            )}
         </div>
     );
 }
@@ -3405,7 +3573,16 @@ Buat file `resources/js/components/portal/mapping-user-view.tsx`:
 
 ```tsx
 import { router } from '@inertiajs/react';
-import { AlertCircle, Check, CheckCircle2, CheckSquare, Globe, Loader2, UserCheck, XCircle } from 'lucide-react';
+import {
+    AlertCircle,
+    Check,
+    CheckCircle2,
+    CheckSquare,
+    Globe,
+    Loader2,
+    UserCheck,
+    XCircle,
+} from 'lucide-react';
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -3418,7 +3595,12 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import type { CredentialType, Portal, UserPortalCredential } from '@/types';
+import type {
+    CredentialType,
+    Portal,
+    PortalMappingSummary,
+    UserPortalCredential,
+} from '@/types';
 
 interface UserItem {
     id: number;
@@ -3429,68 +3611,123 @@ interface UserItem {
     dep_id: string | null;
 }
 
+type PortalItem = Portal | PortalMappingSummary;
+
 interface MappingUserViewProps {
-    portals: Portal[];
+    portals: PortalItem[];
     selectedUser: UserItem | null;
     users: {
         data: UserItem[];
     };
-    userCredentials: Record<string, UserPortalCredential>;
+    allUsers?: UserItem[];
+    userCredentials: Record<string | number, UserPortalCredential>;
+}
+
+function getCsrfToken(): string {
+    if (typeof document === 'undefined') return '';
+    const meta = document.querySelector(
+        'meta[name="csrf-token"]',
+    ) as HTMLMetaElement | null;
+    if (meta?.content) return meta.content;
+    const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/);
+    return match ? decodeURIComponent(match[1]) : '';
 }
 
 export function MappingUserView({
     portals,
     selectedUser,
     users,
+    allUsers,
     userCredentials,
 }: MappingUserViewProps) {
+    const availableUsers = allUsers && allUsers.length > 0 ? allUsers : users.data;
+    const [userSearchTerm, setUserSearchTerm] = useState('');
+
+    const filteredUsers = React.useMemo(() => {
+        if (!userSearchTerm.trim()) return availableUsers;
+        const q = userSearchTerm.toLowerCase();
+        return availableUsers.filter(
+            (u) =>
+                u.name.toLowerCase().includes(q) ||
+                (u.simrs_nik && u.simrs_nik.toLowerCase().includes(q)) ||
+                u.email.toLowerCase().includes(q) ||
+                (u.dep_id && u.dep_id.toLowerCase().includes(q)),
+        );
+    }, [availableUsers, userSearchTerm]);
     const [assignments, setAssignments] = useState<
-        Record<number, { has_access: boolean; credential_type: CredentialType; notes: string }>
+        Record<
+            number,
+            {
+                has_access: boolean;
+                credential_type: CredentialType;
+                notes: string;
+            }
+        >
     >(() => {
         const initial: Record<
             number,
-            { has_access: boolean; credential_type: CredentialType; notes: string }
+            {
+                has_access: boolean;
+                credential_type: CredentialType;
+                notes: string;
+            }
         > = {};
         portals.forEach((p) => {
             const cred = userCredentials[p.id];
             initial[p.id] = {
                 has_access: !!cred && cred.is_active,
-                credential_type: (cred?.credential_type || 'use_shared') as CredentialType,
+                credential_type: (cred?.credential_type ||
+                    'use_shared') as CredentialType,
                 notes: cred?.notes || '',
             };
         });
         return initial;
     });
 
-    const [rowStatus, setRowStatus] = useState<Record<number, 'idle' | 'saving' | 'saved' | 'error'>>({});
+    const [rowStatus, setRowStatus] = useState<
+        Record<number, 'idle' | 'saving' | 'saved' | 'error'>
+    >({});
     const [isBatchSaving, setIsBatchSaving] = useState(false);
 
     const handleSelectUser = (userId: string) => {
         router.get(
             '/admin/portals/mapping',
             { user_id: userId, view_mode: 'user' },
-            { preserveState: true }
+            { preserveState: true },
         );
     };
 
-    const autoSaveRow = async (portalId: number, hasAccess: boolean, credType: CredentialType, notes: string) => {
+    const autoSaveRow = async (
+        portalId: number,
+        hasAccess: boolean,
+        credType: CredentialType,
+        notes?: string,
+        explicitNotesUpdate: boolean = false,
+    ) => {
         if (!selectedUser) return;
         setRowStatus((prev) => ({ ...prev, [portalId]: 'saving' }));
         try {
+            const csrfToken = getCsrfToken();
+            const payload: Record<string, unknown> = {
+                portal_id: portalId,
+                user_id: selectedUser.id,
+                has_access: hasAccess,
+                credential_type: credType,
+            };
+
+            if (explicitNotesUpdate) {
+                payload.notes = notes && notes.trim() !== '' ? notes.trim() : null;
+            }
+
             const response = await fetch('/admin/portals/mapping/save-row', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
-                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-XSRF-TOKEN': csrfToken,
+                    Accept: 'application/json',
                 },
-                body: JSON.stringify({
-                    portal_id: portalId,
-                    user_id: selectedUser.id,
-                    has_access: hasAccess,
-                    credential_type: credType,
-                    notes: notes || null,
-                }),
+                body: JSON.stringify(payload),
             });
 
             if (!response.ok) throw new Error('Gagal menyimpan perubahan');
@@ -3517,10 +3754,19 @@ export function MappingUserView({
         };
 
         setAssignments((prev) => ({ ...prev, [portalId]: updated }));
-        autoSaveRow(portalId, updated.has_access, updated.credential_type, updated.notes);
+        autoSaveRow(
+            portalId,
+            updated.has_access,
+            updated.credential_type,
+            updated.notes,
+            false,
+        );
     };
 
-    const handleCredentialTypeChange = (portalId: number, type: CredentialType) => {
+    const handleCredentialTypeChange = (
+        portalId: number,
+        type: CredentialType,
+    ) => {
         const current = assignments[portalId] || {
             has_access: true,
             credential_type: 'use_shared',
@@ -3533,20 +3779,36 @@ export function MappingUserView({
         };
 
         setAssignments((prev) => ({ ...prev, [portalId]: updated }));
-        autoSaveRow(portalId, updated.has_access, updated.credential_type, updated.notes);
+        autoSaveRow(
+            portalId,
+            updated.has_access,
+            updated.credential_type,
+            updated.notes,
+            false,
+        );
     };
 
     const handleNotesBlur = (portalId: number, notes: string) => {
         const current = assignments[portalId];
         if (!current) return;
-        autoSaveRow(portalId, current.has_access, current.credential_type, notes);
+        autoSaveRow(
+            portalId,
+            current.has_access,
+            current.credential_type,
+            notes,
+            true,
+        );
     };
 
     const handleNotesChange = (portalId: number, notes: string) => {
         setAssignments((prev) => ({
             ...prev,
             [portalId]: {
-                ...prev[portalId],
+                ...(prev[portalId] || {
+                    has_access: false,
+                    credential_type: 'use_shared',
+                    notes: '',
+                }),
                 notes,
             },
         }));
@@ -3561,19 +3823,24 @@ export function MappingUserView({
             assignments: portals.map((p) => ({
                 portal_id: p.id,
                 has_access: hasAccess,
-                credential_type: assignments[p.id]?.credential_type || 'use_shared',
+                credential_type:
+                    assignments[p.id]?.credential_type || 'use_shared',
                 notes: assignments[p.id]?.notes || null,
             })),
         };
 
         router.post('/admin/portals/mapping/sync-user', payload, {
+            preserveScroll: true,
             onFinish: () => setIsBatchSaving(false),
             onSuccess: () => {
                 setAssignments((prev) => {
                     const next = { ...prev };
                     portals.forEach((p) => {
                         next[p.id] = {
-                            ...next[p.id],
+                            ...(next[p.id] || {
+                                notes: '',
+                                credential_type: 'use_shared',
+                            }),
                             has_access: hasAccess,
                         };
                     });
@@ -3586,35 +3853,66 @@ export function MappingUserView({
     return (
         <div className="space-y-5">
             {/* User Selector Header */}
-            <div className="p-4 rounded-xl border border-border bg-card flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col justify-between gap-4 rounded-xl border border-border bg-card p-4 md:flex-row md:items-center">
                 <div className="w-full md:w-96">
-                    <label className="text-xs font-semibold text-muted-foreground">Pilih Petugas Rumah Sakit</label>
-                    <Select
-                        value={selectedUser?.id?.toString() ?? ''}
-                        onValueChange={handleSelectUser}
-                    >
-                        <SelectTrigger className="mt-1">
-                            <SelectValue placeholder="-- Pilih Petugas --" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {users.data.map((u) => (
-                                <SelectItem key={u.id} value={u.id.toString()}>
-                                    {u.name} ({u.simrs_nik ? `NIK: ${u.simrs_nik}` : u.email})
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <label className="text-xs font-semibold text-muted-foreground">
+                        Pilih Petugas Rumah Sakit
+                    </label>
+                    <div className="mt-1 space-y-1.5">
+                        <Input
+                            placeholder="Cari nama / NIK / unit..."
+                            value={userSearchTerm}
+                            onChange={(e) => setUserSearchTerm(e.target.value)}
+                            className="h-8 text-xs"
+                            aria-label="Filter Petugas"
+                        />
+                        <Select
+                            value={selectedUser?.id?.toString() ?? ''}
+                            onValueChange={handleSelectUser}
+                        >
+                            <SelectTrigger
+                                className="h-9"
+                                aria-label="Pilih Petugas Rumah Sakit"
+                            >
+                                <SelectValue placeholder="-- Pilih Petugas --" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-72">
+                                {filteredUsers.length === 0 ? (
+                                    <div className="p-2 text-center text-xs text-muted-foreground">
+                                        Tidak ada petugas ditemukan
+                                    </div>
+                                ) : (
+                                    filteredUsers.map((u) => (
+                                        <SelectItem key={u.id} value={u.id.toString()}>
+                                            {u.name} (
+                                            {u.simrs_nik
+                                                ? `NIK: ${u.simrs_nik}`
+                                                : u.email}
+                                            {u.dep_id ? ` • ${u.dep_id}` : ''}
+                                            )
+                                        </SelectItem>
+                                    ))
+                                )}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
 
                 {selectedUser && (
                     <div className="flex items-center gap-3">
-                        <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                        <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                             <UserCheck className="size-5" />
                         </div>
                         <div>
-                            <div className="font-semibold text-foreground text-sm">{selectedUser.name}</div>
+                            <div className="text-sm font-semibold text-foreground">
+                                {selectedUser.name}
+                            </div>
                             <div className="text-xs text-muted-foreground">
-                                Role: <span className="capitalize">{selectedUser.role}</span> | Dept: {selectedUser.dep_id ?? '–'}
+                                Role:{' '}
+                                <span className="capitalize">
+                                    {selectedUser.role}
+                                </span>{' '}
+                                | Dept: {selectedUser.dep_id ?? '–'}
                             </div>
                         </div>
                     </div>
@@ -3624,18 +3922,22 @@ export function MappingUserView({
             {selectedUser ? (
                 <div className="space-y-4">
                     {/* Quick Action Toolbar */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-muted/30 border border-border rounded-xl">
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 p-3">
                         <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-xs font-medium text-muted-foreground mr-1">Aksi Cepat:</span>
+                            <span className="mr-1 text-xs font-medium text-muted-foreground">
+                                Aksi Cepat:
+                            </span>
                             <Button
                                 type="button"
                                 variant="outline"
                                 size="sm"
                                 disabled={isBatchSaving}
                                 onClick={() => handleBulkSetAccess(true)}
-                                className="text-xs gap-1.5 h-8"
+                                className="h-8 gap-1.5 text-xs"
+                                aria-label="Izinkan Semua Portal"
                             >
-                                <CheckSquare className="size-3.5 text-primary" /> Izinkan Semua Portal
+                                <CheckSquare className="size-3.5 text-primary" />{' '}
+                                Izinkan Semua Portal
                             </Button>
                             <Button
                                 type="button"
@@ -3643,28 +3945,36 @@ export function MappingUserView({
                                 size="sm"
                                 disabled={isBatchSaving}
                                 onClick={() => handleBulkSetAccess(false)}
-                                className="text-xs gap-1.5 h-8 text-destructive hover:bg-destructive/10"
+                                className="h-8 gap-1.5 text-xs text-destructive hover:bg-destructive/10"
+                                aria-label="Cabut Semua Portal"
                             >
-                                <XCircle className="size-3.5" /> Cabut Semua Portal
+                                <XCircle className="size-3.5" /> Cabut Semua
+                                Portal
                             </Button>
                         </div>
 
-                        <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <CheckCircle2 className="size-3.5 text-emerald-500" />
                             <span>Perubahan baris otomatis tersimpan</span>
                         </div>
                     </div>
 
-                    <div className="rounded-xl border border-border bg-card overflow-hidden">
+                    <div className="overflow-hidden rounded-xl border border-border bg-card">
                         <table className="w-full text-left text-sm">
-                            <thead className="bg-muted/50 border-b border-border text-xs uppercase text-muted-foreground font-semibold">
+                            <thead className="border-b border-border bg-muted/50 text-xs font-semibold uppercase text-muted-foreground">
                                 <tr>
-                                    <th className="px-4 py-3 w-16 text-center">Akses</th>
+                                    <th className="w-16 px-4 py-3 text-center">
+                                        Akses
+                                    </th>
                                     <th className="px-4 py-3">Portal Target</th>
                                     <th className="px-4 py-3">Kategori</th>
-                                    <th className="px-4 py-3">Tipe Kredensial</th>
+                                    <th className="px-4 py-3">
+                                        Tipe Kredensial
+                                    </th>
                                     <th className="px-4 py-3">Catatan Akses</th>
-                                    <th className="px-4 py-3 w-28 text-center">Status</th>
+                                    <th className="w-28 px-4 py-3 text-center">
+                                        Status
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
@@ -3676,11 +3986,14 @@ export function MappingUserView({
                                     };
 
                                     const supportsPersonal =
-                                        portal.auth_type === 'personal' || portal.auth_type === 'both';
+                                        portal.auth_type === 'personal' ||
+                                        portal.auth_type === 'both';
                                     const supportsShared =
-                                        portal.auth_type === 'shared' || portal.auth_type === 'both';
+                                        portal.auth_type === 'shared' ||
+                                        portal.auth_type === 'both';
 
-                                    const status = rowStatus[portal.id] || 'idle';
+                                    const status =
+                                        rowStatus[portal.id] || 'idle';
 
                                     return (
                                         <tr
@@ -3694,46 +4007,69 @@ export function MappingUserView({
                                             <td className="px-4 py-3 text-center">
                                                 <Switch
                                                     checked={current.has_access}
-                                                    onCheckedChange={(checked) => handleTogglePortal(portal.id, checked)}
+                                                    onCheckedChange={(
+                                                        checked,
+                                                    ) =>
+                                                        handleTogglePortal(
+                                                            portal.id,
+                                                            checked,
+                                                        )
+                                                    }
+                                                    aria-label={`Akses portal ${portal.name}`}
+                                                    disabled={status === 'saving'}
                                                 />
                                             </td>
                                             <td className="px-4 py-3">
-                                                <div className="font-medium text-foreground flex items-center gap-2">
+                                                <div className="flex items-center gap-2 font-medium text-foreground">
                                                     <Globe className="size-4 text-primary" />
                                                     <span>{portal.name}</span>
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3">
-                                                <Badge variant="outline" className="text-xs">
+                                                <Badge
+                                                    variant="outline"
+                                                    className="text-xs"
+                                                >
                                                     {portal.category}
                                                 </Badge>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <Select
-                                                    value={current.credential_type}
+                                                    value={
+                                                        current.credential_type
+                                                    }
                                                     onValueChange={(val) =>
                                                         handleCredentialTypeChange(
                                                             portal.id,
-                                                            val as CredentialType
+                                                            val as CredentialType,
                                                         )
                                                     }
-                                                    disabled={!current.has_access}
+                                                    disabled={
+                                                        !current.has_access || status === 'saving'
+                                                    }
                                                 >
-                                                    <SelectTrigger className="h-8 text-xs w-[180px]">
+                                                    <SelectTrigger
+                                                        className="h-8 w-[180px] text-xs"
+                                                        aria-label={`Tipe kredensial ${portal.name}`}
+                                                    >
                                                         <SelectValue />
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem
                                                             value="use_shared"
-                                                            disabled={!supportsShared}
+                                                            disabled={
+                                                                !supportsShared
+                                                            }
                                                         >
                                                             Akun Bersama RS
                                                         </SelectItem>
                                                         <SelectItem
                                                             value="personal"
-                                                            disabled={!supportsPersonal}
+                                                            disabled={
+                                                                !supportsPersonal
+                                                            }
                                                         >
-                                                            Akun Personal Staf
+                                                            Akun Pribadi Petugas
                                                         </SelectItem>
                                                     </SelectContent>
                                                 </Select>
@@ -3742,33 +4078,49 @@ export function MappingUserView({
                                                 <Input
                                                     value={current.notes}
                                                     onChange={(e) =>
-                                                        handleNotesChange(portal.id, e.target.value)
+                                                        handleNotesChange(
+                                                            portal.id,
+                                                            e.target.value,
+                                                        )
                                                     }
-                                                    onBlur={(e) => handleNotesBlur(portal.id, e.target.value)}
+                                                    onBlur={(e) =>
+                                                        handleNotesBlur(
+                                                            portal.id,
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                     placeholder="Catatan..."
-                                                    disabled={!current.has_access}
+                                                    aria-label={`Catatan akses ${portal.name}`}
+                                                    disabled={
+                                                        !current.has_access || status === 'saving'
+                                                    }
                                                     className="h-8 text-xs"
                                                 />
                                             </td>
                                             <td className="px-4 py-3 text-center">
                                                 {status === 'saving' && (
-                                                    <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
-                                                        <Loader2 className="size-3 animate-spin" /> Menyimpan...
+                                                    <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                                                        <Loader2 className="size-3 animate-spin" />{' '}
+                                                        Menyimpan...
                                                     </span>
                                                 )}
                                                 {status === 'saved' && (
-                                                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1 font-medium">
-                                                        <Check className="size-3" /> Tersimpan
+                                                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                                                        <Check className="size-3" />{' '}
+                                                        Tersimpan
                                                     </span>
                                                 )}
                                                 {status === 'error' && (
-                                                    <span className="text-[11px] text-destructive inline-flex items-center gap-1 font-medium">
-                                                        <AlertCircle className="size-3" /> Gagal
+                                                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-destructive">
+                                                        <AlertCircle className="size-3" />{' '}
+                                                        Gagal
                                                     </span>
                                                 )}
                                                 {status === 'idle' && (
                                                     <span className="text-[11px] text-muted-foreground/60">
-                                                        {current.has_access ? 'Aktif' : 'Nonaktif'}
+                                                        {current.has_access
+                                                            ? 'Aktif'
+                                                            : 'Nonaktif'}
                                                     </span>
                                                 )}
                                             </td>
@@ -3780,8 +4132,9 @@ export function MappingUserView({
                     </div>
                 </div>
             ) : (
-                <div className="p-12 text-center rounded-xl border border-dashed border-border text-muted-foreground text-sm">
-                    Pilih salah satu petugas pada menu di atas untuk menampilkan daftar izin portal.
+                <div className="rounded-xl border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
+                    Pilih salah satu petugas pada menu di atas untuk menampilkan
+                    daftar izin portal.
                 </div>
             )}
         </div>
@@ -3802,7 +4155,12 @@ import { MappingUserView } from '@/components/portal/mapping-user-view';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
-import type { BreadcrumbItem, Portal, UserPortalCredential } from '@/types';
+import type {
+    BreadcrumbItem,
+    Portal,
+    PortalMappingSummary,
+    UserPortalCredential,
+} from '@/types';
 
 interface UserItem {
     id: number;
@@ -3813,17 +4171,24 @@ interface UserItem {
     dep_id: string | null;
 }
 
+type PortalItem = Portal | PortalMappingSummary;
+
 interface Props {
     view_mode: 'portal' | 'user';
-    portals: Portal[];
-    selected_portal: Portal | null;
+    portals: PortalItem[];
+    selected_portal: PortalItem | null;
     selected_user: UserItem | null;
     users: {
         data: UserItem[];
+        links?: { url: string | null; label: string; active: boolean }[];
+        current_page?: number;
+        last_page?: number;
+        total?: number;
     };
-    portal_credentials: Record<string, UserPortalCredential>;
-    user_credentials: Record<string, UserPortalCredential>;
+    portal_credentials: Record<string | number, UserPortalCredential>;
+    user_credentials: Record<string | number, UserPortalCredential>;
     departments: string[];
+    all_users?: UserItem[];
     filters: {
         portal_id: number;
         user_id: number;
@@ -3848,13 +4213,14 @@ export default function AdminPortalsMapping({
     portal_credentials,
     user_credentials,
     departments,
+    all_users,
     filters,
 }: Props) {
     const handleTabChange = (mode: string) => {
         router.get(
             '/admin/portals/mapping',
             { ...filters, view_mode: mode },
-            { preserveState: true }
+            { preserveState: true },
         );
     };
 
@@ -3863,37 +4229,43 @@ export default function AdminPortalsMapping({
             <Head title="Mapping Akses Portal Pelaporan" />
 
             <div className="flex flex-col gap-5">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                        <h1 className="flex items-center gap-2 text-xl font-bold tracking-tight text-foreground">
                             <ShieldCheck className="size-6 text-primary" />
                             Mapping Hak Akses Portal Pelaporan
                         </h1>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Atur otorisasi petugas rumah sakit ke portal eksternal dan tentukan penggunaan akun bersama atau akun personal.
+                        <p className="mt-1 text-xs text-muted-foreground">
+                            Atur otorisasi petugas rumah sakit ke portal
+                            eksternal dan tentukan penggunaan akun bersama atau
+                            akun personal.
                         </p>
                     </div>
 
                     <Button asChild variant="outline" className="gap-2">
                         <Link href="/admin/portals">
-                            <ArrowLeft className="size-4" /> Kembali ke Master Portal
+                            <ArrowLeft className="size-4" /> Kembali ke Master
+                            Portal
                         </Link>
                     </Button>
                 </div>
 
                 <Tabs value={view_mode} onValueChange={handleTabChange}>
                     <TabsList className="h-10">
-                        <TabsTrigger value="portal" className="text-xs gap-2">
-                            <Globe className="size-4" /> Matriks Berdasarkan Portal
+                        <TabsTrigger value="portal" className="gap-2 text-xs">
+                            <Globe className="size-4" /> Matriks Berdasarkan
+                            Portal
                         </TabsTrigger>
-                        <TabsTrigger value="user" className="text-xs gap-2">
-                            <Users className="size-4" /> Matriks Berdasarkan Petugas
+                        <TabsTrigger value="user" className="gap-2 text-xs">
+                            <Users className="size-4" /> Matriks Berdasarkan
+                            Petugas
                         </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="portal" className="mt-4">
                         {selected_portal ? (
                             <MappingPortalView
+                                key={`portal-${selected_portal.id}-${filters.department || ''}-${filters.search || ''}`}
                                 portals={portals}
                                 selectedPortal={selected_portal}
                                 users={users}
@@ -3903,16 +4275,19 @@ export default function AdminPortalsMapping({
                             />
                         ) : (
                             <div className="p-8 text-center text-muted-foreground">
-                                Belum ada master portal yang aktif. Silakan tambahkan portal terlebih dahulu.
+                                Belum ada master portal yang aktif. Silakan
+                                tambahkan portal terlebih dahulu.
                             </div>
                         )}
                     </TabsContent>
 
                     <TabsContent value="user" className="mt-4">
                         <MappingUserView
+                            key={`user-${selected_user?.id ?? 'none'}`}
                             portals={portals}
                             selectedUser={selected_user}
                             users={users}
+                            allUsers={all_users || users.data}
                             userCredentials={user_credentials}
                         />
                     </TabsContent>
@@ -3943,15 +4318,17 @@ git commit -m "feat(portal): add access mapping matrix UI views"
 - Test: `tests/Feature/PortalPelaporan/AdminPortalControllerTest.php`
 - Test: `tests/Feature/PortalPelaporan/AdminPortalMappingControllerTest.php`
 - Test: `tests/Feature/PortalPelaporan/PortalInertiaPropsTest.php`
+- Test: `tests/Feature/PortalPelaporan/AdminPortalMappingServiceTest.php`
+- Test: `tests/Feature/PortalPelaporan/AdminPortalServiceTest.php`
 
 **Interfaces:**
-- Consumes: Seluruh modul Plan 1 dan Plan 2.
-- Produces: Seluruh test Pest hijau (100% passing), clean TypeScript check, dan clean Vite asset bundle build.
+- Consumes: Seluruh modul Plan 1 dan Plan 2 beserta pengerasan hasil Code Review.
+- Produces: Seluruh test Pest hijau (100% passing: 60 test, 307 assertions), clean TypeScript check (`tsc --noEmit`), dan clean Vite asset bundle build.
 
 - [x] **Step 1: Run complete Pest test suite for PortalPelaporan**
 
 Run: `php artisan test tests/Feature/PortalPelaporan`  
-Expected: PASS untuk seluruh pengujian (27 test dari Plan 1 + 14 test dari Plan 2 = 41 passing tests).
+Expected: PASS untuk seluruh pengujian (27 test dari Plan 1 + 33 test dari Plan 2 = 60 passing tests, 307 assertions).
 
 - [x] **Step 2: Run TypeScript static verification**
 
@@ -3969,3 +4346,22 @@ Expected: Production build completes successfully without missing imports or ass
 git add docs/superpowers/plans/2026-09-10-portal-eksternal-plan-2-admin-modul.md
 git commit -m "docs(portal): complete implementation plan 2 for admin module and mapping matrix"
 ```
+
+---
+
+### Code Review Hardening Summary & Architectural Improvements
+
+Berdasarkan audit independen oleh Senior Code Reviewer, implementasi Plan 2 telah diperkuat dengan poin-poin arsitektural berikut:
+1. **Explicit Note Clearing vs Preservation**:
+   - `AdminPortalMappingService::saveSingleAssignment` menerima parameter `?bool $updateNotes = null`.
+   - Toggle switch / perubahan dropdown tipe akun hanya mengirim `portal_id`, `user_id`, `has_access`, `credential_type` tanpa key `notes` (sehingga catatan existing dipertahankan).
+   - Event blur pada input catatan mengirim `notes` secara eksplisit, memungkinkan pengosongan catatan di database ketika petugas menghapus teksnya.
+2. **Hospital Staff Reachability (>50 Users)**:
+   - `AdminPortalMappingService::getMappingData` menyertakan `all_users` (seluruh staf aktif unpaginated) untuk dropdown `MappingUserView`.
+   - `mapping-user-view.tsx` dilengkapi live client-side search input `userSearchTerm` (filter nama, NIK, email, departemen) agar staf urutan >50 tetap dapat dipilih dan dikonfigurasi.
+3. **DataTablePagination Reusability**:
+   - `mapping-portal-view.tsx` menggunakan komponen `DataTablePagination` bawaan project dengan link Inertia untuk navigasi halaman user.
+4. **Accessible Confirmation Dialog**:
+   - Menghapus pemanggilan native blocking `window.confirm()` pada `index.tsx`, digantikan oleh komponen `ConfirmDialog` yang accessible dengan keyboard trap dan ARIA dialog.
+5. **Defense-in-Depth Route Authorization**:
+   - Menambahkan middleware perimeter `can:manage,App\Models\Portal` langsung pada group `Route::prefix('admin/portals')` di `routes/web.php` sebagai proteksi lapis luar, melengkapi otorisasi level controller `$this->authorize('manage', Portal::class)`.
