@@ -84,6 +84,59 @@ it('allows admin to render mapping page with portals and users', function (): vo
         );
 });
 
+it('allows admin to render mapping page without initial portal selection (selected_portal is null)', function (): void {
+    $this->actingAs($this->admin)
+        ->get(route('admin.portals.mapping.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('admin/portals/mapping')
+            ->has('portals')
+            ->where('selected_portal', null)
+            ->where('view_mode', 'portal')
+        );
+});
+
+it('allows admin to filter users by search term', function (): void {
+    $userA = User::factory()->create([
+        'name' => 'Budi Santoso UniqueMappingSearch',
+        'email' => 'budi.santoso.unique@rsasf.co.id',
+        'simrs_nik' => 'NIK-889911',
+    ]);
+    $userB = User::factory()->create([
+        'name' => 'Dewi Lestari UniqueMappingSearch',
+        'email' => 'dewi.lestari.unique@rsasf.co.id',
+        'simrs_nik' => 'NIK-334455',
+    ]);
+
+    // Search by name
+    $this->actingAs($this->admin)
+        ->get(route('admin.portals.mapping.index', [
+            'portal_id' => $this->portal1->id,
+            'search' => 'Budi Santoso UniqueMappingSearch',
+        ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('admin/portals/mapping')
+            ->where('filters.search', 'Budi Santoso UniqueMappingSearch')
+            ->has('users.data', 1)
+            ->where('users.data.0.id', $userA->id)
+        );
+
+    // Search by NIK
+    $this->actingAs($this->admin)
+        ->get(route('admin.portals.mapping.index', [
+            'portal_id' => $this->portal1->id,
+            'search' => 'NIK-334455',
+        ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('admin/portals/mapping')
+            ->where('filters.search', 'NIK-334455')
+            ->has('users.data', 1)
+            ->where('users.data.0.id', $userB->id)
+        );
+});
+
 it('allows admin to sync multiple users for a portal (syncPortal)', function (): void {
     $userA = User::factory()->create(['name' => 'Petugas A']);
     $userB = User::factory()->create(['name' => 'Petugas B']);

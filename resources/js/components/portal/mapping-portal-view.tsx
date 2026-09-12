@@ -7,9 +7,10 @@ import {
     Loader2,
     Search,
     Users,
+    X,
     XCircle,
 } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -42,7 +43,7 @@ type PortalItem = Portal | PortalMappingSummary;
 
 interface MappingPortalViewProps {
     portals: PortalItem[];
-    selectedPortal: PortalItem;
+    selectedPortal: PortalItem | null;
     users: {
         data: UserItem[];
         links?: { url: string | null; label: string; active: boolean }[];
@@ -78,7 +79,7 @@ export function MappingPortalView({
     departments,
     filters,
 }: MappingPortalViewProps) {
-    const [assignments, setAssignments] = useState<
+    const [localAssignments, setLocalAssignments] = useState<
         Record<
             number,
             {
@@ -87,49 +88,229 @@ export function MappingPortalView({
                 notes: string;
             }
         >
-    >(() => {
-        const initial: Record<
-            number,
-            {
-                has_access: boolean;
-                credential_type: CredentialType;
-                notes: string;
+    >({});
+
+    const getAssignment = useCallback(
+        (userId: number) => {
+            if (localAssignments[userId]) {
+                return localAssignments[userId];
             }
-        > = {};
-        users.data.forEach((u) => {
-            const cred = portalCredentials[u.id];
-            initial[u.id] = {
+            const cred = portalCredentials[userId];
+            return {
                 has_access: !!cred && cred.is_active,
                 credential_type: (cred?.credential_type ||
                     'use_shared') as CredentialType,
                 notes: cred?.notes || '',
             };
-        });
-        return initial;
-    });
+        },
+        [localAssignments, portalCredentials],
+    );
 
     const [rowStatus, setRowStatus] = useState<
         Record<number, 'idle' | 'saving' | 'saved' | 'error'>
     >({});
     const [isBatchSaving, setIsBatchSaving] = useState(false);
 
-    const handleSelectPortal = (portalId: string) => {
+    // Search state & debounced request
+    const [searchTerm, setSearchTerm] = useState(filters.search || '');
+    const [prevFilterSearch, setPrevFilterSearch] = useState(filters.search);
+    if (filters.search !== prevFilterSearch) {
+        setPrevFilterSearch(filters.search);
+        setSearchTerm(filters.search || '');
+    }
+
+    // Optimistic dropdown states for instant UI feedback
+    const [selectedPortalId, setSelectedPortalId] = useState(
+        selectedPortal?.id ? selectedPortal.id.toString() : '',
+    );
+    const [prevSelectedPortalProp, setPrevSelectedPortalProp] = useState(
+        selectedPortal?.id ? selectedPortal.id.toString() : '',
+    );
+    const currentPortalPropId = selectedPortal?.id
+        ? selectedPortal.id.toString()
+        : '';
+    if (currentPortalPropId !== prevSelectedPortalProp) {
+        setPrevSelectedPortalProp(currentPortalPropId);
+        setSelectedPortalId(currentPortalPropId);
+    }
+
+    const [selectedDepartment, setSelectedDepartment] = useState(
+        filters.department || '_all',
+    );
+    const [prevDepartmentProp, setPrevDepartmentProp] = useState(
+        filters.department || '_all',
+    );
+    if ((filters.department || '_all') !== prevDepartmentProp) {
+        setPrevDepartmentProp(filters.department || '_all');
+        setSelectedDepartment(filters.department || '_all');
+    }
+
+    const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (searchTimeoutRef.current) {
+                clearTimeout(searchTimeoutRef.current);
+            }
+        };
+    }, []);
+
+    const buildFilteredParams = useCallback(
+        (
+            overrides: {
+                portal_id?: string | number;
+                department?: string;
+                search?: string;
+                role?: string;
+                page?: number;
+                [key: string]: string | number | undefined;
+            } = {},
+        ) => {
+            const pId =
+                overrides.portal_id !== undefined
+                    ? overrides.portal_id
+                    : selectedPortalId;
+            const dept =
+                overrides.department !== undefined
+                    ? overrides.department
+                    : selectedDepartment;
+            const qSearch =
+                overrides.search !== undefined ? overrides.search : searchTerm;
+            const roleVal =
+                overrides.role !== undefined
+                    ? overrides.role
+                    : filters.role || '';
+
+            const params: Record<string, string | number> = {};
+            if (
+                pId &&
+                pId !== '' &&
+                pId !== '_none' &&
+                pId !== 0 &&
+                pId !== '0'
+            ) {
+                params.portal_id = pId;
+            }
+            if (dept && dept !== '_all' && dept.trim() !== '') {
+                params.department = dept.trim();
+            }
+            if (
+                roleVal &&
+                roleVal !== '_all' &&
+                String(roleVal).trim() !== ''
+            ) {
+                params.role = String(roleVal).trim();
+            }
+            if (qSearch && qSearch.trim() !== '') {
+                params.search = qSearch.trim();
+            }
+            if (overrides.page && Number(overrides.page) > 1) {
+                params.page = overrides.page;
+            }
+            return params;
+        },
+        [selectedPortalId, selectedDepartment, searchTerm, filters.role],
+    );
+
+    const triggerSearchRequest = useCallback(
+        (query: string) => {
+            const trimmed = query.trim();
+            if (trimmed === (filters.search || '').trim()) return;
+
+            router.get(
+                '/admin/portals/mapping',
+                buildFilteredParams({ search: trimmed }),
+                {
+                    preserveState: true,
+                    preserveScroll: true,
+                    replace: true,
+                },
+            );
+        },
+        [filters.search, buildFilteredParams],
+    );
+
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setSearchTerm(val);
+
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current);
+        }
+
+        searchTimeoutRef.current = setTimeout(() => {
+            triggerSearchRequest(val);
+        }, 400);
+    };
+
+    const handleSearchKeyDown = (
+        e: React.KeyboardEvent<HTMLInputElement>,
+    ) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (searchTimeoutRef.current) {
+                clearTimeout(searchTimeoutRef.current);
+            }
+            triggerSearchRequest(searchTerm);
+        }
+    };
+
+    const handleClearSearch = () => {
+        setSearchTerm('');
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current);
+        }
+        if (!(filters.search || '')) return;
+
         router.get(
             '/admin/portals/mapping',
-            { ...filters, portal_id: portalId, view_mode: 'portal' },
-            { preserveState: true },
+            buildFilteredParams({ search: '' }),
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            },
+        );
+    };
+
+    const handleSelectPortal = (portalId: string) => {
+        if (!portalId || portalId === '_none') {
+            setSelectedPortalId('');
+            router.get(
+                '/admin/portals/mapping',
+                buildFilteredParams({ portal_id: '' }),
+                {
+                    preserveState: true,
+                    preserveScroll: true,
+                    replace: true,
+                },
+            );
+            return;
+        }
+        setSelectedPortalId(portalId);
+        router.get(
+            '/admin/portals/mapping',
+            buildFilteredParams({ portal_id: portalId }),
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            },
         );
     };
 
     const handleFilterChange = (key: string, value: string) => {
+        if (key === 'department') {
+            setSelectedDepartment(value);
+        }
         router.get(
             '/admin/portals/mapping',
+            buildFilteredParams({ [key]: value }),
             {
-                ...filters,
-                [key]: value === '_all' ? '' : value,
-                view_mode: 'portal',
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
             },
-            { preserveState: true },
         );
     };
 
@@ -140,6 +321,7 @@ export function MappingPortalView({
         notes?: string,
         explicitNotesUpdate: boolean = false,
     ) => {
+        if (!selectedPortal) return;
         setRowStatus((prev) => ({ ...prev, [userId]: 'saving' }));
         try {
             const csrfToken = getCsrfToken();
@@ -177,18 +359,13 @@ export function MappingPortalView({
     };
 
     const handleToggleUser = (userId: number, checked: boolean) => {
-        const current = assignments[userId] || {
-            has_access: false,
-            credential_type: 'use_shared',
-            notes: '',
-        };
-
+        const current = getAssignment(userId);
         const updated = {
             ...current,
             has_access: checked,
         };
 
-        setAssignments((prev) => ({ ...prev, [userId]: updated }));
+        setLocalAssignments((prev) => ({ ...prev, [userId]: updated }));
         autoSaveRow(
             userId,
             updated.has_access,
@@ -202,18 +379,13 @@ export function MappingPortalView({
         userId: number,
         type: CredentialType,
     ) => {
-        const current = assignments[userId] || {
-            has_access: true,
-            credential_type: 'use_shared',
-            notes: '',
-        };
-
+        const current = getAssignment(userId);
         const updated = {
             ...current,
             credential_type: type,
         };
 
-        setAssignments((prev) => ({ ...prev, [userId]: updated }));
+        setLocalAssignments((prev) => ({ ...prev, [userId]: updated }));
         autoSaveRow(
             userId,
             updated.has_access,
@@ -224,8 +396,7 @@ export function MappingPortalView({
     };
 
     const handleNotesBlur = (userId: number, notes: string) => {
-        const current = assignments[userId];
-        if (!current) return;
+        const current = getAssignment(userId);
         autoSaveRow(
             userId,
             current.has_access,
@@ -236,14 +407,11 @@ export function MappingPortalView({
     };
 
     const handleNotesChange = (userId: number, notes: string) => {
-        setAssignments((prev) => ({
+        const current = getAssignment(userId);
+        setLocalAssignments((prev) => ({
             ...prev,
             [userId]: {
-                ...(prev[userId] || {
-                    has_access: false,
-                    credential_type: 'use_shared',
-                    notes: '',
-                }),
+                ...current,
                 notes,
             },
         }));
@@ -253,6 +421,7 @@ export function MappingPortalView({
         hasAccess: boolean,
         defaultType: CredentialType = 'use_shared',
     ) => {
+        if (!selectedPortal) return;
         setIsBatchSaving(true);
         const payload = {
             portal_id: selectedPortal.id,
@@ -260,7 +429,7 @@ export function MappingPortalView({
                 user_id: u.id,
                 has_access: hasAccess,
                 credential_type: defaultType,
-                notes: assignments[u.id]?.notes || null,
+                notes: getAssignment(u.id).notes || null,
             })),
         };
 
@@ -268,27 +437,32 @@ export function MappingPortalView({
             preserveScroll: true,
             onFinish: () => setIsBatchSaving(false),
             onSuccess: () => {
-                setAssignments((prev) => {
-                    const next = { ...prev };
-                    users.data.forEach((u) => {
-                        next[u.id] = {
-                            ...(next[u.id] || { notes: '' }),
-                            has_access: hasAccess,
-                            credential_type: defaultType,
-                        };
-                    });
-                    return next;
+                const next: Record<
+                    number,
+                    {
+                        has_access: boolean;
+                        credential_type: CredentialType;
+                        notes: string;
+                    }
+                > = {};
+                users.data.forEach((u) => {
+                    next[u.id] = {
+                        notes: getAssignment(u.id).notes,
+                        has_access: hasAccess,
+                        credential_type: defaultType,
+                    };
                 });
+                setLocalAssignments(next);
             },
         });
     };
 
     const supportsPersonal =
-        selectedPortal.auth_type === 'personal' ||
-        selectedPortal.auth_type === 'both';
+        selectedPortal?.auth_type === 'personal' ||
+        selectedPortal?.auth_type === 'both';
     const supportsShared =
-        selectedPortal.auth_type === 'shared' ||
-        selectedPortal.auth_type === 'both';
+        selectedPortal?.auth_type === 'shared' ||
+        selectedPortal?.auth_type === 'both';
 
     return (
         <div className="space-y-5">
@@ -299,16 +473,19 @@ export function MappingPortalView({
                         Pilih Portal Target
                     </label>
                     <Select
-                        value={selectedPortal.id.toString()}
+                        value={selectedPortalId}
                         onValueChange={handleSelectPortal}
                     >
                         <SelectTrigger
-                            className="mt-1"
+                            className="mt-1 text-xs"
                             aria-label="Pilih Portal Target"
                         >
-                            <SelectValue placeholder="Pilih Portal" />
+                            <SelectValue placeholder="-- Pilih Portal --" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="max-h-72">
+                            <SelectItem value="_none">
+                                -- Pilih Portal --
+                            </SelectItem>
                             {portals.map((p) => (
                                 <SelectItem key={p.id} value={p.id.toString()}>
                                     {p.name} ({p.category})
@@ -323,13 +500,14 @@ export function MappingPortalView({
                         Filter Departemen
                     </label>
                     <Select
-                        value={filters.department || '_all'}
+                        value={selectedDepartment}
                         onValueChange={(v) =>
                             handleFilterChange('department', v)
                         }
+                        disabled={!selectedPortal}
                     >
                         <SelectTrigger
-                            className="mt-1"
+                            className="mt-1 text-xs"
                             aria-label="Filter Departemen"
                         >
                             <SelectValue placeholder="Semua Departemen" />
@@ -356,17 +534,29 @@ export function MappingPortalView({
                         <Input
                             placeholder="Ketik nama atau NIK petugas..."
                             aria-label="Cari Nama atau NIK Petugas"
-                            value={filters.search}
-                            onChange={(e) =>
-                                handleFilterChange('search', e.target.value)
-                            }
-                            className="pl-9"
+                            value={searchTerm}
+                            onChange={handleSearchChange}
+                            onKeyDown={handleSearchKeyDown}
+                            disabled={!selectedPortal}
+                            className="pl-9 pr-8 text-xs"
                         />
+                        {searchTerm && (
+                            <button
+                                type="button"
+                                onClick={handleClearSearch}
+                                className="absolute top-1/2 right-2.5 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                                aria-label="Hapus pencarian"
+                            >
+                                <X className="size-4" />
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
 
-            {/* Bulk Toolbar */}
+            {selectedPortal ? (
+                <div className="space-y-4">
+                    {/* Bulk Toolbar */}
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 p-3">
                 <div className="flex flex-wrap items-center gap-2">
                     <span className="mr-1 text-xs font-medium text-muted-foreground">
@@ -453,12 +643,7 @@ export function MappingPortalView({
                             </tr>
                         ) : (
                             users.data.map((user) => {
-                                const current = assignments[user.id] || {
-                                    has_access: false,
-                                    credential_type: 'use_shared',
-                                    notes: '',
-                                };
-
+                                const current = getAssignment(user.id);
                                 const status = rowStatus[user.id] || 'idle';
 
                                 return (
@@ -602,6 +787,13 @@ export function MappingPortalView({
             {users.links && users.links.length > 3 && (
                 <div className="rounded-xl border border-border overflow-hidden">
                     <DataTablePagination links={users.links} />
+                </div>
+            )}
+                </div>
+            ) : (
+                <div className="rounded-xl border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
+                    Pilih salah satu portal pada menu di atas untuk menampilkan
+                    daftar hak akses petugas.
                 </div>
             )}
         </div>

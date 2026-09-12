@@ -6,7 +6,9 @@ import {
     CheckSquare,
     Globe,
     Loader2,
+    Search,
     UserCheck,
+    X,
     XCircle,
 } from 'lucide-react';
 import React, { useState } from 'react';
@@ -115,11 +117,32 @@ export function MappingUserView({
     >({});
     const [isBatchSaving, setIsBatchSaving] = useState(false);
 
+    const [selectedUserId, setSelectedUserId] = useState(
+        selectedUser?.id?.toString() ?? '',
+    );
+    const [prevSelectedUserProp, setPrevSelectedUserProp] = useState(
+        selectedUser?.id?.toString() ?? '',
+    );
+    if ((selectedUser?.id?.toString() ?? '') !== prevSelectedUserProp) {
+        setPrevSelectedUserProp(selectedUser?.id?.toString() ?? '');
+        setSelectedUserId(selectedUser?.id?.toString() ?? '');
+    }
+
     const handleSelectUser = (userId: string) => {
+        if (!userId || userId === '_none') {
+            setSelectedUserId('');
+            router.get(
+                '/admin/portals/mapping',
+                { view_mode: 'user' },
+                { preserveState: true, preserveScroll: true, replace: true },
+            );
+            return;
+        }
+        setSelectedUserId(userId);
         router.get(
             '/admin/portals/mapping',
             { user_id: userId, view_mode: 'user' },
-            { preserveState: true },
+            { preserveState: true, preserveScroll: true, replace: true },
         );
     };
 
@@ -279,30 +302,26 @@ export function MappingUserView({
     return (
         <div className="space-y-5">
             {/* User Selector Header */}
-            <div className="flex flex-col justify-between gap-4 rounded-xl border border-border bg-card p-4 md:flex-row md:items-center">
-                <div className="w-full md:w-96">
-                    <label className="text-xs font-semibold text-muted-foreground">
-                        Pilih Petugas Rumah Sakit
-                    </label>
-                    <div className="mt-1 space-y-1.5">
-                        <Input
-                            placeholder="Cari nama / NIK / unit..."
-                            value={userSearchTerm}
-                            onChange={(e) => setUserSearchTerm(e.target.value)}
-                            className="h-8 text-xs"
-                            aria-label="Filter Petugas"
-                        />
+            <div className="flex flex-col justify-between gap-4 rounded-xl border border-border bg-card p-4 lg:flex-row lg:items-center">
+                <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+                    <div className="w-full sm:w-72 md:w-80">
+                        <label className="mb-1 block text-xs font-semibold text-muted-foreground">
+                            Pilih Petugas Target
+                        </label>
                         <Select
-                            value={selectedUser?.id?.toString() ?? ''}
+                            value={selectedUserId}
                             onValueChange={handleSelectUser}
                         >
                             <SelectTrigger
-                                className="h-9"
+                                className="h-9 text-xs"
                                 aria-label="Pilih Petugas Rumah Sakit"
                             >
                                 <SelectValue placeholder="-- Pilih Petugas --" />
                             </SelectTrigger>
                             <SelectContent className="max-h-72">
+                                <SelectItem value="_none">
+                                    -- Pilih Petugas --
+                                </SelectItem>
                                 {filteredUsers.length === 0 ? (
                                     <div className="p-2 text-center text-xs text-muted-foreground">
                                         Tidak ada petugas ditemukan
@@ -321,6 +340,32 @@ export function MappingUserView({
                                 )}
                             </SelectContent>
                         </Select>
+                    </div>
+
+                    <div className="w-full sm:w-64 md:w-72">
+                        <label className="mb-1 block text-xs font-semibold text-muted-foreground">
+                            Cari Petugas
+                        </label>
+                        <div className="relative">
+                            <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                                placeholder="Ketik nama, NIK, unit..."
+                                value={userSearchTerm}
+                                onChange={(e) => setUserSearchTerm(e.target.value)}
+                                className="h-9 pl-8 pr-7 text-xs"
+                                aria-label="Filter Petugas"
+                            />
+                            {userSearchTerm && (
+                                <button
+                                    type="button"
+                                    onClick={() => setUserSearchTerm('')}
+                                    className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                                    aria-label="Hapus filter pencarian petugas"
+                                >
+                                    <X className="size-3.5" />
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
 

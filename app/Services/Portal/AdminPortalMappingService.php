@@ -48,8 +48,10 @@ class AdminPortalMappingService
             ->orderBy('dep_id')
             ->pluck('dep_id');
 
-        $targetPortalId = $selectedPortalId ?? $portals->first()?->id ?? 0;
-        $selectedPortal = $portals->firstWhere('id', $targetPortalId) ?? $portals->first();
+        $selectedPortal = ($selectedPortalId && $selectedPortalId > 0)
+            ? ($portals->firstWhere('id', $selectedPortalId) ?? null)
+            : null;
+        $targetPortalId = $selectedPortal?->id ?? 0;
 
         $selectedUser = ($selectedUserId && $selectedUserId > 0) ? User::find($selectedUserId) : null;
 

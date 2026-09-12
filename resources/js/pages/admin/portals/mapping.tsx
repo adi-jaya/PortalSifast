@@ -68,11 +68,33 @@ export default function AdminPortalsMapping({
     filters,
 }: Props) {
     const handleTabChange = (mode: string) => {
-        router.get(
-            '/admin/portals/mapping',
-            { ...filters, view_mode: mode },
-            { preserveState: true },
-        );
+        if (mode === 'user') {
+            const params: Record<string, string | number> = { view_mode: 'user' };
+            if (selected_user?.id) {
+                params.user_id = selected_user.id;
+            }
+            router.get('/admin/portals/mapping', params, {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            });
+        } else {
+            const params: Record<string, string | number> = {};
+            if (selected_portal?.id) {
+                params.portal_id = selected_portal.id;
+            }
+            if (filters.department && filters.department !== '_all') {
+                params.department = filters.department;
+            }
+            if (filters.search && filters.search.trim() !== '') {
+                params.search = filters.search.trim();
+            }
+            router.get('/admin/portals/mapping', params, {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            });
+        }
     };
 
     return (
@@ -114,9 +136,14 @@ export default function AdminPortalsMapping({
                     </TabsList>
 
                     <TabsContent value="portal" className="mt-4">
-                        {selected_portal ? (
+                        {portals.length === 0 ? (
+                            <div className="rounded-xl border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
+                                Belum ada master portal yang aktif. Silakan
+                                tambahkan portal terlebih dahulu.
+                            </div>
+                        ) : (
                             <MappingPortalView
-                                key={`portal-${selected_portal.id}-${filters.department || ''}-${filters.search || ''}`}
+                                key={`portal-${selected_portal?.id ?? 'none'}`}
                                 portals={portals}
                                 selectedPortal={selected_portal}
                                 users={users}
@@ -124,11 +151,6 @@ export default function AdminPortalsMapping({
                                 departments={departments}
                                 filters={filters}
                             />
-                        ) : (
-                            <div className="p-8 text-center text-muted-foreground">
-                                Belum ada master portal yang aktif. Silakan
-                                tambahkan portal terlebih dahulu.
-                            </div>
                         )}
                     </TabsContent>
 
