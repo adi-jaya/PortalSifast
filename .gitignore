@@ -30,3 +30,5 @@ yarn-error.log
 .claude
 .cursor
 .superpowers
+.agents
+skills-lock.json
