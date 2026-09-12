@@ -39,6 +39,7 @@ interface Props {
     portal_credentials: Record<string | number, UserPortalCredential>;
     user_credentials: Record<string | number, UserPortalCredential>;
     departments: string[];
+    all_users?: UserItem[];
     filters: {
         portal_id: number;
         user_id: number;
@@ -63,6 +64,7 @@ export default function AdminPortalsMapping({
     portal_credentials,
     user_credentials,
     departments,
+    all_users,
     filters,
 }: Props) {
     const handleTabChange = (mode: string) => {
@@ -136,6 +138,7 @@ export default function AdminPortalsMapping({
                             portals={portals}
                             selectedUser={selected_user}
                             users={users}
+                            allUsers={all_users || users.data}
                             userCredentials={user_credentials}
                         />
                     </TabsContent>

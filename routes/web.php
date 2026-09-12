@@ -130,7 +130,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('portal-pelaporan.personal-credentials.update');
 
     // Master Portal Pelaporan Eksternal (Admin)
-    Route::prefix('admin/portals')->name('admin.portals.')->group(function (): void {
+    Route::prefix('admin/portals')
+        ->name('admin.portals.')
+        ->middleware('can:manage,App\Models\Portal')
+        ->group(function (): void {
         Route::get('/', [AdminPortalController::class, 'index'])->name('index');
         Route::get('/create', [AdminPortalController::class, 'create'])->name('create');
         Route::post('/', [AdminPortalController::class, 'store'])->name('store');

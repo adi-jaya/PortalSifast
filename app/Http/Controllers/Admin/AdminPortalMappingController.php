@@ -44,7 +44,8 @@ class AdminPortalMappingController extends Controller
             (int) $request->validated('user_id'),
             (bool) $request->validated('has_access'),
             (string) ($request->validated('credential_type') ?? 'use_shared'),
-            $request->validated('notes')
+            $request->validated('notes'),
+            $request->has('notes')
         );
 
         if ($request->wantsJson()) {

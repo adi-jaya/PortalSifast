@@ -45,6 +45,7 @@ interface MappingUserViewProps {
     users: {
         data: UserItem[];
     };
+    allUsers?: UserItem[];
     userCredentials: Record<string | number, UserPortalCredential>;
 }
 
@@ -62,8 +63,23 @@ export function MappingUserView({
     portals,
     selectedUser,
     users,
+    allUsers,
     userCredentials,
 }: MappingUserViewProps) {
+    const availableUsers = allUsers && allUsers.length > 0 ? allUsers : users.data;
+    const [userSearchTerm, setUserSearchTerm] = useState('');
+
+    const filteredUsers = React.useMemo(() => {
+        if (!userSearchTerm.trim()) return availableUsers;
+        const q = userSearchTerm.toLowerCase();
+        return availableUsers.filter(
+            (u) =>
+                u.name.toLowerCase().includes(q) ||
+                (u.simrs_nik && u.simrs_nik.toLowerCase().includes(q)) ||
+                u.email.toLowerCase().includes(q) ||
+                (u.dep_id && u.dep_id.toLowerCase().includes(q)),
+        );
+    }, [availableUsers, userSearchTerm]);
     const [assignments, setAssignments] = useState<
         Record<
             number,
@@ -111,12 +127,24 @@ export function MappingUserView({
         portalId: number,
         hasAccess: boolean,
         credType: CredentialType,
-        notes: string,
+        notes?: string,
+        explicitNotesUpdate: boolean = false,
     ) => {
         if (!selectedUser) return;
         setRowStatus((prev) => ({ ...prev, [portalId]: 'saving' }));
         try {
             const csrfToken = getCsrfToken();
+            const payload: Record<string, unknown> = {
+                portal_id: portalId,
+                user_id: selectedUser.id,
+                has_access: hasAccess,
+                credential_type: credType,
+            };
+
+            if (explicitNotesUpdate) {
+                payload.notes = notes && notes.trim() !== '' ? notes.trim() : null;
+            }
+
             const response = await fetch('/admin/portals/mapping/save-row', {
                 method: 'POST',
                 headers: {
@@ -125,13 +153,7 @@ export function MappingUserView({
                     'X-XSRF-TOKEN': csrfToken,
                     Accept: 'application/json',
                 },
-                body: JSON.stringify({
-                    portal_id: portalId,
-                    user_id: selectedUser.id,
-                    has_access: hasAccess,
-                    credential_type: credType,
-                    notes: notes || null,
-                }),
+                body: JSON.stringify(payload),
             });
 
             if (!response.ok) throw new Error('Gagal menyimpan perubahan');
@@ -163,6 +185,7 @@ export function MappingUserView({
             updated.has_access,
             updated.credential_type,
             updated.notes,
+            false,
         );
     };
 
@@ -187,6 +210,7 @@ export function MappingUserView({
             updated.has_access,
             updated.credential_type,
             updated.notes,
+            false,
         );
     };
 
@@ -198,6 +222,7 @@ export function MappingUserView({
             current.has_access,
             current.credential_type,
             notes,
+            true,
         );
     };
 
@@ -259,28 +284,44 @@ export function MappingUserView({
                     <label className="text-xs font-semibold text-muted-foreground">
                         Pilih Petugas Rumah Sakit
                     </label>
-                    <Select
-                        value={selectedUser?.id?.toString() ?? ''}
-                        onValueChange={handleSelectUser}
-                    >
-                        <SelectTrigger
-                            className="mt-1"
-                            aria-label="Pilih Petugas Rumah Sakit"
+                    <div className="mt-1 space-y-1.5">
+                        <Input
+                            placeholder="Cari nama / NIK / unit..."
+                            value={userSearchTerm}
+                            onChange={(e) => setUserSearchTerm(e.target.value)}
+                            className="h-8 text-xs"
+                            aria-label="Filter Petugas"
+                        />
+                        <Select
+                            value={selectedUser?.id?.toString() ?? ''}
+                            onValueChange={handleSelectUser}
                         >
-                            <SelectValue placeholder="-- Pilih Petugas --" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {users.data.map((u) => (
-                                <SelectItem key={u.id} value={u.id.toString()}>
-                                    {u.name} (
-                                    {u.simrs_nik
-                                        ? `NIK: ${u.simrs_nik}`
-                                        : u.email}
-                                    )
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                            <SelectTrigger
+                                className="h-9"
+                                aria-label="Pilih Petugas Rumah Sakit"
+                            >
+                                <SelectValue placeholder="-- Pilih Petugas --" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-72">
+                                {filteredUsers.length === 0 ? (
+                                    <div className="p-2 text-center text-xs text-muted-foreground">
+                                        Tidak ada petugas ditemukan
+                                    </div>
+                                ) : (
+                                    filteredUsers.map((u) => (
+                                        <SelectItem key={u.id} value={u.id.toString()}>
+                                            {u.name} (
+                                            {u.simrs_nik
+                                                ? `NIK: ${u.simrs_nik}`
+                                                : u.email}
+                                            {u.dep_id ? ` • ${u.dep_id}` : ''}
+                                            )
+                                        </SelectItem>
+                                    ))
+                                )}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
 
                 {selectedUser && (
@@ -401,6 +442,7 @@ export function MappingUserView({
                                                         )
                                                     }
                                                     aria-label={`Akses portal ${portal.name}`}
+                                                    disabled={status === 'saving'}
                                                 />
                                             </td>
                                             <td className="px-4 py-3">
@@ -429,7 +471,7 @@ export function MappingUserView({
                                                         )
                                                     }
                                                     disabled={
-                                                        !current.has_access
+                                                        !current.has_access || status === 'saving'
                                                     }
                                                 >
                                                     <SelectTrigger
@@ -453,7 +495,7 @@ export function MappingUserView({
                                                                 !supportsPersonal
                                                             }
                                                         >
-                                                            Akun Personal Staf
+                                                            Akun Pribadi Petugas
                                                         </SelectItem>
                                                     </SelectContent>
                                                 </Select>
@@ -476,7 +518,7 @@ export function MappingUserView({
                                                     placeholder="Catatan..."
                                                     aria-label={`Catatan akses ${portal.name}`}
                                                     disabled={
-                                                        !current.has_access
+                                                        !current.has_access || status === 'saving'
                                                     }
                                                     className="h-8 text-xs"
                                                 />

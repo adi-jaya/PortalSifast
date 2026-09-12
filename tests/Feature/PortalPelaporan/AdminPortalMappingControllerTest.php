@@ -234,6 +234,42 @@ it('saves single row assignment via saveRow endpoint (instant auto-save)', funct
 
     expect(UserPortalCredential::where('portal_id', $this->portal1->id)->where('user_id', $user->id)->exists())->toBeTrue();
 
+    // Preserve notes when notes key is omitted from payload
+    $this->actingAs($this->admin)
+        ->postJson(route('admin.portals.mapping.save-row'), [
+            'portal_id' => $this->portal1->id,
+            'user_id' => $user->id,
+            'has_access' => true,
+            'credential_type' => 'personal',
+        ])
+        ->assertOk()
+        ->assertJson([
+            'success' => true,
+            'credential' => [
+                'credential_type' => 'personal',
+                'notes' => 'Akses Instan Auto-Save',
+            ],
+        ]);
+
+    // Clear notes when notes key is explicitly sent as null
+    $this->actingAs($this->admin)
+        ->postJson(route('admin.portals.mapping.save-row'), [
+            'portal_id' => $this->portal1->id,
+            'user_id' => $user->id,
+            'has_access' => true,
+            'credential_type' => 'personal',
+            'notes' => null,
+        ])
+        ->assertOk()
+        ->assertJson([
+            'success' => true,
+            'credential' => [
+                'notes' => null,
+            ],
+        ]);
+
+    expect(UserPortalCredential::where('portal_id', $this->portal1->id)->where('user_id', $user->id)->first()->notes)->toBeNull();
+
     // Revoke access via saveRow with has_access: false
     $this->actingAs($this->admin)
         ->postJson(route('admin.portals.mapping.save-row'), [

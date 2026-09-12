@@ -23,10 +23,11 @@ class AdminPortalMappingService
 
         $search = (string) ($filters['search'] ?? '');
         if ($search !== '') {
-            $usersQuery->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('simrs_nik', 'like', "%{$search}%");
+            $escapedSearch = addcslashes($search, '%_\\');
+            $usersQuery->where(function ($q) use ($escapedSearch) {
+                $q->where('name', 'like', "%{$escapedSearch}%")
+                    ->orWhere('email', 'like', "%{$escapedSearch}%")
+                    ->orWhere('simrs_nik', 'like', "%{$escapedSearch}%");
             });
         }
 
@@ -92,6 +93,10 @@ class AdminPortalMappingService
                 'dep_id' => $selectedUser->dep_id,
             ] : null,
             'users' => $usersQuery->paginate(50)->withQueryString(),
+            'all_users' => User::query()
+                ->select(['id', 'name', 'email', 'simrs_nik', 'role', 'dep_id'])
+                ->orderBy('name')
+                ->get(),
             'portal_credentials' => $portalCredentials,
             'user_credentials' => $userCredentials,
             'departments' => $departments,
@@ -177,16 +182,23 @@ class AdminPortalMappingService
         return $credential;
     }
 
-    public function saveSingleAssignment(int $portalId, int $userId, bool $hasAccess, string $credentialType = 'use_shared', ?string $notes = null): ?UserPortalCredential
-    {
+    public function saveSingleAssignment(
+        int $portalId,
+        int $userId,
+        bool $hasAccess,
+        string $credentialType = 'use_shared',
+        ?string $notes = null,
+        ?bool $updateNotes = null
+    ): ?UserPortalCredential {
         if ($hasAccess) {
             $attributes = [
                 'credential_type' => $credentialType,
                 'is_active' => true,
             ];
 
-            if ($notes !== null) {
-                $attributes['notes'] = $notes;
+            $shouldUpdateNotes = $updateNotes !== null ? $updateNotes : ($notes !== null);
+            if ($shouldUpdateNotes) {
+                $attributes['notes'] = ($notes !== null && trim($notes) !== '') ? trim($notes) : null;
             }
 
             return UserPortalCredential::updateOrCreate(

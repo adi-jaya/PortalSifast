@@ -118,5 +118,37 @@ it('filters out null and empty string departments in mapping data', function ():
 
     expect($data['departments']->all())->toContain('IGD', 'POLI')
         ->and($data['departments']->all())->not->toContain('')
-        ->and($data['departments']->all())->not->toContain(null);
+        ->and($data['departments']->all())->not->toContain(null)
+        ->and($data)->toHaveKey('all_users')
+        ->and($data['all_users']->count())->toBeGreaterThanOrEqual(4);
 });
+
+it('clears existing notes when saveSingleAssignment is called with updateNotes true and null or empty notes', function (): void {
+    $user = User::factory()->create();
+
+    $cred = $this->service->saveSingleAssignment($this->portal1->id, $user->id, true, 'use_shared', 'Catatan Awal');
+    expect($cred->notes)->toBe('Catatan Awal');
+
+    // Explicitly update notes to empty string -> notes cleared
+    $updated = $this->service->saveSingleAssignment($this->portal1->id, $user->id, true, 'use_shared', '', true);
+    expect($updated->notes)->toBeNull();
+
+    // Re-set note
+    $updated2 = $this->service->saveSingleAssignment($this->portal1->id, $user->id, true, 'use_shared', 'Catatan Baru', true);
+    expect($updated2->notes)->toBe('Catatan Baru');
+
+    // Explicitly update notes to null -> notes cleared
+    $updated3 = $this->service->saveSingleAssignment($this->portal1->id, $user->id, true, 'use_shared', null, true);
+    expect($updated3->notes)->toBeNull();
+});
+
+it('filters users by search in getMappingData', function (): void {
+    User::factory()->create(['name' => 'Dr. Specialist Alpha', 'email' => 'alpha@hospital.org']);
+    User::factory()->create(['name' => 'Dr. Normal Beta', 'email' => 'beta@hospital.org']);
+
+    $data = $this->service->getMappingData($this->portal1->id, null, 'portal', ['search' => 'Specialist Alpha']);
+
+    expect($data['users']->total())->toBe(1)
+        ->and($data['users']->first()->name)->toBe('Dr. Specialist Alpha');
+});
+

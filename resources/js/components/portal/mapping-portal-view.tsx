@@ -10,6 +10,7 @@ import {
     XCircle,
 } from 'lucide-react';
 import React, { useState } from 'react';
+import { DataTablePagination } from '@/components/data-table-pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -132,11 +133,23 @@ export function MappingPortalView({
         userId: number,
         hasAccess: boolean,
         credType: CredentialType,
-        notes: string,
+        notes?: string,
+        explicitNotesUpdate: boolean = false,
     ) => {
         setRowStatus((prev) => ({ ...prev, [userId]: 'saving' }));
         try {
             const csrfToken = getCsrfToken();
+            const payload: Record<string, unknown> = {
+                portal_id: selectedPortal.id,
+                user_id: userId,
+                has_access: hasAccess,
+                credential_type: credType,
+            };
+
+            if (explicitNotesUpdate) {
+                payload.notes = notes && notes.trim() !== '' ? notes.trim() : null;
+            }
+
             const response = await fetch('/admin/portals/mapping/save-row', {
                 method: 'POST',
                 headers: {
@@ -145,13 +158,7 @@ export function MappingPortalView({
                     'X-XSRF-TOKEN': csrfToken,
                     Accept: 'application/json',
                 },
-                body: JSON.stringify({
-                    portal_id: selectedPortal.id,
-                    user_id: userId,
-                    has_access: hasAccess,
-                    credential_type: credType,
-                    notes: notes || null,
-                }),
+                body: JSON.stringify(payload),
             });
 
             if (!response.ok) throw new Error('Gagal menyimpan perubahan');
@@ -183,6 +190,7 @@ export function MappingPortalView({
             updated.has_access,
             updated.credential_type,
             updated.notes,
+            false,
         );
     };
 
@@ -207,13 +215,20 @@ export function MappingPortalView({
             updated.has_access,
             updated.credential_type,
             updated.notes,
+            false,
         );
     };
 
     const handleNotesBlur = (userId: number, notes: string) => {
         const current = assignments[userId];
         if (!current) return;
-        autoSaveRow(userId, current.has_access, current.credential_type, notes);
+        autoSaveRow(
+            userId,
+            current.has_access,
+            current.credential_type,
+            notes,
+            true,
+        );
     };
 
     const handleNotesChange = (userId: number, notes: string) => {
@@ -461,6 +476,7 @@ export function MappingPortalView({
                                                     )
                                                 }
                                                 aria-label={`Akses ${user.name}`}
+                                                disabled={status === 'saving'}
                                             />
                                         </td>
                                         <td className="px-4 py-3">
@@ -495,7 +511,7 @@ export function MappingPortalView({
                                                         val as CredentialType,
                                                     )
                                                 }
-                                                disabled={!current.has_access}
+                                                disabled={!current.has_access || status === 'saving'}
                                             >
                                                 <SelectTrigger
                                                     className="h-8 w-[180px] text-xs"
@@ -518,7 +534,7 @@ export function MappingPortalView({
                                                             !supportsPersonal
                                                         }
                                                     >
-                                                        Akun Personal Staf
+                                                        Akun Pribadi Petugas
                                                     </SelectItem>
                                                 </SelectContent>
                                             </Select>
@@ -540,7 +556,7 @@ export function MappingPortalView({
                                                 }
                                                 placeholder="Catatan..."
                                                 aria-label={`Catatan untuk ${user.name}`}
-                                                disabled={!current.has_access}
+                                                disabled={!current.has_access || status === 'saving'}
                                                 className="h-8 text-xs"
                                             />
                                         </td>
@@ -578,6 +594,12 @@ export function MappingPortalView({
                     </tbody>
                 </table>
             </div>
+
+            {users.links && users.links.length > 3 && (
+                <div className="rounded-xl border border-border overflow-hidden">
+                    <DataTablePagination links={users.links} />
+                </div>
+            )}
         </div>
     );
 }

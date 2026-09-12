@@ -12,6 +12,7 @@ import {
     X,
 } from 'lucide-react';
 import { useCallback, useState } from 'react';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { DataTablePagination } from '@/components/data-table-pagination';
 import { DataTableToolbar } from '@/components/data-table-toolbar';
 import { EmptyState } from '@/components/empty-state';
@@ -96,14 +97,23 @@ export default function AdminPortalsIndex({
         );
     };
 
+    const [portalToDelete, setPortalToDelete] = useState<Portal | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
     const handleDelete = (portal: Portal) => {
-        if (
-            confirm(
-                `Hapus portal "${portal.name}" beserta seluruh mapping akses petugasnya?`,
-            )
-        ) {
-            router.delete(`/admin/portals/${portal.id}`);
-        }
+        setPortalToDelete(portal);
+    };
+
+    const handleConfirmDelete = () => {
+        if (!portalToDelete) return;
+        setIsDeleting(true);
+        router.delete(`/admin/portals/${portalToDelete.id}`, {
+            preserveScroll: true,
+            onFinish: () => {
+                setIsDeleting(false);
+                setPortalToDelete(null);
+            },
+        });
     };
 
     return (
@@ -398,6 +408,18 @@ export default function AdminPortalsIndex({
                     )}
                 </div>
             </div>
+
+            <ConfirmDialog
+                open={portalToDelete !== null}
+                onOpenChange={(open) => !open && setPortalToDelete(null)}
+                title="Hapus Master Portal"
+                description={`Apakah Anda yakin ingin menghapus portal "${portalToDelete?.name}"? Seluruh mapping hak akses petugas ke portal ini juga akan dihapus.`}
+                confirmLabel="Hapus Portal"
+                cancelLabel="Batal"
+                variant="destructive"
+                onConfirm={handleConfirmDelete}
+                loading={isDeleting}
+            />
         </AppLayout>
     );
 }
