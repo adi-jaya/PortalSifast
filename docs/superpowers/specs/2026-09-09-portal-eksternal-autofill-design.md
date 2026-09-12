@@ -1,9 +1,16 @@
 # Spesifikasi Desain: Portal Pelaporan Eksternal SIMRS Sifast & Custom Browser Extension Autofill
 
-**Tanggal:** 2026-09-09  
-**Status:** Approved  
+**Tanggal Dibuat:** 2026-09-09  
+**Terakhir Disinkronkan:** 2026-09-12 (Pasca-Implementasi Plan 1 & Plan 2)  
+**Status:** In Progress (Plan 1 & 2 Completed, Plan 3 & 4 Pending)  
 **Tipe Proyek:** Architectural Subsystem  
 **Target Platform:** SIMRS Sifast (Laravel 12, Inertia.js, React 19, TypeScript, Tailwind CSS v4) & Chromium-based Browsers (Manifest V3)
+
+### Status Rencana Implementasi Modular:
+- [x] **Plan 1: Fondasi Backend & Database** *(Selesai - 29 Pest Tests PASS)*
+- [x] **Plan 2: Modul Admin (Master Portal & Mapping Akses)** *(Selesai - 33 Pest Tests PASS, Total 62 Tests PASS)*
+- [ ] **Plan 3: Custom Browser Extension Manifest V3 (`rs-extension/`)** *(Siap Dibuat)*
+- [ ] **Plan 4: Halaman Pengguna (Portal Agregator, Deteksi Ekstensi & Distribusi ZIP)** *(Terencana)*
 
 ---
 
@@ -89,8 +96,9 @@ app/
 │       ├── Admin/
 │       │   ├── PortalRequest.php
 │       │   ├── SaveMappingRowRequest.php           # Validasi simpan baris tunggal (Instant Auto-Save)
-│       │   ├── SyncPortalUsersRequest.php
-│       │   └── SyncUserPortalsRequest.php
+│       │   ├── SyncPortalUsersRequest.php          # Validasi massal mapping per-portal
+│       │   ├── SyncUserPortalsRequest.php          # Validasi massal mapping per-user
+│       │   └── UpdateMappingCredentialRequest.php  # Validasi mutasi individual credential mapping
 │       └── UpdatePersonalCredentialRequest.php
 └── Services/
     └── Portal/
@@ -106,6 +114,8 @@ app/
 2. **Constructor Injection:** Controller menerima instance service secara eksplisit via `__construct()`.
 3. **Database Transactions:** Operasi sinkronisasi massal (`syncPortalUsers`, `syncUserPortals`) dibungkus dalam `DB::transaction()` untuk menjamin integritas data.
 4. **Keamanan Kredensial:** Logika enkripsi, dekripsi, dan proteksi password kosong saat update sepenuhnya diatur dalam service layer tanpa membocorkan plaintext password ke lapisan view/Inertia props.
+5. **Defense-in-Depth Authorization:** Rute admin diproteksi pada level perimeter rute `routes/web.php` via `middleware('can:manage,App\Models\Portal')`, melengkapi otorisasi level controller (`Gate::authorize('manage', Portal::class)`).
+6. **Explicit Note-Clearing Auto-Save:** Method `saveSingleAssignment` mendukung parameter `$updateNotes` (`$request->has('notes')`). Toggle akses switch menjaga catatan lama tanpa menimpanya, sedangkan pengosongan input catatan secara sadar akan menghapus (*clear*) catatan di database menjadi `null`.
 
 ---
 
@@ -278,13 +288,25 @@ rs-extension/
 * **Modal Atur Akun Pribadi:** Memungkinkan staf memasukkan username & password pribadi mereka sendiri untuk portal yang mengizinkan akun personal.
 
 ### 6.2. Halaman Admin: Master Portal (`/admin/portals`)
-* **Tabel Master:** Manajemen portal, toggle status aktif, pengaturan urutan (*sort order*).
-* **Form Builder:** Input metadata portal, konfigurasi akun bersama RS, dan editor visual/JSON untuk form selector.
+* **Tabel Master:** Manajemen portal, toggle status aktif (`toggleActive`), pengaturan urutan (*sort order*), dan konfirmasi hapus via komponen modal `ConfirmDialog` yang accessible (menggantikan blocking native `window.confirm()`).
+* **Form Builder & FormConfigEditor:**
+  - Input metadata portal (nama, slug otomatis, kategori, url, pattern, auth_type).
+  - Konfigurasi akun bersama RS (`shared_username`, `shared_password`) dengan proteksi *zero-plaintext leakage* (password tidak pernah dibocorkan ke props Inertia).
+  - Editor interaktif selector form login menggunakan komponen `FormConfigEditor` dan `SelectorTagInput`: mendukung preset tag visual cepat (ID, name, selector CSS umum) serta live switch ke raw JSON editor dengan validasi sintaks.
 
 ### 6.3. Halaman Admin: Mapping Akses (`/admin/portals/mapping`)
 * **Tampilan Matriks Dual-Mode:** Mode filter per Portal (*Portal-Centric*) atau per Pengguna (*User-Centric*).
+* **Jangkauan Seluruh Staf RS (>50–300 Petugas):**
+  - Pada `MappingPortalView`: Menggunakan komponen `DataTablePagination` bawaan project yang tersinkronisasi dengan query string Inertia.
+  - Pada `MappingUserView`: Controller menyediakan dataset `all_users` (seluruh staf aktif unpaginated) yang dilengkapi live client-side search input `userSearchTerm` (pencarian nama, NIK, email, unit kerja) agar seluruh staf rumah sakit dapat dicari dan dipilih tanpa terhalang batasan paginasi.
+* **Ergonomi Filter & UI Polish (Commit 7c4f627):**
+  - Layout filter horizontal yang intuitif dengan dropdown target di sebelah kiri dan filter departemen/pencarian di sebelah kanan.
+  - Pemilihan dropdown menggunakan state optimistik dengan placeholder jelas (`-- Pilih Portal --` dan `-- Pilih Petugas --`) dan status empty-state informatif jika belum ada target yang dipilih.
+  - Input pencarian didebounce (300ms) dengan key stabil untuk mencegah kehilangan fokus keyboard saat re-render.
+  - Otomatis menghapus query string parameter kosong (`?search=&department=`) dari URL untuk menjaga kebersihan riwayat navigasi browser.
 * **Arsitektur Hybrid (Instant Auto-Save & Batch Actions):**
   - **Interaksi Baris Tunggal:** Menggunakan Radix `Switch` (Akses ON/OFF), `Select` (Tipe Akun), dan input catatan (`onBlur`) yang otomatis tersimpan seketika di background (`POST /admin/portals/mapping/save-row`) dengan *optimistic UI* dan mikro-indikator status (*Tersimpan*). Menghilangkan risiko data hilang saat navigasi paginasi.
+  - **Dukungan Note-Clearing:** Parameter `$updateNotes` membedakan perubahan toggle akses (catatan lama dipertahankan) vs pengosongan sadar pada input catatan (catatan di DB diubah menjadi `null`).
   - **Aksi Cepat Massal:** Toolbar menyediakan tombol massal (*"Izinkan Semua (Akun Bersama)"*, *"Izinkan Semua (Akun Personal)"*, *"Cabut Semua Akses"*) yang mengeksekusi 1 request transaksi DB (`POST /admin/portals/mapping/sync-portal` / `sync-user`).
 
 ### 6.4. Distribusi Ekstensi
@@ -294,12 +316,31 @@ rs-extension/
 
 ## 7. Rencana Pengujian & Verifikasi
 
-1. **Unit & Feature Test (Pest/PHPUnit):**
-   - Tes CRUD Master Portal dan enkripsi/dekripsi password.
-   - Tes otorisasi endpoint dispatch (hanya user aktif yang memiliki mapping yang dapat menerima kredensial).
-   - Tes isolasi hak akses (non-admin dilarang mengakses route `/admin/portals`).
-2. **Browser Extension Test:**
-   - Tes deteksi ekstensi pada domain SIMRS.
-   - Tes pembukaan tab target dan konsumsi kredensial berbasis `tabId`.
-   - Tes verifikasi penghapusan kredensial dari RAM setelah autofill (*zero memory leak*).
+### 7.1. Unit & Feature Test Backend (Pest PHP) — Status: 62 Tests PASS (354 Assertions)
+Pengujian otomatis komprehensif pada namespace `Tests\Feature\PortalPelaporan`:
+1. **Schema & Database Integrity:**
+   - `PortalDatabaseSchemaTest`: Struktur kolom tabel `portals` dan `user_portal_credentials` beserta index unik dan foreign key cascade.
+2. **Model, Enkripsi, & Factory:**
+   - `PortalModelTest`: Enkripsi simetris Eloquent `Crypt::encryptString` pada `shared_password` dan `personal_password`, method helper `supportsShared()` dan `supportsPersonal()`, serta integritas factory.
+3. **Otorisasi & Kebijakan Akses:**
+   - `PortalPolicyTest`: Hak kelola hanya untuk Admin, hak akses lihat hanya jika portal aktif dan mapping aktif ada, dispatch token hanya untuk pengguna yang diizinkan.
+   - `PortalInertiaPropsTest`: Evaluasi shared props `can_manage_portals` untuk role admin vs staf biasa dan guest.
+4. **Master Portal Service & Controller:**
+   - `AdminPortalServiceTest` & `AdminPortalControllerTest`: Filter pagination, auto-slug, proteksi password bersama agar tidak tertimpa saat update kosong, toggle status aktif, dan proteksi middleware perimeter.
+5. **Mapping Akses Service & Controller:**
+   - `AdminPortalMappingServiceTest` & `AdminPortalMappingControllerTest`: Paginasi matriks, instant auto-save `saveRow`, filter departemen dan pencarian nama/NIK, sinkronisasi massal transaksional (`syncPortal` dan `syncUser`), serta pengosongan catatan (*note clearing*).
+6. **API Dispatch & Self-Service Kredensial:**
+   - `PortalDispatchServiceTest` & `PortalDispatchApiTest`: Resolusi kredensial personal vs shared, fallback admin, proteksi portal non-aktif, dan respon payload JSON one-time transfer.
+   - `PortalPersonalCredentialServiceTest` & `PortalPersonalCredentialApiTest`: Self-service update username & password oleh pemilik akun tanpa menimpa password yang sudah ada jika tidak diisi.
+7. **Idempotensi Seeder:**
+   - `PortalSeederTest`: 8 kelompok portal eksternal resmi tersimpan lengkap tanpa duplikasi saat di-seed berulang kali.
+
+### 7.2. Rencana Verifikasi Ekstensi Browser & Pengguna (Plan 3 & Plan 4)
+1. **Browser Extension Verification (Plan 3):**
+   - Tes deteksi ekstensi pada domain SIMRS (`content-simrs.js` inject dataset ke `<html>` dan emit event ready).
+   - Tes pembukaan tab target dan konsumsi kredensial berbasis `tabId` di background service worker.
+   - Tes verifikasi penghapusan kredensial dari RAM setelah autofill (*zero memory leak / zero-persistence*).
    - Tes ketahanan selector pada halaman contoh (SIRS Online, SITB, SIGA) dan keberhasilan Heuristic Scanner saat selector dinonaktifkan.
+2. **User Portal & Packaging Verification (Plan 4):**
+   - Halaman `/portal-pelaporan`: Render grid kartu portal sesuai hak akses staf, deteksi status badge ekstensi, modal atur akun personal.
+   - Endpoint download file ZIP ekstensi browser yang siap di-install di Chromium browser.
