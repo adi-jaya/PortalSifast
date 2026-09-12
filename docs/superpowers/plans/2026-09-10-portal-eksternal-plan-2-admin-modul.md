@@ -3948,22 +3948,22 @@ git commit -m "feat(portal): add access mapping matrix UI views"
 - Consumes: Seluruh modul Plan 1 dan Plan 2.
 - Produces: Seluruh test Pest hijau (100% passing), clean TypeScript check, dan clean Vite asset bundle build.
 
-- [ ] **Step 1: Run complete Pest test suite for PortalPelaporan**
+- [x] **Step 1: Run complete Pest test suite for PortalPelaporan**
 
 Run: `php artisan test tests/Feature/PortalPelaporan`  
 Expected: PASS untuk seluruh pengujian (27 test dari Plan 1 + 14 test dari Plan 2 = 41 passing tests).
 
-- [ ] **Step 2: Run TypeScript static verification**
+- [x] **Step 2: Run TypeScript static verification**
 
 Run: `npm run types`  
 Expected: Zero type errors (`tsc --noEmit` exits with code 0).
 
-- [ ] **Step 3: Run Vite build**
+- [x] **Step 3: Run Vite build**
 
 Run: `npm run build`  
 Expected: Production build completes successfully without missing imports or assets.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add docs/superpowers/plans/2026-09-10-portal-eksternal-plan-2-admin-modul.md
