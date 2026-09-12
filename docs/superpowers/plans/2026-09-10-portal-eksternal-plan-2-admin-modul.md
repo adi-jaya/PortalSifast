@@ -2933,7 +2933,7 @@ git commit -m "feat(portal): add master portal CRUD inertia views"
   1. Mode Berdasarkan Portal (Row-level Switch instant save & toolbar quick batch sync).
   2. Mode Berdasarkan Petugas (User-centric portal access management with instant save).
 
-- [ ] **Step 1: Create `switch.tsx` & `mapping-portal-view.tsx`**
+- [x] **Step 1: Create `switch.tsx` & `mapping-portal-view.tsx`**
 
 Buat file `resources/js/components/ui/switch.tsx`:
 
@@ -3399,7 +3399,7 @@ export function MappingPortalView({
 }
 ```
 
-- [ ] **Step 2: Create `mapping-user-view.tsx`**
+- [x] **Step 2: Create `mapping-user-view.tsx`**
 
 Buat file `resources/js/components/portal/mapping-user-view.tsx`:
 
@@ -3789,7 +3789,7 @@ export function MappingUserView({
 }
 ```
 
-- [ ] **Step 3: Create `mapping.tsx`**
+- [x] **Step 3: Create `mapping.tsx`**
 
 Buat file `resources/js/pages/admin/portals/mapping.tsx`:
 
@@ -3923,12 +3923,12 @@ export default function AdminPortalsMapping({
 }
 ```
 
-- [ ] **Step 4: Run type check to verify zero TypeScript errors**
+- [x] **Step 4: Run type check to verify zero TypeScript errors**
 
 Run: `npm run types`  
 Expected: 0 errors.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add resources/js/components/portal/mapping-portal-view.tsx resources/js/components/portal/mapping-user-view.tsx resources/js/pages/admin/portals/mapping.tsx
