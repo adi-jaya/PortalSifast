@@ -49,6 +49,7 @@ Panduan onboarding ini dipecah ke dalam beberapa dokumen tematik di dalam direkt
 | **10** | [`10-MODUL-WEB-OFFICIAL-DAN-CMS.md`](./10-MODUL-WEB-OFFICIAL-DAN-CMS.md) | Headless CMS Website Publik: Artikel, Kamar Inap, Poliklinik & Jadwal Dokter SIMRS, Promo, Rekanan, Kritik/Saran, Instagram Graph API & Berita RSS Muhammadiyah. |
 | **11** | [`11-REALTIME-WEBSOCKET-DAN-PRESENSI.md`](./11-REALTIME-WEBSOCKET-DAN-PRESENSI.md) | Arsitektur WebSocket Laravel Reverb, Laravel Echo React, Presence Channel, Tracking User Online, dan Internal Chat Realtime. |
 | **12** | [`12-PANDUAN-SETUP-LOKAL-DAN-DEPLOYMENT.md`](./12-PANDUAN-SETUP-LOKAL-DAN-DEPLOYMENT.md) | Panduan Menyiapkan Lingkungan Development Lokal, Konfigurasi `.env`, Menjalankan Concurrently, Daftar Artisan Command Operasional, Deployment & Troubleshooting. |
+| **13** | [`13-MODUL-PORTAL-PELAPORAN-EKSTERNAL.md`](./13-MODUL-PORTAL-PELAPORAN-EKSTERNAL.md) | Subsistem Agregator Portal Pelaporan Eksternal Pemerintah (Kemenkes & BKKBN), Kredensial Hibrida Terenkripsi, dan Custom Chromium Extension Manifest V3 (Zero-Persistence Autofill). |
 
 ---
 
@@ -58,3 +59,4 @@ Panduan onboarding ini dipecah ke dalam beberapa dokumen tematik di dalam direkt
 2. **Hari ke-2 (Transisi Frontend & Modul Operasional IT):** Baca modul [`02b-PANDUAN-FRONTEND-REACT-INERTIA-UNTUK-LARAVEL-DEV.md`](./02b-PANDUAN-FRONTEND-REACT-INERTIA-UNTUK-LARAVEL-DEV.md) untuk menguasai arsitektur React & Inertia, lalu pahami alur kerja ITIL pada [`03-MODUL-HELPDESK-ITIL-TICKETING.md`](./03-MODUL-HELPDESK-ITIL-TICKETING.md) dan pengelolaan aset pada [`04-MODUL-ASET-DAN-INVENTARIS.md`](./04-MODUL-ASET-DAN-INVENTARIS.md).
 3. **Hari ke-3 (Modul Mutu, Naskah & Darurat):** Baca [`05`](./05-MODUL-SIMMUTU.md), [`06`](./06-MODUL-TATA-NASKAH-REGULASI.md), dan [`07`](./07-MODUL-EMERGENCY-PANIC-BUTTON.md).
 4. **Hari ke-4 (Keamanan, Payroll, CMS & Real-time):** Baca [`08`](./08-MODUL-PATROLI-KEAMANAN.md), [`09`](./09-MODUL-PAYROLL-DAN-MONITORING-INFRASTRUKTUR.md), [`10`](./10-MODUL-WEB-OFFICIAL-DAN-CMS.md), dan [`11`](./11-REALTIME-WEBSOCKET-DAN-PRESENSI.md).
+5. **Hari ke-5 (Integrasi Eksternal & Browser Extension):** Baca [`13`](./13-MODUL-PORTAL-PELAPORAN-EKSTERNAL.md) untuk memahami arsitektur portal pelaporan, enkripsi kredensial, dan ekstensi Chromium.
