@@ -27,20 +27,20 @@ Modul ini mendokumentasikan subsistem **Portal Pelaporan Eksternal & Custom Brow
 - [Bab 2: 📊 Matriks Status Implementasi & Roadmap Modul](#bab-2--matriks-status-implementasi--roadmap-modul)
   - [2.1 Matriks Status 4 Rencana Modular](#21-matriks-status-4-rencana-modular)
   - [2.2 Matriks Fitur, Rute, Otorisasi, & Ketersediaan](#22-matriks-fitur-rute-otorisasi--ketersediaan)
-- [Bab 3: 🗄️ Model Data & Skema Database (Plan 1 - Selesai)](#bab-3-️-model-data--skema-database-plan-1---selesai)
+- [Bab 3: 🗄 Model Data & Skema Database (Plan 1 - Selesai)](#bab-3--model-data--skema-database-plan-1---selesai)
   - [3.1 Skema Tabel `portals` (Master Portal Eksternal)](#31-skema-tabel-portals-master-portal-eksternal)
   - [3.2 Spesifikasi Format JSON `form_config`](#32-spesifikasi-format-json-form_config)
   - [3.3 Skema Tabel `user_portal_credentials` (Mapping Akses & Akun Personal)](#33-skema-tabel-user_portal_credentials-mapping-akses--akun-personal)
   - [3.4 Enkripsi Simetris Kredensial & Proteksi Model Eloquent](#34-enkripsi-simetris-kredensial--proteksi-model-eloquent)
   - [3.5 Ringkasan 8 Kelompok Portal Resmi Bawaan Seeder (`PortalSeeder.php`)](#35-ringkasan-8-kelompok-portal-resmi-bawaan-seeder-portalseederphp)
   - [3.6 Panduan Uji Coba Cepat (Hands-on Verification Bab 3)](#36-panduan-uji-coba-cepat-hands-on-verification-bab-3)
-- [Bab 4: ⚙️ Backend Core & Arsitektur Service Layer (Plan 1 - Selesai)](#bab-4-️-backend-core--arsitektur-service-layer-plan-1---selesai)
+- [Bab 4: ⚙ Backend Core & Arsitektur Service Layer (Plan 1 - Selesai)](#bab-4--backend-core--arsitektur-service-layer-plan-1---selesai)
   - [4.1 Arsitektur Service Class Layer (`App\Services\Portal\*`)](#41-arsitektur-service-class-layer-appservicesportal)
   - [4.2 Defense-in-Depth Authorization & Middleware Perimeter](#42-defense-in-depth-authorization--middleware-perimeter)
   - [4.3 Kontrak API Endpoint Dispatch Token](#43-kontrak-api-endpoint-dispatch-token)
   - [4.4 Peta Berkas & Panduan Code Review (Plan 1)](#44-peta-berkas--panduan-code-review-plan-1)
   - [4.5 Panduan Uji Coba Cepat (Hands-on Verification Bab 4)](#45-panduan-uji-coba-cepat-hands-on-verification-bab-4)
-- [Bab 5: 🖥️ Modul Admin SIMRS: Master Portal & Mapping Akses (Plan 2 - Selesai)](#bab-5-️-modul-admin-simrs-master-portal--mapping-akses-plan-2---selesai)
+- [Bab 5: 🖥 Modul Admin SIMRS: Master Portal & Mapping Akses (Plan 2 - Selesai)](#bab-5--modul-admin-simrs-master-portal--mapping-akses-plan-2---selesai)
   - [5.1 Manajemen Master Portal (`/admin/portals`)](#51-manajemen-master-portal-adminportals)
   - [5.2 Visual Form Configuration Editor](#52-visual-form-configuration-editor)
   - [5.3 Matriks Mapping Akses Dual-Mode (`/admin/portals/mapping`)](#53-matriks-mapping-akses-dual-mode-adminportalsmapping)
@@ -66,7 +66,7 @@ Modul ini mendokumentasikan subsistem **Portal Pelaporan Eksternal & Custom Brow
   - [8.1 Automated Backend Testing (Pest PHP)](#81-automated-backend-testing-pest-php)
   - [8.2 Automated Extension Testing (Node.js Test Runner)](#82-automated-extension-testing-nodejs-test-runner)
   - [8.3 Skenario Manual QA Langkah-demi-Langkah (Walkthrough Lengkap)](#83-skenario-manual-qa-langkah-demi-langkah-walkthrough-lengkap)
-- [Bab 9: 🛠️ Runbook Operasional, Pemeliharaan & Troubleshooting](#bab-9-️-runbook-operasional-pemeliharaan--troubleshooting)
+- [Bab 9: 🛠 Runbook Operasional, Pemeliharaan & Troubleshooting](#bab-9--runbook-operasional-pemeliharaan--troubleshooting)
   - [9.1 Prosedur Menambah Portal Pelaporan Eksternal Baru](#91-prosedur-menambah-portal-pelaporan-eksternal-baru)
   - [9.2 Prosedur Penanganan Perubahan DOM Form Login Target](#92-prosedur-penanganan-perubahan-dom-form-login-target)
   - [9.3 Prosedur Debugging Ekstensi Chromium](#93-prosedur-debugging-ekstensi-chromium)
@@ -292,7 +292,9 @@ Berikut adalah peta rute HTTP, controller penanggung jawab, middleware pengamana
 
 ---
 
-## Bab 3: 🗄️ Model Data & Skema Database (Plan 1 - Selesai)
+<a id="bab-3-model-data--skema-database-plan-1---selesai"></a>
+<a id="bab-3--model-data--skema-database-plan-1---selesai"></a>
+## Bab 3: 🗄 Model Data & Skema Database (Plan 1 - Selesai)
 
 Skema database dirancang dengan normalisasi relasional tinggi, integritas referensial penuh (*Foreign Key Cascadable*), dan proteksi enkripsi kolom otomatis pada lapisan Eloquent Model.
 
@@ -535,7 +537,9 @@ php artisan test tests/Feature/PortalPelaporan/PortalSeederTest.php
 
 ---
 
-## Bab 4: ⚙️ Backend Core & Arsitektur Service Layer (Plan 1 - Selesai)
+<a id="bab-4-backend-core--arsitektur-service-layer-plan-1---selesai"></a>
+<a id="bab-4--backend-core--arsitektur-service-layer-plan-1---selesai"></a>
+## Bab 4: ⚙ Backend Core & Arsitektur Service Layer (Plan 1 - Selesai)
 
 **Status Implementasi:** `[STATUS: SELESAI (Plan 1 - PASS)]`
 
@@ -665,6 +669,7 @@ Service ini mengelola matriks otorisasi penugasan staf dan hak akses portal ekst
     2. **Mode User-Centric (`viewMode = 'user'`):** Memilih 1 staf RS target, lalu menampilkan daftar seluruh portal eksternal dengan status akses staf tersebut ke masing-masing portal.
   - **Filter Staf Fleksibel:** Menyaring pengguna berdasarkan pencarian nama, email, atau NIK SIMRS (`simrs_nik`), filter departemen/unit kerja (`dep_id`), dan role.
   - **Paginasi & Optimasi Query:** Menghasilkan koleksi staf terpaginasi 50 user per halaman untuk tampilan tabel utama, serta koleksi `all_users` unpaginated (hanya kolom ID, nama, email, NIK, role, dan dep_id) untuk pencarian cepat pada dropdown selector.
+  - **Catatan Skalabilitas `all_users`:** Strategi pengembalian `all_users` tanpa paginasi sengaja dioptimalkan untuk populasi staf internal rumah sakit (< 1.000 pengguna) guna menghadirkan pengalaman pencarian instan pada sisi klien tanpa latency HTTP round-trip. Jika skala organisasi rumah sakit bertumbuh melampaui 1.000 pengguna aktif di masa mendatang, arsitektur ini dapat ditingkatkan dengan memperkenalkan endpoint pencarian dinamis (*remote search*) menggunakan komponen `AsyncSelect` / combobox terpaginasi.
   - **Indexing Akses O(1):** Mengambil mapping hak akses aktif dan mengindeksnya dengan `keyBy('user_id')` (pada mode portal) atau `keyBy('portal_id')` (pada mode user) sehingga komponen frontend dapat memeriksa status akses secara instan tanpa iterasi linier.
 
 * **`syncPortalUsers(Portal $portal, array $assignments): void` & `syncUserPortals(User $user, array $assignments): void`**
@@ -934,6 +939,7 @@ Endpoint Dispatch Token adalah satu-satunya kanal komunikasi resmi yang menyedia
   - `X-CSRF-TOKEN: <csrf_token_session>`
 * **Autentikasi:** Web Session Cookie Laravel (hanya dapat dipanggil dalam konteks browser yang sedang aktif masuk ke akun SIMRS Sifast).
 * **Otorisasi:** `Gate::authorize('dispatchToken', $portal)`.
+* **Rate Limiting:** `throttle:30,1` (Maksimal 30 request / menit per user session). Jika ambang batas ini dilampaui, server mengembalikan status `HTTP 429 Too Many Requests`.
 
 #### 2. Format Request Payload
 Endpoint ini tidak memerlukan request body (`{}`). Seluruh konteks user diidentifikasi melalui sesi autentikasi (`$request->user()`), dan konteks portal diidentifikasi melalui parameter URL `{portal}`.
@@ -1001,6 +1007,13 @@ Struktur JSON yang dikembalikan mencakup metadata navigasi web target, rantai se
     "message": "No query results for model [App\\Models\\Portal] 999"
   }
   ```
+* **429 Too Many Requests (Rate Limit Terlampaui):**
+  ```json
+  {
+    "message": "Too Many Attempts."
+  }
+  ```
+  *(Terjadi jika peramban atau skrip otomatis memanggil endpoint melebihi kuota 30 request / menit per user session. HTTP response header `Retry-After: <detik>` disertakan oleh middleware throttling Laravel untuk menginstruksikan durasi jeda sebelum mencoba kembali).*
 
 #### 5. Pembahasan Aspek Zero-Leakage
 Endpoint dispatch token dirancang khusus untuk memenuhi standar keamanan ketat:
@@ -1085,7 +1098,9 @@ php artisan test tests/Feature/PortalPelaporan
 
 ---
 
-## Bab 5: 🖥️ Modul Admin SIMRS: Master Portal & Mapping Akses (Plan 2 - Selesai)
+<a id="bab-5-modul-admin-simrs-master-portal--mapping-akses-plan-2---selesai"></a>
+<a id="bab-5--modul-admin-simrs-master-portal--mapping-akses-plan-2---selesai"></a>
+## Bab 5: 🖥 Modul Admin SIMRS: Master Portal & Mapping Akses (Plan 2 - Selesai)
 
 > [!NOTE]
 > **Status Implementasi:** `SELESAI (Plan 2 - PASS)`  
@@ -1193,7 +1208,7 @@ Formulir master portal dirancang terpadu dalam satu komponen yang dapat digunaka
       className="pr-10"
   />
   ```
-  Pada saat mode edit, backend `AdminPortalService::formatForEdit()` hanya mengirimkan flag metadata `has_shared_password: true`. Input password diinisialisasi kosong dengan placeholder bulatan samaran `••••••••••••` dan keterangan `(Tersimpan terenkripsi. Kosongkan jika tidak diubah)`. Jika admin menyimpan form tanpa mengisi field password, backend secara otomatis menjalankan `unset($data['shared_password'])`, menjamin ciphertext password lama di database tidak terhapus atau tertimpa string kosong.
+  Pada saat mode edit, backend `AdminPortalService::formatPortalForEdit()` hanya mengirimkan flag metadata `has_shared_password: true`. Input password diinisialisasi kosong dengan placeholder bulatan samaran `••••••••••••` dan keterangan `(Tersimpan terenkripsi. Kosongkan jika tidak diubah)`. Jika admin menyimpan form tanpa mengisi field password, backend secara otomatis menjalankan `unset($data['shared_password'])`, menjamin ciphertext password lama di database tidak terhapus atau tertimpa string kosong.
 
 #### 4. Modal Accessible `ConfirmDialog` (`resources/js/components/confirm-dialog.tsx`)
 SIMRS Sifast menggantikan fungsi bawaan peramban `window.confirm()` yang bersifat *blocking* terhadap main thread JavaScript dengan komponen modal accessible [`ConfirmDialog`](../../resources/js/components/confirm-dialog.tsx):
@@ -1350,6 +1365,10 @@ Fitur-fitur utama Mode User-Centric:
 - **Pencarian Petugas di Memori Klien (`userSearchTerm`):** Input pencarian instan yang memfilter daftar dropdown secara langsung berdasarkan kecocokan nama, NIK, email, atau departemen tanpa perlu round-trip ke server.
 - **Kartu Identitas Petugas:** Menampilkan badge role dan unit kerja staf yang sedang dipilih.
 - **Katalog Seluruh Portal:** Menampilkan daftar lengkap portal aktif tanpa batas halaman. Admin dapat mengaktifkan atau menonaktifkan portal-portal pelaporan yang menjadi wewenang staf tersebut dalam hitungan detik.
+
+> [!NOTE]
+> **Catatan Skalabilitas UI (`allUsers`):**  
+> Pengiriman daftar `allUsers` secara unpaginated pada Mode User-Centric dioptimalkan untuk populasi staf rumah sakit (< 1.000 pengguna) sehingga penyaringan dropdown berjalan instan di memori peramban tanpa jeda jaringan. Untuk pertumbuhan jangka panjang (> 1.000 pengguna), antarmuka dapat ditingkatkan ke pola *remote async search* (`AsyncSelect`) yang memuat data pengguna secara inkremental via endpoint pencarian khusus.
 
 #### 3. Instant Auto-Save & Optimistic UI
 Matriks mapping mengadopsi pola *Instant Auto-Save* yang menghilangkan kebutuhan tombol "Submit / Simpan Form" global. Setiap perubahan interaktif langsung dikirimkan ke endpoint backend:
@@ -1737,12 +1756,31 @@ Berkas [`rs-extension/content-simrs.js`](../../rs-extension/content-simrs.js) be
    });
    ```
 
-#### Relay Peluncuran Portal (`SIFAST_PORTAL_LAUNCH`):
-Saat staf menekan tombol kartu portal pada dashboard SIMRS, frontend memicu dispatch token dan memancarkan CustomEvent `SIFAST_PORTAL_LAUNCH`. Content bridge bertugas menangkap event ini dan meneruskannya ke Background Service Worker:
+#### Relay Peluncuran Portal (`SIFAST_PORTAL_LAUNCH`) & Defensive Security Boundary:
+Saat staf menekan tombol kartu portal pada dashboard SIMRS, frontend memicu dispatch token dan memancarkan CustomEvent `SIFAST_PORTAL_LAUNCH`. Content bridge bertugas menangkap event ini, menerapkan validasi defensif (*defensive security boundary*), dan meneruskannya ke Background Service Worker:
 ```javascript
 window.addEventListener('SIFAST_PORTAL_LAUNCH', (event) => {
   const payload = event.detail;
-  if (!payload || !payload.portal || !payload.credentials) {
+
+  // Defensive validation: Cegah skrip arbitrer menyusupkan payload berbahaya
+  if (!payload || typeof payload !== 'object') {
+    return;
+  }
+
+  const { portal, credentials } = payload;
+  if (!portal || typeof portal !== 'object' || !credentials || typeof credentials !== 'object') {
+    return;
+  }
+
+  // Validasi URL berprotokol resmi http: / https: (cegah skema javascript:, data:, file:)
+  const url = portal.url;
+  const isHttpUrl = typeof url === 'string' && /^https?:\/\//i.test(url);
+
+  // Validasi kredensial esensial bertipe string
+  const hasValidCreds = typeof credentials.username === 'string' && typeof credentials.password === 'string';
+
+  if (!isHttpUrl || !hasValidCreds) {
+    console.warn('[SIFAST Extension Bridge] Invalid portal launch payload rejected:', { url, hasValidCreds });
     return;
   }
 
@@ -1756,6 +1794,13 @@ window.addEventListener('SIFAST_PORTAL_LAUNCH', (event) => {
   );
 });
 ```
+
+> [!IMPORTANT]
+> **Defensive Security Boundary pada Content Bridge:**  
+> Karena `content-simrs.js` mendengarkan `window.addEventListener('SIFAST_PORTAL_LAUNCH')` pada konteks DOM halaman, skrip pihak ketiga atau potensi celah keamanan DOM dapat mencoba memicu event sintetis. Pemeriksaan defensif di atas memastikan:
+> 1. Objek `portal` dan `credentials` wajib ada dan bertipe objek valid.
+> 2. Properti `url` wajib menggunakan protokol resmi `http:` atau `https:` (menangkal URL injection berskema `javascript:`, `data:`, atau `chrome-extension:`).
+> 3. Field `username` dan `password` divalidasi bertipe string sebelum diteruskan via `chrome.runtime.sendMessage`, mencegah penyusupan objek malformasi atau eksploitasi prototype pollution ke dalam antrean memori Background Service Worker.
 
 ---
 
@@ -2201,11 +2246,17 @@ class PortalAggregatorService
             File::makeDirectory($storageDir, 0755, true);
         }
 
-        // Caching pintar: Buat ulang ZIP hanya jika berkas sumber berubah
-        $sourceModifiedTime = filemtime($extensionSourceDir . '/manifest.json');
+        // Caching pintar: Pindai filemtime terbaru di seluruh berkas sumber ekstensi.
+        // Hal ini memastikan update pada background.js atau content-autofill.js tanpa
+        // kenaikan versi manifest tetap menginvalidasi cache ZIP secara otomatis.
+        $latestSourceModified = 0;
+        foreach (File::allFiles($extensionSourceDir) as $file) {
+            $latestSourceModified = max($latestSourceModified, $file->getMTime());
+        }
+
         $zipModifiedTime = File::exists($zipFilePath) ? filemtime($zipFilePath) : 0;
 
-        if (!File::exists($zipFilePath) || $sourceModifiedTime > $zipModifiedTime) {
+        if (!File::exists($zipFilePath) || $latestSourceModified > $zipModifiedTime) {
             $this->buildZipBundle($extensionSourceDir, $zipFilePath);
         }
 
@@ -2253,7 +2304,7 @@ class PortalAggregatorService
 
 #### Keunggulan Arsitektur Distribusi ZIP:
 * **Ukuran Ringkas (< 50 KB):** Hanya berkas fungsional yang dikemas. Folder pengujian (`tests/`) dan skrip internal (`scripts/`) dikecualikan dari paket distribusi pengguna akhir.
-* **Smart Filemtime Caching:** Sistem tidak melakukan kompresi ulang berulang kali jika berkas manifest tidak mengalami perubahan, menghemat utilisasi CPU server saat diunduh serentak oleh staf.
+* **Smart Filemtime Caching:** Sistem memindai `filemtime` terbaru (`max(filemtime)`) dari seluruh berkas sumber di dalam direktori `rs-extension/` dan hanya mengemas ulang arsip jika terdapat berkas sumber yang lebih baru daripada berkas ZIP yang tersimpan di cache. Hal ini menghemat utilisasi CPU server saat diunduh serentak oleh staf, sekaligus menjamin setiap perbaikan kode (seperti pada `background.js` atau `content-autofill.js`) langsung terdistribusi tanpa menunggu kenaikan nomor versi pada `manifest.json`.
 * **Keamanan Akses:** Rute pengunduhan dilindungi oleh middleware otentikasi SIMRS, memastikan hanya staf rumah sakit terdaftar yang dapat mengunduh paket ekstensi.
 
 ---
@@ -2612,7 +2663,7 @@ Berikut adalah potongan kode pengujian siklus hidup antrean RAM pada `rs-extensi
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-test('Background Service Worker: In-Memory Queue lifecyle and auto-purge', async (t) => {
+test('Background Service Worker: In-Memory Queue lifecycle and auto-purge', async (t) => {
   // Simulasi antrean RAM pendingTabs
   const pendingTabs = new Map();
 
@@ -2944,7 +2995,9 @@ Untuk memvalidasi integrasi menyeluruh antara antarmuka web SIMRS, API backend t
 
 ---
 
-## Bab 9: 🛠️ Runbook Operasional, Pemeliharaan & Troubleshooting
+<a id="bab-9-runbook-operasional-pemeliharaan--troubleshooting"></a>
+<a id="bab-9--runbook-operasional-pemeliharaan--troubleshooting"></a>
+## Bab 9: 🛠 Runbook Operasional, Pemeliharaan & Troubleshooting
 
 > **Sasaran Pembaca:** Tim IT Support, Database Administrator, Application Developer, dan Information Security Officer RS Aisyiyah Siti Fatimah Tulangan.  
 > **Karakteristik Runbook:** Praktis, berorientasi tindakan (*actionable*), teruji pada lingkungan produksi, dan dirancang untuk meminimalkan waktu pemulihan insiden (*Mean Time to Recovery / MTTR*).
