@@ -33,6 +33,7 @@ import {
     Boxes,
     BarChart3,
 } from 'lucide-react';
+import { buildPortalNavGroup } from '@/lib/build-portal-nav-group';
 import { buildSikatNavGroup } from '@/lib/build-sikat-nav-group';
 import { buildSimmutuNavGroup } from '@/lib/build-simmutu-nav-group';
 import { buildTatanaskahNavGroup } from '@/lib/build-tatanaskah-nav-group';
@@ -60,6 +61,7 @@ export type PortalNavGroup = {
 };
 
 export type PortalNavPermissions = {
+    can_manage_portals?: boolean;
     can_access_payroll?: boolean;
     can_access_patroli?: boolean;
     simmutu?: {
@@ -524,6 +526,11 @@ export function buildVisibleModuleGroups(permissions?: PortalNavPermissions): Po
     const webOfficialGroup = buildWebOfficialNavGroup(permissions?.web_official);
     if (webOfficialGroup) {
         base.push(webOfficialGroup);
+    }
+
+    const portalGroup = buildPortalNavGroup(permissions?.can_manage_portals);
+    if (portalGroup) {
+        base.push(portalGroup);
     }
 
     return base;

@@ -919,7 +919,7 @@ Untuk menghindari hardcoding logika role di sisi frontend React, middleware [`Ap
     // ...
 ]
 ```
-Komponen antarmuka seperti Sidebar Navigasi ([`app-sidebar.tsx`](../../resources/js/components/app-sidebar.tsx)) dapat mengevaluasi prop `can_manage_portals` untuk menampilkan atau menyembunyikan menu manajemen secara deklaratif.
+Komponen antarmuka bilah navigasi utama seperti registry navigasi ([`portal-nav.ts`](../../resources/js/lib/portal-nav.ts) & [`build-portal-nav-group.ts`](../../resources/js/lib/build-portal-nav-group.ts) pada [`TemplateSidebar`](../../resources/js/components/template-sidebar.tsx)) dapat mengevaluasi prop `can_manage_portals` untuk menampilkan atau menyembunyikan menu manajemen secara deklaratif.
 
 ---
 
@@ -1150,7 +1150,7 @@ Route::middleware(['auth', 'verified', 'can:manage,App\Models\Portal'])
         Route::patch('/{portal}/toggle-active', [AdminPortalController::class, 'toggleActive'])->name('toggle-active');
     });
 ```
-Pada komponen bilah navigasi utama ([`resources/js/components/app-sidebar.tsx`](../../resources/js/components/app-sidebar.tsx)), menu **Portal Eksternal** hanya dirender jika properti `permissions.can_manage_portals` bernilai `true` (diteruskan melalui shared props Inertia oleh [`HandleInertiaRequests.php`](../../app/Http/Middleware/HandleInertiaRequests.php)).
+Pada komponen bilah navigasi utama ([`resources/js/lib/build-portal-nav-group.ts`](../../resources/js/lib/build-portal-nav-group.ts) yang diregistrasikan ke [`portal-nav.ts`](../../resources/js/lib/portal-nav.ts) dan dikonsumsi oleh [`TemplateSidebar`](../../resources/js/components/template-sidebar.tsx)), grup menu **Portal Eksternal** hanya dirender jika properti `permissions.can_manage_portals` bernilai `true` (diteruskan melalui shared props Inertia oleh [`HandleInertiaRequests.php`](../../app/Http/Middleware/HandleInertiaRequests.php)).
 
 #### 2. Antarmuka Tabel Master Portal (`resources/js/pages/admin/portals/index.tsx`)
 Komponen `AdminPortalsIndex` memanfaatkan kombinasi komponen tata letak [`AppLayout`](../../resources/js/layouts/app-layout.tsx), [`DataTableToolbar`](../../resources/js/components/data-table-toolbar.tsx), dan [`DataTablePagination`](../../resources/js/components/data-table-pagination.tsx):
@@ -1437,7 +1437,7 @@ Tabel berikut menyajikan pemetaan lengkap seluruh berkas frontend yang dibangun 
 | **9** | [`resources/js/components/portal/mapping-user-view.tsx`](../../resources/js/components/portal/mapping-user-view.tsx) | `[BARU]` | Komponen matriks mapping berdasarkan petugas (*User-Centric*). | Menangani pemilihan staf dari koleksi `allUsers`, pencarian lokal di memori, kartu profil staf, daftar portal unpaginated, dan auto-save. | Pastikan filtering lokal `filteredUsers` menangani pencarian nama, NIK, email, dan departemen secara case-insensitive. |
 | **10** | [`resources/js/components/confirm-dialog.tsx`](../../resources/js/components/confirm-dialog.tsx) | `[BARU]` | Komponen dialog konfirmasi aman berbasis Radix UI. | Menggantikan native `window.confirm()` dengan dialog WAI-ARIA accessible, focus trap, varian destruktif, dan status loading pemrosesan. | Pastikan tombol konfirmasi dinonaktifkan saat properti `loading` bernilai `true`. |
 | **11** | [`resources/js/types/portal.ts`](../../resources/js/types/portal.ts) | `[BARU]` | Definisi kontrak tipe TypeScript subsistem portal. | Menyediakan definisi antarmuka kuat untuk `Portal`, `FormConfig`, `UserPortalCredential`, `PortalAuthType`, dan `CredentialType`. | Pastikan sinkron 100% dengan skema database dan enum kolom Laravel di backend. |
-| **12** | [`resources/js/components/app-sidebar.tsx`](../../resources/js/components/app-sidebar.tsx) | `[MODIFIKASI]` | Komponen bilah navigasi utama aplikasi SIMRS. | Menambahkan grup menu "Portal Eksternal" (`Master Portal` dan `Mapping Akses`) di bawah evaluasi hak akses `can_manage_portals`. | Pastikan menu hanya tampil bagi pengguna yang memiliki izin `manage` pada `PortalPolicy`. |
+| **12** | [`resources/js/lib/build-portal-nav-group.ts`](../../resources/js/lib/build-portal-nav-group.ts) & [`portal-nav.ts`](../../resources/js/lib/portal-nav.ts) | `[BARU / MODIFIKASI]` | Builder modul navigasi bilah samping TemplateSidebar. | Membangun grup menu "Portal Eksternal" (`Master Portal` dan `Mapping Akses`) di bawah evaluasi izin `can_manage_portals`. | Pastikan menu hanya tampil bagi pengguna yang memiliki izin `manage` pada `PortalPolicy`. |
 
 ---
 
