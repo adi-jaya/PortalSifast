@@ -257,7 +257,7 @@ rs-extension/
 ### 5.2. Izin pada `manifest.json`
 * **`permissions`:** `["tabs", "scripting", "storage"]`
 * **`host_permissions`:**
-  - Domain SIMRS lokal & produksi: `["*://*.rsasf.co.id/*", "http://localhost/*", "http://127.0.0.1/*"]`
+  - Domain SIMRS lokal & produksi: `["*://*.rsaisyiyahsitifatimah.com/*", "http://localhost/*", "http://127.0.0.1/*"]`
   - Domain instansi target: `["https://*.kemkes.go.id/*", "https://*.bkkbn.go.id/*", "https://*.kemendukbangga.go.id/*", "https://*.sitb.id/*"]`
 
 ### 5.3. Alur Komunikasi One-Time Dispatch (Zero-Persistence)
