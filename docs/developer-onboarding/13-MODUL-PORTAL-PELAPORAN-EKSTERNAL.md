@@ -206,8 +206,8 @@ flowchart TD
         C_EVENT["Emisi DOM CustomEvent:<br/>'SIFAST_PORTAL_LAUNCH'<br/>(Target URL & Kredensial)"]
         UI --> CLICK
         CLICK --> API_CALL
-        API_CALL -.->|HTTPS POST Request| DTOKEN
-        DTOKEN -.->|JSON Response One-Time Kredensial| API_CALL
+        API_CALL -.->|"HTTPS POST Request"| DTOKEN
+        DTOKEN -.->|"JSON Response One-Time Kredensial"| API_CALL
         API_CALL --> C_EVENT
     end
 
@@ -215,7 +215,7 @@ flowchart TD
         HANDSHAKE["DOM Dataset Handshake:<br/>html[data-sifast-extension-installed='true']"]
         EVT_LISTEN["Event Listener DOM 'SIFAST_PORTAL_LAUNCH'"]
         MSG_EXT["chrome.runtime.sendMessage:<br/>{ action: 'LAUNCH_PORTAL', payload }"]
-        HANDSHAKE -.->|Inisialisasi Badge Aktif| UI
+        HANDSHAKE -.->|"Inisialisasi Badge Aktif"| UI
         C_EVENT --> EVT_LISTEN
         EVT_LISTEN --> MSG_EXT
     end
@@ -234,18 +234,18 @@ flowchart TD
         FLUSH_RAM["chrome.runtime.sendMessage:<br/>{ action: 'CREDENTIALS_CONSUMED' }"]
         FOCUS_CAPTCHA["Auto-Focus ke Input CAPTCHA<br/>(Jika Ditemukan / Submit Manual)"]
         
-        REQ_CRED -.->|Ambil Payload Berbasis tabId| RAM_QUEUE
-        RAM_QUEUE -.->|Kirim Payload Sekali Pakai| REQ_CRED
+        REQ_CRED -.->|"Ambil Payload Berbasis tabId"| RAM_QUEUE
+        RAM_QUEUE -.->|"Kirim Payload Sekali Pakai"| REQ_CRED
         REQ_CRED --> FIND_DOM
         FIND_DOM --> SET_NATIVE
         SET_NATIVE --> FLUSH_RAM
-        FLUSH_RAM -.->|Hapus Bersih dari RAM: pendingTabs.delete(tabId)| RAM_QUEUE
+        FLUSH_RAM -.->|"Hapus Bersih dari RAM: pendingTabs.delete(tabId)"| RAM_QUEUE
         SET_NATIVE --> FOCUS_CAPTCHA
     end
 
     subgraph TARGET_WEB["Platform Pelaporan Resmi Pemerintah"]
         LOGIN_FORM["Halaman Login Portal Target<br/>(Kemenkes / BKKBN / dsb)"]
-        SET_NATIVE -->|Injeksi Otomatis Nilai Input| LOGIN_FORM
+        SET_NATIVE -->|"Injeksi Otomatis Nilai Input"| LOGIN_FORM
     end
 ```
 
