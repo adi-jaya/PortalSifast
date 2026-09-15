@@ -66,6 +66,7 @@ export function ExtensionGuideBanner({
                     onClick={() => setDismissed(true)}
                     className="h-8 w-8 text-amber-600 hover:bg-amber-100/60 hover:text-amber-900 dark:text-amber-400 dark:hover:bg-amber-900/40"
                     title="Tutup pemberitahuan"
+                    aria-label="Tutup pemberitahuan"
                 >
                     <X className="h-4 w-4" />
                 </Button>

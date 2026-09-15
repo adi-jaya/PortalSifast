@@ -73,7 +73,8 @@ export default function PortalPelaporanIndex({
     const categoryCounts = useMemo(() => {
         const counts: Record<string, number> = { all: portals.length };
         for (const portal of portals) {
-            counts[portal.category] = (counts[portal.category] || 0) + 1;
+            const key = portal.category.toLowerCase().trim();
+            counts[key] = (counts[key] || 0) + 1;
         }
         return counts;
     }, [portals]);
@@ -196,7 +197,7 @@ export default function PortalPelaporanIndex({
                                             : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300',
                                     )}
                                 >
-                                    {categoryCounts[category] || 0}
+                                    {categoryCounts[category.toLowerCase().trim()] || 0}
                                 </span>
                             </button>
                         ))}
@@ -210,6 +211,7 @@ export default function PortalPelaporanIndex({
                             placeholder="Cari nama atau deskripsi portal..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
+                            aria-label="Cari portal pelaporan"
                             className="h-9 pl-9 pr-8 text-xs"
                         />
                         {searchTerm && (

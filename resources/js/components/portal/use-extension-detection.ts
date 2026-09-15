@@ -10,10 +10,19 @@ import type { ExtensionStatus } from '@/types/portal';
  * 3. Mengirimkan CustomEvent 'SIFAST_PING_EXTENSION' dan mendengarkan respon 'SIFAST_PONG_EXTENSION'.
  */
 export function useExtensionDetection(): ExtensionStatus {
-    const [status, setStatus] = useState<ExtensionStatus>({
-        isInstalled: false,
-        version: null,
-        isChecking: true,
+    const [status, setStatus] = useState<ExtensionStatus>(() => {
+        if (typeof document !== 'undefined' && document.documentElement.dataset.sifastExtensionInstalled === 'true') {
+            return {
+                isInstalled: true,
+                version: document.documentElement.dataset.sifastExtensionVersion || '1.0.0',
+                isChecking: false,
+            };
+        }
+        return {
+            isInstalled: false,
+            version: null,
+            isChecking: true,
+        };
     });
 
     useEffect(() => {
