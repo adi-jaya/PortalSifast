@@ -86,7 +86,7 @@ tests/
   - `PortalAggregatorService::getCategoriesForUser(User $user): array`
   - `PortalAggregatorService::formatPortalCard(Portal $portal, User $user, ?UserPortalCredential $credential = null): array`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Buat file `tests/Feature/PortalPelaporan/PortalAggregatorServiceTest.php`:
 
@@ -305,7 +305,7 @@ it('returns unique, deduplicated, sorted list of categories for user portals', f
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Jalankan perintah pengujian:
 ```bash
@@ -313,7 +313,7 @@ vendor/bin/pest tests/Feature/PortalPelaporan/PortalAggregatorServiceTest.php
 ```
 Ekspektasi: Gagal (*Class "App\Services\Portal\PortalAggregatorService" not found*).
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Buat file `app/Services/Portal/PortalAggregatorService.php`:
 
@@ -450,7 +450,7 @@ class PortalAggregatorService
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Jalankan:
 ```bash
@@ -458,7 +458,7 @@ vendor/bin/pest tests/Feature/PortalPelaporan/PortalAggregatorServiceTest.php
 ```
 Ekspektasi: Seluruh 7 tes PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/Services/Portal/PortalAggregatorService.php tests/Feature/PortalPelaporan/PortalAggregatorServiceTest.php
@@ -481,7 +481,7 @@ git commit -m "feat(portal): add PortalAggregatorService with access filtering a
   - Controller: `PortalAggregatorController::index(Request $request): \Inertia\Response`
   - Inertia component: `portal-pelaporan/index` with props: `portals`, `categories`, `filters`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Buat file `tests/Feature/PortalPelaporan/PortalAggregatorControllerTest.php`:
 
@@ -587,7 +587,7 @@ it('passes query filters category and search to aggregator service and props', f
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Jalankan:
 ```bash
@@ -595,7 +595,7 @@ vendor/bin/pest tests/Feature/PortalPelaporan/PortalAggregatorControllerTest.php
 ```
 Ekspektasi: Gagal (*Route [portal-pelaporan.index] not defined*).
 
-- [ ] **Step 3: Implement controller and route**
+- [x] **Step 3: Implement controller and route**
 
 1. Buat file `app/Http/Controllers/PortalAggregatorController.php`:
 
@@ -659,7 +659,7 @@ class PortalAggregatorController extends Controller
         ->name('portal-pelaporan.personal-credentials.update');
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Jalankan:
 ```bash
@@ -667,7 +667,7 @@ vendor/bin/pest tests/Feature/PortalPelaporan/PortalAggregatorControllerTest.php
 ```
 Ekspektasi: Seluruh 4 tes PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/Http/Controllers/PortalAggregatorController.php routes/web.php tests/Feature/PortalPelaporan/PortalAggregatorControllerTest.php
@@ -689,7 +689,7 @@ git commit -m "feat(portal): add PortalAggregatorController and register GET /po
   - `ExtensionStatus` interface in `resources/js/types/portal.ts`
   - Hook: `useExtensionDetection(): ExtensionStatus`
 
-- [ ] **Step 1: Update TypeScript types in `resources/js/types/portal.ts`**
+- [x] **Step 1: Update TypeScript types in `resources/js/types/portal.ts`**
 
 Edit file `resources/js/types/portal.ts` dengan menambahkan tipe `PortalCardItem` dan `ExtensionStatus`:
 
@@ -791,7 +791,7 @@ export interface ExtensionStatus {
 }
 ```
 
-- [ ] **Step 2: Create React hook `useExtensionDetection`**
+- [x] **Step 2: Create React hook `useExtensionDetection`**
 
 Buat file `resources/js/components/portal/use-extension-detection.ts`:
 
@@ -888,7 +888,7 @@ export function useExtensionDetection(): ExtensionStatus {
 }
 ```
 
-- [ ] **Step 3: Run TypeScript compiler check**
+- [x] **Step 3: Run TypeScript compiler check**
 
 Jalankan:
 ```bash
@@ -896,7 +896,7 @@ npx tsc --noEmit
 ```
 Ekspektasi: Tidak ada error TypeScript.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add resources/js/types/portal.ts resources/js/components/portal/use-extension-detection.ts
@@ -919,7 +919,7 @@ git commit -m "feat(portal): add PortalCardItem types and useExtensionDetection 
   - `<ExtensionGuideBanner isInstalled={status.isInstalled} isChecking={status.isChecking} onOpenGuide={() => ...} />`
   - `<ExtensionInstallDialog open={isOpen} onOpenChange={setIsOpen} />`
 
-- [ ] **Step 1: Create `extension-status-badge.tsx`**
+- [x] **Step 1: Create `extension-status-badge.tsx`**
 
 Buat file `resources/js/components/portal/extension-status-badge.tsx`:
 
@@ -993,7 +993,7 @@ export function ExtensionStatusBadge({
 }
 ```
 
-- [ ] **Step 2: Create `extension-install-dialog.tsx`**
+- [x] **Step 2: Create `extension-install-dialog.tsx`**
 
 Buat file `resources/js/components/portal/extension-install-dialog.tsx`:
 
@@ -1117,7 +1117,7 @@ export function ExtensionInstallDialog({
 }
 ```
 
-- [ ] **Step 3: Create `extension-guide-banner.tsx`**
+- [x] **Step 3: Create `extension-guide-banner.tsx`**
 
 Buat file `resources/js/components/portal/extension-guide-banner.tsx`:
 
@@ -1197,7 +1197,7 @@ export function ExtensionGuideBanner({
 }
 ```
 
-- [ ] **Step 4: Run TypeScript check**
+- [x] **Step 4: Run TypeScript check**
 
 Jalankan:
 ```bash
@@ -1205,7 +1205,7 @@ npx tsc --noEmit
 ```
 Ekspektasi: Tidak ada error.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add resources/js/components/portal/extension-status-badge.tsx resources/js/components/portal/extension-install-dialog.tsx resources/js/components/portal/extension-guide-banner.tsx
@@ -1229,7 +1229,7 @@ git commit -m "feat(portal): add extension status badge, guide banner, and insta
   - `<PersonalCredentialDialog portal={portal} open={isOpen} onOpenChange={setIsOpen} onSuccess={handleSuccess} />`
   - `<PortalCard portal={portal} isExtensionInstalled={isInstalled} onOpenPersonalModal={handleOpenModal} />`
 
-- [ ] **Step 1: Create `personal-credential-dialog.tsx`**
+- [x] **Step 1: Create `personal-credential-dialog.tsx`**
 
 Buat file `resources/js/components/portal/personal-credential-dialog.tsx`:
 
@@ -1454,7 +1454,7 @@ export function PersonalCredentialDialog({
 }
 ```
 
-- [ ] **Step 2: Create `portal-card.tsx`**
+- [x] **Step 2: Create `portal-card.tsx`**
 
 Buat file `resources/js/components/portal/portal-card.tsx`:
 
@@ -1681,7 +1681,7 @@ export function PortalCard({
 }
 ```
 
-- [ ] **Step 3: Run TypeScript compiler check**
+- [x] **Step 3: Run TypeScript compiler check**
 
 Jalankan:
 ```bash
@@ -1689,7 +1689,7 @@ npx tsc --noEmit
 ```
 Ekspektasi: Bebas dari error tipe.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add resources/js/components/portal/personal-credential-dialog.tsx resources/js/components/portal/portal-card.tsx
@@ -1710,7 +1710,7 @@ git commit -m "feat(portal): add PortalCard component and PersonalCredentialDial
 - Produces:
   - Halaman `portal-pelaporan/index` yang siap di-render via Inertia.
 
-- [ ] **Step 1: Create `resources/js/pages/portal-pelaporan/index.tsx`**
+- [x] **Step 1: Create `resources/js/pages/portal-pelaporan/index.tsx`**
 
 Buat file `resources/js/pages/portal-pelaporan/index.tsx`:
 
@@ -2005,7 +2005,7 @@ export default function PortalPelaporanIndex({
 }
 ```
 
-- [ ] **Step 2: Run TypeScript check**
+- [x] **Step 2: Run TypeScript check**
 
 Jalankan:
 ```bash
@@ -2013,7 +2013,7 @@ npx tsc --noEmit
 ```
 Ekspektasi: Tidak ada error kompilasi TypeScript.
 
-- [ ] **Step 3: Run Pest Feature tests for controller**
+- [x] **Step 3: Run Pest Feature tests for controller**
 
 Jalankan:
 ```bash
@@ -2021,7 +2021,7 @@ vendor/bin/pest tests/Feature/PortalPelaporan/PortalAggregatorControllerTest.php
 ```
 Ekspektasi: Semua 4 tes PASS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add resources/js/pages/portal-pelaporan/index.tsx
@@ -2039,7 +2039,7 @@ git commit -m "feat(portal): add portal-pelaporan index page with live category 
 - Consumes: Route `/portal-pelaporan` (`portal-pelaporan.index`).
 - Produces: Item menu navigasi "Portal Pelaporan" di sidebar SIMRS untuk seluruh staf rumah sakit yang berhak.
 
-- [ ] **Step 1: Check existing navigation items in `app-sidebar.tsx`**
+- [x] **Step 1: Check existing navigation items in `app-sidebar.tsx`**
 
 Periksa posisi `mainNavItems` di `resources/js/components/app-sidebar.tsx`:
 ```tsx
@@ -2057,7 +2057,7 @@ const mainNavItems: NavItem[] = [
     ...
 ```
 
-- [ ] **Step 2: Add "Portal Pelaporan" into `mainNavItems`**
+- [x] **Step 2: Add "Portal Pelaporan" into `mainNavItems`**
 
 Tambahkan item menu `Portal Pelaporan` dengan icon `Globe` atau `Layers` pada `mainNavItems` di `resources/js/components/app-sidebar.tsx`:
 
@@ -2083,7 +2083,7 @@ const mainNavItems: NavItem[] = [
 
 Pastikan icon `Globe` telah di-import dari `lucide-react`.
 
-- [ ] **Step 3: Run TypeScript compiler check**
+- [x] **Step 3: Run TypeScript compiler check**
 
 Jalankan:
 ```bash
@@ -2091,7 +2091,7 @@ npx tsc --noEmit
 ```
 Ekspektasi: Bebas dari error tipe.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add resources/js/components/app-sidebar.tsx
@@ -2106,7 +2106,7 @@ git commit -m "feat(navigation): integrate Portal Pelaporan link into SIMRS app 
 - Test: Seluruh unit/feature test di `tests/Feature/PortalPelaporan/`
 - Build: Verifikasi TypeScript (`npx tsc --noEmit`) dan Vite build (`npm run build`)
 
-- [ ] **Step 1: Run full PortalPelaporan Pest feature tests**
+- [x] **Step 1: Run full PortalPelaporan Pest feature tests**
 
 Jalankan:
 ```bash
@@ -2114,7 +2114,7 @@ vendor/bin/pest tests/Feature/PortalPelaporan
 ```
 Ekspektasi: Seluruh tes (78 tes awal + 11 tes baru Plan 3 = 89 tes) PASS dengan 0 failure.
 
-- [ ] **Step 2: Run frontend build verification**
+- [x] **Step 2: Run frontend build verification**
 
 Jalankan:
 ```bash
@@ -2122,7 +2122,7 @@ npm run build
 ```
 Ekspektasi: Build Vite sukses menghasilkan production bundles tanpa chunk error.
 
-- [ ] **Step 3: Commit and update documentation log**
+- [x] **Step 3: Commit and update documentation log**
 
 ```bash
 git add docs/superpowers/plans/2026-09-15-portal-eksternal-plan-3-portal-aggregator.md
