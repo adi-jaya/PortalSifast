@@ -1,14 +1,15 @@
 # Spesifikasi Desain: Portal Pelaporan Eksternal SIMRS Sifast & Custom Browser Extension Autofill
 
 **Tanggal Dibuat:** 2026-09-09  
-**Terakhir Disinkronkan:** 2026-09-12 (Pasca-Implementasi Plan 1 & Plan 2)  
-**Status:** In Progress (Plan 1 & 2 Completed, Plan 3 & 4 Pending)  
+**Terakhir Disinkronkan:** 2026-09-15 (Pembaruan Addendum Spesifikasi Logo Upload)  
+**Status:** In Progress (Plan 1 & 2 Completed, Logo Spec Approved, Plan 3 & 4 Pending)  
 **Tipe Proyek:** Architectural Subsystem  
 **Target Platform:** SIMRS Sifast (Laravel 12, Inertia.js, React 19, TypeScript, Tailwind CSS v4) & Chromium-based Browsers (Manifest V3)
 
 ### Status Rencana Implementasi Modular:
 - [x] **Plan 1: Fondasi Backend & Database** *(Selesai - 29 Pest Tests PASS)*
 - [x] **Plan 2: Modul Admin (Master Portal & Mapping Akses)** *(Selesai - 33 Pest Tests PASS, Total 62 Tests PASS)*
+- [ ] **Addendum: Penyimpanan & Pengunggahan Berkas Logo Portal** *(Spesifikasi Disetujui: [`2026-09-15-portal-logo-upload-design.md`](2026-09-15-portal-logo-upload-design.md))*
 - [ ] **Plan 3: Custom Browser Extension Manifest V3 (`rs-extension/`)** *(Siap Dibuat)*
 - [ ] **Plan 4: Halaman Pengguna (Portal Agregator, Deteksi Ekstensi & Distribusi ZIP)** *(Terencana)*
 
@@ -42,7 +43,7 @@ Menyimpan daftar website eksternal, konfigurasi form login, dan kredensial bersa
 | `category` | `varchar(100)` | Kategori (contoh: "Kemenkes", "BKKBN", "Mutu & Akreditasi") |
 | `url` | `text` | URL landing / form login website target |
 | `url_pattern` | `varchar(255) NULL` | Regex / wildcard pattern untuk verifikasi URL tab eksternal |
-| `icon_path` | `varchar(255) NULL` | Path file logo/ikon portal di storage |
+| `icon_path` | `varchar(255) NULL` | Path file logo/ikon portal di storage (Spesifikasi upload & lifecycle: [`2026-09-15-portal-logo-upload-design.md`](2026-09-15-portal-logo-upload-design.md)) |
 | `description` | `text NULL` | Deskripsi singkat fungsi pelaporan portal |
 | `auth_type` | `enum('shared', 'personal', 'both')` | Kebijakan tipe akun login |
 | `shared_username` | `varchar(255) NULL` | Username akun bersama RS |
@@ -95,6 +96,7 @@ app/
 │   └── Requests/
 │       ├── Admin/
 │       │   ├── PortalRequest.php
+│       │   ├── UploadPortalLogoRequest.php         # Validasi dedicated upload berkas logo portal
 │       │   ├── SaveMappingRowRequest.php           # Validasi simpan baris tunggal (Instant Auto-Save)
 │       │   ├── SyncPortalUsersRequest.php          # Validasi massal mapping per-portal
 │       │   ├── SyncUserPortalsRequest.php          # Validasi massal mapping per-user
@@ -102,7 +104,7 @@ app/
 │       └── UpdatePersonalCredentialRequest.php
 └── Services/
     └── Portal/
-        ├── AdminPortalService.php                  # CRUD master portal, filter, auto-slug, toggle aktif
+        ├── AdminPortalService.php                  # CRUD master portal, logo storage lifecycle, filter, auto-slug
         ├── AdminPortalMappingService.php           # Matriks mapping, transactional sync massal, update/delete
         ├── PortalDispatchService.php               # One-time credential payload builder & decryption
         ├── PortalPersonalCredentialService.php     # Self-service credential update logic
