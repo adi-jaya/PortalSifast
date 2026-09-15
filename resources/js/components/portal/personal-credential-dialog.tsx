@@ -1,5 +1,5 @@
 import { Eye, EyeOff, KeyRound, Loader2, Save, ShieldCheck } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -33,11 +33,23 @@ export function PersonalCredentialDialog({
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-    // Sinkronisasi form saat portal berubah
+    // Sinkronisasi form saat modal dibuka atau portal yang dipilih berganti
+    useEffect(() => {
+        if (open && portal) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setUsername(portal.personal_username || '');
+            setPassword('');
+            setShowPassword(false);
+            setErrorMessage(null);
+            setSuccessMessage(null);
+        }
+    }, [open, portal]);
+
     const handleOpenChange = (newOpen: boolean) => {
         if (newOpen && portal) {
             setUsername(portal.personal_username || '');
             setPassword('');
+            setShowPassword(false);
             setErrorMessage(null);
             setSuccessMessage(null);
         }
@@ -76,10 +88,12 @@ export function PersonalCredentialDialog({
                 }),
             });
 
-            const data = await response.json();
+            const data = await response.json().catch(() => null);
 
             if (!response.ok) {
-                const message = data.message || (data.errors ? Object.values(data.errors).flat().join(', ') : 'Gagal menyimpan kredensial.');
+                const message =
+                    data?.message ||
+                    (data?.errors ? Object.values(data.errors).flat().join(', ') : 'Gagal menyimpan kredensial.');
                 throw new Error(message);
             }
 
@@ -98,7 +112,7 @@ export function PersonalCredentialDialog({
         }
     };
 
-    if (!portal) return null;
+    if (!portal || !portal.can_configure_personal) return null;
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -170,6 +184,7 @@ export function PersonalCredentialDialog({
                                     onClick={() => setShowPassword(!showPassword)}
                                     className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                                     tabIndex={-1}
+                                    aria-label={showPassword ? 'Sembunyikan password' : 'Lihat password'}
                                 >
                                     {showPassword ? (
                                         <EyeOff className="h-4 w-4" />

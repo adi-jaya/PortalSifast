@@ -187,6 +187,7 @@ export function PortalCard({
                         onClick={() => onOpenPersonalModal(portal)}
                         className="h-8 w-8 p-0 text-slate-600 hover:text-indigo-600 dark:text-slate-300 dark:hover:text-indigo-400"
                         title="Atur Username & Password Akun Pribadi"
+                        aria-label="Atur Akun Pribadi"
                     >
                         <KeyRound className="h-4 w-4" />
                     </Button>
