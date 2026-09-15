@@ -7,7 +7,7 @@ use App\Models\User;
 
 use function Pest\Laravel\actingAs;
 
-function makePortalAset(string $kode, string $ruangKode, string $barangKode): Aset
+function makeBulkDestroyAset(string $kode, string $ruangKode, string $barangKode): Aset
 {
     $ruang = AsetRuang::query()->create([
         'kode_ruang' => $ruangKode,
@@ -29,7 +29,7 @@ function makePortalAset(string $kode, string $ruangKode, string $barangKode): As
 }
 
 it('requires authentication to bulk delete aset', function () {
-    $aset = makePortalAset('INV-BD-2026-0001', 'BD01', 'BB1');
+    $aset = makeBulkDestroyAset('INV-BD-2026-0001', 'BD01', 'BB1');
 
     $this->post(route('aset.bulk-destroy'), ['ids' => [$aset->id]])
         ->assertRedirect(route('login'));
@@ -39,9 +39,9 @@ it('requires authentication to bulk delete aset', function () {
 
 it('soft deletes selected aset from index bulk action', function () {
     $user = User::factory()->create();
-    $a = makePortalAset('INV-BD-2026-0002', 'BD02', 'BB2');
-    $b = makePortalAset('INV-BD-2026-0003', 'BD03', 'BB3');
-    $keep = makePortalAset('INV-BD-2026-0004', 'BD04', 'BB4');
+    $a = makeBulkDestroyAset('INV-BD-2026-0002', 'BD02', 'BB2');
+    $b = makeBulkDestroyAset('INV-BD-2026-0003', 'BD03', 'BB3');
+    $keep = makeBulkDestroyAset('INV-BD-2026-0004', 'BD04', 'BB4');
 
     actingAs($user)
         ->from(route('aset.index'))

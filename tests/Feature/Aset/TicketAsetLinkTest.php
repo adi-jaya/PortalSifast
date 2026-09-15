@@ -96,6 +96,7 @@ it('stores ticket with asset_id and resolves portal aset', function () {
     actingAs($user)
         ->post('/tickets', [
             'ticket_type_id' => $this->type->id,
+            'dep_id' => 'IT',
             'ticket_category_id' => $this->category->id,
             'ticket_priority_id' => $this->priority->id,
             'title' => 'Rusak monitor IGD',
@@ -115,6 +116,7 @@ it('stores ticket with asset_no_inventaris and links portal aset by kode', funct
     actingAs($user)
         ->post('/tickets', [
             'ticket_type_id' => $this->type->id,
+            'dep_id' => 'IT',
             'ticket_category_id' => $this->category->id,
             'ticket_priority_id' => $this->priority->id,
             'title' => 'Tiket via kode aset',
