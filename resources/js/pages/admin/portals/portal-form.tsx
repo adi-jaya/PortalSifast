@@ -1,4 +1,4 @@
-import { Link, useForm } from '@inertiajs/react';
+import { Link, router, useForm } from '@inertiajs/react';
 import {
     ArrowLeft,
     Check,
@@ -8,8 +8,11 @@ import {
     Lock,
     Shield,
     Sparkles,
+    Trash2,
+    Upload,
+    X,
 } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { FormConfigEditor } from '@/components/portal/form-config-editor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,6 +46,10 @@ export function PortalForm({
     isEditing = false,
 }: PortalFormProps) {
     const [showPassword, setShowPassword] = useState(false);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [isInstantUploading, setIsInstantUploading] = useState(false);
+    const [isInstantRemoving, setIsInstantRemoving] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const categoryOptions = React.useMemo(() => {
         const seen = new Set<string>();
@@ -85,13 +92,31 @@ export function PortalForm({
         auto_submit: false,
     };
 
-    const { data, setData, post, put, processing, errors } = useForm({
+    const { data, setData, post, processing, errors } = useForm<{
+        _method?: string;
+        name: string;
+        slug: string;
+        category: string;
+        url: string;
+        url_pattern: string;
+        icon_file: File | null;
+        remove_logo: boolean;
+        description: string;
+        auth_type: PortalAuthType;
+        shared_username: string;
+        shared_password: string;
+        form_config: FormConfig;
+        is_active: boolean;
+        sort_order: number;
+    }>({
+        ...(isEditing ? { _method: 'put' } : {}),
         name: initialData?.name ?? '',
         slug: initialData?.slug ?? '',
         category: initialData?.category ?? (categories[0] || 'Kemenkes'),
         url: initialData?.url ?? '',
         url_pattern: initialData?.url_pattern ?? '',
-        icon_path: initialData?.icon_path ?? '',
+        icon_file: null,
+        remove_logo: false,
         description: initialData?.description ?? '',
         auth_type: (initialData?.auth_type ?? 'both') as PortalAuthType,
         shared_username: initialData?.shared_username ?? '',
@@ -101,6 +126,16 @@ export function PortalForm({
         is_active: initialData?.is_active ?? true,
         sort_order: initialData?.sort_order ?? 0,
     });
+
+    useEffect(() => {
+        if (data.icon_file) {
+            const objectUrl = URL.createObjectURL(data.icon_file);
+            setPreviewUrl(objectUrl);
+            return () => URL.revokeObjectURL(objectUrl);
+        } else {
+            setPreviewUrl(null);
+        }
+    }, [data.icon_file]);
 
     const handleAutoSlug = (force = false) => {
         if (!data.name) return;
@@ -112,15 +147,90 @@ export function PortalForm({
         setData('slug', slugified);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (isEditing && initialData?.id) {
-            put(`/admin/portals/${initialData.id}`);
-        } else {
-            post('/admin/portals');
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] || null;
+        setData((prev) => ({
+            ...prev,
+            icon_file: file,
+            remove_logo: false,
+        }));
+    };
+
+    const handleClearStagedFile = () => {
+        setData('icon_file', null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
         }
     };
 
+    const handleMarkRemoveLogo = () => {
+        setData((prev) => ({
+            ...prev,
+            icon_file: null,
+            remove_logo: true,
+        }));
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const handleUndoRemoveLogo = () => {
+        setData('remove_logo', false);
+    };
+
+    const handleQuickUpload = () => {
+        if (!data.icon_file || !initialData?.id) return;
+        setIsInstantUploading(true);
+        router.post(
+            `/admin/portals/${initialData.id}/logo`,
+            { icon_file: data.icon_file },
+            {
+                forceFormData: true,
+                preserveScroll: true,
+                onSuccess: () => {
+                    handleClearStagedFile();
+                },
+                onFinish: () => {
+                    setIsInstantUploading(false);
+                },
+            },
+        );
+    };
+
+    const handleInstantRemove = () => {
+        if (!initialData?.id) return;
+        if (!confirm('Yakin ingin menghapus berkas logo ini secara langsung?')) {
+            return;
+        }
+        setIsInstantRemoving(true);
+        router.delete(`/admin/portals/${initialData.id}/logo`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                handleClearStagedFile();
+                setData('remove_logo', false);
+            },
+            onFinish: () => {
+                setIsInstantRemoving(false);
+            },
+        });
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (isEditing && initialData?.id) {
+            post(`/admin/portals/${initialData.id}`, {
+                forceFormData: true,
+            });
+        } else {
+            post('/admin/portals', {
+                forceFormData: true,
+            });
+        }
+    };
+
+    const currentDisplayUrl =
+        previewUrl || (!data.remove_logo ? initialData?.icon_url : null);
+    const hasExistingLogo = Boolean(initialData?.icon_url && !data.remove_logo);
     const showSharedSection =
         data.auth_type === 'shared' || data.auth_type === 'both';
 
@@ -240,7 +350,7 @@ export function PortalForm({
                         )}
                     </div>
 
-                    <div>
+                    <div className="md:col-span-2">
                         <Label htmlFor="url_pattern">
                             URL Match Pattern (Wildcard)
                         </Label>
@@ -259,17 +369,136 @@ export function PortalForm({
                         </p>
                     </div>
 
-                    <div>
-                        <Label htmlFor="icon_path">Logo / Path Ikon</Label>
-                        <Input
-                            id="icon_path"
-                            value={data.icon_path}
-                            onChange={(e) =>
-                                setData('icon_path', e.target.value)
-                            }
-                            placeholder="Contoh: /images/portals/kemenkes.png"
-                            className="mt-1 text-xs"
-                        />
+                    {/* Logo Uploader Box */}
+                    <div className="md:col-span-2 space-y-2 rounded-xl border border-border/80 bg-muted/20 p-4">
+                        <Label className="text-sm font-semibold text-foreground">
+                            Berkas Logo Portal
+                        </Label>
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                            {/* 80x80 Preview Box */}
+                            <div className="relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background shadow-xs">
+                                {currentDisplayUrl ? (
+                                    <img
+                                        src={currentDisplayUrl}
+                                        alt="Preview Logo"
+                                        className="size-full object-contain p-1.5"
+                                    />
+                                ) : (
+                                    <Globe className="size-8 text-muted-foreground/60" />
+                                )}
+                            </div>
+
+                            <div className="flex flex-1 flex-col gap-2">
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                                    onChange={handleFileChange}
+                                    className="hidden"
+                                    id="portal-logo-input"
+                                />
+
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                            fileInputRef.current?.click()
+                                        }
+                                        className="gap-1.5 text-xs"
+                                    >
+                                        <Upload className="size-3.5" />
+                                        {hasExistingLogo || data.icon_file
+                                            ? 'Ganti Logo'
+                                            : 'Pilih Logo'}
+                                    </Button>
+
+                                    {data.icon_file && (
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={handleClearStagedFile}
+                                            className="gap-1 text-xs text-muted-foreground hover:text-foreground"
+                                        >
+                                            <X className="size-3.5" /> Batal
+                                        </Button>
+                                    )}
+
+                                    {isEditing &&
+                                        data.icon_file &&
+                                        initialData?.id && (
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                size="sm"
+                                                disabled={isInstantUploading}
+                                                onClick={handleQuickUpload}
+                                                className="gap-1.5 text-xs font-medium"
+                                            >
+                                                <Upload className="size-3.5" />
+                                                {isInstantUploading
+                                                    ? 'Mengunggah...'
+                                                    : 'Unggah Cepat'}
+                                            </Button>
+                                        )}
+
+                                    {hasExistingLogo && !data.icon_file && (
+                                        <>
+                                            {isEditing && initialData?.id ? (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    disabled={isInstantRemoving}
+                                                    onClick={handleInstantRemove}
+                                                    className="gap-1.5 text-xs text-destructive hover:bg-destructive/10"
+                                                >
+                                                    <Trash2 className="size-3.5" />
+                                                    {isInstantRemoving
+                                                        ? 'Menghapus...'
+                                                        : 'Hapus Logo Instan'}
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={handleMarkRemoveLogo}
+                                                    className="gap-1.5 text-xs text-destructive hover:bg-destructive/10"
+                                                >
+                                                    <Trash2 className="size-3.5" /> Hapus Logo
+                                                </Button>
+                                            )}
+                                        </>
+                                    )}
+
+                                    {data.remove_logo && (
+                                        <span className="flex items-center gap-2 text-xs text-destructive">
+                                            <span>Logo akan dihapus saat disimpan</span>
+                                            <button
+                                                type="button"
+                                                onClick={handleUndoRemoveLogo}
+                                                className="underline hover:text-foreground"
+                                            >
+                                                Batalkan
+                                            </button>
+                                        </span>
+                                    )}
+                                </div>
+
+                                <p className="text-[11px] text-muted-foreground">
+                                    Format: PNG, JPG, WEBP, atau SVG (Maks. 2 MB). Disarankan rasio 1:1.
+                                </p>
+
+                                {errors.icon_file && (
+                                    <p className="text-xs font-medium text-destructive">
+                                        {errors.icon_file}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -492,9 +721,7 @@ export function PortalForm({
 
                 <Button type="submit" disabled={processing} className="gap-2">
                     <Check className="size-4" />
-                    {isEditing
-                        ? 'Simpan Perubahan Portal'
-                        : 'Simpan & Tambah Portal'}
+                    {processing ? 'Menyimpan...' : 'Simpan'}
                 </Button>
             </div>
         </form>
