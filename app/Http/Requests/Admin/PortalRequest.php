@@ -16,10 +16,18 @@ class PortalRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $merges = [];
+
         if (blank($this->input('slug')) && filled($this->input('name'))) {
-            $this->merge([
-                'slug' => Str::slug((string) $this->input('name')),
-            ]);
+            $merges['slug'] = Str::slug((string) $this->input('name'));
+        }
+
+        if ($this->has('category') && is_string($this->input('category'))) {
+            $merges['category'] = trim($this->input('category'));
+        }
+
+        if (! empty($merges)) {
+            $this->merge($merges);
         }
     }
 

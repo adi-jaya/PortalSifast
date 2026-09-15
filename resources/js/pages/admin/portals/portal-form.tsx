@@ -30,12 +30,42 @@ interface PortalFormProps {
     isEditing?: boolean;
 }
 
+const DEFAULT_CATEGORIES = [
+    'Kemenkes',
+    'BKKBN',
+    'Kemendukbangga',
+    'Mutu & Akreditasi',
+];
+
 export function PortalForm({
     initialData,
     categories,
     isEditing = false,
 }: PortalFormProps) {
     const [showPassword, setShowPassword] = useState(false);
+
+    const categoryOptions = React.useMemo(() => {
+        const seen = new Set<string>();
+        const uniqueList: string[] = [];
+
+        [
+            ...(initialData?.category ? [initialData.category] : []),
+            ...categories,
+            ...DEFAULT_CATEGORIES,
+        ].forEach((cat) => {
+            const trimmed = (cat || '').trim();
+            if (!trimmed) return;
+            const normalized = trimmed.toLowerCase();
+            if (!seen.has(normalized)) {
+                seen.add(normalized);
+                uniqueList.push(trimmed);
+            }
+        });
+
+        return uniqueList.sort((a, b) =>
+            a.localeCompare(b, undefined, { sensitivity: 'base' }),
+        );
+    }, [categories, initialData?.category]);
 
     const defaultFormConfig: FormConfig = {
         is_spa: false,
@@ -178,13 +208,9 @@ export function PortalForm({
                             required
                         />
                         <datalist id="category-suggestions">
-                            {categories.map((cat) => (
+                            {categoryOptions.map((cat) => (
                                 <option key={cat} value={cat} />
                             ))}
-                            <option value="Kemenkes" />
-                            <option value="BKKBN" />
-                            <option value="Kemendukbangga" />
-                            <option value="Mutu & Akreditasi" />
                         </datalist>
                         {errors.category && (
                             <p className="mt-1 text-xs text-destructive">

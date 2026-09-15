@@ -64,12 +64,7 @@ class AdminPortalService
                 'updated_at' => $portal->updated_at?->format('Y-m-d H:i'),
             ]);
 
-        $categories = Portal::query()
-            ->distinct()
-            ->orderBy('category')
-            ->pluck('category')
-            ->filter()
-            ->values();
+        $categories = $this->getCategories();
 
         return [
             'portals' => $portals,
@@ -80,6 +75,23 @@ class AdminPortalService
                 'status' => $status,
             ],
         ];
+    }
+
+    /**
+     * @return Collection<int, string>
+     */
+    public function getCategories(): Collection
+    {
+        return Portal::query()
+            ->whereNotNull('category')
+            ->where('category', '!=', '')
+            ->distinct()
+            ->pluck('category')
+            ->map(fn ($category): string => trim((string) $category))
+            ->filter(fn (string $category): bool => $category !== '')
+            ->unique(fn (string $category): string => mb_strtolower($category))
+            ->sort(fn (string $a, string $b): int => strnatcasecmp($a, $b))
+            ->values();
     }
 
     /**
@@ -100,16 +112,9 @@ class AdminPortalService
             'auto_submit' => false,
         ];
 
-        $categories = Portal::query()
-            ->distinct()
-            ->orderBy('category')
-            ->pluck('category')
-            ->filter()
-            ->values();
-
         return [
             'default_form_config' => $defaultFormConfig,
-            'categories' => $categories,
+            'categories' => $this->getCategories(),
         ];
     }
 

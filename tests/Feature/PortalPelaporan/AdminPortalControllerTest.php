@@ -53,6 +53,21 @@ it('allows admin to render portal index with list and filters', function (): voi
         );
 });
 
+it('allows admin to render create page with deduplicated categories', function (): void {
+    Portal::factory()->create(['name' => 'SIRS Online', 'category' => 'Kemenkes']);
+    Portal::factory()->create(['name' => 'SIHA 2', 'category' => ' Kemenkes ']);
+    Portal::factory()->create(['name' => 'SIRIKA', 'category' => 'BKKBN']);
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.portals.create'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('admin/portals/create')
+            ->has('categories', 2)
+            ->where('categories', ['BKKBN', 'Kemenkes'])
+        );
+});
+
 it('allows admin to create a new portal with encrypted password and json config', function (): void {
     $payload = [
         'name' => 'SITB Jawa Timur',

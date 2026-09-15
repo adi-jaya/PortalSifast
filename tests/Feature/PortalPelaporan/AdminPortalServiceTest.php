@@ -17,6 +17,20 @@ it('paginates and filters portals with category and search', function (): void {
         ->and($result['categories'])->toContain('Kemenkes', 'BKKBN');
 });
 
+it('returns trimmed, non-empty, and deduplicated categories in getFormData and paginatePortals', function (): void {
+    Portal::factory()->create(['name' => 'SIRS Online', 'category' => 'Kemenkes']);
+    Portal::factory()->create(['name' => 'SIHA 2', 'category' => ' Kemenkes ']);
+    Portal::factory()->create(['name' => 'SITB Jatim', 'category' => 'kemenkes']);
+    Portal::factory()->create(['name' => 'SIRIKA', 'category' => 'BKKBN']);
+    Portal::factory()->create(['name' => 'New SIGA', 'category' => 'bkkbn']);
+
+    $formData = $this->service->getFormData();
+    $categories = $formData['categories']->values()->all();
+
+    expect(count($categories))->toBe(2)
+        ->and(array_map('strtolower', $categories))->toEqualCanonicalizing(['kemenkes', 'bkkbn']);
+});
+
 it('stores a portal with auto-slug and default sort_order and form_config', function (): void {
     $portal = $this->service->storePortal([
         'name' => 'SIGA Kemendukbangga',
