@@ -177,3 +177,74 @@ it('includes icon_url in paginatePortals and formatPortalForEdit', function (): 
     expect($paginated['portals']->first())->toHaveKey('icon_url')
         ->and($paginated['portals']->first()['icon_url'])->toBe(Storage::disk('public')->url('portals/test-accessor.png'));
 });
+
+it('safely resolves file extension using MIME type rather than client extension to prevent RCE', function (): void {
+    Storage::fake('public');
+    $maliciousFile = UploadedFile::fake()->image('exploit.php', 100, 100);
+
+    $portal = $this->service->storePortal([
+        'name' => 'Exploit Portal',
+        'category' => 'Security',
+        'url' => 'https://security.example.com',
+        'auth_type' => 'shared',
+        'icon_file' => $maliciousFile,
+    ]);
+
+    expect($portal->icon_path)->toEndWith('.png')
+        ->and($portal->icon_path)->not->toContain('.php')
+        ->and(Storage::disk('public')->exists($portal->icon_path))->toBeTrue();
+
+    $anotherMaliciousFile = UploadedFile::fake()->image('shell.php', 100, 100);
+    $updated = $this->service->updatePortalLogo($portal, $anotherMaliciousFile);
+
+    expect($updated->icon_path)->toEndWith('.png')
+        ->and($updated->icon_path)->not->toContain('.php')
+        ->and(Storage::disk('public')->exists($updated->icon_path))->toBeTrue();
+
+    // Also verify when MIME type is explicitly image/png with a .php client filename
+    $mimePngFile = UploadedFile::fake()->image('backdoor.php', 100, 100)->mimeType('image/png');
+    $updatedWithMime = $this->service->updatePortalLogo($portal, $mimePngFile);
+
+    expect($updatedWithMime->icon_path)->toEndWith('.png')
+        ->and($updatedWithMime->icon_path)->not->toContain('.php')
+        ->and(Storage::disk('public')->exists($updatedWithMime->icon_path))->toBeTrue();
+});
+
+it('does not remove logo when remove_logo is string false in updatePortal', function (): void {
+    Storage::fake('public');
+    $file = UploadedFile::fake()->image('logo.png', 100, 100);
+    $portal = $this->service->storePortal([
+        'name' => 'Retain Logo Portal',
+        'category' => 'Kemenkes',
+        'url' => 'https://example.com',
+        'auth_type' => 'shared',
+        'icon_file' => $file,
+    ]);
+    $path = $portal->icon_path;
+    expect(Storage::disk('public')->exists($path))->toBeTrue();
+
+    // Passing 'false' as string (as commonly sent by multipart/form-data)
+    $this->service->updatePortal($portal, [
+        'name' => 'Retain Logo Portal Updated',
+        'remove_logo' => 'false',
+    ]);
+
+    expect($portal->fresh()->icon_path)->toBe($path)
+        ->and(Storage::disk('public')->exists($path))->toBeTrue();
+
+    // Passing boolean false
+    $this->service->updatePortal($portal, [
+        'remove_logo' => false,
+    ]);
+
+    expect($portal->fresh()->icon_path)->toBe($path)
+        ->and(Storage::disk('public')->exists($path))->toBeTrue();
+
+    // Passing boolean true removes the logo
+    $this->service->updatePortal($portal, [
+        'remove_logo' => true,
+    ]);
+
+    expect($portal->fresh()->icon_path)->toBeNull()
+        ->and(Storage::disk('public')->exists($path))->toBeFalse();
+});

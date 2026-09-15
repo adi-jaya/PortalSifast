@@ -148,7 +148,10 @@ class AdminPortalService
         if (($data['icon_file'] ?? null) instanceof UploadedFile) {
             $file = $data['icon_file'];
             $slug = $data['slug'] ?? Str::slug((string) ($data['name'] ?? 'portal'));
-            $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'png');
+            $extension = strtolower($file->extension() ?: 'png');
+            if (! in_array($extension, ['png', 'jpg', 'jpeg', 'webp', 'svg'], true)) {
+                $extension = 'png';
+            }
             $filename = sprintf('%s-%s.%s', $slug, Str::random(8), $extension);
             $data['icon_path'] = $file->storeAs('portals', $filename, 'public');
         }
@@ -188,7 +191,7 @@ class AdminPortalService
      */
     public function updatePortal(Portal $portal, array $data): Portal
     {
-        if (! empty($data['remove_logo'])) {
+        if (filter_var($data['remove_logo'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
             $this->removePortalLogo($portal);
         } elseif (($data['icon_file'] ?? null) instanceof UploadedFile) {
             $this->updatePortalLogo($portal, $data['icon_file']);
@@ -209,7 +212,10 @@ class AdminPortalService
     {
         $this->deleteIconFile($portal->icon_path);
 
-        $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'png');
+        $extension = strtolower($file->extension() ?: 'png');
+        if (! in_array($extension, ['png', 'jpg', 'jpeg', 'webp', 'svg'], true)) {
+            $extension = 'png';
+        }
         $filename = sprintf('%s-%s.%s', $portal->slug, Str::random(8), $extension);
         $path = $file->storeAs('portals', $filename, 'public');
 
