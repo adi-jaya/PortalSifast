@@ -43,6 +43,11 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
+        title: 'Portal Pelaporan',
+        href: '/portal-pelaporan',
+        icon: Globe,
+    },
+    {
         title: 'Tiket',
         href: '/tickets',
         icon: Ticket,
