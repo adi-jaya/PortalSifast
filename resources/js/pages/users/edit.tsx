@@ -256,7 +256,7 @@ export default function UsersEdit({
                                 </Label>
                             </div>
                             <p className="text-xs text-muted-foreground">
-                                Hanya superadmin yang dapat memberi/mencabut akses patroli.
+                                Hanya admin yang dapat memberi/mencabut akses patroli.
                             </p>
                             <InputError message={getError('can_access_patroli')} />
                         </div>

@@ -21,8 +21,8 @@ use App\Models\Ticket;
 use App\Services\Inventaris\BuatAsetBatch;
 use App\Services\Inventaris\GeneratorKodeAset;
 use App\Services\Inventaris\HitungPenyusutanAset;
-use App\Services\Inventaris\PemetaanStatusAset;
 use App\Services\Inventaris\PengaturanPenyusutanAset;
+use App\Services\Inventaris\UpdateAsetUnit;
 use App\Services\InventarisQrCodeGenerator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -509,54 +509,9 @@ class AsetController extends Controller
         ]);
     }
 
-    public function update(StoreAsetRequest $request, Aset $aset): RedirectResponse
+    public function update(StoreAsetRequest $request, Aset $aset, UpdateAsetUnit $updateAsetUnit): RedirectResponse
     {
-        $v = $request->validated();
-        $status = PemetaanStatusAset::dariInputForm(
-            $v['status_fungsi'] ?? $aset->status_fungsi,
-            $v['tingkat_kerusakan'] ?? $aset->tingkat_kerusakan,
-        );
-
-        $aset->update([
-            'aset_barang_id' => $v['aset_barang_id'] ?? $aset->aset_barang_id,
-            'aset_ruang_id' => $v['aset_ruang_id'],
-            'aset_distributor_id' => $v['aset_distributor_id'] ?? null,
-            'tahun_registrasi' => $v['tahun_registrasi'],
-            'asal_barang' => $v['asal_barang'] ?? null,
-            'tanggal_pengadaan' => $v['tanggal_pengadaan'] ?? null,
-            'harga' => $v['harga'] ?? null,
-            'kondisi' => $status['kondisi'],
-            'status_fungsi' => $status['status_fungsi'],
-            'tingkat_kerusakan' => $status['tingkat_kerusakan'],
-            'no_seri' => filled($v['no_seri'] ?? null) ? $v['no_seri'] : null,
-        ]);
-
-        if ($aset->aset_barang_id) {
-            $resolved = app(PengaturanPenyusutanAset::class)->resolveUntukAset(
-                $v['harga'] ?? $aset->harga,
-                isset($v['umur_ekonomis_bulan']) ? (int) $v['umur_ekonomis_bulan'] : null,
-                $v['nilai_residu'] ?? null,
-                $v['kelas_aset'] ?? null,
-            );
-
-            AsetBarang::query()->whereKey($aset->aset_barang_id)->update([
-                'kelas_aset' => $v['kelas_aset'] ?? null,
-                'wajib_kalibrasi' => array_key_exists('wajib_kalibrasi', $v) ? (bool) $v['wajib_kalibrasi'] : false,
-                'umur_ekonomis_bulan' => $resolved['umur_bulan'],
-                'aset_kategori_id' => $v['aset_kategori_id'] ?? null,
-                'aset_jenis_id' => $v['aset_jenis_id'] ?? null,
-                'aset_merk_id' => $v['aset_merk_id'] ?? null,
-                'aset_produsen_id' => $v['aset_produsen_id'] ?? null,
-                'aset_aspak_alat_id' => $v['aset_aspak_alat_id'] ?? null,
-                'aset_non_alkes_id' => $v['aset_non_alkes_id'] ?? null,
-                'no_akl_akd' => $v['no_akl_akd'] ?? null,
-                'daya_watt' => $v['daya_watt'] ?? null,
-                'level_teknologi' => $v['level_teknologi'] ?? null,
-                'tahun_produksi' => $v['tahun_produksi'] ?? null,
-                'tahun_mulai_operasi' => $v['tahun_mulai_operasi'] ?? null,
-                'nilai_residu' => $resolved['nilai_residu'],
-            ]);
-        }
+        $updateAsetUnit->handle($aset, $request->validated());
 
         return redirect()
             ->route('aset.show', $aset)

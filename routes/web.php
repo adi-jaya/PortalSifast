@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\DashboardNotificationController;
 use App\Http\Controllers\Api\DashboardTextAnalyticsController;
 use App\Http\Controllers\AsetAspakController;
 use App\Http\Controllers\AsetController;
+use App\Http\Controllers\AsetDistributorController;
 use App\Http\Controllers\AsetDokumenController;
 use App\Http\Controllers\AsetFotoController;
 use App\Http\Controllers\AsetImportController;
@@ -129,11 +130,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('integrations/sikat/go', SikatSsoRedirectController::class)
         ->name('integrations.sikat.go');
 
-    Route::get('users', [UsersController::class, 'index'])->name('users.index');
-    Route::get('users/create', [UsersController::class, 'create'])->name('users.create');
-    Route::post('users', [UsersController::class, 'store'])->name('users.store');
-    Route::get('users/{user}/edit', [UsersController::class, 'edit'])->name('users.edit');
-    Route::put('users/{user}', [UsersController::class, 'update'])->name('users.update');
+    Route::middleware('admin')->group(function (): void {
+        Route::get('users', [UsersController::class, 'index'])->name('users.index');
+        Route::get('users/create', [UsersController::class, 'create'])->name('users.create');
+        Route::post('users', [UsersController::class, 'store'])->name('users.store');
+        Route::get('users/{user}/edit', [UsersController::class, 'edit'])->name('users.edit');
+        Route::put('users/{user}', [UsersController::class, 'update'])->name('users.update');
+    });
     Route::get('pegawai', [PegawaiController::class, 'index'])->name('pegawai.index');
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('reports/sla', SlaReportController::class)->name('reports.sla');
@@ -157,37 +160,39 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('panic-staff', [EmergencyReportWebController::class, 'staff'])->name('emergency-reports.staff');
 
     // Inventaris SIMRS (read-only) — write dinonaktifkan, gunakan modul Aset
-    Route::get('inventaris/export', [InventarisController::class, 'export'])->name('inventaris.export');
-    Route::get('inventaris/audit', [InventarisController::class, 'audit'])->name('inventaris.audit');
-    Route::get('inventaris/label-print-batch', [InventarisController::class, 'labelPrintBatch'])->name('inventaris.label-print-batch');
-    Route::get('inventaris/{inventaris}/label-print', [InventarisController::class, 'labelPrint'])->name('inventaris.label-print');
-    Route::get('inventaris/{inventaris}/photo', [InventarisGambarController::class, 'show'])->name('inventaris.photo');
-    Route::resource('inventaris', InventarisController::class)
-        ->only(['index', 'show'])
-        ->parameters(['inventaris' => 'inventaris:no_inventaris']);
+    Route::middleware('inventaris.access')->group(function (): void {
+        Route::get('inventaris/export', [InventarisController::class, 'export'])->name('inventaris.export');
+        Route::get('inventaris/audit', [InventarisController::class, 'audit'])->name('inventaris.audit');
+        Route::get('inventaris/label-print-batch', [InventarisController::class, 'labelPrintBatch'])->name('inventaris.label-print-batch');
+        Route::get('inventaris/{inventaris}/label-print', [InventarisController::class, 'labelPrint'])->name('inventaris.label-print');
+        Route::get('inventaris/{inventaris}/photo', [InventarisGambarController::class, 'show'])->name('inventaris.photo');
+        Route::resource('inventaris', InventarisController::class)
+            ->only(['index', 'show'])
+            ->parameters(['inventaris' => 'inventaris:no_inventaris']);
 
-    // Inventaris Barang (read-only SIMRS)
-    Route::resource('inventaris-barang', InventarisBarangController::class)
-        ->only(['index', 'show'])
-        ->parameters(['inventaris-barang' => 'barang'])
-        ->where(['barang' => '.*']);
+        // Inventaris Barang (read-only SIMRS)
+        Route::resource('inventaris-barang', InventarisBarangController::class)
+            ->only(['index', 'show'])
+            ->parameters(['inventaris-barang' => 'barang'])
+            ->where(['barang' => '.*']);
 
-    // Master lookup inventaris (read-only SIMRS)
-    Route::resource('inventaris-ruang', InventarisRuangController::class)
-        ->only(['index'])
-        ->parameters(['inventaris-ruang' => 'ruang']);
-    Route::resource('inventaris-kategori', InventarisKategoriController::class)
-        ->only(['index'])
-        ->parameters(['inventaris-kategori' => 'kategori']);
-    Route::resource('inventaris-jenis', InventarisJenisController::class)
-        ->only(['index'])
-        ->parameters(['inventaris-jenis' => 'jenis']);
-    Route::resource('inventaris-merk', InventarisMerkController::class)
-        ->only(['index'])
-        ->parameters(['inventaris-merk' => 'merk']);
-    Route::resource('inventaris-produsen', InventarisProdusenController::class)
-        ->only(['index'])
-        ->parameters(['inventaris-produsen' => 'produsen']);
+        // Master lookup inventaris (read-only SIMRS)
+        Route::resource('inventaris-ruang', InventarisRuangController::class)
+            ->only(['index'])
+            ->parameters(['inventaris-ruang' => 'ruang']);
+        Route::resource('inventaris-kategori', InventarisKategoriController::class)
+            ->only(['index'])
+            ->parameters(['inventaris-kategori' => 'kategori']);
+        Route::resource('inventaris-jenis', InventarisJenisController::class)
+            ->only(['index'])
+            ->parameters(['inventaris-jenis' => 'jenis']);
+        Route::resource('inventaris-merk', InventarisMerkController::class)
+            ->only(['index'])
+            ->parameters(['inventaris-merk' => 'merk']);
+        Route::resource('inventaris-produsen', InventarisProdusenController::class)
+            ->only(['index'])
+            ->parameters(['inventaris-produsen' => 'produsen']);
+    });
 
     // Aset portal (database utama)
     Route::get('aset/sinkron', [AsetSinkronController::class, 'index'])->name('aset.sinkron.index');
@@ -302,6 +307,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('aset.master.merk.destroy');
     Route::post('aset/master/merk/bulk-delete', [AsetMerkController::class, 'bulkDestroy'])
         ->name('aset.master.merk.bulk-destroy');
+    Route::get('aset/master/distributor', [AsetDistributorController::class, 'index'])
+        ->name('aset.master.distributor.index');
+    Route::post('aset/master/distributor/simpan', [AsetDistributorController::class, 'store'])
+        ->name('aset.master.distributor.store');
+    Route::patch('aset/master/distributor/{distributor}', [AsetDistributorController::class, 'update'])
+        ->name('aset.master.distributor.update');
+    Route::delete('aset/master/distributor/{distributor}', [AsetDistributorController::class, 'destroy'])
+        ->name('aset.master.distributor.destroy');
+    Route::post('aset/master/distributor/bulk-delete', [AsetDistributorController::class, 'bulkDestroy'])
+        ->name('aset.master.distributor.bulk-destroy');
     Route::get('aset/master/kategori', [AsetKategoriController::class, 'index'])
         ->name('aset.master.kategori.index');
     Route::post('aset/master/kategori/simpan', [AsetKategoriController::class, 'store'])

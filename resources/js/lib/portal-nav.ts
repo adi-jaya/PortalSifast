@@ -63,6 +63,8 @@ export type PortalNavGroup = {
 };
 
 export type PortalNavPermissions = {
+    can_manage_users?: boolean;
+    can_access_inventaris_simrs?: boolean;
     can_access_payroll?: boolean;
     can_access_patroli?: boolean;
     can_access_checklist_kendaraan?: boolean;
@@ -509,6 +511,13 @@ export const moduleGroups: PortalNavGroup[] = [
                 isActive: (path) => path.startsWith('/aset/master/merk'),
             },
             {
+                id: 'aset-master-distributor',
+                label: 'Master Distributor',
+                href: '/aset/master/distributor',
+                icon: Building2,
+                isActive: (path) => path.startsWith('/aset/master/distributor'),
+            },
+            {
                 id: 'aset-master-ruang',
                 label: 'Master Ruang',
                 href: '/aset/master/ruang',
@@ -604,6 +613,18 @@ export const moduleGroups: PortalNavGroup[] = [
     },
 ];
 
+export function buildVisibleMainNavItems(permissions?: PortalNavPermissions): PortalNavItem[] {
+    const canManageUsers = Boolean(permissions?.can_manage_users);
+
+    return mainNavItems.filter((item) => {
+        if (item.id === 'users') {
+            return canManageUsers;
+        }
+
+        return true;
+    });
+}
+
 export function buildVisibleModuleGroups(permissions?: PortalNavPermissions): PortalNavGroup[] {
     const canAccessPayroll = Boolean(permissions?.can_access_payroll);
     const canAccessPatroli = Boolean(permissions?.can_access_patroli);
@@ -635,6 +656,10 @@ export function buildVisibleModuleGroups(permissions?: PortalNavPermissions): Po
             }
             if (group.id === 'berkas-kepegawaian') {
                 return canAccessBerkasKepegawaian;
+            }
+            // Sembunyikan dari sidebar untuk sementara — modul belum dipakai.
+            if (group.id === 'inventaris-simrs') {
+                return false;
             }
 
             return true;

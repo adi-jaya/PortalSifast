@@ -3,16 +3,19 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Session\DatabaseSession;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable, TwoFactorAuthenticatable;
 
     /**
@@ -105,7 +108,7 @@ class User extends Authenticatable
      */
     public function sessions(): HasMany
     {
-        return $this->hasMany(\Illuminate\Session\DatabaseSession::class, 'user_id');
+        return $this->hasMany(DatabaseSession::class, 'user_id');
     }
 
     /**
@@ -121,7 +124,7 @@ class User extends Authenticatable
     /**
      * Tiket yang dibuat oleh user ini (sebagai pemohon)
      */
-    public function requestedTickets(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function requestedTickets(): HasMany
     {
         return $this->hasMany(Ticket::class, 'requester_id');
     }
@@ -129,7 +132,7 @@ class User extends Authenticatable
     /**
      * Tiket yang ditugaskan ke user ini (sebagai assignee)
      */
-    public function assignedTickets(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function assignedTickets(): HasMany
     {
         return $this->hasMany(Ticket::class, 'assignee_id');
     }
@@ -137,7 +140,7 @@ class User extends Authenticatable
     /**
      * Komentar tiket oleh user ini
      */
-    public function ticketComments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function ticketComments(): HasMany
     {
         return $this->hasMany(TicketComment::class);
     }
@@ -145,7 +148,7 @@ class User extends Authenticatable
     /**
      * Aktivitas tiket oleh user ini
      */
-    public function ticketActivities(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function ticketActivities(): HasMany
     {
         return $this->hasMany(TicketActivity::class);
     }
@@ -175,6 +178,16 @@ class User extends Authenticatable
     public function isPemohon(): bool
     {
         return $this->role === 'pemohon';
+    }
+
+    public function canManageUsers(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin();
+    }
+
+    public function canAccessInventarisSimrs(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin() || $this->isStaff();
     }
 
     /**
@@ -207,7 +220,7 @@ class User extends Authenticatable
 
     public function canManagePatroliAccess(): bool
     {
-        return $this->isSuperAdmin();
+        return $this->isSuperAdmin() || $this->isAdmin();
     }
 
     public function canAccessChecklistKendaraan(): bool
@@ -431,7 +444,7 @@ class User extends Authenticatable
 
     // ==================== CHAT ====================
 
-    public function conversations(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function conversations(): BelongsToMany
     {
         return $this->belongsToMany(Conversation::class, 'conversation_user')->withTimestamps();
     }

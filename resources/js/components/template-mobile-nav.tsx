@@ -13,8 +13,8 @@ import { IconWell } from '@/components/icon-well';
 import {
     APP_NAME,
     APP_SUBTITLE,
+    buildVisibleMainNavItems,
     buildVisibleModuleGroups,
-    mainNavItems,
     settingsNavItems,
     type PortalNavPermissions,
 } from '@/lib/portal-nav';
@@ -33,6 +33,10 @@ type Props = {
 export function TemplateMobileNav({ open, onOpenChange }: Props) {
     const { isCurrentUrl, currentUrl } = useCurrentUrl();
     const { permissions } = usePage<SharedPageProps>().props;
+    const visibleMainNavItems = useMemo(
+        () => buildVisibleMainNavItems(permissions),
+        [permissions],
+    );
     const visibleModuleGroups = useMemo(
         () => buildVisibleModuleGroups(permissions),
         [permissions],
@@ -87,7 +91,7 @@ export function TemplateMobileNav({ open, onOpenChange }: Props) {
                         <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-sidebar-muted">
                             Menu Utama
                         </p>
-                        {mainNavItems.map((item) => {
+                        {visibleMainNavItems.map((item) => {
                             const isActive = item.isActive(currentUrl);
                             return (
                                 <Link

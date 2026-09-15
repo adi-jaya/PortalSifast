@@ -295,7 +295,7 @@ export default function UsersCreate({
                                 </Label>
                             </div>
                             <p className="text-xs text-muted-foreground">
-                                Hanya superadmin yang dapat memberi/mencabut akses patroli.
+                                Hanya admin yang dapat memberi/mencabut akses patroli.
                             </p>
                             <InputError message={errors.can_access_patroli} />
                         </div>

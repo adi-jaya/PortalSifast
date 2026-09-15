@@ -10,53 +10,76 @@ return new class extends Migration
     public function up(): void
     {
         // Cutover bersih: check-in lama terikat aset_ruang, tidak dimigrasi.
-        DB::table('patroli_checkin_item')->delete();
-        DB::table('patroli_checkin')->delete();
+        if (Schema::hasTable('patroli_checkin_item')) {
+            DB::table('patroli_checkin_item')->delete();
+        }
+        if (Schema::hasTable('patroli_checkin')) {
+            DB::table('patroli_checkin')->delete();
+        }
 
-        Schema::create('patroli_area', function (Blueprint $table) {
-            $table->id();
-            $table->string('nama')->unique();
-            $table->text('deskripsi')->nullable();
-            $table->boolean('is_active')->default(true);
-            $table->timestamps();
-        });
+        if (! Schema::hasTable('patroli_area')) {
+            Schema::create('patroli_area', function (Blueprint $table) {
+                $table->id();
+                $table->string('nama')->unique();
+                $table->text('deskripsi')->nullable();
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
+            });
+        }
 
-        Schema::create('patroli_ruang', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('patroli_area_id')->constrained('patroli_area')->cascadeOnDelete();
-            $table->string('kode')->nullable()->unique();
-            $table->string('nama');
-            $table->foreignId('patroli_template_id')
-                ->nullable()
-                ->constrained('patroli_template')
-                ->nullOnDelete();
-            $table->boolean('is_active')->default(true);
-            $table->timestamps();
+        if (! Schema::hasTable('patroli_ruang')) {
+            Schema::create('patroli_ruang', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('patroli_area_id')->constrained('patroli_area')->cascadeOnDelete();
+                $table->string('kode')->nullable()->unique();
+                $table->string('nama');
+                $table->foreignId('patroli_template_id')
+                    ->nullable()
+                    ->constrained('patroli_template')
+                    ->nullOnDelete();
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
 
-            $table->unique(['patroli_area_id', 'nama']);
-            $table->index(['patroli_template_id', 'is_active']);
-        });
+                $table->unique(['patroli_area_id', 'nama']);
+                $table->index(['patroli_template_id', 'is_active']);
+            });
+        }
 
-        Schema::table('patroli_checkin', function (Blueprint $table) {
-            // SQLite: composite index must be dropped before the FK column.
-            $table->dropIndex(['aset_ruang_id', 'checked_at']);
-        });
+        if (Schema::hasColumn('patroli_checkin', 'aset_ruang_id')) {
+            Schema::table('patroli_checkin', function (Blueprint $table) {
+                // MySQL may use the composite index for the FK; drop FK first.
+                $table->dropForeign(['aset_ruang_id']);
+            });
 
-        Schema::table('patroli_checkin', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('aset_ruang_id');
-        });
+            $compositeIndex = collect(Schema::getIndexes('patroli_checkin'))
+                ->first(fn (array $index): bool => $index['columns'] === ['aset_ruang_id', 'checked_at']);
 
-        Schema::table('patroli_checkin', function (Blueprint $table) {
-            $table->foreignId('patroli_ruang_id')
-                ->after('id')
-                ->constrained('patroli_ruang')
-                ->cascadeOnDelete();
-            $table->index(['patroli_ruang_id', 'checked_at']);
-        });
+            if ($compositeIndex !== null) {
+                Schema::table('patroli_checkin', function (Blueprint $table) use ($compositeIndex): void {
+                    $table->dropIndex($compositeIndex['name']);
+                });
+            }
 
-        Schema::table('aset_ruang', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('patroli_template_id');
-        });
+            Schema::table('patroli_checkin', function (Blueprint $table) {
+                $table->dropColumn('aset_ruang_id');
+            });
+        }
+
+        if (! Schema::hasColumn('patroli_checkin', 'patroli_ruang_id')) {
+            Schema::table('patroli_checkin', function (Blueprint $table) {
+                $table->foreignId('patroli_ruang_id')
+                    ->after('id')
+                    ->constrained('patroli_ruang')
+                    ->cascadeOnDelete();
+                $table->index(['patroli_ruang_id', 'checked_at']);
+            });
+        }
+
+        if (Schema::hasColumn('aset_ruang', 'patroli_template_id')) {
+            Schema::table('aset_ruang', function (Blueprint $table) {
+                $table->dropConstrainedForeignId('patroli_template_id');
+            });
+        }
     }
 
     public function down(): void

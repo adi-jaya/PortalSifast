@@ -1,11 +1,12 @@
 {
     "mcpServers": {
         "laravel-boost": {
-            "command": "php",
+            "command": "C:\\Program Files\\FlyEnv-Data\\app\\php-8.4.25\\php.exe",
             "args": [
-                "./artisan",
+                "C:\\Project\\php\\PortalSifast\\artisan",
                 "boost:mcp"
-            ]
+            ],
+            "cwd": "C:\\Project\\php\\PortalSifast"
         }
     }
 }
