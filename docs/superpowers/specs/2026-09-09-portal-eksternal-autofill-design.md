@@ -10,7 +10,7 @@
 - [x] **Plan 1: Fondasi Backend & Database** *(Selesai - 29 Pest Tests PASS)*
 - [x] **Plan 2: Modul Admin (Master Portal & Mapping Akses)** *(Selesai - 33 Pest Tests PASS, Total 62 Tests PASS)*
 - [x] **Addendum: Penyimpanan & Pengunggahan Berkas Logo Portal** *(Selesai - 16 Pest Tests PASS, Total 78 Tests PASS)*
-- [ ] **Plan 3: Halaman Pengguna (Portal Agregator, Deteksi Ekstensi di UI React & Self-Service Kredensial)** *(Tahap Berikutnya)*
+- [ ] **Plan 3: Halaman Pengguna (Portal Agregator, Deteksi Ekstensi di UI React & Self-Service Kredensial)** *(Dokumen Plan Siap Dieksekusi)*
 - [ ] **Plan 4: Custom Browser Extension Manifest V3 (`rs-extension/`), Distribusi ZIP & Verifikasi E2E** *(Tahap Akhir - Dokumen Plan Telah Siap)*
 
 ---
