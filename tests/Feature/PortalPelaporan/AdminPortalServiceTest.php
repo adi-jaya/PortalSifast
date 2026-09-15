@@ -2,6 +2,8 @@
 
 use App\Models\Portal;
 use App\Services\Portal\AdminPortalService;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 beforeEach(function (): void {
     $this->service = new AdminPortalService;
@@ -82,4 +84,96 @@ it('toggles portal active status and deletes portal', function (): void {
 
     expect($this->service->destroyPortal($portal))->toBeTrue();
     expect(Portal::find($portal->id))->toBeNull();
+});
+
+it('stores a portal with an uploaded icon file to public storage disk', function (): void {
+    Storage::fake('public');
+    $file = UploadedFile::fake()->image('kemenkes.png', 100, 100);
+
+    $portal = $this->service->storePortal([
+        'name' => 'Portal SIRS Kemkes',
+        'category' => 'Kemenkes',
+        'url' => 'https://sirs.kemkes.go.id',
+        'auth_type' => 'shared',
+        'icon_file' => $file,
+    ]);
+
+    expect($portal->icon_path)->not->toBeNull()
+        ->and($portal->icon_path)->toStartWith('portals/portal-sirs-kemkes-')
+        ->and(Storage::disk('public')->exists($portal->icon_path))->toBeTrue();
+});
+
+it('updates portal logo by storing new file and deleting previous file', function (): void {
+    Storage::fake('public');
+    $oldFile = UploadedFile::fake()->image('old-logo.png', 100, 100);
+    $portal = $this->service->storePortal([
+        'name' => 'SIRIKA BKKBN',
+        'category' => 'BKKBN',
+        'url' => 'https://sirika.bkkbn.go.id',
+        'auth_type' => 'shared',
+        'icon_file' => $oldFile,
+    ]);
+    $oldPath = $portal->icon_path;
+    expect(Storage::disk('public')->exists($oldPath))->toBeTrue();
+
+    $newFile = UploadedFile::fake()->image('new-logo.png', 120, 120);
+    $updated = $this->service->updatePortalLogo($portal, $newFile);
+
+    expect($updated->icon_path)->not->toBe($oldPath)
+        ->and(Storage::disk('public')->exists($updated->icon_path))->toBeTrue()
+        ->and(Storage::disk('public')->exists($oldPath))->toBeFalse();
+});
+
+it('removes portal logo and deletes file from public disk', function (): void {
+    Storage::fake('public');
+    $file = UploadedFile::fake()->image('logo.png', 100, 100);
+    $portal = $this->service->storePortal([
+        'name' => 'MPDN Kemkes',
+        'category' => 'Kemenkes',
+        'url' => 'https://mpdn.kemkes.go.id',
+        'auth_type' => 'shared',
+        'icon_file' => $file,
+    ]);
+    $path = $portal->icon_path;
+    expect(Storage::disk('public')->exists($path))->toBeTrue();
+
+    $this->service->removePortalLogo($portal);
+
+    expect($portal->fresh()->icon_path)->toBeNull()
+        ->and(Storage::disk('public')->exists($path))->toBeFalse();
+});
+
+it('cleans up physical logo file when destroying portal', function (): void {
+    Storage::fake('public');
+    $file = UploadedFile::fake()->image('to-delete.png', 100, 100);
+    $portal = $this->service->storePortal([
+        'name' => 'Portal to Delete',
+        'category' => 'Kemenkes',
+        'url' => 'https://example.com',
+        'auth_type' => 'shared',
+        'icon_file' => $file,
+    ]);
+    $path = $portal->icon_path;
+    expect(Storage::disk('public')->exists($path))->toBeTrue();
+
+    $this->service->destroyPortal($portal);
+
+    expect(Portal::find($portal->id))->toBeNull()
+        ->and(Storage::disk('public')->exists($path))->toBeFalse();
+});
+
+it('includes icon_url in paginatePortals and formatPortalForEdit', function (): void {
+    Storage::fake('public');
+    $portal = Portal::factory()->create([
+        'name' => 'Test Accessor Portal',
+        'icon_path' => 'portals/test-accessor.png',
+    ]);
+
+    $editData = $this->service->formatPortalForEdit($portal);
+    expect($editData)->toHaveKey('icon_url')
+        ->and($editData['icon_url'])->toBe(Storage::disk('public')->url('portals/test-accessor.png'));
+
+    $paginated = $this->service->paginatePortals(['search' => 'Test Accessor Portal']);
+    expect($paginated['portals']->first())->toHaveKey('icon_url')
+        ->and($paginated['portals']->first()['icon_url'])->toBe(Storage::disk('public')->url('portals/test-accessor.png'));
 });

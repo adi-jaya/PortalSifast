@@ -4,7 +4,9 @@ namespace App\Services\Portal;
 
 use App\Models\Portal;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class AdminPortalService
@@ -54,6 +56,7 @@ class AdminPortalService
                 'url' => $portal->url,
                 'url_pattern' => $portal->url_pattern,
                 'icon_path' => $portal->icon_path,
+                'icon_url' => $portal->icon_url,
                 'description' => $portal->description,
                 'auth_type' => $portal->auth_type,
                 'shared_username' => $portal->shared_username,
@@ -142,6 +145,16 @@ class AdminPortalService
             ];
         }
 
+        if (($data['icon_file'] ?? null) instanceof UploadedFile) {
+            $file = $data['icon_file'];
+            $slug = $data['slug'] ?? Str::slug((string) ($data['name'] ?? 'portal'));
+            $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'png');
+            $filename = sprintf('%s-%s.%s', $slug, Str::random(8), $extension);
+            $data['icon_path'] = $file->storeAs('portals', $filename, 'public');
+        }
+
+        unset($data['icon_file'], $data['remove_logo']);
+
         return Portal::create($data);
     }
 
@@ -158,6 +171,7 @@ class AdminPortalService
             'url' => $portal->url,
             'url_pattern' => $portal->url_pattern,
             'icon_path' => $portal->icon_path,
+            'icon_url' => $portal->icon_url,
             'description' => $portal->description,
             'auth_type' => $portal->auth_type,
             'shared_username' => $portal->shared_username,
@@ -174,11 +188,40 @@ class AdminPortalService
      */
     public function updatePortal(Portal $portal, array $data): Portal
     {
+        if (! empty($data['remove_logo'])) {
+            $this->removePortalLogo($portal);
+        } elseif (($data['icon_file'] ?? null) instanceof UploadedFile) {
+            $this->updatePortalLogo($portal, $data['icon_file']);
+        }
+
+        unset($data['icon_file'], $data['remove_logo']);
+
         if (! filled($data['shared_password'] ?? null)) {
             unset($data['shared_password']);
         }
 
         $portal->update($data);
+
+        return $portal;
+    }
+
+    public function updatePortalLogo(Portal $portal, UploadedFile $file): Portal
+    {
+        $this->deleteIconFile($portal->icon_path);
+
+        $extension = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'png');
+        $filename = sprintf('%s-%s.%s', $portal->slug, Str::random(8), $extension);
+        $path = $file->storeAs('portals', $filename, 'public');
+
+        $portal->update(['icon_path' => $path]);
+
+        return $portal;
+    }
+
+    public function removePortalLogo(Portal $portal): Portal
+    {
+        $this->deleteIconFile($portal->icon_path);
+        $portal->update(['icon_path' => null]);
 
         return $portal;
     }
@@ -193,6 +236,15 @@ class AdminPortalService
 
     public function destroyPortal(Portal $portal): bool
     {
+        $this->deleteIconFile($portal->icon_path);
+
         return (bool) $portal->delete();
+    }
+
+    private function deleteIconFile(?string $path): void
+    {
+        if ($path && Storage::disk('public')->exists($path)) {
+            Storage::disk('public')->delete($path);
+        }
     }
 }
