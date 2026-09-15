@@ -96,13 +96,12 @@ it('creates portal and credential records using factories', function (): void {
         ->and($credential->portal)->not->toBeNull();
 });
 
-it('provides icon_url attribute pointing to public storage disk when icon_path is set', function (): void {
-    Storage::fake('public');
+it('provides icon_url attribute pointing to public storage path when icon_path is set', function (): void {
     $portal = Portal::factory()->create(['icon_path' => 'portals/test-logo.png']);
 
-    expect($portal->icon_url)->toBe(Storage::disk('public')->url('portals/test-logo.png'))
+    expect($portal->icon_url)->toBe('/storage/portals/test-logo.png')
         ->and($portal->toArray())->toHaveKey('icon_url')
-        ->and($portal->toArray()['icon_url'])->toBe(Storage::disk('public')->url('portals/test-logo.png'));
+        ->and($portal->toArray()['icon_url'])->toBe('/storage/portals/test-logo.png');
 });
 
 it('returns null for icon_url when icon_path is null', function (): void {
@@ -112,3 +111,4 @@ it('returns null for icon_url when icon_path is null', function (): void {
         ->and($portal->toArray())->toHaveKey('icon_url')
         ->and($portal->toArray()['icon_url'])->toBeNull();
 });
+

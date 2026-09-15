@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\Storage;
 
 class Portal extends Model
 {
@@ -54,11 +53,10 @@ class Portal extends Model
     protected function iconUrl(): Attribute
     {
         return Attribute::make(
-            get: fn (): ?string => $this->icon_path
-                ? Storage::disk('public')->url($this->icon_path)
-                : null,
+            get: fn (): ?string => $this->icon_path ? "/storage/{$this->icon_path}" : null,
         );
     }
+
 
     public function userCredentials(): HasMany
     {
