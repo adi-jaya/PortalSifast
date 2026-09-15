@@ -4,6 +4,7 @@ use App\Models\Portal;
 use App\Models\User;
 use App\Models\UserPortalCredential;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 it('encrypts shared password on portal and decrypts on access', function (): void {
     $portal = Portal::create([
@@ -93,4 +94,21 @@ it('creates portal and credential records using factories', function (): void {
         ->and($credential->personal_username)->not->toBeEmpty()
         ->and($credential->user)->not->toBeNull()
         ->and($credential->portal)->not->toBeNull();
+});
+
+it('provides icon_url attribute pointing to public storage disk when icon_path is set', function (): void {
+    Storage::fake('public');
+    $portal = Portal::factory()->create(['icon_path' => 'portals/test-logo.png']);
+
+    expect($portal->icon_url)->toBe(Storage::disk('public')->url('portals/test-logo.png'))
+        ->and($portal->toArray())->toHaveKey('icon_url')
+        ->and($portal->toArray()['icon_url'])->toBe(Storage::disk('public')->url('portals/test-logo.png'));
+});
+
+it('returns null for icon_url when icon_path is null', function (): void {
+    $portal = Portal::factory()->create(['icon_path' => null]);
+
+    expect($portal->icon_url)->toBeNull()
+        ->and($portal->toArray())->toHaveKey('icon_url')
+        ->and($portal->toArray()['icon_url'])->toBeNull();
 });
