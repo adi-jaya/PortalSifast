@@ -48,7 +48,16 @@ class PortalRequest extends FormRequest
             'category' => ['required', 'string', 'max:100'],
             'url' => ['required', 'url'],
             'url_pattern' => ['nullable', 'string', 'max:255'],
-            'icon_path' => ['nullable', 'string', 'max:255'],
+            'icon_file' => [
+                'nullable',
+                'file',
+                'mimes:png,jpg,jpeg,webp,svg',
+                'max:2048',
+            ],
+            'remove_logo' => [
+                'nullable',
+                'boolean',
+            ],
             'description' => ['nullable', 'string'],
             'auth_type' => ['required', 'in:shared,personal,both'],
             'shared_username' => ['nullable', 'string', 'max:255'],

@@ -2,6 +2,8 @@
 
 use App\Models\Portal;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -190,4 +192,34 @@ it('allows admin to delete a portal', function (): void {
         ->assertSessionHas('success');
 
     expect(Portal::find($portal->id))->toBeNull();
+});
+
+it('validates that icon_file must be a valid image under 2MB in store request', function (): void {
+    Storage::fake('public');
+
+    // Test invalid mime type (text file)
+    $invalidFile = UploadedFile::fake()->create('document.txt', 100, 'text/plain');
+    $response = $this->actingAs($this->admin)
+        ->post(route('admin.portals.store'), [
+            'name' => 'Portal Invalid File',
+            'category' => 'Kemenkes',
+            'url' => 'https://example.com/login',
+            'auth_type' => 'shared',
+            'icon_file' => $invalidFile,
+        ]);
+
+    $response->assertSessionHasErrors('icon_file');
+
+    // Test oversized file (> 2048 KB)
+    $oversizedFile = UploadedFile::fake()->create('huge.png', 3000, 'image/png');
+    $responseOversized = $this->actingAs($this->admin)
+        ->post(route('admin.portals.store'), [
+            'name' => 'Portal Huge File',
+            'category' => 'Kemenkes',
+            'url' => 'https://example.com/login',
+            'auth_type' => 'shared',
+            'icon_file' => $oversizedFile,
+        ]);
+
+    $responseOversized->assertSessionHasErrors('icon_file');
 });
