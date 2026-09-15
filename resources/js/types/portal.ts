@@ -63,3 +63,34 @@ export interface PortalMappingSummary {
     is_active: boolean;
     user_credentials_count: number;
 }
+
+/**
+ * Payload representasi kartu portal pelaporan pada halaman agregator.
+ */
+export interface PortalCardItem {
+    id: number;
+    name: string;
+    slug: string;
+    category: string;
+    url: string;
+    url_pattern: string | null;
+    icon_path: string | null;
+    icon_url: string | null;
+    description: string | null;
+    auth_type: PortalAuthType;
+    credential_type: CredentialType | null;
+    personal_username: string | null;
+    has_personal_credential: boolean;
+    can_configure_personal: boolean;
+    sort_order: number;
+}
+
+/**
+ * Status keberadaan ekstensi browser SIMRS Sifast.
+ */
+export interface ExtensionStatus {
+    isInstalled: boolean;
+    version: string | null;
+    isChecking: boolean;
+}
+
