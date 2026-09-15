@@ -1,14 +1,14 @@
-# Portal Pelaporan Eksternal SIMRS - Plan 3: Custom Browser Extension Manifest V3
+# Portal Pelaporan Eksternal SIMRS - Plan 4: Custom Browser Extension Manifest V3
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 >
-> **Catatan Arsitektur:** Dokumen ini merupakan **Bagian 3 dari 4** rencana implementasi modular yang merujuk pada spesifikasi induk: [`docs/superpowers/specs/2026-09-09-portal-eksternal-autofill-design.md`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/docs/superpowers/specs/2026-09-09-portal-eksternal-autofill-design.md).
+> **Catatan Arsitektur:** Dokumen ini merupakan **Bagian 4 dari 4 (Tahap Akhir)** rencana implementasi modular yang merujuk pada spesifikasi induk: [`docs/superpowers/specs/2026-09-09-portal-eksternal-autofill-design.md`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/docs/superpowers/specs/2026-09-09-portal-eksternal-autofill-design.md).
 >
 > **Daftar Rencana Modular:**
 > 1. **Plan 1: Fondasi Backend & Database** *(Selesai - 29 Tests PASS)*
 > 2. **Plan 2: Modul Admin (Master Portal & Mapping Akses)** *(Selesai - 33 Tests PASS, Total 62 Tests PASS)*
-> 3. **Plan 3: Custom Browser Extension Manifest V3 (rs-extension: Background Worker, Content Bridge, Autofill Injector, Heuristic Scanner, Popup Inspector)** *(Dokumen ini)*
-> 4. **Plan 4: Halaman Pengguna (Portal Agregator, Deteksi Ekstensi, Self-Service Kredensial, ZIP Packaging & E2E Testing)** *(Terencana)*
+> 3. **Plan 3: Halaman Pengguna (Portal Agregator, Deteksi Ekstensi & Self-Service Kredensial)** *(Tahap Sebelum Dokumen Ini)*
+> 4. **Plan 4: Custom Browser Extension Manifest V3 (rs-extension: Background Worker, Content Bridge, Autofill Injector, Heuristic Scanner, Popup Inspector)** *(Dokumen ini)*
 
 **Goal:** Membangun ekstensi browser Chromium berbasis Manifest V3 (`rs-extension/`) yang aman (*zero-persistence* in-memory queue), mampu mendeteksi keberadaannya di portal SIMRS Sifast, mengisi otomatis kredensial login pada 8 kelompok website eksternal pemerintah (Kemenkes & BKKBN) menggunakan synthetic event dispatcher & heuristic scanner, serta menyediakan popup inspector 1-klik bagi Admin IT untuk mengekstrak selector form baru.
 

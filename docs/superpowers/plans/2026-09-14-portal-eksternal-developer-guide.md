@@ -196,7 +196,7 @@ git commit -m "docs(onboarding): add chapter 5 admin portal master and mapping u
 **Files:**
 - Modify: `docs/developer-onboarding/13-MODUL-PORTAL-PELAPORAN-EKSTERNAL.md`
 - Plan Reference:
-  - `docs/superpowers/plans/2026-09-14-portal-eksternal-plan-3-browser-extension.md`
+  - `docs/superpowers/plans/2026-09-14-portal-eksternal-plan-4-browser-extension.md`
   - `docs/superpowers/specs/2026-09-09-portal-eksternal-autofill-design.md` (Plan 3 & Plan 4 sections)
 
 **Interfaces:**

@@ -1504,7 +1504,7 @@ php artisan test tests/Feature/PortalPelaporan --filter=AdminPortal
 > **Status Modul:** `[STATUS: SIAP DIIMPLEMENTASIKAN (Plan 3)]`  
 > **Direktori Sumber:** [`rs-extension/`](../../rs-extension/)  
 > **Lingkungan Eksekusi:** Chromium Browser (Google Chrome, Microsoft Edge, Brave) Manifest V3  
-> **Rujukan Rencana Teknis:** [`docs/superpowers/plans/2026-09-14-portal-eksternal-plan-3-browser-extension.md`](../superpowers/plans/2026-09-14-portal-eksternal-plan-3-browser-extension.md)
+> **Rujukan Rencana Teknis:** [`docs/superpowers/plans/2026-09-14-portal-eksternal-plan-4-browser-extension.md`](../superpowers/plans/2026-09-14-portal-eksternal-plan-4-browser-extension.md)
 
 Bab ini merinci spesifikasi arsitektur, mekanisme keamanan, dan implementasi teknis dari **Custom Chromium Extension** (`rs-extension/`). Ekstensi ini bertindak sebagai jembatan otomatisasi cerdas (*intelligent autofill bridge*) yang menghubungkan aplikasi web SIMRS Sifast dengan 8 kelompok sistem pelaporan eksternal pemerintah (Kemenkes & BKKBN). Dirancang khusus dengan filosofi **Zero-Persistence Guarantee**, ekstensi ini mengisi kredensial login secara instan tanpa pernah menyimpan password ke dalam media penyimpanan fisik peramban pengguna.
 

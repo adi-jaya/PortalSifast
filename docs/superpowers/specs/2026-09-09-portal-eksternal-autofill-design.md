@@ -1,17 +1,17 @@
 # Spesifikasi Desain: Portal Pelaporan Eksternal SIMRS Sifast & Custom Browser Extension Autofill
 
 **Tanggal Dibuat:** 2026-09-09  
-**Terakhir Disinkronkan:** 2026-09-15 (Pembaruan Addendum Spesifikasi Logo Upload)  
-**Status:** In Progress (Plan 1 & 2 Completed, Logo Spec Approved, Plan 3 & 4 Pending)  
+**Terakhir Disinkronkan:** 2026-09-15 (Pembaruan Urutan Implementasi: Halaman Pengguna Dahulu, Ekstensi di Tahap Akhir)  
+**Status:** In Progress (Plan 1, Plan 2 & Logo Completed - 78 Tests PASS, Plan 3 Next, Plan 4 Prepared)  
 **Tipe Proyek:** Architectural Subsystem  
 **Target Platform:** SIMRS Sifast (Laravel 12, Inertia.js, React 19, TypeScript, Tailwind CSS v4) & Chromium-based Browsers (Manifest V3)
 
 ### Status Rencana Implementasi Modular:
 - [x] **Plan 1: Fondasi Backend & Database** *(Selesai - 29 Pest Tests PASS)*
 - [x] **Plan 2: Modul Admin (Master Portal & Mapping Akses)** *(Selesai - 33 Pest Tests PASS, Total 62 Tests PASS)*
-- [ ] **Addendum: Penyimpanan & Pengunggahan Berkas Logo Portal** *(Spesifikasi Disetujui: [`2026-09-15-portal-logo-upload-design.md`](2026-09-15-portal-logo-upload-design.md))*
-- [ ] **Plan 3: Custom Browser Extension Manifest V3 (`rs-extension/`)** *(Siap Dibuat)*
-- [ ] **Plan 4: Halaman Pengguna (Portal Agregator, Deteksi Ekstensi & Distribusi ZIP)** *(Terencana)*
+- [x] **Addendum: Penyimpanan & Pengunggahan Berkas Logo Portal** *(Selesai - 16 Pest Tests PASS, Total 78 Tests PASS)*
+- [ ] **Plan 3: Halaman Pengguna (Portal Agregator, Deteksi Ekstensi di UI React & Self-Service Kredensial)** *(Tahap Berikutnya)*
+- [ ] **Plan 4: Custom Browser Extension Manifest V3 (`rs-extension/`), Distribusi ZIP & Verifikasi E2E** *(Tahap Akhir - Dokumen Plan Telah Siap)*
 
 ---
 
@@ -92,7 +92,7 @@ app/
 │   │   │   └── AdminPortalMappingController.php     # Constructor injection: AdminPortalMappingService
 │   │   ├── PortalDispatchController.php            # Constructor injection: PortalDispatchService
 │   │   ├── PortalPersonalCredentialController.php   # Constructor injection: PortalPersonalCredentialService
-│   │   └── PortalAggregatorController.php          # Constructor injection: PortalAggregatorService (Plan 4)
+│   │   └── PortalAggregatorController.php          # Constructor injection: PortalAggregatorService (Plan 3)
 │   └── Requests/
 │       ├── Admin/
 │       │   ├── PortalRequest.php
@@ -108,7 +108,7 @@ app/
         ├── AdminPortalMappingService.php           # Matriks mapping, transactional sync massal, update/delete
         ├── PortalDispatchService.php               # One-time credential payload builder & decryption
         ├── PortalPersonalCredentialService.php     # Self-service credential update logic
-        └── PortalAggregatorService.php             # User aggregator data & extension bundle zip (Plan 4)
+        └── PortalAggregatorService.php             # User aggregator data (Plan 3) & extension bundle zip (Plan 4)
 ```
 
 **Karakteristik Arsitektur:**
@@ -318,17 +318,17 @@ rs-extension/
 
 ## 7. Rencana Pengujian & Verifikasi
 
-### 7.1. Unit & Feature Test Backend (Pest PHP) — Status: 62 Tests PASS (354 Assertions)
+### 7.1. Unit & Feature Test Backend (Pest PHP) — Status: 78 Tests PASS (432 Assertions)
 Pengujian otomatis komprehensif pada namespace `Tests\Feature\PortalPelaporan`:
 1. **Schema & Database Integrity:**
    - `PortalDatabaseSchemaTest`: Struktur kolom tabel `portals` dan `user_portal_credentials` beserta index unik dan foreign key cascade.
 2. **Model, Enkripsi, & Factory:**
-   - `PortalModelTest`: Enkripsi simetris Eloquent `Crypt::encryptString` pada `shared_password` dan `personal_password`, method helper `supportsShared()` dan `supportsPersonal()`, serta integritas factory.
+   - `PortalModelTest`: Enkripsi simetris Eloquent `Crypt::encryptString` pada `shared_password` dan `personal_password`, method helper `supportsShared()` dan `supportsPersonal()`, accessor `icon_url`, serta integritas factory.
 3. **Otorisasi & Kebijakan Akses:**
    - `PortalPolicyTest`: Hak kelola hanya untuk Admin, hak akses lihat hanya jika portal aktif dan mapping aktif ada, dispatch token hanya untuk pengguna yang diizinkan.
    - `PortalInertiaPropsTest`: Evaluasi shared props `can_manage_portals` untuk role admin vs staf biasa dan guest.
-4. **Master Portal Service & Controller:**
-   - `AdminPortalServiceTest` & `AdminPortalControllerTest`: Filter pagination, auto-slug, proteksi password bersama agar tidak tertimpa saat update kosong, toggle status aktif, dan proteksi middleware perimeter.
+4. **Master Portal Service, Controller & Logo Upload:**
+   - `AdminPortalServiceTest` & `AdminPortalControllerTest`: Filter pagination, auto-slug, proteksi password bersama, toggle status aktif, proteksi middleware perimeter, validasi upload file logo, dedicated upload/remove logo endpoint, sanitasi MIME type, dan pembersihan berkas fisik storage saat portal dihapus.
 5. **Mapping Akses Service & Controller:**
    - `AdminPortalMappingServiceTest` & `AdminPortalMappingControllerTest`: Paginasi matriks, instant auto-save `saveRow`, filter departemen dan pencarian nama/NIK, sinkronisasi massal transaksional (`syncPortal` dan `syncUser`), serta pengosongan catatan (*note clearing*).
 6. **API Dispatch & Self-Service Kredensial:**
@@ -337,12 +337,14 @@ Pengujian otomatis komprehensif pada namespace `Tests\Feature\PortalPelaporan`:
 7. **Idempotensi Seeder:**
    - `PortalSeederTest`: 8 kelompok portal eksternal resmi tersimpan lengkap tanpa duplikasi saat di-seed berulang kali.
 
-### 7.2. Rencana Verifikasi Ekstensi Browser & Pengguna (Plan 3 & Plan 4)
-1. **Browser Extension Verification (Plan 3):**
+### 7.2. Rencana Verifikasi Pengguna & Ekstensi Browser (Plan 3 & Plan 4)
+1. **User Portal & Aggregator Verification (Plan 3):**
+   - Halaman `/portal-pelaporan`: Render grid kartu portal sesuai hak akses staf, deteksi status badge ekstensi, modal atur akun personal.
+   - Filter pencarian instan dan kategori di antarmuka pengguna.
+   - Integrasi item menu navigasi SIMRS.
+2. **Browser Extension & Packaging Verification (Plan 4):**
    - Tes deteksi ekstensi pada domain SIMRS (`content-simrs.js` inject dataset ke `<html>` dan emit event ready).
    - Tes pembukaan tab target dan konsumsi kredensial berbasis `tabId` di background service worker.
    - Tes verifikasi penghapusan kredensial dari RAM setelah autofill (*zero memory leak / zero-persistence*).
    - Tes ketahanan selector pada halaman contoh (SIRS Online, SITB, SIGA) dan keberhasilan Heuristic Scanner saat selector dinonaktifkan.
-2. **User Portal & Packaging Verification (Plan 4):**
-   - Halaman `/portal-pelaporan`: Render grid kartu portal sesuai hak akses staf, deteksi status badge ekstensi, modal atur akun personal.
    - Endpoint download file ZIP ekstensi browser yang siap di-install di Chromium browser.
