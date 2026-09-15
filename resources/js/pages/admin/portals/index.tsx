@@ -28,6 +28,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
+import { cn } from '@/lib/utils';
 import type { BreadcrumbItem, Portal } from '@/types';
 
 interface PaginatedPortals {
@@ -268,8 +269,19 @@ export default function AdminPortalsIndex({
                                         >
                                             <td className="px-4 py-3">
                                                 <div className="flex items-start gap-3">
-                                                    <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                                                        <Globe className="size-4" />
+                                                    <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted/30">
+                                                        {portal.icon_url ? (
+                                                            <img
+                                                                src={portal.icon_url}
+                                                                alt={portal.name}
+                                                                className="size-full object-contain p-1"
+                                                                onError={(e) => {
+                                                                    e.currentTarget.style.display = 'none';
+                                                                    e.currentTarget.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
+                                                                }}
+                                                            />
+                                                        ) : null}
+                                                        <Globe className={cn("size-4 text-primary", portal.icon_url && "fallback-icon hidden")} />
                                                     </div>
                                                     <div>
                                                         <div className="flex items-center gap-2 font-semibold text-foreground">

@@ -28,6 +28,7 @@ export interface Portal {
     url: string;
     url_pattern: string | null;
     icon_path: string | null;
+    icon_url?: string | null;
     description: string | null;
     auth_type: PortalAuthType;
     shared_username: string | null;
