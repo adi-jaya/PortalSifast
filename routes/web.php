@@ -50,6 +50,7 @@ use App\Http\Controllers\PatroliCheckinController;
 use App\Http\Controllers\PatroliLaporanController;
 use App\Http\Controllers\PatroliTemplateController;
 use App\Http\Controllers\PegawaiController;
+use App\Http\Controllers\PortalAggregatorController;
 use App\Http\Controllers\PortalDispatchController;
 use App\Http\Controllers\PortalPersonalCredentialController;
 use App\Http\Controllers\ProjectController;
@@ -122,6 +123,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('integrations.sikat.go');
 
     // Portal Pelaporan Eksternal
+    Route::get('portal-pelaporan', [PortalAggregatorController::class, 'index'])
+        ->name('portal-pelaporan.index');
     Route::post('portal-pelaporan/{portal}/dispatch-token', [PortalDispatchController::class, 'dispatch'])
         ->middleware('throttle:30,1')
         ->name('portal-pelaporan.dispatch-token');
