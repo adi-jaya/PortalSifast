@@ -223,3 +223,95 @@ it('validates that icon_file must be a valid image under 2MB in store request', 
 
     $responseOversized->assertSessionHasErrors('icon_file');
 });
+
+it('allows admin to quickly upload logo via dedicated endpoint', function (): void {
+    Storage::fake('public');
+    $portal = Portal::factory()->create(['slug' => 'portal-quick-upload']);
+    $file = UploadedFile::fake()->image('quick-logo.png', 100, 100);
+
+    $response = $this->actingAs($this->admin)
+        ->post(route('admin.portals.logo.upload', $portal), [
+            'icon_file' => $file,
+        ]);
+
+    $response->assertBack()
+        ->assertSessionHas('success', 'Logo portal berhasil diperbarui.');
+
+    $portal->refresh();
+    expect($portal->icon_path)->not->toBeNull()
+        ->and(Storage::disk('public')->exists($portal->icon_path))->toBeTrue();
+});
+
+it('allows admin to quickly remove logo via dedicated endpoint', function (): void {
+    Storage::fake('public');
+    $file = UploadedFile::fake()->image('quick-remove.png', 100, 100);
+    $portal = Portal::factory()->create(['slug' => 'portal-quick-remove']);
+    $path = $file->storeAs('portals', 'portal-quick-remove-12345678.png', 'public');
+    $portal->update(['icon_path' => $path]);
+
+    $response = $this->actingAs($this->admin)
+        ->delete(route('admin.portals.logo.remove', $portal));
+
+    $response->assertBack()
+        ->assertSessionHas('success', 'Logo portal berhasil dihapus.');
+
+    $portal->refresh();
+    expect($portal->icon_path)->toBeNull()
+        ->and(Storage::disk('public')->exists($path))->toBeFalse();
+});
+
+it('forbids staff from uploading or removing logo on dedicated endpoints', function (): void {
+    $portal = Portal::factory()->create();
+
+    $this->actingAs($this->staff)
+        ->post(route('admin.portals.logo.upload', $portal), [
+            'icon_file' => UploadedFile::fake()->image('staff.png'),
+        ])
+        ->assertForbidden();
+
+    $this->actingAs($this->staff)
+        ->delete(route('admin.portals.logo.remove', $portal))
+        ->assertForbidden();
+});
+
+it('allows admin to update portal with new icon_file and remove_logo flag', function (): void {
+    Storage::fake('public');
+    $portal = Portal::factory()->create([
+        'name' => 'Initial Portal',
+        'icon_path' => 'portals/initial-logo.png',
+    ]);
+    Storage::disk('public')->put('portals/initial-logo.png', 'initial content');
+
+    // 1. Update with new file
+    $newFile = UploadedFile::fake()->image('updated.png');
+    $this->actingAs($this->admin)
+        ->put(route('admin.portals.update', $portal), [
+            'name' => 'Updated Portal Name',
+            'category' => 'Kemenkes',
+            'url' => 'https://example.com',
+            'auth_type' => 'shared',
+            'icon_file' => $newFile,
+        ])
+        ->assertRedirect(route('admin.portals.index'));
+
+    $portal->refresh();
+    expect($portal->name)->toBe('Updated Portal Name')
+        ->and(Storage::disk('public')->exists('portals/initial-logo.png'))->toBeFalse()
+        ->and(Storage::disk('public')->exists($portal->icon_path))->toBeTrue();
+
+    // 2. Update with remove_logo
+    $currentPath = $portal->icon_path;
+    $this->actingAs($this->admin)
+        ->put(route('admin.portals.update', $portal), [
+            'name' => 'Updated Portal Name',
+            'category' => 'Kemenkes',
+            'url' => 'https://example.com',
+            'auth_type' => 'shared',
+            'remove_logo' => true,
+        ])
+        ->assertRedirect(route('admin.portals.index'));
+
+    $portal->refresh();
+    expect($portal->icon_path)->toBeNull()
+        ->and(Storage::disk('public')->exists($currentPath))->toBeFalse();
+});

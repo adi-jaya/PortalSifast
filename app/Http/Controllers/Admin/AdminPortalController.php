@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PortalRequest;
+use App\Http\Requests\Admin\UploadPortalLogoRequest;
 use App\Models\Portal;
 use App\Services\Portal\AdminPortalService;
 use Illuminate\Http\RedirectResponse;
@@ -77,5 +78,23 @@ class AdminPortalController extends Controller
         $this->portalService->toggleActive($portal);
 
         return back()->with('success', 'Status portal berhasil diubah.');
+    }
+
+    public function uploadLogo(UploadPortalLogoRequest $request, Portal $portal): RedirectResponse
+    {
+        Gate::authorize('manage', Portal::class);
+
+        $this->portalService->updatePortalLogo($portal, $request->file('icon_file'));
+
+        return back()->with('success', 'Logo portal berhasil diperbarui.');
+    }
+
+    public function removeLogo(Portal $portal): RedirectResponse
+    {
+        Gate::authorize('manage', Portal::class);
+
+        $this->portalService->removePortalLogo($portal);
+
+        return back()->with('success', 'Logo portal berhasil dihapus.');
     }
 }

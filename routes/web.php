@@ -134,22 +134,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('admin.portals.')
         ->middleware('can:manage,App\Models\Portal')
         ->group(function (): void {
-        Route::get('/', [AdminPortalController::class, 'index'])->name('index');
-        Route::get('/create', [AdminPortalController::class, 'create'])->name('create');
-        Route::post('/', [AdminPortalController::class, 'store'])->name('store');
-        Route::get('/{portal}/edit', [AdminPortalController::class, 'edit'])->name('edit');
-        Route::put('/{portal}', [AdminPortalController::class, 'update'])->name('update');
-        Route::delete('/{portal}', [AdminPortalController::class, 'destroy'])->name('destroy');
-        Route::patch('/{portal}/toggle-active', [AdminPortalController::class, 'toggleActive'])->name('toggle-active');
+            Route::get('/', [AdminPortalController::class, 'index'])->name('index');
+            Route::get('/create', [AdminPortalController::class, 'create'])->name('create');
+            Route::post('/', [AdminPortalController::class, 'store'])->name('store');
+            Route::get('/{portal}/edit', [AdminPortalController::class, 'edit'])->name('edit');
+            Route::put('/{portal}', [AdminPortalController::class, 'update'])->name('update');
+            Route::delete('/{portal}', [AdminPortalController::class, 'destroy'])->name('destroy');
+            Route::patch('/{portal}/toggle-active', [AdminPortalController::class, 'toggleActive'])->name('toggle-active');
+            Route::post('/{portal}/logo', [AdminPortalController::class, 'uploadLogo'])->name('logo.upload');
+            Route::delete('/{portal}/logo', [AdminPortalController::class, 'removeLogo'])->name('logo.remove');
 
-        // Mapping Akses Petugas
-        Route::get('/mapping', [AdminPortalMappingController::class, 'index'])->name('mapping.index');
-        Route::post('/mapping/save-row', [AdminPortalMappingController::class, 'saveRow'])->name('mapping.save-row');
-        Route::post('/mapping/sync-portal', [AdminPortalMappingController::class, 'syncPortal'])->name('mapping.sync-portal');
-        Route::post('/mapping/sync-user', [AdminPortalMappingController::class, 'syncUser'])->name('mapping.sync-user');
-        Route::patch('/mapping/{credential}', [AdminPortalMappingController::class, 'updateCredential'])->name('mapping.update-credential');
-        Route::delete('/mapping/{credential}', [AdminPortalMappingController::class, 'destroyCredential'])->name('mapping.destroy-credential');
-    });
+            // Mapping Akses Petugas
+            Route::get('/mapping', [AdminPortalMappingController::class, 'index'])->name('mapping.index');
+            Route::post('/mapping/save-row', [AdminPortalMappingController::class, 'saveRow'])->name('mapping.save-row');
+            Route::post('/mapping/sync-portal', [AdminPortalMappingController::class, 'syncPortal'])->name('mapping.sync-portal');
+            Route::post('/mapping/sync-user', [AdminPortalMappingController::class, 'syncUser'])->name('mapping.sync-user');
+            Route::patch('/mapping/{credential}', [AdminPortalMappingController::class, 'updateCredential'])->name('mapping.update-credential');
+            Route::delete('/mapping/{credential}', [AdminPortalMappingController::class, 'destroyCredential'])->name('mapping.destroy-credential');
+        });
 
     Route::get('users', [UsersController::class, 'index'])->name('users.index');
     Route::get('users/create', [UsersController::class, 'create'])->name('users.create');
