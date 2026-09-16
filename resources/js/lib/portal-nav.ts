@@ -11,6 +11,7 @@ import {
     FileText,
     FolderCog,
     FolderKanban,
+    Globe,
     HandCoins,
     HeartPulse,
     LayoutGrid,
@@ -95,6 +96,16 @@ export const mainNavItems: PortalNavItem[] = [
         href: dashboard().url,
         icon: LayoutGrid,
         isActive: (path) => path === '/dashboard' || path === '/',
+    },
+    {
+        id: 'portal-pelaporan',
+        label: 'Portal Pelaporan',
+        href: '/portal-pelaporan',
+        icon: Globe,
+        isActive: (path) =>
+            path === '/portal-pelaporan' ||
+            path.startsWith('/portal-pelaporan?') ||
+            path.startsWith('/portal-pelaporan/'),
     },
     {
         id: 'chat',

@@ -6,6 +6,9 @@ test('portal nav is the shared source of truth for desktop and mobile menus', fu
     $mobile = file_get_contents(resource_path('js/components/template-mobile-nav.tsx'));
 
     expect($portalNav)
+        ->toContain("id: 'portal-pelaporan'")
+        ->toContain("label: 'Portal Pelaporan'")
+        ->toContain("href: '/portal-pelaporan'")
         ->toContain("id: 'inventaris'")
         ->toContain("label: 'Inventaris Portal'")
         ->toContain("id: 'inventaris-simrs'")
