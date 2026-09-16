@@ -12,8 +12,8 @@ Modul ini mendokumentasikan subsistem **Portal Pelaporan Eksternal & Custom Brow
 | **Tech Stack Backend** | Laravel 12, PHP 8.2+, Eloquent ORM, Symmetric AES-256-CBC Encryption, Pest PHP |
 | **Tech Stack Frontend** | React 19, TypeScript, Inertia.js v2, Tailwind CSS v4, Lucide React, Shadcn UI |
 | **Browser Extension** | Chromium Manifest V3, Pure Vanilla ES2022+, Zero-Persistence RAM Queue, Node.js 22 Test Runner |
-| **Status Implementasi** | **Plan 1 (Backend Core & DB):** `SELESAI (PASS)`<br/>**Plan 2 (Admin Portal & Mapping):** `SELESAI (PASS)`<br/>**Plan 3 (Browser Extension MV3):** `SIAP DIIMPLEMENTASIKAN`<br/>**Plan 4 (Halaman Pengguna & ZIP):** `TERENCANA` |
-| **Total Cakupan Pengujian** | 62 Pest Test Cases (354 Assertions) — Seluruhnya Lulus (`PASS`) |
+| **Status Implementasi** | **Plan 1 (Backend Core & DB):** `SELESAI (PASS)`<br/>**Plan 2 (Admin Portal & Mapping):** `SELESAI (PASS)`<br/>**Addendum (Penyimpanan & Upload Logo):** `SELESAI (PASS)`<br/>**Plan 3 (Halaman Pengguna & Portal Agregator):** `SELESAI (PASS)`<br/>**Plan 4 (Browser Extension MV3 & Distribusi ZIP):** `SIAP DIIMPLEMENTASIKAN` |
+| **Total Cakupan Pengujian** | 91 Pest Test Cases (542 Assertions) + 2 Navigation Parity Tests (32 Assertions) — Seluruhnya Lulus (`PASS`) |
 | **Relasi Modul Onboarding** | [Modul 01: Arsitektur & Tech Stack](./01-ARSITEKTUR-DAN-TECH-STACK.md), [Modul 02b: Frontend React Inertia](./02b-PANDUAN-FRONTEND-REACT-INERTIA-UNTUK-LARAVEL-DEV.md) |
 
 ---
@@ -25,7 +25,7 @@ Modul ini mendokumentasikan subsistem **Portal Pelaporan Eksternal & Custom Brow
   - [1.2 3 Pilar Keamanan & Filosofi Arsitektur](#12-3-pilar-keamanan--filosofi-arsitektur)
   - [1.3 Diagram Arsitektur Interaksi End-to-End](#13-diagram-arsitektur-interaksi-end-to-end)
 - [Bab 2: 📊 Matriks Status Implementasi & Roadmap Modul](#bab-2--matriks-status-implementasi--roadmap-modul)
-  - [2.1 Matriks Status 4 Rencana Modular](#21-matriks-status-4-rencana-modular)
+  - [2.1 Matriks Status Rencana Modular](#21-matriks-status-rencana-modular)
   - [2.2 Matriks Fitur, Rute, Otorisasi, & Ketersediaan](#22-matriks-fitur-rute-otorisasi--ketersediaan)
 - [Bab 3: 🗄 Model Data & Skema Database (Plan 1 - Selesai)](#bab-3--model-data--skema-database-plan-1---selesai)
   - [3.1 Skema Tabel `portals` (Master Portal Eksternal)](#31-skema-tabel-portals-master-portal-eksternal)
@@ -46,22 +46,25 @@ Modul ini mendokumentasikan subsistem **Portal Pelaporan Eksternal & Custom Brow
   - [5.3 Matriks Mapping Akses Dual-Mode (`/admin/portals/mapping`)](#53-matriks-mapping-akses-dual-mode-adminportalsmapping)
   - [5.4 Peta Berkas & Panduan Code Review (Plan 2)](#54-peta-berkas--panduan-code-review-plan-2)
   - [5.5 Panduan Uji Coba Langsung (Hands-on Verification Bab 5)](#55-panduan-uji-coba-langsung-hands-on-verification-bab-5)
-- [Bab 6: 🧩 Custom Browser Extension Manifest V3 (Plan 3 - Siap Diimplementasikan)](#bab-6--custom-browser-extension-manifest-v3-plan-3---siap-diimplementasikan)
-  - [6.1 Filosofi & Batasan Arsitektur Zero-Persistence](#61-filosofi--batasan-arsitektur-zero-persistence)
-  - [6.2 Konfigurasi `manifest.json` (Chromium Manifest V3)](#62-konfigurasi-manifestjson-chromium-manifest-v3)
-  - [6.3 Background Service Worker (`background.js`) & In-Memory Queue](#63-background-service-worker-backgroundjs--in-memory-queue)
-  - [6.4 Content Bridge SIMRS (`content-simrs.js`) & Handshake Protocol](#64-content-bridge-simrs-content-simrsjs--handshake-protocol)
-  - [6.5 Content Engine Target (`content-autofill.js`) & Heuristic Scanner](#65-content-engine-target-content-autofilljs--heuristic-scanner)
-  - [6.6 Admin Popup Tool (`popup/`) & Form Inspector 1-Klik](#66-admin-popup-tool-popup--form-inspector-1-klik)
-  - [6.7 Peta Berkas Target `rs-extension/` & Panduan Code Review (Plan 3)](#67-peta-berkas-target-rs-extension--panduan-code-review-plan-3)
-  - [6.8 Panduan Uji Coba Cepat (Hands-on Extension Verification)](#68-panduan-uji-coba-cepat-hands-on-extension-verification)
-- [Bab 7: 🚀 Modul Pengguna: Portal Agregator & Distribusi Ekstensi (Plan 4 - Terencana)](#bab-7--modul-pengguna-portal-agregator--distribusi-ekstensi-plan-4---terencana)
-  - [7.1 Halaman Portal Pelaporan Pengguna (`/portal-pelaporan`)](#71-halaman-portal-pelaporan-pengguna-portal-pelaporan)
-  - [7.2 Deteksi Handshake Ekstensi di UI React](#72-deteksi-handshake-ekstensi-di-ui-react)
-  - [7.3 Modal Kredensial Pribadi Mandiri (*Self-Service Credential Modal*)](#73-modal-kredensial-pribadi-mandiri-self-service-credential-modal)
-  - [7.4 Mekanisme Distribusi & Packaging File ZIP Ekstensi](#74-mekanisme-distribusi--packaging-file-zip-ekstensi)
-  - [7.5 Peta Berkas Target & Panduan Code Review (Plan 4)](#75-peta-berkas-target--panduan-code-review-plan-4)
-  - [7.6 Panduan Uji Coba Cepat (Hands-on Verification Bab 7)](#76-panduan-uji-coba-cepat-hands-on-verification-bab-7)
+- [Bab 6: 🚀 Modul Pengguna: Portal Agregator, Deteksi Ekstensi & Self-Service Kredensial (Plan 3 - Selesai)](#bab-6--modul-pengguna-portal-agregator-deteksi-ekstensi--self-service-kredensial-plan-3---selesai)
+  - [6.1 Halaman Portal Pelaporan Pengguna (`/portal-pelaporan`)](#61-halaman-portal-pelaporan-pengguna-portal-pelaporan)
+  - [6.2 Arsitektur Service Class Layer (`PortalAggregatorService`)](#62-arsitektur-service-class-layer-portalaggregatorservice)
+  - [6.3 Deteksi Handshake Ekstensi di UI React (`useExtensionDetection`)](#63-deteksi-handshake-ekstensi-di-ui-react-useextensiondetection)
+  - [6.4 Komponen Antarmuka & Kartu Responsif (`PortalCard`, Badge, Banner & Dialog)](#64-komponen-antarmuka--kartu-responsif-portalcard-badge-banner--dialog)
+  - [6.5 Modal Pengaturan Kredensial Pribadi Mandiri (`PersonalCredentialDialog`)](#65-modal-pengaturan-kredensial-pribadi-mandiri-personalcredentialdialog)
+  - [6.6 Integrasi Menu Navigasi SIMRS (`resources/js/lib/portal-nav.ts`)](#66-integrasi-menu-navigasi-simrs-resourcesjslibportal-navts)
+  - [6.7 Peta Berkas & Panduan Code Review (Plan 3)](#67-peta-berkas--panduan-code-review-plan-3)
+  - [6.8 Panduan Uji Coba Cepat (Hands-on Verification Bab 6)](#68-panduan-uji-coba-cepat-hands-on-verification-bab-6)
+- [Bab 7: 🧩 Custom Browser Extension Manifest V3 & Distribusi Ekstensi (Plan 4 - Siap Diimplementasikan)](#bab-7--custom-browser-extension-manifest-v3--distribusi-ekstensi-plan-4---siap-diimplementasikan)
+  - [7.1 Filosofi & Batasan Arsitektur Zero-Persistence](#71-filosofi--batasan-arsitektur-zero-persistence)
+  - [7.2 Konfigurasi `manifest.json` (Chromium Manifest V3)](#72-konfigurasi-manifestjson-chromium-manifest-v3)
+  - [7.3 Background Service Worker (`background.js`) & In-Memory Queue](#73-background-service-worker-backgroundjs--in-memory-queue)
+  - [7.4 Content Bridge SIMRS (`content-simrs.js`) & Handshake Protocol](#74-content-bridge-simrs-content-simrsjs--handshake-protocol)
+  - [7.5 Content Engine Target (`content-autofill.js`) & Heuristic Scanner](#75-content-engine-target-content-autofilljs--heuristic-scanner)
+  - [7.6 Admin Popup Tool (`popup/`) & Form Inspector 1-Klik](#76-admin-popup-tool-popup--form-inspector-1-klik)
+  - [7.7 Mekanisme Distribusi & Packaging File ZIP Ekstensi](#77-mekanisme-distribusi--packaging-file-zip-ekstensi)
+  - [7.8 Peta Berkas Target `rs-extension/` & Panduan Code Review (Plan 4)](#78-peta-berkas-target-rs-extension--panduan-code-review-plan-4)
+  - [7.9 Panduan Uji Coba Cepat (Hands-on Extension Verification)](#79-panduan-uji-coba-cepat-hands-on-extension-verification)
 - [Bab 8: 🧪 Panduan Pengujian & Skenario Verifikasi (Master Testing Guide)](#bab-8--panduan-pengujian--skenario-verifikasi-master-testing-guide)
   - [8.1 Automated Backend Testing (Pest PHP)](#81-automated-backend-testing-pest-php)
   - [8.2 Automated Extension Testing (Node.js Test Runner)](#82-automated-extension-testing-nodejs-test-runner)
@@ -253,16 +256,17 @@ flowchart TD
 
 ## Bab 2: 📊 Matriks Status Implementasi & Roadmap Modul
 
-### 2.1 Matriks Status 4 Rencana Modular
+### 2.1 Matriks Status Rencana Modular
 
-Pengembangan subsistem Portal Pelaporan Eksternal dibagi menjadi 4 tahapan (*Implementation Plans*). Tabel di bawah ini merangkum status ketersediaan setiap rencana kerja:
+Pengembangan subsistem Portal Pelaporan Eksternal dibagi menjadi tahapan modular berurutan. Tabel di bawah ini merangkum status ketersediaan setiap rencana kerja:
 
 | Plan | Nama Rencana Kerja | Ruang Lingkup Fungsional | Status Saat Ini | Hasil Verifikasi |
 | :--- | :--- | :--- | :--- | :--- |
 | **Plan 1** | **Fondasi Backend, Database, Service Layer, & Otorisasi** | Skema tabel `portals` & `user_portal_credentials`, Model Eloquent terenkripsi, `PortalDispatchService`, `PortalPersonalCredentialService`, `PortalPolicy`, Controller API, rute web, dan database seeder 8 kelompok portal. | **`TERIMPLEMENTASI (PASS)`** | 29 Pest Tests Lulus (100% PASS) |
 | **Plan 2** | **Modul Admin SIMRS: Master Portal & Mapping Akses Dual-View** | `AdminPortalService`, `AdminPortalMappingService`, `AdminPortalController`, `AdminPortalMappingController`, Halaman React/Inertia (`Index.tsx`, `Form.tsx`, `Mapping.tsx`), visual `FormConfigEditor`, `SelectorTagInput`, instant auto-save row, bulk sync. | **`TERIMPLEMENTASI (PASS)`** | 33 Pest Tests Tambahan Lulus (Total 62 Tests PASS) |
-| **Plan 3** | **Custom Browser Extension Chromium Manifest V3 (`rs-extension/`)** | Berkas manifes `manifest.json` (MV3), Background Service Worker (`background.js`) dengan RAM queue berbasis `tabId` (TTL 30s), Content Bridge SIMRS (`content-simrs.js`), Content Engine Target (`content-autofill.js`) dengan `setNativeValue` & fallback heuristic scanner, UI popup inspector (`popup/`), suite pengujian unit Node.js 22. | **`SIAP DIIMPLEMENTASIKAN`** | Spesifikasi lengkap & siap dieksekusi |
-| **Plan 4** | **Halaman Pengguna: Portal Agregator & Distribusi Ekstensi** | Halaman `/portal-pelaporan` untuk seluruh staf rumah sakit, pencarian live & filter kategori, kartu interaktif dengan deteksi ekstensi (badge hijau status aktif / banner panduan unduh), modal self-service update password pribadi, endpoint download file ZIP ekstensi terkompresi. | **`TERENCANA`** | Desain UI dan spesifikasi teknis telah disetujui |
+| **Addendum** | **Penyimpanan & Pengunggahan Berkas Logo Portal** | Validasi berkas gambar (JPEG, PNG, WebP, SVG maks 2MB), sanitasi nama berkas & deteksi MIME type aman, dedicated endpoint upload/remove logo instan, preservasi file fisik, dan pembersihan file fisik saat portal dihapus. | **`TERIMPLEMENTASI (PASS)`** | 16 Pest Tests Tambahan Lulus (Total 78 Tests PASS) |
+| **Plan 3** | **Halaman Pengguna: Portal Agregator, Deteksi Ekstensi & Self-Service** | Halaman `/portal-pelaporan` untuk seluruh staf rumah sakit, pencarian live & filter kategori instan, kartu interaktif dengan deteksi ekstensi multi-vektor (badge hijau aktif / banner panduan unduh), modal self-service update password pribadi (preservation & dynamic initial password rule), registrasi navigasi `portal-nav.ts` (desktop & mobile). | **`TERIMPLEMENTASI (PASS)`** | 13 Pest Tests Tambahan Lulus (Total 91 Tests / 542 Assertions PASS) |
+| **Plan 4** | **Custom Browser Extension Chromium Manifest V3 (`rs-extension/`) & ZIP** | Berkas manifes `manifest.json` (MV3), Background Service Worker (`background.js`) dengan RAM queue berbasis `tabId` (TTL 30s), Content Bridge SIMRS (`content-simrs.js`), Content Engine Target (`content-autofill.js`) dengan `setNativeValue` & fallback heuristic scanner, UI popup inspector (`popup/`), suite pengujian unit Node.js 22, dan endpoint download ZIP terkompresi. | **`SIAP DIIMPLEMENTASIKAN`** | Spesifikasi lengkap & rencana kerja siap dieksekusi |
 
 ---
 
@@ -279,6 +283,8 @@ Berikut adalah peta rute HTTP, controller penanggung jawab, middleware pengamana
 | **Simpan Master Portal Baru** | `POST /admin/portals` | [`AdminPortalController@store`](../../app/Http/Controllers/Admin/AdminPortalController.php) | `auth`, `verified`, `can:manage,App\Models\Portal` | Selesai (Plan 2) |
 | **Form Edit Master Portal** | `GET /admin/portals/{portal}/edit` | [`AdminPortalController@edit`](../../app/Http/Controllers/Admin/AdminPortalController.php) | `auth`, `verified`, `can:manage,App\Models\Portal` | Selesai (Plan 2) |
 | **Update Data Master Portal** | `PUT /admin/portals/{portal}` | [`AdminPortalController@update`](../../app/Http/Controllers/Admin/AdminPortalController.php) | `auth`, `verified`, `can:manage,App\Models\Portal` | Selesai (Plan 2) |
+| **Upload Cepat Berkas Logo Portal** | `POST /admin/portals/{portal}/logo` | [`AdminPortalController@uploadLogo`](../../app/Http/Controllers/Admin/AdminPortalController.php) | `auth`, `verified`, `can:manage,App\Models\Portal` | Selesai (Addendum) |
+| **Hapus Cepat Berkas Logo Portal** | `DELETE /admin/portals/{portal}/logo` | [`AdminPortalController@removeLogo`](../../app/Http/Controllers/Admin/AdminPortalController.php) | `auth`, `verified`, `can:manage,App\Models\Portal` | Selesai (Addendum) |
 | **Hapus Master Portal (Soft/Cascade)** | `DELETE /admin/portals/{portal}` | [`AdminPortalController@destroy`](../../app/Http/Controllers/Admin/AdminPortalController.php) | `auth`, `verified`, `can:manage,App\Models\Portal` | Selesai (Plan 2) |
 | **Toggle Status Aktif/Nonaktif Portal** | `PATCH /admin/portals/{portal}/toggle-active` | [`AdminPortalController@toggleActive`](../../app/Http/Controllers/Admin/AdminPortalController.php) | `auth`, `verified`, `can:manage,App\Models\Portal` | Selesai (Plan 2) |
 | **Matriks Mapping Akses Petugas (Dual-View)** | `GET /admin/portals/mapping` | [`AdminPortalMappingController@index`](../../app/Http/Controllers/Admin/AdminPortalMappingController.php) | `auth`, `verified`, `can:manage,App\Models\Portal` | Selesai (Plan 2) |
@@ -287,8 +293,8 @@ Berikut adalah peta rute HTTP, controller penanggung jawab, middleware pengamana
 | **Sinkronisasi Massal Petugas ke Banyak Portal** | `POST /admin/portals/mapping/sync-user` | [`AdminPortalMappingController@syncUser`](../../app/Http/Controllers/Admin/AdminPortalMappingController.php) | `auth`, `verified`, `can:manage,App\Models\Portal` | Selesai (Plan 2) |
 | **Update Kredensial Tunggal Mapping** | `PATCH /admin/portals/mapping/{credential}` | [`AdminPortalMappingController@updateCredential`](../../app/Http/Controllers/Admin/AdminPortalMappingController.php) | `auth`, `verified`, `can:manage,App\Models\Portal` | Selesai (Plan 2) |
 | **Cabut Akses Kredensial Mapping** | `DELETE /admin/portals/mapping/{credential}` | [`AdminPortalMappingController@destroyCredential`](../../app/Http/Controllers/Admin/AdminPortalMappingController.php) | `auth`, `verified`, `can:manage,App\Models\Portal` | Selesai (Plan 2) |
-| **Halaman Agregator Portal Pengguna** | `GET /portal-pelaporan` | `PortalPelaporanController@index` | `auth`, `verified`, `can:viewAny,App\Models\Portal` | Terencana (Plan 4) |
-| **Unduh Berkas ZIP Paket Ekstensi** | `GET /portal-pelaporan/extension/download` | `PortalExtensionDownloadController@download` | `auth`, `verified` | Terencana (Plan 4) |
+| **Halaman Agregator Portal Pengguna** | `GET /portal-pelaporan` | [`PortalAggregatorController@index`](../../app/Http/Controllers/PortalAggregatorController.php) | `auth`, `verified` | Selesai (Plan 3) |
+| **Unduh Berkas ZIP Paket Ekstensi** | `GET /portal-pelaporan/extension/download` | `PortalAggregatorController@downloadExtension` | `auth`, `verified` | Terencana (Plan 4) |
 
 ---
 
@@ -1018,7 +1024,7 @@ Struktur JSON yang dikembalikan mencakup metadata navigasi web target, rantai se
 #### 5. Pembahasan Aspek Zero-Leakage
 Endpoint dispatch token dirancang khusus untuk memenuhi standar keamanan ketat:
 1. **On-Demand Dispatch:** Token kredensial hanya dipanggil ketika staf rumah sakit secara sadar mengklik tombol **"Buka Portal"** pada UI SIMRS. Kredensial tidak pernah di-load di awal (*pre-fetched*) saat halaman katalog dibuka.
-2. **Ephemerality (Sifat Sementara):** Payload JSON dikonsumsi langsung oleh *Content Bridge* ekstensi dan disimpan di memori volatile RAM Service Worker dengan waktu hidup maksimal 30 detik (lihat Bab 6).
+2. **Ephemerality (Sifat Sementara):** Payload JSON dikonsumsi langsung oleh *Content Bridge* ekstensi dan disimpan di memori volatile RAM Service Worker dengan waktu hidup maksimal 30 detik (lihat Bab 7).
 3. **No In-Page Exposure:** Kata sandi yang didekripsi tidak pernah disematkan ke dalam tag HTML DOM, objek JavaScript global `window`, maupun Inertia Page Props.
 
 ---
@@ -1499,14 +1505,503 @@ php artisan test tests/Feature/PortalPelaporan --filter=AdminPortal
 
 ---
 
-## Bab 6: 🧩 Custom Browser Extension Manifest V3 (Plan 3 - Siap Diimplementasikan)
+## Bab 6: 🚀 Modul Pengguna: Portal Agregator, Deteksi Ekstensi & Self-Service Kredensial (Plan 3 - Selesai)
 
-> **Status Modul:** `[STATUS: SIAP DIIMPLEMENTASIKAN (Plan 3)]`  
+> **Status Modul:** `[STATUS: TERIMPLEMENTASI (Plan 3 - PASS)]`  
+> **Rute Utama Pengguna:** `GET /portal-pelaporan` (Inertia View: [`resources/js/pages/portal-pelaporan/index.tsx`](../../resources/js/pages/portal-pelaporan/index.tsx))  
+> **Integrasi Navigasi:** Single Source of Truth SIMRS ([`resources/js/lib/portal-nav.ts`](../../resources/js/lib/portal-nav.ts) — `mainNavItems`)  
+> **Rujukan Rencana Teknis:** [`docs/superpowers/plans/2026-09-15-portal-eksternal-plan-3-portal-aggregator.md`](../superpowers/plans/2026-09-15-portal-eksternal-plan-3-portal-aggregator.md)  
+> **Hasil Pengujian Otomatis:** 13 Pest Tests Tambahan Lulus (Total 91 Tests / 542 Assertions PASS)
+
+Bab ini mendokumentasikan secara menyeluruh implementasi **Modul Pengguna: Portal Agregator, Deteksi Ekstensi & Self-Service Kredensial** (Plan 3). Modul ini menyediakan *single pane of glass* (antarmuka terpadu) bagi seluruh staf rumah sakit (rekam medis, perawat, surveilans epidemiologi, petugas TB, petugas HIV, dan tim manajemen mutu) untuk mengakses portal resmi pemerintah secara terpusat, mendeteksi status kesiapan ekstensi peramban, serta mengelola kredensial akun personal secara mandiri dengan jaminan keamanan **Zero-Password Leakage**.
+
+```
++----------------------------------------------------------------------------------------------------+
+|                       ARSITEKTUR MODUL PENGGUNA (PORTAL AGREGATOR SIMRS)                           |
++----------------------------------------------------------------------------------------------------+
+|                                                                                                    |
+|  [Staf RS Membuka Browser] ───► Akses: GET /portal-pelaporan (routes/web.php)                      |
+|                                         │                                                          |
+|                                         ▼                                                          |
+|  [PortalAggregatorController@index] ──► Panggil: PortalAggregatorService@getUserPortals($user)     |
+|                                         │        PortalAggregatorService@getCategoriesForUser($user)
+|                                         ├─ Filter Portal Aktif (portals.is_active = true)           |
+|                                         ├─ Scope Hak Akses Staf (user_portal_credentials.is_active)  |
+|                                         ├─ Super-Admin Bypass (isAdmin() || isSuperAdmin())        |
+|                                         ├─ Case-insensitive Category Filter (LOWER(category) = ?)   |
+|                                         ├─ Sort Order Konsisten (ordered() scope)                  |
+|                                         └─ Format Kartu: Zero-Password Leakage (icon_url resolved)  |
+|                                         ▼                                                          |
+|  [Inertia Page: portal-pelaporan/index.tsx]                                                        |
+|        │                                                                                           |
+|        ├──► [useExtensionDetection Hook]                                                           |
+|        │         │                                                                                 |
+|        │         ├─ 1. Lazy dataset: document.documentElement.dataset.sifastExtensionInstalled    |
+|        │         ├─ 2. CustomEvents: SIFAST_EXTENSION_READY / SIFAST_PONG_EXTENSION                |
+|        │         ├─ 3. MutationObserver pada atribut dataset sifast-extension-*                    |
+|        │         ├─ 4. Window focus listener + proactive SIFAST_PING_EXTENSION                     |
+|        │         └─ 5. Fallback timer 500ms -> status { isInstalled, version, isChecking }         |
+|        │                                                                                           |
+|        ├──► [Header & Badge: <ExtensionStatusBadge />]                                             |
+|        │         ├─ isChecking: Spinner Loader "Memeriksa Ekstensi..."                             |
+|        │         ├─ isInstalled: Badge Emerald "Ekstensi Aktif (v1.0.0)"                           |
+|        │         └─ !isInstalled: Tombol Amber "Ekstensi Belum Terpasang" -> Buka Panduan          |
+|        │                                                                                           |
+|        ├──► [Banner Edukasi: <ExtensionGuideBanner />] (Dismissible, Tombol Panduan Pemasangan)    |
+|        │                                                                                           |
+|        ├──► [Toolbar Filter & Live Search]                                                         |
+|        │         ├─ Category Pills (Semua Portal, Kemenkes, BKKBN, dsb) + Case-insensitive counter|
+|        │         └─ Live Search Input (Filter nama, deskripsi, kategori secara real-time) + Reset X|
+|        │                                                                                           |
+|        ├──► [Grid Kartu Responsif: <PortalCard />] (1-4 Kolom, sm/md/lg/xl)                        |
+|        │         ├─ Logo Visual (icon_url via storage) + Fallback Inisial / Globe saat onError    |
+|        │         ├─ Badge Tipe Akun (Akun Bersama RS [Teal] vs Akun Pribadi [Indigo/Amber])        |
+|        │         ├─ Tombol Atur Akun Pribadi (KeyRound) -> Buka <PersonalCredentialDialog />       |
+|        │         └─ Tombol Utama "Buka Portal":                                                    |
+|        │              ├─ Ekstensi Ada    : Fetch POST /dispatch-token -> emit SIFAST_PORTAL_LAUNCH |
+|        │              ├─ Ekstensi Tak Ada: Graceful Fallback window.open(portal.url, '_blank')     |
+|        │              └─ Dispatch Gagal  : Fallback window.open() + Deteksi Popup Blocker          |
+|        │                                                                                           |
+|        └──► [Modal Self-Service: <PersonalCredentialDialog />]                                     |
+|                  ├─ Reset form via portal id key & useEffect                                       |
+|                  ├─ Input Username & Input Password dengan Toggle Lihat Sandi (Eye/EyeOff)         |
+|                  ├─ Placeholder Password Tersimpan Aman: •••••••••••• (Kosongkan jika tak diubah)   |
+|                  ├─ Validasi Dinamis: Wajib diisi saat setup awal, Nullable saat update preservasi |
+|                  └─ Submit PUT /portal-pelaporan/{portal}/personal-credentials -> Inertia Reload   |
++----------------------------------------------------------------------------------------------------+
+```
+
+---
+
+### 6.1 Halaman Portal Pelaporan Pengguna (`/portal-pelaporan`)
+
+Halaman portal pelaporan adalah ruang kerja (*workspace*) harian petugas rumah sakit. Sebelum subsistem ini ada, petugas harus mengingat puluhan URL login pemerintah dan mencatat kata sandi di kertas memo. Halaman `/portal-pelaporan` menyatukan seluruh akses resmi ke dalam antarmuka yang bersih, cepat, dan aman.
+
+#### Aturan Akses & Visibilitas Berbasis Hak Akses
+1. **Penyaringan Portal Aktif (`portals.is_active = true`):**
+   Hanya portal yang berstatus aktif dalam basis data yang dapat tampil di antarmuka pengguna. Jika Administrator IT menonaktifkan portal melalui modul admin, portal tersebut seketika hilang dari pandangan seluruh staf.
+2. **Penyaringan Penugasan Staf (*User-Assignment Filtering*):**
+   * **Staf Biasa (Non-Admin):** Hanya dapat melihat portal di mana terdapat entri relasi aktif pada tabel pivot `user_portal_credentials` (`user_id = auth()->id()` dan `is_active = true`). Staf tidak dapat melihat maupun mengakses portal yang bukan merupakan wewenang dinasnya.
+   * **Administrator & Super-Admin (`isAdmin() || isSuperAdmin()`):** Memiliki hak istimewa (*super privilege*) untuk melihat seluruh portal aktif dalam sistem. Jika admin belum memiliki mapping eksplisit pada portal tertentu yang mendukung akun bersama (`shared` atau `both`), sistem secara cerdas menyediakan fallback ke akun bersama RS (`use_shared`), memudahkan pengujian dan supervisi langsung.
+
+#### Filter Kategori & Pencarian Real-Time (Client-side Instant Filter)
+* **Pill Filter Kategori:**
+  * Tombol `Semua Portal` menampilkan total seluruh portal yang dapat diakses pengguna.
+  * Tombol kategori individual (misal: `Kemenkes`, `BKKBN`, `Mutu & Akreditasi`) dilengkapi lencana angka (*counter badge*).
+  * Perhitungan jumlah portal per kategori dinormalisasi secara *case-insensitive* (`portal.category.toLowerCase().trim()`) untuk mencegah pecahan angka akibat perbedaan kapitalisasi data.
+* **Input Live Search:**
+  * Staf dapat mencari portal dengan mengetikkan kata kunci pada bidang input pencarian.
+  * Pencarian mencakup nama portal, deskripsi, dan nama kategori secara instan tanpa perlu melakukan reload halaman.
+  * Dilengkapi tombol silang (X) cepat untuk mengosongkan kata kunci pencarian.
+* **State Kondisi Kosong (*Empty State*):**
+  * Jika staf belum memiliki portal yang ditugaskan sama sekali: Tampil ilustrasi ramah dengan teks edukatif:  
+    *"Belum Ada Akses Portal. Akun Anda belum memiliki izin akses ke portal pelaporan eksternal. Silakan hubungi Tim IT atau Administrator untuk mendapatkan penugasan portal."*
+  * Jika filter pencarian atau kategori tidak menghasilkan kecocokan: Tampil ilustrasi pencarian kosong disertai tombol **Reset Filter** untuk mengembalikan tampilan ke default.
+
+---
+
+### 6.2 Arsitektur Service Class Layer (`PortalAggregatorService`)
+
+Logika bisnis agregasi data portal dikelola secara terisolasi pada kelas layanan [`App\Services\Portal\PortalAggregatorService`](../../app/Services/Portal/PortalAggregatorService.php) dan diinjeksi ke [`App\Http\Controllers\PortalAggregatorController`](../../app/Http/Controllers/PortalAggregatorController.php) menggunakan *Constructor Injection*:
+
+```php
+// app/Http/Controllers/PortalAggregatorController.php
+namespace App\Http\Controllers;
+
+use App\Services\Portal\PortalAggregatorService;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
+
+class PortalAggregatorController extends Controller
+{
+    public function __construct(
+        private PortalAggregatorService $aggregatorService,
+    ) {}
+
+    public function index(Request $request): Response
+    {
+        $user = $request->user();
+        $category = $request->query('category');
+        $search = $request->query('search');
+
+        $portals = $this->aggregatorService->getUserPortals(
+            $user,
+            category: is_string($category) ? $category : null,
+            search: is_string($search) ? $search : null,
+        );
+
+        $categories = $this->aggregatorService->getCategoriesForUser($user);
+
+        return Inertia::render('portal-pelaporan/index', [
+            'portals' => $portals,
+            'categories' => $categories,
+            'filters' => [
+                'category' => is_string($category) && filled($category) ? $category : 'all',
+                'search' => is_string($search) ? $search : '',
+            ],
+        ]);
+    }
+}
+```
+
+#### Rincian Logika Kunci pada `PortalAggregatorService.php`:
+
+1. **Optimasi Query & Eager Loading Berlingkup (`getUserPortals`):**
+   ```php
+   $query = Portal::query()->where('is_active', true);
+
+   if (! $isAdmin) {
+       $query->whereHas('userCredentials', function (Builder $q) use ($user): void {
+           $q->where('user_id', $user->id)
+               ->where('is_active', true);
+       });
+   }
+
+   // Eager load credentials yang hanya milik user bersangkutan
+   $query->with(['userCredentials' => function ($q) use ($user): void {
+       $q->where('user_id', $user->id)
+           ->where('is_active', true);
+   }]);
+   ```
+2. **Pencarian Kategori Case-Insensitive:**
+   ```php
+   if (filled($category) && $category !== 'all') {
+       $cat = trim((string) $category);
+       $query->whereRaw('LOWER(category) = ?', [mb_strtolower($cat)]);
+   }
+   ```
+3. **Pengurutan Konsisten Menggunakan Scope `ordered()`:**
+   Menggunakan scope bawaan model `Portal::scopeOrdered()` (`sort_order ASC, name ASC`) untuk menjamin urutan prioritas kartu portal seragam.
+4. **Format Kartu Aman (*Zero Password Leakage*):**
+   Fungsi `formatPortalCard()` menyusun representasi kartu portal. Kata sandi (`shared_password` dan `personal_password`) **TIDAK PERNAH DISERTAKAN** dalam payload kartu yang dikirim ke Inertia frontend:
+   ```php
+   // app/Services/Portal/PortalAggregatorService.php
+   $hasPersonalCredential = filled($credential?->personal_username)
+       && filled($credential?->getRawOriginal('personal_password'));
+
+   return [
+       'id' => $portal->id,
+       'name' => $portal->name,
+       'slug' => $portal->slug,
+       'category' => $portal->category,
+       'url' => $portal->url,
+       'url_pattern' => $portal->url_pattern,
+       'icon_path' => $portal->icon_path,
+       'icon_url' => $portal->icon_url,
+       'description' => $portal->description,
+       'auth_type' => $portal->auth_type,
+       'credential_type' => $credentialType,
+       'personal_username' => $credential?->personal_username,
+       'has_personal_credential' => $hasPersonalCredential,
+       'can_configure_personal' => $canConfigurePersonal,
+       'sort_order' => $portal->sort_order,
+   ];
+   ```
+   > [!TIP]
+   > **Optimasi `getRawOriginal('personal_password')`:**  
+   > Pengecekan keberadaan kata sandi personal menggunakan `$credential?->getRawOriginal('personal_password')` alih-alih mengakses properti `$credential->personal_password`. Hal ini menghindari proses dekripsi kriptografis simetris AES-256 yang tidak perlu saat hanya memeriksa apakah kolom password telah terisi di database.
+
+#### Validasi Dinamis pada `UpdatePersonalCredentialRequest.php`:
+Pada form request pembaruan kredensial pribadi ([`app/Http/Requests/UpdatePersonalCredentialRequest.php`](../../app/Http/Requests/UpdatePersonalCredentialRequest.php)), aturan validasi password dirancang secara dinamis berlandaskan keamanan dan kenyamanan staf:
+```php
+public function rules(): array
+{
+    /** @var Portal|null $portal */
+    $portal = $this->route('portal');
+    $user = $this->user();
+
+    $hasExistingPassword = false;
+    if ($portal && $user) {
+        $credential = UserPortalCredential::where('user_id', $user->id)
+            ->where('portal_id', $portal->id)
+            ->first();
+        $hasExistingPassword = filled($credential?->getRawOriginal('personal_password'));
+    }
+
+    return [
+        'username' => ['required', 'string', 'max:255'],
+        'password' => [$hasExistingPassword ? 'nullable' : 'required', 'string', 'min:4', 'max:255'],
+        'extra_fields' => ['nullable', 'array'],
+    ];
+}
+
+public function messages(): array
+{
+    return [
+        'password.required' => 'Password akun pribadi wajib diisi untuk konfigurasi awal.',
+    ];
+}
+```
+* **Konfigurasi Awal:** Jika staf belum pernah menyimpan password, bidang kata sandi berstatus `required`.
+* **Pembaruan Lanjutan (*Password Preservation*):** Jika staf sudah memiliki password tersimpan, bidang kata sandi berstatus `nullable`. Jika staf mengosongkan input password, backend mempertahankan kata sandi lama tanpa menimpanya.
+
+---
+
+### 6.3 Deteksi Handshake Ekstensi di UI React (`useExtensionDetection`)
+
+Untuk memberikan pengalaman pengguna yang mulus tanpa ketergantungan pada refresh browser manual, antarmuka SIMRS memanfaatkan custom React hook [`useExtensionDetection`](../../resources/js/components/portal/use-extension-detection.ts).
+
+Hook ini mengimplementasikan **6 lapisan deteksi multi-vektor**:
+
+```typescript
+// resources/js/components/portal/use-extension-detection.ts
+import { useEffect, useState } from 'react';
+import type { ExtensionStatus } from '@/types/portal';
+
+export function useExtensionDetection(): ExtensionStatus {
+    // 1. Inisialisasi malas (Lazy initialization) langsung dari dataset DOM
+    const [status, setStatus] = useState<ExtensionStatus>(() => {
+        if (typeof document !== 'undefined' && document.documentElement.dataset.sifastExtensionInstalled === 'true') {
+            return {
+                isInstalled: true,
+                version: document.documentElement.dataset.sifastExtensionVersion || '1.0.0',
+                isChecking: false,
+            };
+        }
+        return { isInstalled: false, version: null, isChecking: true };
+    });
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const checkDataset = (): boolean => {
+            if (typeof document === 'undefined') return false;
+            const dataset = document.documentElement.dataset;
+            if (dataset.sifastExtensionInstalled === 'true') {
+                if (isMounted) {
+                    setStatus({
+                        isInstalled: true,
+                        version: dataset.sifastExtensionVersion || '1.0.0',
+                        isChecking: false,
+                    });
+                }
+                return true;
+            }
+            return false;
+        };
+
+        checkDataset();
+
+        // 2. Listener event inisialisasi ekstensi & respon ping
+        const handleExtensionSignal = (event: Event) => {
+            if (!isMounted) return;
+            const customEv = event as CustomEvent<{ version?: string; installed?: boolean }>;
+            const version = customEv.detail?.version || document.documentElement.dataset.sifastExtensionVersion || '1.0.0';
+            setStatus({ isInstalled: true, version, isChecking: false });
+        };
+
+        window.addEventListener('SIFAST_EXTENSION_READY', handleExtensionSignal);
+        window.addEventListener('SIFAST_PONG_EXTENSION', handleExtensionSignal);
+
+        // 3. MutationObserver memantau perubahan dataset pada <html>
+        let observer: MutationObserver | null = null;
+        if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
+            observer = new MutationObserver(() => checkDataset());
+            observer.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['data-sifast-extension-installed', 'data-sifast-extension-version'],
+            });
+        }
+
+        // 4. Re-check saat window aktif kembali (misal setelah user memasang ekstensi di tab chrome://extensions)
+        const handleFocus = () => {
+            if (!checkDataset()) {
+                try {
+                    window.dispatchEvent(new CustomEvent('SIFAST_PING_EXTENSION'));
+                } catch {}
+            }
+        };
+        window.addEventListener('focus', handleFocus);
+
+        // 5. Ping ekstensi secara proaktif
+        try {
+            window.dispatchEvent(new CustomEvent('SIFAST_PING_EXTENSION'));
+        } catch {}
+
+        // 6. Fallback timeout 500ms jika ekstensi tidak merespons
+        const timer = setTimeout(() => {
+            if (isMounted && !checkDataset()) {
+                setStatus((prev) => ({ ...prev, isChecking: false }));
+            }
+        }, 500);
+
+        return () => {
+            isMounted = false;
+            clearTimeout(timer);
+            if (observer) observer.disconnect();
+            window.removeEventListener('focus', handleFocus);
+            window.removeEventListener('SIFAST_EXTENSION_READY', handleExtensionSignal);
+            window.removeEventListener('SIFAST_PONG_EXTENSION', handleExtensionSignal);
+        };
+    }, []);
+
+    return status;
+}
+```
+
+---
+
+### 6.4 Komponen Antarmuka & Kartu Responsif
+
+Arsitektur antarmuka pengguna dibangun menggunakan komponen-komponen React yang modular, responsif, dan memenuhi standar aksesibilitas WCAG:
+
+#### 1. Komponen Kartu Portal Interaktif ([`PortalCard.tsx`](../../resources/js/components/portal/portal-card.tsx))
+Setiap portal ditampilkan dalam kartu interaktif dengan fitur-fitur berikut:
+* **Resolusi Logo dengan Fallback Gambar:** Logo dimuat dari `portal.icon_url` (jalur publik storage). Jika berkas gambar rusak atau tidak ditemukan, listener `onError` mengaktifkan fallback visual berupa inisial 2 huruf nama portal atau ikon `Globe` berlatar gradien emerald yang rapi.
+* **Badge Kategori:** Menampilkan kategori portal dengan batasan lebar (`max-w-[130px] truncate`) dan atribut `title` lengkap saat kursor diarahkan ke badge.
+* **Indikator Tipe Akun:**
+  * `Akun Bersama RS`: Lencana berwarna teal dengan ikon `Users`, menandakan kredensial dikelola terpusat oleh Admin RS.
+  * `Akun Pribadi`: Lencana berwarna indigo jika kredensial sudah diatur, atau berwarna amber (*Pribadi (Belum Diatur)*) jika staf belum mengisi kredensial.
+* **Tombol Tindakan Cepat:**
+  * Tombol kunci `Atur Akun Pribadi` (ikon `KeyRound`) hanya dirender jika properti `can_configure_personal` bernilai `true`.
+  * Tombol utama `Buka Portal`:
+    * Jika ekstensi terpasang: Tombol memicu pemanggilan `POST /portal-pelaporan/{portal.id}/dispatch-token` dengan header CSRF dan XMLHttpRequest, lalu memancarkan CustomEvent `SIFAST_PORTAL_LAUNCH`.
+    * Jika ekstensi belum terpasang: Tombol melakukan *graceful fallback* membuka URL portal target di tab baru secara langsung (`window.open(portal.url, '_blank', 'noopener,noreferrer')`).
+    * Deteksi Popup Blocker: Jika browser memblokir pembukaan tab baru otomatis, kartu menampilkan kotak peringatan ramah dengan link klik manual: *"Popup tab baru diblokir browser. Klik di sini untuk membuka."*
+
+#### 2. Badge Indikator Status Ekstensi ([`ExtensionStatusBadge.tsx`](../../resources/js/components/portal/extension-status-badge.tsx))
+* **State `isChecking`:** Menampilkan badge outline abu-abu dengan spinner loader: `Memeriksa Ekstensi...`.
+* **State `isInstalled`:** Menampilkan badge emerald cerah dengan ikon centang: `Ekstensi Aktif (v1.0.0)`.
+* **State `!isInstalled`:** Menampilkan tombol interaktif amber: `Ekstensi Belum Terpasang` yang saat diklik langsung membuka dialog modal panduan pemasangan.
+
+#### 3. Banner Panduan Instalasi ([`ExtensionGuideBanner.tsx`](../../resources/js/components/portal/extension-guide-banner.tsx))
+* Ditampilkan di bagian atas halaman agregator bila ekstensi belum terdeteksi aktif.
+* Menyediakan ringkasan manfaat pengisian otomatis kredensial untuk portal Kemenkes dan BKKBN.
+* Dapat ditutup sementara oleh pengguna (*dismissible*) melalui tombol silang (X).
+
+#### 4. Modal Dialog Panduan Pemasangan ([`ExtensionInstallDialog.tsx`](../../resources/js/components/portal/extension-install-dialog.tsx))
+* Memberikan panduan 3 langkah mudah memuat ekstensi pada browser Chromium (Google Chrome, Microsoft Edge, Brave):
+  1. Unduh dan ekstrak folder ekstensi `rs-extension/`.
+  2. Buka halaman `chrome://extensions`.
+  3. Aktifkan **Developer mode** dan klik **Load unpacked**.
+* Memuat kartu jaminan keamanan **Zero-Persistence Guarantee**: menegaskan bahwa ekstensi tidak menyimpan data password di browser dan kredensial langsung terhapus dari RAM setelah form terisi.
+
+---
+
+### 6.5 Modal Pengaturan Kredensial Pribadi Mandiri (`PersonalCredentialDialog`)
+
+Bagi portal yang mendukung akun mandiri staf (seperti SITB Kemenkes atau SIHA), staf dapat mengelola kredensial milik mereka sendiri melalui komponen modal [`PersonalCredentialDialog`](../../resources/js/components/portal/personal-credential-dialog.tsx):
+
+* **Sinkronisasi Form & Isolasi State:**  
+  Komponen di-render dengan atribut `key={selectedPortalForCredentials?.id ?? 'none'}` dan sinkronisasi `useEffect`. Setiap kali staf beralih antar portal, seluruh field form, status error, dan status loading di-reset bersih.
+* **Keamanan Tampilan Sandi (*Password Masking*):**  
+  Field password menggunakan font monospaced (`font-mono`) dan dilengkapi tombol *toggle* mata (`Eye` / `EyeOff`) untuk melihat atau menyembunyikan kata sandi saat pengetikan.
+* **Preservasi Password Tersimpan:**  
+  Jika portal telah memiliki password pribadi tersimpan, kolom password menampilkan placeholder protektif `••••••••••••` dengan catatan edukatif: `(Kosongkan jika tidak ingin mengubah)`. Staf dapat memperbarui username tanpa perlu mengetik ulang kata sandi mereka.
+* **Integrasi Reaktif Inertia:**  
+  Setelah kredensial berhasil disimpan via panggilan `PUT /portal-pelaporan/{portal.id}/personal-credentials`, modal menampilkan notifikasi sukses hijau berikon `ShieldCheck` dan memicu pembaruan data parsial Inertia via `router.reload({ only: ['portals'] })` sehingga kartu portal seketika mencerminkan status akun terbaru.
+
+---
+
+### 6.6 Integrasi Menu Navigasi SIMRS (`resources/js/lib/portal-nav.ts`)
+
+Sesuai panduan arsitektur aplikasi ([`AGENTS.md`](../../AGENTS.md)), seluruh navigasi SIMRS Sifast dikelola secara terpusat pada file **Single Source of Truth** [`resources/js/lib/portal-nav.ts`](../../resources/js/lib/portal-nav.ts).
+
+#### Pendaftaran Menu Pengguna (`mainNavItems`):
+Menu **Portal Pelaporan** didaftarkan langsung ke array `mainNavItems` sehingga tersedia secara universal bagi seluruh staf rumah sakit yang terotentikasi:
+
+```typescript
+// resources/js/lib/portal-nav.ts (baris 100-109)
+export const mainNavItems: PortalNavItem[] = [
+    {
+        id: 'dashboard',
+        label: 'Dashboard',
+        href: dashboard().url,
+        icon: LayoutGrid,
+        isActive: (path) => path === '/dashboard' || path === '/',
+    },
+    {
+        id: 'portal-pelaporan',
+        label: 'Portal Pelaporan',
+        href: '/portal-pelaporan',
+        icon: Globe,
+        isActive: (path) =>
+            path === '/portal-pelaporan' ||
+            path.startsWith('/portal-pelaporan?') ||
+            path.startsWith('/portal-pelaporan/'),
+    },
+    // ...
+];
+```
+
+* **Konsistensi Layout:** Menu otomatis dirender pada navigasi desktop ([`TemplateSidebar`](../../resources/js/components/template-sidebar.tsx)) dan navigasi mobile ([`TemplateMobileNav`](../../resources/js/components/template-mobile-nav.tsx)).
+* **Pemisahan Hak Kelola Admin:** Menu manajemen portal admin (**Master Portal** di `/admin/portals` dan **Mapping Akses** di `/admin/portals/mapping`) dikelompokkan secara terpisah di bawah builder `buildPortalNavGroup(permissions?.can_manage_portals)` dan hanya tampil untuk pengguna dengan izin administratif.
+* **Aturan Emas:** *Dilarang keras memodifikasi `resources/js/components/app-sidebar.tsx` karena berkas tersebut adalah artefak starter-kit yang tidak pernah dirender pada layout aktif SIMRS.*
+
+---
+
+### 6.7 Peta Berkas & Panduan Code Review (Plan 3)
+
+Tabel berikut merangkum seluruh berkas yang dibangun dan dimodifikasi pada tahap Plan 3:
+
+| No | Path Berkas | Status | Baris | Peran & Deskripsi Arsitektur | Poin Penting Code Review |
+| :---: | :--- | :---: | :---: | :--- | :--- |
+| **1** | [`app/Services/Portal/PortalAggregatorService.php`](../../app/Services/Portal/PortalAggregatorService.php) | `[BARU]` | 133 | Service agregasi portal aktif, filter kueri, dan pemformat kartu. | Verifikasi penanganan `where('is_active', true)`, eager load `userCredentials` scoped, query kategori case-insensitive, dan jaminan zero password leakage. |
+| **2** | [`app/Http/Controllers/PortalAggregatorController.php`](../../app/Http/Controllers/PortalAggregatorController.php) | `[BARU]` | 44 | Controller tipis halaman agregator pengguna (`index`). | Constructor injection `PortalAggregatorService`, sanitasi parameter query `category` & `search`, render Inertia view `portal-pelaporan/index`. |
+| **3** | [`app/Http/Requests/UpdatePersonalCredentialRequest.php`](../../app/Http/Requests/UpdatePersonalCredentialRequest.php) | `[MODIFIKASI]` | 50 | Form request validasi pembaruan kredensial mandiri staf. | Memastikan password wajib diisi (`required`) saat konfigurasi awal, dan bersifat opsional (`nullable`) saat preservasi password yang sudah ada. |
+| **4** | [`routes/web.php`](../../routes/web.php) | `[MODIFIKASI]` | — | Pendaftaran rute web `GET /portal-pelaporan`. | Berada dalam middleware perimeter `['auth', 'verified']`, nama rute: `portal-pelaporan.index`. |
+| **5** | [`resources/js/types/portal.ts`](../../resources/js/types/portal.ts) | `[MODIFIKASI]` | 97 | Definisi tipe TypeScript: `PortalCardItem` & `ExtensionStatus`. | Tipe data type-safe untuk frontend, properti `has_personal_credential` dan `can_configure_personal`. |
+| **6** | [`resources/js/components/portal/use-extension-detection.ts`](../../resources/js/components/portal/use-extension-detection.ts) | `[BARU]` | 126 | Custom React hook deteksi ekstensi multi-vektor. | Lazy initialization, CustomEvents `READY`/`PONG`, `MutationObserver` atribut dataset, dan event `focus` window. |
+| **7** | [`resources/js/components/portal/extension-status-badge.tsx`](../../resources/js/components/portal/extension-status-badge.tsx) | `[BARU]` | 70 | Komponen lencana status ekstensi di header. | Menangani 3 status: memeriksa (spinner), aktif (emerald), dan belum terpasang (amber button). |
+| **8** | [`resources/js/components/portal/extension-guide-banner.tsx`](../../resources/js/components/portal/extension-guide-banner.tsx) | `[BARU]` | 77 | Komponen banner edukasi instalasi ekstensi. | Ramah pengguna, dismissible, dan terhubung ke modal panduan pemasangan. |
+| **9** | [`resources/js/components/portal/extension-install-dialog.tsx`](../../resources/js/components/portal/extension-install-dialog.tsx) | `[BARU]` | 142 | Dialog modal petunjuk instalasi unpacked ekstensi. | Panduan 3 langkah bergambar dan kartu jaminan keamanan zero-persistence. |
+| **10** | [`resources/js/components/portal/portal-card.tsx`](../../resources/js/components/portal/portal-card.tsx) | `[BARU]` | 243 | Komponen kartu portal individual responsif. | Fallback gambar `onError`, badge akun, tombol peluncuran dengan dispatch token atau fallback direct tab, deteksi popup blocker. |
+| **11** | [`resources/js/components/portal/personal-credential-dialog.tsx`](../../resources/js/components/portal/personal-credential-dialog.tsx) | `[BARU]` | 240 | Modal self-service kredensial personal staf. | Reset state per portal, toggle intip sandi, placeholder protektif `••••••••••••`, dan reload parsial Inertia. |
+| **12** | [`resources/js/pages/portal-pelaporan/index.tsx`](../../resources/js/pages/portal-pelaporan/index.tsx) | `[BARU]` | 290 | Halaman utama agregator portal pelaporan. | Integrasi `AppLayout`, live filter kategori, live search, responsive grid, empty states, dan shortcut link admin. |
+| **13** | [`resources/js/lib/portal-nav.ts`](../../resources/js/lib/portal-nav.ts) | `[MODIFIKASI]` | 549 | Konfigurasi navigasi terpusat SIMRS (Single Source of Truth). | Pendaftaran `portal-pelaporan` ke `mainNavItems`, konsisten di `TemplateSidebar` dan `TemplateMobileNav`. |
+| **14** | [`tests/Feature/PortalPelaporan/PortalAggregatorServiceTest.php`](../../tests/Feature/PortalPelaporan/PortalAggregatorServiceTest.php) | `[BARU]` | 312 | Pest unit test untuk query, filtering, dan formatting kartu. | 8 skenario pengujian komprehensif, hak akses staf vs admin, super-admin config, filter kategori case-insensitive, dan zero leakage. |
+| **15** | [`tests/Feature/PortalPelaporan/PortalAggregatorControllerTest.php`](../../tests/Feature/PortalPelaporan/PortalAggregatorControllerTest.php) | `[BARU]` | 114 | Pest feature test untuk controller dan respon Inertia. | 4 skenario pengujian: redirect guest, otorisasi staf, super-privilege admin, dan passing query filters. |
+
+---
+
+### 6.8 Panduan Uji Coba Cepat (Hands-on Verification Bab 6)
+
+Pengembang dan tim QA dapat memvalidasi fungsionalitas modul pengguna Plan 3 melalui langkah-langkah praktis berikut:
+
+#### A. Pengujian Otomatis Backend (Pest PHP)
+Jalankan pengujian unit dan feature agregator portal pengguna:
+
+```bash
+# 1. Menjalankan seluruh pengujian service dan controller portal agregator (12 test cases)
+vendor/bin/pest tests/Feature/PortalPelaporan --filter=PortalAggregator
+
+# 2. Menjalankan pengujian otorisasi dan validasi kredensial personal (12 test cases)
+vendor/bin/pest tests/Feature/PortalPelaporan --filter=PortalPersonalCredential
+
+# 3. Menjalankan pengujian paritas navigasi SIMRS (memastikan menu muncul di desktop & mobile)
+vendor/bin/pest tests/Feature/PortalNavParityTest.php
+```
+*Hasil yang diharapkan: Seluruh rangkaian pengujian lulus 100% (`PASS`) tanpa ada kegagalan regresi.*
+
+#### B. Pengujian Manual Antarmuka Pengguna di Browser
+1. **Login sebagai Staf Rumah Sakit:**  
+   Masuk ke aplikasi SIMRS menggunakan akun staf biasa yang bukan admin (misal akun perawat atau rekam medis).
+2. **Periksa Menu Navigasi:**  
+   Amati bahwa menu **Portal Pelaporan** tampil di bilah sidebar utama dengan ikon bola dunia (`Globe`).
+3. **Akses Halaman `/portal-pelaporan`:**  
+   Klik menu navigasi tersebut. Pastikan grid hanya menampilkan portal yang diizinkan untuk staf Anda.
+4. **Uji Coba Filter Kategori & Pencarian:**  
+   * Klik tombol-tombol kategori (contoh: `Kemenkes`, `BKKBN`): amati kartu tersaring seketika tanpa refresh halaman.
+   * Ketik kata kunci pada kotak pencarian: amati kartu tersaring secara instan.
+5. **Uji Coba Atur Kredensial Pribadi:**  
+   * Cari portal bertipe akun pribadi (misal SITB atau SIHA) dan klik tombol ikon kunci.
+   * Masukkan username dan password baru, lalu klik **Simpan Akun**.
+   * Buka kembali modal: pastikan password terlindungi dengan placeholder `••••••••••••`.
+6. **Uji Coba Peluncuran Portal (Graceful Fallback):**  
+   * Bila browser belum memiliki ekstensi: klik tombol **Buka Portal**. Browser akan langsung membuka tab baru ke website pelaporan resmi target.
+
+---
+
+## Bab 7: 🧩 Custom Browser Extension Manifest V3 & Distribusi Ekstensi (Plan 4 - Siap Diimplementasikan)
+
+> **Status Modul:** `[STATUS: SIAP DIIMPLEMENTASIKAN (Plan 4)]`  
 > **Direktori Sumber:** [`rs-extension/`](../../rs-extension/)  
+> **Rute Distribusi Ekstensi:** `GET /portal-pelaporan/extension/download`  
 > **Lingkungan Eksekusi:** Chromium Browser (Google Chrome, Microsoft Edge, Brave) Manifest V3  
 > **Rujukan Rencana Teknis:** [`docs/superpowers/plans/2026-09-14-portal-eksternal-plan-4-browser-extension.md`](../superpowers/plans/2026-09-14-portal-eksternal-plan-4-browser-extension.md)
 
-Bab ini merinci spesifikasi arsitektur, mekanisme keamanan, dan implementasi teknis dari **Custom Chromium Extension** (`rs-extension/`). Ekstensi ini bertindak sebagai jembatan otomatisasi cerdas (*intelligent autofill bridge*) yang menghubungkan aplikasi web SIMRS Sifast dengan 8 kelompok sistem pelaporan eksternal pemerintah (Kemenkes & BKKBN). Dirancang khusus dengan filosofi **Zero-Persistence Guarantee**, ekstensi ini mengisi kredensial login secara instan tanpa pernah menyimpan password ke dalam media penyimpanan fisik peramban pengguna.
+Bab ini merinci spesifikasi arsitektur, mekanisme keamanan, dan implementasi teknis dari **Custom Chromium Extension** (`rs-extension/`) serta layanan pengemasan arsip biner ZIP untuk distribusi mandiri di lingkungan RS Aisyiyah Siti Fatimah Tulangan. Ekstensi ini bertindak sebagai jembatan otomatisasi cerdas (*intelligent autofill bridge*) yang menghubungkan aplikasi web SIMRS Sifast dengan 8 kelompok sistem pelaporan eksternal pemerintah (Kemenkes & BKKBN). Dirancang khusus dengan filosofi **Zero-Persistence Guarantee**, ekstensi ini mengisi kredensial login secara instan tanpa pernah menyimpan password ke dalam media penyimpanan fisik peramban pengguna.
 
 ```
 +-------------------------------------------------------------------------------------------------------------------+
@@ -1515,13 +2010,13 @@ Bab ini merinci spesifikasi arsitektur, mekanisme keamanan, dan implementasi tek
 |                                                                                                                   |
 |  [SIMRS Sifast (React SPA)]                                                                                       |
 |        │                                                                                                          |
-|        │  1. Klik "Buka Portal & Autofill"                                                                        |
+|        │  1. Klik "Buka Portal" pada <PortalCard />                                                               |
 |        │  2. Fetch Dispatch Token: POST /portal-pelaporan/{portal}/dispatch-token                                 |
 |        │  3. Emit CustomEvent: window.dispatchEvent('SIFAST_PORTAL_LAUNCH', { detail: payload })                   |
 |        ▼                                                                                                          |
 |  [Content Script Bridge: content-simrs.js] (run_at: document_start)                                              |
 |        │                                                                                                          |
-|        │  4. Tangkap CustomEvent 'SIFAST_PORTAL_LAUNCH'                                                           |
+|        │  4. Tangkap CustomEvent 'SIFAST_PORTAL_LAUNCH' (Validasi Defensive Boundary)                             |
 |        │  5. Forward ke Background: chrome.runtime.sendMessage({ type: 'SIFAST_PORTAL_LAUNCH', payload })          |
 |        ▼                                                                                                          |
 |  [Service Worker: background.js] (In-Memory Volatile RAM Queue)                                                   |
@@ -1554,7 +2049,7 @@ Bab ini merinci spesifikasi arsitektur, mekanisme keamanan, dan implementasi tek
 
 ---
 
-### 6.1 Filosofi & Batasan Arsitektur Zero-Persistence
+### 7.1 Filosofi & Batasan Arsitektur Zero-Persistence
 
 Ekstensi browser SIMRS Sifast dibangun di atas prinsip rekayasa perangkat lunak modern yang mengutamakan keamanan data medis dan kepatuhan hukum:
 
@@ -1577,7 +2072,7 @@ Kredensial login (khususnya kata sandi) adalah data yang paling rentan terhadap 
 
 ---
 
-### 6.2 Konfigurasi `manifest.json` (Chromium Manifest V3)
+### 7.2 Konfigurasi `manifest.json` (Chromium Manifest V3)
 
 Berkas [`rs-extension/manifest.json`](../../rs-extension/manifest.json) merupakan manifest konfigurasi resmi berbasis standar Google Chromium Manifest V3:
 
@@ -1641,20 +2136,20 @@ Berkas [`rs-extension/manifest.json`](../../rs-extension/manifest.json) merupaka
 1. **Perizinan Minimal (*Principle of Least Privilege*):**
    * `"tabs"`: Diperlukan untuk membuat tab baru (`chrome.tabs.create`) saat staf meluncurkan portal dari SIMRS, serta mendeteksi penutupan tab (`chrome.tabs.onRemoved`) guna membersihkan antrean RAM.
    * `"scripting"`: Diperlukan oleh fitur Admin Form Inspector pada popup untuk mengeksekusi scanning struktur DOM form secara dinamis di tab aktif.
-   * `"storage"`: Hanya dicadangkan untuk penyimpanan state non-sensitif preferensi UI popup jika dibutuhkan di masa mendatang (tidak digunakan untuk kredensial).
-2. **Pembatasan Host Permissions Spesifik:**
-   * Izin jaringan dibatasi secara eksplisit pada domain internal SIMRS (`rsaisyiyahsitifatimah.com`, `localhost`, `127.0.0.1`) serta 4 domain kementerian/lembaga resmi pelaporan kesehatan (`kemkes.go.id`, `bkkbn.go.id`, `kemendukbangga.go.id`, `sitb.id`). Ekstensi ditolak berjalan di luar domain-domain resmi ini.
+   * `"storage"`: Hanya dicadangkan untuk preferensi non-sensitif popup jika dibutuhkan di masa mendatang.
+2. **Host Permissions Spesifik:**
+   * Dibatasi eksplisit pada domain internal SIMRS (`rsaisyiyahsitifatimah.com`, `localhost`, `127.0.0.1`) serta 4 domain kementerian resmi (`kemkes.go.id`, `bkkbn.go.id`, `kemendukbangga.go.id`, `sitb.id`).
 3. **Pemisahan Fase Eksekusi Content Script:**
-   * `content-simrs.js` dieksekusi pada `run_at: "document_start"` agar atribut penanda handshake DOM (`data-sifast-extension-installed`) disuntikkan ke elemen `<html>` seketika sebelum framework React/Inertia me-render tampilan awal.
-   * `content-autofill.js` dieksekusi pada `run_at: "document_idle"` agar form login pada halaman target (termasuk halaman berbasis SPA) telah selesai melakukan manipulasi DOM awal sebelum autofill engine mulai memindai elemen form.
-4. **Generator Ikon Mandiri (`scripts/generate-icons.js`):**
-   * Ikon PNG (16x16, 48x48, 128x128 piksel) dihasilkan secara otomatis menggunakan skrip Node.js murni berbasis kompresi DEFLATE bawaan (`node:zlib`). Tidak membutuhkan dependensi library pengolah gambar eksternal seperti Sharp atau Canvas. Menghasilkan logo perisai hijau emerald (`#059669`) dengan lambang palang putih khas Siti Fatimah.
+   * `content-simrs.js` dieksekusi pada `run_at: "document_start"` agar atribut dataset handshake disuntikkan ke `<html>` sebelum React/Inertia merender DOM.
+   * `content-autofill.js` dieksekusi pada `run_at: "document_idle"` agar form login SPA telah selesai dimanipulasi oleh framework client-side sebelum autofill berjalan.
+4. **Pembangkit Ikon Mandiri (`scripts/generate-icons.js`):**
+   * Pembangkit ikon PNG murni tanpa dependensi library eksternal menggunakan kompresi DEFLATE bawaan Node.js (`node:zlib`).
 
 ---
 
-### 6.3 Background Service Worker (`background.js`) & In-Memory Queue
+### 7.3 Background Service Worker (`background.js`) & In-Memory Queue
 
-Berkas [`rs-extension/background.js`](../../rs-extension/background.js) bertindak sebagai pusat koordinasi antrean kredensial dan manajemen siklus hidup tab di peramban.
+Berkas [`rs-extension/background.js`](../../rs-extension/background.js) bertindak sebagai pusat koordinasi antrean kredensial volatile RAM dan manajemen siklus hidup tab peramban.
 
 #### Struktur Data Antrean Memori Volatile
 ```javascript
@@ -1711,30 +2206,19 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 });
 ```
 
-#### Garansi Keamanan *Burn-After-Reading*:
-Ketika content script target memanggil `SIFAST_GET_CREDENTIALS`, penghapusan kredensial dari `pendingCredentials` dieksekusi **sebelum** fungsi callback respon dikirimkan ke tab target. Hal ini menjamin bahwa kredensial hanya dapat dibaca satu kali per sesi peluncuran, mencegah skrip berbahaya lain membaca ulang kata sandi dari background worker.
-
 ---
 
-### 6.4 Content Bridge SIMRS (`content-simrs.js`) & Handshake Protocol
+### 7.4 Content Bridge SIMRS (`content-simrs.js`) & Handshake Protocol
 
 Berkas [`rs-extension/content-simrs.js`](../../rs-extension/content-simrs.js) berjalan di domain SIMRS Sifast untuk membentuk jembatan komunikasi dua arah antara aplikasi web React/Inertia dengan ekstensi.
 
 #### Tiga Pilar Protokol Handshake SIMRS:
-
-1. **Injeksi Atribut Dataset DOM:**
-   Pada fase inisialisasi awal (`document_start`), skrip menyematkan atribut penanda langsung ke elemen root HTML:
+1. **Injeksi Atribut Dataset DOM (`document_start`):**
    ```javascript
    document.documentElement.dataset.sifastExtensionInstalled = 'true';
    document.documentElement.dataset.sifastExtensionVersion = '1.0.0';
    ```
-   Aplikasi React dapat mendeteksi keberadaan ekstensi secara instan melalui pemeriksaan sinkron:
-   ```typescript
-   const isInstalled = document.documentElement.dataset.sifastExtensionInstalled === 'true';
-   ```
-
 2. **CustomEvent `SIFAST_EXTENSION_READY`:**
-   Setelah atribut dataset terpasang, skrip memancarkan event inisialisasi global:
    ```javascript
    window.dispatchEvent(
      new CustomEvent('SIFAST_EXTENSION_READY', {
@@ -1742,11 +2226,8 @@ Berkas [`rs-extension/content-simrs.js`](../../rs-extension/content-simrs.js) be
      })
    );
    ```
-
 3. **Bi-directional Ping / Pong Protocol (`SIFAST_PING_EXTENSION`):**
-   Untuk mengakomodasi arsitektur Single Page Application (SPA) pada Inertia.js—di mana pengguna berpindah halaman tanpa melakukan reload dokumen penuh—frontend React dapat memancarkan event ping kapan saja:
    ```javascript
-   // Didengarkan oleh content-simrs.js:
    window.addEventListener('SIFAST_PING_EXTENSION', () => {
      window.dispatchEvent(
        new CustomEvent('SIFAST_PONG_EXTENSION', {
@@ -1756,27 +2237,18 @@ Berkas [`rs-extension/content-simrs.js`](../../rs-extension/content-simrs.js) be
    });
    ```
 
-#### Relay Peluncuran Portal (`SIFAST_PORTAL_LAUNCH`) & Defensive Security Boundary:
-Saat staf menekan tombol kartu portal pada dashboard SIMRS, frontend memicu dispatch token dan memancarkan CustomEvent `SIFAST_PORTAL_LAUNCH`. Content bridge bertugas menangkap event ini, menerapkan validasi defensif (*defensive security boundary*), dan meneruskannya ke Background Service Worker:
+#### Relay Peluncuran Portal & Defensive Security Boundary:
+Content bridge memvalidasi payload sebelum meneruskannya ke Background Service Worker guna menangkal serangan DOM injection:
 ```javascript
 window.addEventListener('SIFAST_PORTAL_LAUNCH', (event) => {
   const payload = event.detail;
 
-  // Defensive validation: Cegah skrip arbitrer menyusupkan payload berbahaya
-  if (!payload || typeof payload !== 'object') {
-    return;
-  }
-
+  if (!payload || typeof payload !== 'object') return;
   const { portal, credentials } = payload;
-  if (!portal || typeof portal !== 'object' || !credentials || typeof credentials !== 'object') {
-    return;
-  }
+  if (!portal || typeof portal !== 'object' || !credentials || typeof credentials !== 'object') return;
 
-  // Validasi URL berprotokol resmi http: / https: (cegah skema javascript:, data:, file:)
   const url = portal.url;
   const isHttpUrl = typeof url === 'string' && /^https?:\/\//i.test(url);
-
-  // Validasi kredensial esensial bertipe string
   const hasValidCreds = typeof credentials.username === 'string' && typeof credentials.password === 'string';
 
   if (!isHttpUrl || !hasValidCreds) {
@@ -1795,44 +2267,19 @@ window.addEventListener('SIFAST_PORTAL_LAUNCH', (event) => {
 });
 ```
 
-> [!IMPORTANT]
-> **Defensive Security Boundary pada Content Bridge:**  
-> Karena `content-simrs.js` mendengarkan `window.addEventListener('SIFAST_PORTAL_LAUNCH')` pada konteks DOM halaman, skrip pihak ketiga atau potensi celah keamanan DOM dapat mencoba memicu event sintetis. Pemeriksaan defensif di atas memastikan:
-> 1. Objek `portal` dan `credentials` wajib ada dan bertipe objek valid.
-> 2. Properti `url` wajib menggunakan protokol resmi `http:` atau `https:` (menangkal URL injection berskema `javascript:`, `data:`, atau `chrome-extension:`).
-> 3. Field `username` dan `password` divalidasi bertipe string sebelum diteruskan via `chrome.runtime.sendMessage`, mencegah penyusupan objek malformasi atau eksploitasi prototype pollution ke dalam antrean memori Background Service Worker.
-
 ---
 
-### 6.5 Content Engine Target (`content-autofill.js`) & Heuristic Scanner
+### 7.5 Content Engine Target (`content-autofill.js`) & Heuristic Scanner
 
 Berkas [`rs-extension/content-autofill.js`](../../rs-extension/content-autofill.js) adalah mesin pelaksana injeksi yang aktif pada tab website pelaporan eksternal pemerintah.
 
-#### 1. Permintaan Kredensial Sekali Pakai
-Saat DOM tab target berstatus `document_idle`, skrip mengirim permintaan ke Background Service Worker:
-```javascript
-chrome.runtime.sendMessage({ type: 'SIFAST_GET_CREDENTIALS' }, (response) => {
-  if (!response || !response.success || !response.payload) {
-    // Tidak ada penugasan kredensial aktif untuk tab ini (graceful exit)
-    return;
-  }
-  executeAutofill(response.payload);
-});
-```
+#### 1. Resolusi Elemen Form (Statis & Fallback Scanner):
+* **Tahap A (Static Selectors):** Mencocokkan rantai CSS selector dari konfigurasi `form_config` portal di database SIMRS (misal `["#c", "input[name='email']", "#email"]`).
+* **Tahap B (Runtime Heuristic Scanner Fallback):** Jika selector statis tidak ditemukan, mesin otomatis memindai input `input[type='password']`, menemukan form kontainer terdekat, lalu mencari input teks/email yang berada tepat sebelum password input serta mencocokkan kata kunci identitas (`user`, `login`, `email`, `nip`, `nik`).
 
-#### 2. Resolusi Elemen Form (Statis & Fallback)
-Mesin mencoba menemukan bidang input username dan password melalui dua tahapan:
-* **Tahap A (Static Selectors):** Menguji daftar selector CSS yang tersimpan pada `form_config` portal di database SIMRS (misalnya `["#c", "input[name='email']", "#email"]`). Fungsi `queryField()` mengeksekusi `root.querySelector(selector)`.
-* **Tahap B (Runtime Heuristic Scanner Fallback):** Jika selector statis gagal (misalnya karena portal pemerintah mengubah struktur HTML atau tidak menyertakan atribut `name`/`id` seperti form SIRS Online), fungsi `runHeuristicScanner(root)` otomatis aktif:
-  1. Memindai seluruh elemen input bertipe password yang terlihat (*visible password input*): `input[type='password']`.
-  2. Mencari form kontainer atau kelompok input yang menaungi password tersebut.
-  3. Memindai elemen input kandidat username di form yang sama (input teks, email, atau tel yang posisinya berada tepat sebelum password input).
-  4. Menganalisis kecocokan kata kunci atribut (`name`, `id`, `placeholder`, `aria-label`) terhadap kamus kata kunci identitas: `user`, `login`, `email`, `nip`, `nik`, `satker`, `kode`, `identitas`.
+#### 2. Bypass Prototype Property Setter Framework Modern (`setNativeValue`):
+Framework modern (React, Vue, Angular) melakukan override setter properti `value`. Mengubah `element.value = "..."` secara langsung seringkali tidak memicu state internal framework. Ekstensi memanggil descriptor setter prototipe asli browser:
 
-#### 3. Bypass Prototype Property Setter Framework Modern (`setNativeValue`)
-Framework modern (React, Vue, Angular) meng-override properti `value` pada elemen input DOM untuk sinkronisasi Virtual DOM / state internal. Mengubah `element.value = "..."` secara langsung via JavaScript biasa seringkali diabaikan oleh framework, menyebabkan tombol submit tetap nonaktif atau data terkirim kosong.
-
-Ekstensi mengatasi masalah ini dengan memanggil property setter asli dari prototipe `HTMLInputElement` dan menembakkan siklus event sintetis lengkap:
 ```javascript
 export function setNativeValue(element, value) {
   const valueSetter = Object.getOwnPropertyDescriptor(element, 'value')?.set;
@@ -1840,7 +2287,6 @@ export function setNativeValue(element, value) {
   const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
 
   if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
-    // Override setter framework terdeteksi -> panggil setter prototipe asli
     prototypeValueSetter.call(element, value);
   } else if (valueSetter) {
     valueSetter.call(element, value);
@@ -1848,33 +2294,26 @@ export function setNativeValue(element, value) {
     element.value = value;
   }
 
-  // Pancarkan siklus event sintetis dengan bubbling
   element.dispatchEvent(new Event('input', { bubbles: true }));
   element.dispatchEvent(new Event('change', { bubbles: true }));
   element.dispatchEvent(new FocusEvent('blur', { bubbles: true }));
 }
 ```
 
-#### 4. Deteksi CAPTCHA & Auto-Focus
-Jika form target memuat bidang CAPTCHA (dideteksi via `detectCaptcha(root)` dengan memeriksa kata kunci `captcha`, `kode`, `security`, `img_code` pada atribut input):
-1. Ekstensi tidak mencoba mengisi CAPTCHA secara otomatis.
-2. Ekstensi memindahkan fokus kursor keyboard ke input CAPTCHA:
-   ```javascript
-   captchaElement.focus();
-   ```
-3. Ekstensi memunculkan toast non-intrusif di pojok kanan bawah jendela peramban:
-   ```javascript
-   showAutofillToast(portalName, 'Kredensial Sifast Terisi. Silakan masukkan kode CAPTCHA di atas untuk melanjutkan.');
-   ```
+#### 3. Deteksi CAPTCHA & Auto-Focus:
+Jika bidang CAPTCHA terdeteksi di form login:
+1. Ekstensi tidak mem-bypass CAPTCHA.
+2. Fokus kursor keyboard otomatis diarahkan ke input CAPTCHA (`captchaElement.focus()`).
+3. Ekstensi menampilkan toast instruksi visual di layar: *"Kredensial Sifast Terisi. Silakan masukkan kode CAPTCHA di atas untuk melanjutkan."*
 
-#### 5. Pembersihan Memori Content Script (Zero-Persistence Purge)
-Seketika setelah fungsi `setNativeValue` selesai dijalankan untuk seluruh bidang, seluruh variabel kredensial lokal di-nullifikasi (`payload = null; credentials = null;`) untuk mencegah pembacaan melalui memory heap dump pada DevTools.
+#### 4. Pembersihan Memori Content Script:
+Seketika setelah form terisi, seluruh variabel kredensial lokal di-nullifikasi (`payload = null; credentials = null;`) guna memastikan zero persistence di memori tab peramban.
 
 ---
 
-### 6.6 Admin Popup Tool (`popup/`) & Form Inspector 1-Klik
+### 7.6 Admin Popup Tool (`popup/`) & Form Inspector 1-Klik
 
-Direktori [`rs-extension/popup/`](../../rs-extension/popup/) menyediakan antarmuka mini yang bersih dan elegan ketika ikon ekstensi diklik di bilah toolbar browser.
+Direktori [`rs-extension/popup/`](../../rs-extension/popup/) menyediakan antarmuka mini yang rapi saat ikon toolbar peramban diklik.
 
 ```
 +------------------------------------------------------+
@@ -1905,309 +2344,15 @@ Direktori [`rs-extension/popup/`](../../rs-extension/popup/) menyediakan antarmu
 +------------------------------------------------------+
 ```
 
-#### Fitur Utama Admin Popup Tool:
-1. **Pemeriksaan Status Ekstensi & Domain:** Menampilkan status koneksi ekstensi dan mendeteksi apakah tab aktif berada di portal resmi kementerian, domain SIMRS Sifast, atau halaman lain.
-2. **1-Click Form Inspector:** Tombol "Scan Form Login Halaman Ini" menjalankan inspeksi DOM secara otomatis:
-   * Mengumpulkan semua elemen input dalam form aktif.
-   * Menganalisis kandidat username, password, field tambahan (satker/kode RS), dan captcha.
-   * Menghasilkan array selector berperingkat (*ranked selectors*: ID selector, name selector, attribute selector).
-3. **Generator JSON `form_config` Otomatis:** Mengonversi hasil inspeksi langsung menjadi objek JSON yang 100% valid sesuai skema Bab 3.2.
-4. **Salin ke Clipboard Instan:** Tombol "Salin JSON Config" menyalin string JSON siap pakai ke clipboard dengan notifikasi visual ("Tersalin!"), memungkinkan Administrator IT SIMRS mendaftarkan portal baru di Web Admin SIMRS dalam hitungan detik tanpa membuka DevTools manual.
+* **1-Click Form Inspector:** Memindai DOM form aktif pada tab saat ini, mengidentifikasi kandidat username, password, field tambahan, dan captcha.
+* **Generator JSON `form_config` Otomatis:** Mengonversi hasil inspeksi langsung menjadi objek JSON yang 100% valid sesuai skema Bab 3.2.
+* **Salin ke Clipboard Instan:** Tombol satu klik menyalin konfigurasi JSON siap pakai untuk ditempelkan ke modul admin SIMRS saat mendaftarkan portal baru.
 
 ---
 
-### 6.7 Peta Berkas Target `rs-extension/` & Panduan Code Review (Plan 3)
+### 7.7 Mekanisme Distribusi & Packaging File ZIP Ekstensi
 
-Berikut adalah tabel peta berkas target untuk implementasi Plan 3 pada direktori [`rs-extension/`](../../rs-extension/):
-
-| No | Path Berkas | Status | Deskripsi Fungsi | Rationale & Arsitektur | Poin Review Checklist |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **1** | [`rs-extension/manifest.json`](../../rs-extension/manifest.json) | `[BARU]` | Konfigurasi utama ekstensi Chromium Manifest V3. | Menetapkan metadata nama, versi `1.0.0`, permissions ketat, host permissions spesifik, background service worker, dan content scripts. | Pastikan permissions hanya `tabs`, `scripting`, `storage`. Pastikan host permissions hanya mencakup domain SIMRS dan domain lembaga resmi. |
-| **2** | [`rs-extension/background.js`](../../rs-extension/background.js) | `[BARU]` | Background Service Worker penampung antrean kredensial volatile RAM. | Mengatur siklus hidup `pendingCredentials` Map berbasis `tabId`, timer TTL 30s, auto-flush burn-after-reading, dan listener `chrome.tabs.onRemoved`. | Verifikasi tidak ada penggunaan storage persisten. Pastikan `pendingCredentials.delete(tabId)` terpanggil sebelum mengirimkan kredensial. |
-| **3** | [`rs-extension/content-simrs.js`](../../rs-extension/content-simrs.js) | `[BARU]` | Content script jembatan komunikasi di domain SIMRS Sifast. | Menyuntikkan atribut dataset DOM ke `<html>`, mengemisi event `SIFAST_EXTENSION_READY`, merespons ping/pong, dan merelay peluncuran portal ke background worker. | Pastikan dieksekusi pada `document_start`. Pastikan event listener CustomEvent dibersihkan dengan benar dan data event disanitasi. |
-| **4** | [`rs-extension/content-autofill.js`](../../rs-extension/content-autofill.js) | `[BARU]` | Content script mesin pengisian form di domain target pemerintah. | Meminta kredensial sekali pakai, menyelesaikan selector statis / heuristic scanner, membypass prototype setter via `setNativeValue`, dan mendeteksi CAPTCHA. | Verifikasi penanganan `setNativeValue` memicu event input, change, dan blur. Pastikan CAPTCHA tidak di-bypass dan fokus dipindahkan ke input captcha. |
-| **5** | [`rs-extension/scripts/generate-icons.js`](../../rs-extension/scripts/generate-icons.js) | `[BARU]` | Skrip utilitas pembangkit ikon PNG binary murni tanpa dependensi. | Memanfaatkan modul native `node:zlib` untuk membuat berkas binary PNG valid berukuran 16x16, 48x48, dan 128x128 berlatar hijau emerald Sifast. | Jalankan via Node.js dan verifikasi 3 berkas PNG terbentuk dengan header magic byte PNG yang valid (`89 50 4E 47`). |
-| **6** | `rs-extension/icons/icon-{16,48,128}.png` | `[BARU]` | Berkas aset ikon resmi ekstensi peramban. | Dibutuhkan oleh antarmuka ekstensi browser (favicon, extension list, extensions manager, Chrome Web Store). | Pastikan berkas non-kosong dan dapat dimuat oleh Chrome tanpa pesan error format ikon. |
-| **7** | [`rs-extension/popup/popup.html`](../../rs-extension/popup/popup.html) | `[BARU]` | Struktur tata letak antarmuka popup tool admin. | Menyediakan elemen status ekstensi, tab aktif, tombol pemicu 1-Click Form Inspector, preview JSON, dan tombol salin. | Struktur HTML semantik, tidak memuat inline script berbahaya (kepatuhan CSP Manifest V3). |
-| **8** | [`rs-extension/popup/popup.css`](../../rs-extension/popup/popup.css) | `[BARU]` | Lembar gaya desain popup tool admin. | Tema warna hijau emerald (`#059669`) dan teal konsisten dengan identitas brand SIMRS Siti Fatimah, desain kompak 360px. | Tampilan responsif, scrollbar rapi untuk preview JSON, kontras warna memenuhi standar WCAG AA. |
-| **9** | [`rs-extension/popup/popup.js`](../../rs-extension/popup/popup.js) | `[BARU]` | Logika pengontrol interaksi dan algoritma Form Inspector pada popup. | Menangani query tab aktif, eksekusi pemindaian form DOM, pembentukan JSON `form_config`, dan penyalinan clipboard. | Pastikan fungsi `analyzePageInputs` dan `generateFormConfigJson` diekspor secara modular agar dapat diuji di Node.js test runner. |
-| **10** | [`rs-extension/tests/helpers/mock-chrome.js`](../../rs-extension/tests/helpers/mock-chrome.js) | `[BARU]` | Helper mock API Chrome untuk lingkungan pengujian Node.js. | Mensimulasikan `chrome.runtime.onMessage`, `chrome.tabs.create`, dan `chrome.tabs.onRemoved` tanpa memerlukan browser nyata. | Pastikan mock mendukung skenario asynchronous response via callback `sendResponse`. |
-| **11** | [`rs-extension/tests/manifest-validation.test.js`](../../rs-extension/tests/manifest-validation.test.js) | `[BARU]` | Pengujian otomatis validasi berkas `manifest.json`. | Memverifikasi skema Manifest V3, permissions, host permissions, content script patterns, dan eksistensi 3 berkas ikon. | Uji menggunakan `node --test`. Pastikan seluruh asersi lulus. |
-| **12** | [`rs-extension/tests/background.test.js`](../../rs-extension/tests/background.test.js) | `[BARU]` | Pengujian unit antrean kredensial Service Worker. | Menguji penyimpanan antrean, pembersihan instan burn-after-reading, kedaluwarsa TTL 30s, dan pembersihan penutupan tab. | Pastikan garansi zero-persistence diverifikasi: antrean bernilai 0 setelah kredensial diambil. |
-| **13** | [`rs-extension/tests/content-simrs.test.js`](../../rs-extension/tests/content-simrs.test.js) | `[BARU]` | Pengujian unit jembatan komunikasi SIMRS. | Menguji penyuntikan atribut dataset DOM, emisi event ready, respons event ping/pong, dan penerusan event launch. | Pastikan event bridge bekerja tanpa error pada mock DOM. |
-| **14** | [`rs-extension/tests/content-autofill.test.js`](../../rs-extension/tests/content-autofill.test.js) | `[BARU]` | Pengujian unit mesin pengisian form target. | Menguji `setNativeValue`, resolusi selector statis, heuristik scanner fallback, deteksi captcha, dan pembersihan memori. | Pastikan bypass setter memicu event `input`, `change`, dan `blur`. |
-| **15** | [`rs-extension/tests/popup-inspector.test.js`](../../rs-extension/tests/popup-inspector.test.js) | `[BARU]` | Pengujian unit algoritma Form Inspector popup. | Menguji analisis kandidat input dan kesesuaian struktur JSON yang dihasilkan terhadap skema Bab 3.2. | Pastikan output JSON valid dan memuat properti `is_spa`, `username_field`, dan `password_field`. |
-| **16** | [`rs-extension/tests/e2e-simulation.test.js`](../../rs-extension/tests/e2e-simulation.test.js) | `[BARU]` | Pengujian simulasi integrasi siklus hidup end-to-end. | Mensimulasikan alur utuh: launch SIMRS -> simpan RAM -> fetch tab target -> auto-flush -> DOM fill -> verifikasi input terisi. | Uji coba simulasi komprehensif membuktikan kerja sama seluruh komponen ekstensi. |
-| **17** | [`rs-extension/README.md`](../../rs-extension/README.md) | `[BARU]` | Dokumentasi resmi instalasi dan operasional ekstensi. | Panduan bagi tim IT rumah sakit untuk memuat unpacked extension, debugging service worker, dan pengoperasian popup tool. | Pastikan instruksi jelas dan dilengkapi tangkapan layar / diagram alur. |
-
----
-
-### 6.8 Panduan Uji Coba Cepat (Hands-on Extension Verification)
-
-Pengembang dapat memverifikasi implementasi ekstensi browser melalui dua pendekatan: pengujian otomatis berbasis Node.js dan pengujian manual interaktif pada peramban Chromium.
-
-#### A. Perintah Pengujian Otomatis Cepat (Node.js 22 Test Runner)
-Ekstensi dirancang secara modular sehingga seluruh logika inti dapat diuji tanpa membuka antarmuka grafis browser:
-
-```bash
-# 1. Menjalankan seluruh rangkaian tes otomatis ekstensi (6 test suites)
-node --test rs-extension/tests/*.test.js
-
-# Atau menggunakan shortcut npm script jika telah didaftarkan pada package.json:
-npm run test:extension
-```
-
-*Output yang diharapkan: Seluruh rangkaian tes (manifest schema, background queue, content bridge, autofill engine, popup inspector, dan e2e simulation) menghasilkan status **PASS**.*
-
----
-
-#### B. Prosedur Pemasangan Unpacked Extension di Chrome / Edge
-Untuk menguji ekstensi secara visual di komputer lokal:
-
-1. **Buka Halaman Ekstensi Peramban:**
-   * Pada Google Chrome: Buka URL `chrome://extensions` di bilah alamat.
-   * Pada Microsoft Edge: Buka URL `edge://extensions`.
-2. **Aktifkan Mode Pengembang (*Developer Mode*):**
-   * Geser switch **Developer mode** di pojok kanan atas layar menjadi aktif (*ON*).
-3. **Muat Ekstensi yang Belum Dikemas (*Load Unpacked*):**
-   * Klik tombol **Load unpacked** (Muat yang belum dikemas) di pojok kiri atas.
-   * Pada dialog pemilihan direktori, arahkan ke folder proyek SIMRS Sifast dan pilih folder:  
-     `rs-extension/`
-   * Klik **Select Folder** (Pilih Folder).
-4. **Verifikasi Kartu Ekstensi Terpasang:**
-   * Pastikan kartu ekstensi muncul dengan rincian:
-     * **Nama:** SIFAST Portal Autofill
-     * **Versi:** 1.0.0
-     * **Ikon:** Lambang perisai hijau emerald Sifast
-     * **ID Ekstensi:** Dihasilkan secara otomatis oleh browser
-5. **Inspeksi Console Background Service Worker:**
-   * Pada kartu ekstensi, klik tautan biru **service worker** (di sebelah label *Inspect views*).
-   * Jendela DevTools khusus background akan terbuka. Amati console log:  
-     `[SIFAST BG] Background Service Worker initialized. Zero-persistence queue ready.`
-6. **Verifikasi Handshake pada Web SIMRS:**
-   * Buka tab baru dan akses aplikasi SIMRS Sifast (`http://localhost:8000` atau `https://simrs.rsaisyiyahsitifatimah.com`).
-   * Buka DevTools (`F12`), masuk ke tab Console, dan jalankan perintah:
-     ```javascript
-     console.log(document.documentElement.dataset.sifastExtensionInstalled);
-     // Output yang diharapkan: "true"
-     console.log(document.documentElement.dataset.sifastExtensionVersion);
-     // Output yang diharapkan: "1.0.0"
-     ```
-7. **Pengujian 1-Click Form Inspector pada Halaman Login Target:**
-   * Buka tab baru ke salah satu URL login kementerian (misalnya `https://akun-yankes.kemkes.go.id/` atau form login lokal).
-   * Klik ikon ekstensi **SIFAST Portal Autofill** di toolbar peramban.
-   * Pada jendela popup yang muncul, klik tombol **⚡ Scan Form Login Halaman Ini**.
-   * Amati bahwa input username, password, dan captcha terdeteksi dan konfigurasi JSON `form_config` otomatis tersaji di layar. Klik tombol **📋 Salin JSON Config** untuk menguji fungsionalitas salin ke clipboard.
-
-*Untuk rincian pengujian integrasi end-to-end menyeluruh yang menghubungkan SIMRS, token backend, dan autofill live pada website kementerian, silakan merujuk ke [Bab 8: 🧪 Panduan Pengujian & Skenario Verifikasi (Master Testing Guide)](#bab-8--panduan-pengujian--skenario-verifikasi-master-testing-guide).*
-
----
-
-## Bab 7: 🚀 Modul Pengguna: Portal Agregator & Distribusi Ekstensi (Plan 4 - Terencana)
-
-> **Status Modul:** `[STATUS: TERENCANA (Plan 4)]`  
-> **Rute Utama Pengguna:** `GET /portal-pelaporan` (Inertia Page: `resources/js/pages/PortalPelaporan/Index.tsx`)  
-> **Rute Distribusi Ekstensi:** `GET /portal-pelaporan/extension/download`  
-> **Rujukan Spesifikasi Induk:** [`docs/superpowers/specs/2026-09-09-portal-eksternal-autofill-design.md`](../superpowers/specs/2026-09-09-portal-eksternal-autofill-design.md) (Bagian Plan 4)
-
-Bab ini merinci spesifikasi arsitektur dan kebutuhan implementasi untuk **Modul Pengguna: Portal Agregator & Distribusi Ekstensi** (Plan 4). Modul ini menyediakan antarmuka terpadu bagi seluruh petugas rumah sakit untuk mengakses portal pelaporan eksternal sesuai dengan tugas dan tanggung jawab masing-masing, mengelola kredensial akun personal secara mandiri (*self-service*), serta mengunduh paket ekstensi browser resmi yang siap dipasang di komputer dinas.
-
-```
-+----------------------------------------------------------------------------------------------------+
-|                         ARSITEKTUR MODUL PENGGUNA & DISTRIBUSI EKSTENSI                            |
-+----------------------------------------------------------------------------------------------------+
-|                                                                                                    |
-|  [Petugas RS Membuka Browser] ───► Akses: GET /portal-pelaporan                                     |
-|                                         │                                                          |
-|                                         ▼                                                          |
-|  [PortalAggregatorController@index] ──► Panggil: PortalAggregatorService@getAggregatorData(auth()->user()) |
-|                                         │                                                          |
-|                                         ├─ Filter Portal Aktif (active = 1)                        |
-|                                         ├─ Cek Penugasan User (user_portal_credentials)            |
-|                                         ├─ Transform Data (Masking Password, Tipe Akun, Notes)     |
-|                                         ▼                                                          |
-|  [Inertia Page: PortalPelaporan/Index.tsx]                                                         |
-|        │                                                                                           |
-|        ├──► [useExtensionStatus Hook]                                                             |
-|        │         │                                                                                 |
-|        │         ├─ Ekstensi Terdeteksi (data-sifast-extension-installed = 'true')                 |
-|        │         │    └─► Tampilkan: <ExtensionBadge /> [● Ekstensi Sifast Aktif v1.0.0]           |
-|        │         │                                                                                 |
-|        │         └─ Ekstensi Belum Terpasang                                                       |
-|        │              └─► Tampilkan: <ExtensionBanner /> (Peringatan & Tombol Unduh ZIP)           |
-|        │                                                                                           |
-|        ├──► [Pencarian Live & Filter Kategori: Kemenkes, BKKBN, Lainnya]                           |
-|        │                                                                                           |
-|        ├──► [Grid Kartu Portal: <PortalGrid /> & <PortalCard />]                                   |
-|        │         │                                                                                 |
-|        │         ├─ Tipe Personal: Tombol [🔑 Atur Kredensial Pribadi]                             |
-|        │         │    └─► Buka Modal: <PersonalCredentialModal />                                  |
-|        │         │         └─► Submit PUT /portal-pelaporan/{portal}/personal-credentials          |
-|        │         │                                                                                 |
-|        │         └─ Tombol Utama: [🚀 Buka Portal & Autofill]                                      |
-|        │              ├─ Fetch: POST /portal-pelaporan/{portal}/dispatch-token                     |
-|        │              └─ Emit: window.dispatchEvent('SIFAST_PORTAL_LAUNCH', { detail })            |
-|        │                                                                                           |
-|        └──► [Download Paket Ekstensi: GET /portal-pelaporan/extension/download]                    |
-|                  └─► PortalAggregatorService@downloadExtensionZip()                                |
-|                        └─► ZipArchive kompilasi folder rs-extension/ -> Stream sifast-extension.zip|
-+----------------------------------------------------------------------------------------------------+
-```
-
----
-
-### 7.1 Halaman Portal Pelaporan Pengguna (`/portal-pelaporan`)
-
-Halaman portal pelaporan adalah *workspace* harian petugas rumah sakit (staf rekam medis, surveilans epidemiologi, perawat rawat jalan, petugas TB, petugas HIV, dan tim manajemen mutu).
-
-#### Aturan Akses & Visibilitas Berbasis Hak Akses
-1. **Penyaringan Portal Aktif:** Hanya portal dengan status aktif (`portals.is_active = 1`) yang ditampilkan pada halaman pengguna.
-2. **Penyaringan Penugasan Staf (*Role-Based & User-Assignment*):**
-   * **Staf Biasa (Non-Admin):** Hanya dapat melihat portal di mana terdapat entri aktif pada tabel mapping penugasan `user_portal_credentials` (`user_id = auth()->id()` dan `is_active = 1`). Staf tidak akan melihat portal yang bukan merupakan wewenang dinasnya.
-   * **Administrator IT (`can:manage`):** Memiliki hak istimewa (*super privilege*) untuk melihat seluruh portal aktif dalam sistem guna mempermudah pengujian dan supervisi operasional.
-3. **Tampilan Kartu Portal Interaktif (`PortalCard.tsx`):**
-   * **Identitas Visual Portal:** Logo instansi/portal, nama lengkap portal eksternal, dan tag kategori (Kemenkes, BKKBN, atau Kategori Lain).
-   * **Badge Indikator Tipe Akun:**
-     * `Akun Bersama RS` (Ikon Gedung/Users): Kredensial dikelola terpusat oleh Admin IT SIMRS. Petugas tidak perlu memasukkan username/password.
-     * `Akun Pribadi Anda` (Ikon Kunci/User): Petugas menggunakan akun personal yang terdaftar atas nama individu di instansi terkait.
-   * **Catatan Khusus Admin (`notes`):** Menampilkan instruksi spesifik yang diberikan oleh Admin IT saat memetakan staf (misalnya: *"Batas submit laporan bulanan tanggal 5"* atau *"Gunakan NIP untuk login"*).
-   * **Indikator Kesiapan Kredensial Personal:** Jika portal bertipe personal namun staf belum mengisi username/password pribadi, kartu menampilkan status peringatan kuning: *"Kredensial pribadi belum diatur"*.
-
-#### Filter Kategori & Pencarian Real-Time (Live Search)
-* **Tab Filter Kategori Cepat:** Pilihan filter instan: `Semua Portal`, `Kementerian Kesehatan (Kemenkes)`, `BKKBN / Kemendukbangga`, dan kategori kustom lainnya yang terdaftar di database.
-* **Input Live Search:** Staf dapat mencari portal dengan mengetikkan nama portal, deskripsi, atau kata kunci kategori tanpa memuat ulang halaman.
-* **State Kosong (*Empty State*):** Jika staf belum memiliki portal yang ditugaskan, antarmuka menampilkan ilustrasi ramah dengan teks edukatif: *"Belum Ada Portal Pelaporan yang Ditugaskan. Silakan hubungi Administrator IT SIMRS untuk mendapatkan akses pelaporan dinas Anda."*
-
----
-
-### 7.2 Deteksi Handshake Ekstensi di UI React
-
-Untuk menjamin kenyamanan pengguna dan mencegah kebingungan saat ekstensi belum terpasang, antarmuka pengguna SIMRS secara otomatis memantau status instalasi ekstensi peramban.
-
-#### Custom Hook: `useExtensionStatus`
-Aplikasi frontend memanfaatkan custom hook React untuk mendeteksi keberadaan ekstensi secara reaktif:
-
-```typescript
-// resources/js/hooks/useExtensionStatus.ts
-import { useState, useEffect } from 'react';
-
-interface ExtensionStatus {
-  isInstalled: boolean;
-  version: string | null;
-  isChecking: boolean;
-}
-
-export function useExtensionStatus(): ExtensionStatus {
-  const [status, setStatus] = useState<ExtensionStatus>({
-    isInstalled: false,
-    version: null,
-    isChecking: true,
-  });
-
-  useEffect(() => {
-    // 1. Periksa atribut dataset DOM yang disuntikkan oleh content-simrs.js
-    const root = document.documentElement;
-    if (root.dataset.sifastExtensionInstalled === 'true') {
-      setStatus({
-        isInstalled: true,
-        version: root.dataset.sifastExtensionVersion || '1.0.0',
-        isChecking: false,
-      });
-      return;
-    }
-
-    // 2. Pasang listener CustomEvent untuk inisialisasi asynchronous
-    const handleReady = (event: CustomEvent) => {
-      setStatus({
-        isInstalled: true,
-        version: event.detail?.version || '1.0.0',
-        isChecking: false,
-      });
-    };
-
-    const handlePong = (event: CustomEvent) => {
-      setStatus({
-        isInstalled: true,
-        version: event.detail?.version || '1.0.0',
-        isChecking: false,
-      });
-    };
-
-    window.addEventListener('SIFAST_EXTENSION_READY', handleReady as EventListener);
-    window.addEventListener('SIFAST_PONG_EXTENSION', handlePong as EventListener);
-
-    // 3. Pancarkan ping untuk mendeteksi ekstensi yang sudah aktif
-    window.dispatchEvent(new CustomEvent('SIFAST_PING_EXTENSION'));
-
-    // 4. Timeout fallback jika ekstensi tidak merespons dalam 500ms
-    const timer = setTimeout(() => {
-      setStatus((prev) => ({ ...prev, isChecking: false }));
-    }, 500);
-
-    return () => {
-      window.removeEventListener('SIFAST_EXTENSION_READY', handleReady as EventListener);
-      window.removeEventListener('SIFAST_PONG_EXTENSION', handlePong as EventListener);
-      clearTimeout(timer);
-    };
-  }, []);
-
-  return status;
-}
-```
-
-#### Perilaku Antarmuka Berdasarkan Status Ekstensi:
-
-1. **Kasus 1: Ekstensi Terpasang & Aktif (`isInstalled === true`):**
-   * Di sudut kanan atas bilah header, muncul komponen badge status hijau:  
-     `<ExtensionBadge />` menampilkan `● Ekstensi Sifast Aktif (v1.0.0)` dengan indikator titik hijau berdenyut (*pulse animation*).
-   * Tombol pada kartu portal berfungsi optimal: klik tombol **Buka Portal & Autofill** akan memicu pengambilan dispatch token dan memerintahkan ekstensi untuk membuka tab tujuan serta menginjeksi kredensial secara instan.
-
-2. **Kasus 2: Ekstensi Belum Terpasang (`isInstalled === false`):**
-   * Pada bagian atas halaman (di atas grid portal), muncul komponen peringatan edukatif amber:  
-     `<ExtensionBanner />`.
-   * Banner ini menjelaskan secara ramah kepada staf:  
-     *"Ekstensi Browser Sifast Belum Terpasang di Komputer Ini. Fitur pengisian otomatis username dan password memerlukan ekstensi browser resmi SIMRS Siti Fatimah."*
-   * Menyediakan dua tombol tindakan langsung pada banner:
-     * Tombol Primer: **Unduh Ekstensi Browser (.ZIP)** yang mengarah ke endpoint `GET /portal-pelaporan/extension/download`.
-     * Tombol Sekunder: **Panduan Pemasangan (1 Menit)** yang membuka dialog modal `<InstallGuideModal />` berisi panduan visual 3 langkah mudah memuat ekstensi di Google Chrome dan Microsoft Edge.
-   * **Graceful Fallback:** Tombol pada kartu portal tetap dapat diklik; jika ekstensi belum ada, sistem akan membuka URL portal di tab baru via `window.open(url, '_blank')` dan menampilkan pesan toast agar staf memasukkan login secara manual.
-
----
-
-### 7.3 Modal Kredensial Pribadi Mandiri (*Self-Service Credential Modal*)
-
-Untuk portal-portal yang menerapkan kebijakan akun personal (seperti SITB Kemenkes atau SIHA, di mana setiap petugas memiliki sertifikat atau akun petugas TB/HIV individu), staf rumah sakit wajib dapat mengelola username dan password milik mereka sendiri tanpa perantara Administrator IT.
-
-#### Fitur & Keamanan Modal Kredensial Pribadi (`PersonalCredentialModal.tsx`):
-1. **Form Input Interaktif:**
-   * Bidang input `Username / NIP / Email Pribadi`.
-   * Bidang input `Kata Sandi Pribadi` yang dilengkapi tombol intip sandi (`Eye` / `EyeOff`) untuk mempermudah verifikasi pengetikan.
-2. **Placeholder Sandi Tersimpan Aman (Zero-Leakage):**
-   * Jika staf sudah pernah menyimpan password pribadi sebelumnya, kolom input password menampilkan placeholder aman:  
-     `•••••••••••• (Tersimpan terenkripsi. Kosongkan jika tidak ingin mengubah)`
-   * Backend tidak pernah mengirimkan plaintext password lama ke komponen frontend React.
-3. **Mekanisme Penyimpanan Aman (Preservation Logic):**
-   * Saat form disubmit ke endpoint `PUT /portal-pelaporan/{portal}/personal-credentials`:
-     - Jika input password diisi, backend mengenkripsi password baru menggunakan `Crypt::encryptString()` (AES-256-CBC).
-     - Jika input password dibiarkan kosong, backend secara cerdas mempertahankan password lama tanpa menimpanya.
-4. **Otorisasi Ketat Level Record:**
-   * Permintaan divalidasi oleh `PortalPolicy::updatePersonalCredential`:
-     ```php
-     public function updatePersonalCredential(User $user, Portal $portal): bool
-     {
-         return $portal->userCredentials()
-             ->where('user_id', $user->id)
-             ->where('is_active', true)
-             ->exists();
-     }
-     ```
-   * Petugas hanya dapat memperbarui kredensial untuk akun miliknya sendiri pada portal yang telah disetujui oleh admin.
-
----
-
-### 7.4 Mekanisme Distribusi & Packaging File ZIP Ekstensi
-
-Untuk memudahkan deployment ekstensi pada ratusan komputer kerja staf di seluruh instalasi rawat jalan, rawat inap, IGD, dan rekam medis tanpa perlu mendaftarkan ekstensi ke toko publik Google Chrome Web Store (yang membutuhkan registrasi akun publik dan dapat diekspos ke pihak luar), SIMRS menyediakan mekanisme pengunduhan paket ZIP mandiri yang aman.
+Untuk memudahkan deployment ekstensi pada ratusan workstation staf rumah sakit tanpa perlu publikasi ke Google Chrome Web Store, SIMRS menyediakan mekanisme kompresi dan pengunduhan arsip ZIP mandiri.
 
 #### Kontrak Rute & Controller:
 * **Rute HTTP:** `GET /portal-pelaporan/extension/download`
@@ -2217,8 +2362,6 @@ Untuk memudahkan deployment ekstensi pada ratusan komputer kerja staf di seluruh
 * **Service:** `App\Services\Portal\PortalAggregatorService@downloadExtensionZip`
 
 #### Implementasi Service Layer (`PortalAggregatorService.php`):
-Service ini bertanggung jawab mengemas folder `rs-extension/` menjadi arsip biner ZIP standar:
-
 ```php
 namespace App\Services\Portal;
 
@@ -2230,7 +2373,7 @@ use RuntimeException;
 class PortalAggregatorService
 {
     /**
-     * Menghasilkan atau mengambil cache arsip ZIP ekstensi browser yang siap diunduh.
+     * Menghasilkan arsip ZIP ekstensi browser dengan smart caching berbasis filemtime.
      */
     public function downloadExtensionZip(): BinaryFileResponse
     {
@@ -2238,17 +2381,15 @@ class PortalAggregatorService
         $storageDir = storage_path('app/extensions');
         $zipFilePath = $storageDir . '/sifast-autofill-extension.zip';
 
-        if (!File::exists($extensionSourceDir . '/manifest.json')) {
+        if (! File::exists($extensionSourceDir . '/manifest.json')) {
             throw new RuntimeException('Direktori sumber ekstensi rs-extension tidak ditemukan.');
         }
 
-        if (!File::isDirectory($storageDir)) {
+        if (! File::isDirectory($storageDir)) {
             File::makeDirectory($storageDir, 0755, true);
         }
 
-        // Caching pintar: Pindai filemtime terbaru di seluruh berkas sumber ekstensi.
-        // Hal ini memastikan update pada background.js atau content-autofill.js tanpa
-        // kenaikan versi manifest tetap menginvalidasi cache ZIP secara otomatis.
+        // Caching pintar: Pindai filemtime terbaru dari seluruh berkas sumber ekstensi
         $latestSourceModified = 0;
         foreach (File::allFiles($extensionSourceDir) as $file) {
             $latestSourceModified = max($latestSourceModified, $file->getMTime());
@@ -2256,7 +2397,7 @@ class PortalAggregatorService
 
         $zipModifiedTime = File::exists($zipFilePath) ? filemtime($zipFilePath) : 0;
 
-        if (!File::exists($zipFilePath) || $latestSourceModified > $zipModifiedTime) {
+        if (! File::exists($zipFilePath) || $latestSourceModified > $zipModifiedTime) {
             $this->buildZipBundle($extensionSourceDir, $zipFilePath);
         }
 
@@ -2266,9 +2407,6 @@ class PortalAggregatorService
         ]);
     }
 
-    /**
-     * Mengemas berkas-berkas esensial ekstensi ke dalam ZIP.
-     */
     private function buildZipBundle(string $sourceDir, string $destinationPath): void
     {
         $zip = new ZipArchive();
@@ -2302,90 +2440,63 @@ class PortalAggregatorService
 }
 ```
 
-#### Keunggulan Arsitektur Distribusi ZIP:
 * **Ukuran Ringkas (< 50 KB):** Hanya berkas fungsional yang dikemas. Folder pengujian (`tests/`) dan skrip internal (`scripts/`) dikecualikan dari paket distribusi pengguna akhir.
-* **Smart Filemtime Caching:** Sistem memindai `filemtime` terbaru (`max(filemtime)`) dari seluruh berkas sumber di dalam direktori `rs-extension/` dan hanya mengemas ulang arsip jika terdapat berkas sumber yang lebih baru daripada berkas ZIP yang tersimpan di cache. Hal ini menghemat utilisasi CPU server saat diunduh serentak oleh staf, sekaligus menjamin setiap perbaikan kode (seperti pada `background.js` atau `content-autofill.js`) langsung terdistribusi tanpa menunggu kenaikan nomor versi pada `manifest.json`.
-* **Keamanan Akses:** Rute pengunduhan dilindungi oleh middleware otentikasi SIMRS, memastikan hanya staf rumah sakit terdaftar yang dapat mengunduh paket ekstensi.
+* **Smart Filemtime Caching:** Sistem memindai `filemtime` terbaru dari seluruh berkas di `rs-extension/` dan hanya mengemas ulang arsip jika terdapat perubahan kode sumber.
 
 ---
 
-### 7.5 Peta Berkas Target & Panduan Code Review (Plan 4)
+### 7.8 Peta Berkas Target `rs-extension/` & Panduan Code Review (Plan 4)
 
-Berikut adalah tabel rencana berkas target untuk implementasi Plan 4 (Halaman Pengguna, Deteksi Ekstensi & Distribusi ZIP):
+Berikut adalah tabel rencana berkas target untuk implementasi Plan 4:
 
 | No | Path Berkas | Status | Deskripsi Fungsi | Rationale & Arsitektur | Poin Review Checklist |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **1** | [`app/Http/Controllers/PortalAggregatorController.php`](../../app/Http/Controllers/PortalAggregatorController.php) | `[BARU]` | Kontroler utama halaman pengguna portal pelaporan dan pengunduhan ekstensi. | Menangani `index` (render Inertia `/portal-pelaporan`) dan `downloadExtension` via Constructor Injection `PortalAggregatorService`. | Controller ramping tanpa logika bisnis langsung. Otorisasi memverifikasi user terotentikasi. |
-| **2** | [`app/Services/Portal/PortalAggregatorService.php`](../../app/Services/Portal/PortalAggregatorService.php) | `[BARU]` | Service logika agregasi data portal pengguna dan kompilasi arsip ZIP. | Mengambil portal terfilter hak akses, memformat status kredensial, dan mengelola caching pembuatan berkas `sifast-autofill-extension.zip`. | Pastikan kueri mengabaikan portal non-aktif (`is_active = false`). Verifikasi `ZipArchive` menangani permission folder storage. |
-| **3** | [`routes/web.php`](../../routes/web.php) | `[MODIFIKASI]` | Pendaftaran rute web pengguna portal pelaporan. | Menambahkan rute `GET /portal-pelaporan` dan `GET /portal-pelaporan/extension/download` dalam grup middleware `auth`. | Pastikan nama rute konsisten: `portal-pelaporan.index` dan `portal-pelaporan.extension.download`. |
-| **4** | [`resources/js/pages/PortalPelaporan/Index.tsx`](../../resources/js/pages/PortalPelaporan/Index.tsx) | `[BARU]` | Komponen halaman utama portal agregator pengguna (Inertia View). | Menyediakan header identitas staf, integrasi hook `useExtensionStatus`, filter kategori, input pencarian live, dan grid portal. | Pastikan tampilan responsif di desktop maupun tablet workstation rumah sakit. |
-| **5** | [`resources/js/components/Portal/User/PortalGrid.tsx`](../../resources/js/components/Portal/User/PortalGrid.tsx) | `[BARU]` | Komponen penata tata letak kisi (*grid layout*) kartu portal. | Menampilkan daftar kartu portal atau ilustrasi kondisi kosong (*empty state*) jika tidak ada portal yang cocok dengan filter pencarian. | Animasi transisi halus saat filter kategori diubah. |
-| **6** | [`resources/js/components/Portal/User/PortalCard.tsx`](../../resources/js/components/Portal/User/PortalCard.tsx) | `[BARU]` | Komponen kartu interaktif individual untuk masing-masing portal eksternal. | Menampilkan logo, nama portal, badge tipe akun, instruksi notes admin, tombol buka portal, dan tombol pemicu modal kredensial personal. | Tombol menampilkan feedback status loading spinner saat dispatch token sedang diminta ke server. |
-| **7** | [`resources/js/components/Portal/User/ExtensionBanner.tsx`](../../resources/js/components/Portal/User/ExtensionBanner.tsx) | `[BARU]` | Komponen banner bantuan edukatif saat ekstensi belum terpasang. | Menyediakan teks penjelasan ramah staf, tombol download ZIP langsung, dan tombol pemicu modal panduan instalasi visual. | Pastikan banner dapat ditutup sementara (*dismissible*) namun tetap memberikan akses download. |
-| **8** | [`resources/js/components/Portal/User/ExtensionBadge.tsx`](../../resources/js/components/Portal/User/ExtensionBadge.tsx) | `[BARU]` | Komponen indikator status aktif ekstensi pada header halaman. | Menampilkan titik hijau berdenyut (*pulse*) dan teks versi ekstensi terdeteksi: `● Ekstensi Sifast Aktif (v1.0.0)`. | Memberikan kepastian visual instan bagi staf bahwa sistem otomasi siap beroperasi. |
-| **9** | [`resources/js/components/Portal/User/PersonalCredentialModal.tsx`](../../resources/js/components/Portal/User/PersonalCredentialModal.tsx) | `[BARU]` | Komponen dialog modal pengelolaan kredensial akun pribadi staf. | Formulir input username dan password mandiri yang terhubung ke endpoint `PUT /portal-pelaporan/{portal}/personal-credentials`. | Input password terlindungi dengan toggle intip kata sandi dan placeholder protektif jika password telah tersimpan sebelumnya. |
-| **10** | [`resources/js/components/Portal/User/InstallGuideModal.tsx`](../../resources/js/components/Portal/User/InstallGuideModal.tsx) | `[BARU]` | Komponen dialog modal panduan instalasi ekstensi unpacked (1 menit). | Menampilkan panduan langkah demi langkah bergambar untuk memasang ekstensi di Google Chrome dan Microsoft Edge. | Bahasa instruksi lugas dan mudah dipahami oleh staf non-teknis IT. |
-| **11** | [`tests/Feature/PortalPelaporan/PortalAggregatorControllerTest.php`](../../tests/Feature/PortalPelaporan/PortalAggregatorControllerTest.php) | `[BARU]` | Pengujian fitur kontroler agregator pengguna dan pengunduhan ZIP. | Memverifikasi respon halaman `portal-pelaporan.index`, penyaringan data portal sesuai hak akses user, dan header streaming respon download ZIP. | Uji akses staf dengan izin vs staf tanpa izin vs guest unauthenticated. |
-| **12** | [`tests/Feature/PortalPelaporan/PortalAggregatorServiceTest.php`](../../tests/Feature/PortalPelaporan/PortalAggregatorServiceTest.php) | `[BARU]` | Pengujian unit logika bisnis service agregator dan packaging ZIP. | Menguji filter query portal aktif, transformasi koleksi data tanpa kebocoran password, pembuatan berkas ZIP fisik, dan mekanisme caching filemtime. | Pastikan berkas ZIP yang dihasilkan valid dan memuat struktur berkas ekstensi yang lengkap. |
+| :---: | :--- | :---: | :--- | :--- | :--- |
+| **1** | [`rs-extension/manifest.json`](../../rs-extension/manifest.json) | `[BARU]` | Konfigurasi utama ekstensi Chromium Manifest V3. | Menetapkan metadata, permissions minimal (`tabs`, `scripting`, `storage`), host permissions spesifik, background service worker, dan content scripts. | Pastikan host permissions hanya mencakup domain SIMRS dan domain lembaga resmi. |
+| **2** | [`rs-extension/background.js`](../../rs-extension/background.js) | `[BARU]` | Background Service Worker penampung antrean volatile RAM. | Mengatur `pendingCredentials` Map berbasis `tabId`, timer TTL 30s, auto-flush burn-after-reading, dan listener `chrome.tabs.onRemoved`. | Verifikasi tidak ada penggunaan storage persisten. Pastikan auto-flush terpanggil sebelum response dikirim. |
+| **3** | [`rs-extension/content-simrs.js`](../../rs-extension/content-simrs.js) | `[BARU]` | Content script jembatan komunikasi di domain SIMRS Sifast. | Menyuntikkan atribut dataset DOM ke `<html>`, mengemisi event `READY`, merespons ping/pong, dan merelay peluncuran portal dengan defensive boundary. | Pastikan dieksekusi pada `document_start`. Validasi URL berprotokol `http:`/`https:`. |
+| **4** | [`rs-extension/content-autofill.js`](../../rs-extension/content-autofill.js) | `[BARU]` | Content script mesin pengisian form di domain target pemerintah. | Meminta kredensial sekali pakai, menyelesaikan selector statis / heuristic scanner, membypass prototype setter via `setNativeValue`, dan mendeteksi CAPTCHA. | Verifikasi penanganan `setNativeValue` memicu event input, change, dan blur. Pastikan kursor diarahkan ke captcha. |
+| **5** | [`rs-extension/scripts/generate-icons.js`](../../rs-extension/scripts/generate-icons.js) | `[BARU]` | Utilitas pembangkit ikon PNG binary murni tanpa dependensi. | Memanfaatkan modul native `node:zlib` untuk membuat berkas binary PNG valid berukuran 16x16, 48x48, dan 128x128 berlatar hijau emerald Sifast. | Jalankan via Node.js dan verifikasi 3 berkas PNG terbentuk dengan header magic byte PNG yang valid (`89 50 4E 47`). |
+| **6** | `rs-extension/icons/icon-{16,48,128}.png` | `[BARU]` | Berkas aset ikon resmi ekstensi peramban. | Dibutuhkan oleh antarmuka browser (favicon, extension list, extensions manager). | Pastikan berkas non-kosong dan dapat dimuat oleh Chrome tanpa pesan error format ikon. |
+| **7** | [`rs-extension/popup/popup.html`](../../rs-extension/popup/popup.html) | `[BARU]` | Struktur tata letak antarmuka popup tool admin. | Menyediakan elemen status ekstensi, tab aktif, tombol pemicu 1-Click Form Inspector, preview JSON, dan tombol salin. | Struktur HTML semantik, tidak memuat inline script berbahaya (kepatuhan CSP Manifest V3). |
+| **8** | [`rs-extension/popup/popup.css`](../../rs-extension/popup/popup.css) | `[BARU]` | Lembar gaya desain popup tool admin. | Tema warna hijau emerald (`#059669`) dan teal konsisten dengan identitas brand SIMRS Siti Fatimah, desain kompak 360px. | Tampilan responsif, scrollbar rapi untuk preview JSON, kontras warna memenuhi standar WCAG AA. |
+| **9** | [`rs-extension/popup/popup.js`](../../rs-extension/popup/popup.js) | `[BARU]` | Logika pengontrol interaksi dan algoritma Form Inspector pada popup. | Menangani query tab aktif, eksekusi pemindaian form DOM, pembentukan JSON `form_config`, dan penyalinan clipboard. | Pastikan fungsi `analyzePageInputs` dan `generateFormConfigJson` diekspor secara modular agar dapat diuji di Node.js runner. |
+| **10** | [`rs-extension/tests/helpers/mock-chrome.js`](../../rs-extension/tests/helpers/mock-chrome.js) | `[BARU]` | Helper mock API Chrome untuk lingkungan pengujian Node.js. | Mensimulasikan `chrome.runtime.onMessage`, `chrome.tabs.create`, dan `chrome.tabs.onRemoved` tanpa memerlukan browser nyata. | Mendukung skenario asynchronous response via callback `sendResponse`. |
+| **11** | [`rs-extension/tests/manifest-validation.test.js`](../../rs-extension/tests/manifest-validation.test.js) | `[BARU]` | Pengujian otomatis validasi berkas `manifest.json`. | Memverifikasi skema Manifest V3, permissions, host permissions, content script patterns, dan eksistensi 3 berkas ikon. | Uji menggunakan `node --test`. Pastikan seluruh asersi lulus. |
+| **12** | [`rs-extension/tests/background.test.js`](../../rs-extension/tests/background.test.js) | `[BARU]` | Pengujian unit antrean kredensial Service Worker. | Menguji penyimpanan antrean, pembersihan instan burn-after-reading, kedaluwarsa TTL 30s, dan pembersihan penutupan tab. | Memverifikasi garansi zero-persistence: antrean bernilai 0 setelah kredensial diambil. |
+| **13** | [`rs-extension/tests/content-simrs.test.js`](../../rs-extension/tests/content-simrs.test.js) | `[BARU]` | Pengujian unit jembatan komunikasi SIMRS. | Menguji penyuntikan atribut dataset DOM, emisi event ready, respons event ping/pong, dan penerusan event launch. | Memverifikasi event bridge bekerja tanpa error pada mock DOM. |
+| **14** | [`rs-extension/tests/content-autofill.test.js`](../../rs-extension/tests/content-autofill.test.js) | `[BARU]` | Pengujian unit mesin pengisian form target. | Menguji `setNativeValue`, resolusi selector statis, heuristik scanner fallback, deteksi captcha, dan pembersihan memori. | Memastikan bypass setter memicu event `input`, `change`, dan `blur`. |
+| **15** | [`rs-extension/tests/popup-inspector.test.js`](../../rs-extension/tests/popup-inspector.test.js) | `[BARU]` | Pengujian unit algoritma Form Inspector popup. | Menguji analisis kandidat input dan kesesuaian struktur JSON yang dihasilkan terhadap skema Bab 3.2. | Memastikan output JSON valid dan memuat properti `is_spa`, `username_field`, dan `password_field`. |
+| **16** | [`rs-extension/tests/e2e-simulation.test.js`](../../rs-extension/tests/e2e-simulation.test.js) | `[BARU]` | Pengujian simulasi integrasi siklus hidup end-to-end. | Mensimulasikan alur utuh: launch SIMRS -> simpan RAM -> fetch tab target -> auto-flush -> DOM fill -> verifikasi input terisi. | Menguji sinergi seluruh komponen ekstensi secara terintegrasi. |
+| **17** | [`rs-extension/README.md`](../../rs-extension/README.md) | `[BARU]` | Dokumentasi resmi instalasi dan operasional ekstensi. | Panduan bagi tim IT rumah sakit untuk memuat unpacked extension, debugging service worker, dan pengoperasian popup tool. | Instruksi jelas dilengkapi referensi debugging. |
 
 ---
 
-### 7.6 Panduan Uji Coba Cepat (Hands-on Verification Bab 7)
+### 7.9 Panduan Uji Coba Cepat (Hands-on Extension Verification)
 
-Setelah Plan 4 diimplementasikan, pengembang dan tim QA dapat memvalidasi fungsionalitas modul pengguna melalui skenario langkah-demi-langkah berikut:
+Pengembang dapat memverifikasi implementasi ekstensi browser melalui dua pendekatan:
 
-#### A. Skenario Pengujian Interaktif di Browser Pengguna
-1. **Login Sebagai Staf Operasional Rumah Sakit:**
-   * Masuk ke aplikasi SIMRS menggunakan akun staf biasa yang bukan Administrator IT (misalnya petugas rekam medis atau perawat rawat jalan).
-2. **Navigasi ke Halaman Portal Pelaporan (`/portal-pelaporan`):**
-   * Buka menu navigasi atau akses langsung URL `/portal-pelaporan`.
-   * **Verifikasi Filter Akses:** Pastikan hanya portal-portal yang telah ditugaskan kepada staf tersebut yang tampil pada grid. Portal lain yang tidak ditugaskan tidak boleh terlihat.
-3. **Pengujian Deteksi Ekstensi & Banner Bantuan:**
-   * Buka browser yang belum dipasangi ekstensi SIMRS Sifast (misalnya profil browser baru atau jendela *Guest mode*).
-   * Amati bahwa banner edukatif warna amber `<ExtensionBanner />` muncul di bagian atas halaman dengan tombol **Unduh Ekstensi Browser (.ZIP)**.
-4. **Pengujian Pengunduhan & Ekstraksi Arsip ZIP:**
-   * Klik tombol **Unduh Ekstensi Browser (.ZIP)**.
-   * Amati peramban mengunduh berkas biner `sifast-autofill-extension.zip`.
-   * Ekstrak berkas ZIP tersebut ke folder lokal: pastikan berkas `manifest.json`, `background.js`, `content-simrs.js`, `content-autofill.js`, folder `icons/`, dan folder `popup/` ada dan utuh.
-5. **Pemasangan Ekstensi & Deteksi Real-Time:**
-   * Muat folder hasil ekstrak ke browser via `chrome://extensions` (Mode Pengembang -> *Load Unpacked*).
-   * Kembali ke tab SIMRS Sifast (tanpa me-reload dokumen): amati bahwa banner amber otomatis menghilang dan berganti menjadi badge hijau menyala `● Ekstensi Sifast Aktif (v1.0.0)` di header.
-6. **Pengujian Pengaturan Kredensial Pribadi Mandiri (*Personal Credential Modal*):**
-   * Temukan kartu portal yang memiliki badge `Akun Pribadi Anda` (misalnya portal SITB atau SIHA).
-   * Klik tombol ikon kunci **Atur Kredensial Pribadi**.
-   * Pada modal yang terbuka, ketikkan username: `petugas_tb_fatimah` dan password: `SITB_Mandiri_Pass2026!`. Uji ikon mata untuk menampilkan/menyembunyikan teks password.
-   * Klik tombol **Simpan Kredensial**. Pastikan toast notifikasi sukses muncul dan modal tertutup.
-   * Buka kembali modal tersebut: amati kolom password kini menampilkan placeholder aman bulatan `•••••••••••• (Tersimpan terenkripsi. Kosongkan jika tidak diubah)` dan teks asli kata sandi tidak pernah muncul di layar.
-7. **Pengujian Peluncuran Portal & Autofill Terintegrasi:**
-   * Klik tombol utama **Buka Portal & Autofill** pada salah satu kartu portal.
-   * Amati tombol menampilkan status loading *"Menyiapkan Sesi..."*.
-   * Tab baru otomatis terbuka mengarah ke URL portal eksternal kementerian, dan ekstensi langsung mengisikan kredensial ke dalam form login target secara otomatis.
-
----
-
-#### B. Perintah Pengujian Otomatis Cepat (Pest PHP)
-Pengembang dapat menjalankan pengujian otomatis berikut di terminal untuk memvalidasi fungsionalitas modul agregator pengguna dan layanan kompresi ZIP secara instan:
-
+#### A. Perintah Pengujian Otomatis Cepat (Node.js 22 Test Runner)
 ```bash
-# 1. Menjalankan pengujian controller portal agregator pengguna
-php artisan test tests/Feature/PortalPelaporan/PortalAggregatorControllerTest.php
-
-# 2. Menjalankan pengujian service agregator dan packaging ZIP
-php artisan test tests/Feature/PortalPelaporan/PortalAggregatorServiceTest.php
-
-# 3. Menjalankan seluruh pengujian modul pengguna
-php artisan test tests/Feature/PortalPelaporan --filter=PortalAggregator
+# Menjalankan seluruh rangkaian tes otomatis ekstensi (6 test suites)
+node --test rs-extension/tests/*.test.js
 ```
 
-*Untuk panduan pengujian menyeluruh seluruh subsistem (termasuk matriks 9 berkas test backend, pengujian otomatis ekstensi Node.js, dan walkthrough manual QA komprehensif), silakan merujuk ke [Bab 8: 🧪 Panduan Pengujian & Skenario Verifikasi (Master Testing Guide)](#bab-8--panduan-pengujian--skenario-verifikasi-master-testing-guide).*
+#### B. Prosedur Pemasangan Unpacked Extension di Chrome / Edge
+1. Buka `chrome://extensions` di Google Chrome atau `edge://extensions` di Microsoft Edge.
+2. Aktifkan switch **Developer mode** di pojok kanan atas layar.
+3. Klik tombol **Load unpacked** dan pilih direktori: `rs-extension/`.
+4. Pastikan kartu ekstensi **SIFAST Portal Autofill v1.0.0** muncul dengan ikon perisai hijau emerald.
+5. Buka aplikasi SIMRS Sifast (`http://localhost:8000` atau `https://simrs.rsaisyiyahsitifatimah.com`).
+6. Buka halaman `/portal-pelaporan`: amati badge header seketika berubah hijau: `Ekstensi Aktif (v1.0.0)`.
+7. Klik salah satu kartu portal pelaporan kementerian: tab baru otomatis terbuka dan form login target terisi secara otomatis tanpa intervensi manual.
 
 ---
 
 ## Bab 8: 🧪 Panduan Pengujian & Skenario Verifikasi (Master Testing Guide)
 
-> **Cakupan Pengujian:** Backend Test Suite (Pest PHP 62 Tests / 354 Assertions), Extension Runner (Node.js Test Runner), dan 5 Skenario Manual End-to-End QA Walkthrough.  
-> **Status Pest Suite:** `62 PASSED (354 assertions)` — 100% Green (`tests/Feature/PortalPelaporan`).  
-> **Filosofi Pengujian:** *Defense in Depth* — Menguji setiap lapisan sistem secara independen dan komprehensif mulai dari integritas skema database, kriptografi simetris, perimeter otorisasi, logika service, kontrak API HTTP, propagasi Inertia props, protokol ekstensi, hingga penerimaan pengguna akhir (*user acceptance*).
+> **Cakupan Pengujian:** Backend Test Suite (Pest PHP 91 Tests / 542 Assertions), Extension Runner (Node.js Test Runner), 2 Parity Navigation Tests (32 Assertions), dan 5 Skenario Manual End-to-End QA Walkthrough.  
+> **Status Pest Suite:** `91 PASSED (542 assertions)` + 2 Navigation Tests (32 assertions) = **93 PASSED (574 assertions)** — 100% Green (`tests/Feature/PortalPelaporan` & `tests/Feature/PortalNavParityTest.php`).  
+> **Filosofi Pengujian:** *Defense in Depth* — Menguji setiap lapisan sistem secara independen dan komprehensif mulai dari integritas skema database, kriptografi simetris, perimeter otorisasi, logika service, kontrak API HTTP, propagasi Inertia props, registrasi navigasi SSOT, protokol ekstensi, hingga penerimaan pengguna akhir (*user acceptance*).
 
 ```
 +----------------------------------------------------------------------------------------------------+
@@ -2393,29 +2504,31 @@ php artisan test tests/Feature/PortalPelaporan --filter=PortalAggregator
 +----------------------------------------------------------------------------------------------------+
 |                                                                                                    |
 |  [LAPISAN 3: MANUAL QA WALKTHROUGH] (End-to-End Real Browser)                                      |
-|  ├── Skenario 1: CRUD Master Portal & Selector Tag Editor                                          |
-|  ├── Skenario 2: Matriks Mapping Akses & Instant Auto-Save                                         |
-|  ├── Skenario 3: One-Time Dispatch Token & Zero-Leakage (Props & Network Audit)                    |
+|  ├── Skenario 1: CRUD Master Portal & Selector Tag Editor (UI, Form Validation, DB Encryption)    |
+|  ├── Skenario 2: Matriks Mapping Akses & Instant Auto-Save (Dual-View, Switch, onBlur Notes)      |
+|  ├── Skenario 3: One-Time Dispatch Token & Zero-Leakage (API Security, Props Audit, Network)     |
 |  ├── Skenario 4: Handshake & Autofill Ekstensi (Chrome/Edge MV3 Live Injection)                    |
-|  └── Skenario 5: Halaman Pengguna Staf Biasa & Distribusi ZIP                                      |
+|  └── Skenario 5: Halaman Pengguna Staf Biasa & Distribusi ZIP (Self-Service Credential, ZIP DL)  |
 |                                                                                                    |
 |  [LAPISAN 2: AUTOMATED EXTENSION TESTING] (Node.js Test Runner - ES Modules)                       |
 |  ├── manifest.test.js         : Schema validation Manifest V3, permissions & CSP                   |
-|  ├── background.test.js       : In-memory RAM queue life cycle, 60s TTL eviction, purge verification|
+|  ├── background.test.js       : In-memory RAM queue life cycle, 30s TTL eviction, purge verification|
 |  ├── content-simrs.test.js    : DOM handshake, custom event listener, HTML data-attribute bridge   |
 |  ├── content-autofill.test.js : Dynamic selector engine, SPA retry polling, synthetic event dispatch|
 |  └── popup.test.js            : Form Inspector DOM click-and-inspect CSS selector extraction       |
 |                                                                                                    |
-|  [LAPISAN 1: AUTOMATED BACKEND TESTING] (Pest PHP - 62 Tests / 354 Assertions)                     |
+|  [LAPISAN 1: AUTOMATED BACKEND TESTING] (Pest PHP - 91 Tests / 542 Assertions + Nav Parity)        |
 |  ├── 1. PortalDatabaseSchemaTest              : Struktur kolom tabel & foreign keys cascade        |
-|  ├── 2. PortalModelTest                       : Enkripsi simetris Eloquent, helpers, relasi & factory|
+|  ├── 2. PortalModelTest                       : Enkripsi simetris Eloquent, icon_url, relasi/factory|
 |  ├── 3. PortalPolicyTest                      : Hak kelola Admin, hak lihat user, izin dispatch    |
 |  ├── 4. PortalInertiaPropsTest                : Shared props can_manage_portals (Admin/User/Guest)  |
-|  ├── 5. AdminPortal (Service & Controller)    : CRUD, auto-slug, preserve password kosong, toggle  |
+|  ├── 5. AdminPortal (Service & Controller)    : CRUD, auto-slug, logo upload/delete, toggle aktif  |
 |  ├── 6. AdminPortalMapping (Service & Ctrl)   : Dual-view, saveRow auto-save, note-clearing flag   |
 |  ├── 7. PortalDispatch (Service & API)        : Resolusi kredensial, fallback admin, 403 perimeter |
-|  ├── 8. PortalPersonalCredential (Serv & API) : Self-service update username & password mandiri   |
-|  └── 9. PortalSeederTest                      : Idempotensi 8 kelompok portal resmi bawaan         |
+|  ├── 8. PortalPersonalCredential (Serv & API) : Self-service username/password mandiri & validasi  |
+|  ├── 9. PortalSeederTest                      : Idempotensi 8 kelompok portal resmi bawaan         |
+|  ├── 10. PortalAggregator (Service & Ctrl)    : Grid portal user, filter kategori, zero-leakage    |
+|  └── 11. PortalNavParityTest                  : Paritas navigasi SSOT portal-nav.ts desktop/mobile |
 +----------------------------------------------------------------------------------------------------+
 ```
 
@@ -2423,17 +2536,20 @@ php artisan test tests/Feature/PortalPelaporan --filter=PortalAggregator
 
 ### 8.1 Automated Backend Testing (Pest PHP)
 
-Subsistem Portal Pelaporan Eksternal dilengkapi dengan rangkaian uji otomatis backend yang sangat ketat menggunakan framework pengujian **Pest PHP**. Rangkaian ini memverifikasi seluruh lapisan arsitektur backend, menjamin integritas data, keamanan kriptografi, dan kepatuhan otorisasi.
+Subsistem Portal Pelaporan Eksternal dilengkapi dengan rangkaian uji otomatis backend yang sangat ketat menggunakan framework pengujian **Pest PHP**. Rangkaian ini memverifikasi seluruh lapisan arsitektur backend, menjamin integritas data, keamanan kriptografi, kepatuhan otorisasi, dan paritas navigasi antarmuka.
 
 #### Perintah Eksekusi Satu Baris (Single-Line Command)
-Untuk menjalankan seluruh rangkaian pengujian fitur Portal Pelaporan, jalankan perintah berikut di terminal root proyek:
+Untuk menjalankan seluruh rangkaian pengujian fitur Portal Pelaporan dan paritas navigasi, jalankan perintah berikut di terminal root proyek:
 
 ```bash
-# Menjalankan seluruh test suite Portal Pelaporan
-php artisan test tests/Feature/PortalPelaporan
+# Menjalankan seluruh test suite fitur Portal Pelaporan (15 berkas)
+vendor/bin/pest tests/Feature/PortalPelaporan
 
-# Atau dengan menggunakan filter nama namespace:
-php artisan test tests/Feature/PortalPelaporan --filter=PortalPelaporan
+# Menjalankan pengujian paritas navigasi Single Source of Truth
+vendor/bin/pest tests/Feature/PortalNavParityTest.php
+
+# Menjalankan seluruh rangkaian fitur dan navigasi secara serentak
+vendor/bin/pest tests/Feature/PortalPelaporan tests/Feature/PortalNavParityTest.php
 ```
 
 #### Output Eksekusi Aktual
@@ -2443,11 +2559,17 @@ Berikut adalah tangkapan output terminal aktual saat pengujian dieksekusi pada l
    PASS  Tests\Feature\PortalPelaporan\AdminPortalControllerTest
   ✓ it forbids unauthenticated users and staff from accessing admin portals
   ✓ it allows admin to render portal index with list and filters
+  ✓ it allows admin to render create page with deduplicated categories
   ✓ it allows admin to create a new portal with encrypted password and json config
   ✓ it auto-generates slug from name if slug is not provided
   ✓ it allows admin to edit and update a portal without erasing existing shared password
   ✓ it allows admin to toggle active status of a portal
   ✓ it allows admin to delete a portal
+  ✓ it validates that icon_file must be a valid image under 2MB in store
+  ✓ it allows admin to quickly upload logo via dedicated endpoint
+  ✓ it allows admin to quickly remove logo via dedicated endpoint
+  ✓ it forbids staff from uploading or removing logo on dedicated endpoints
+  ✓ it allows admin to update portal with new icon_file and remove_logo flag
 
    PASS  Tests\Feature\PortalPelaporan\AdminPortalMappingControllerTest
   ✓ it forbids staff from accessing mapping pages or endpoints
@@ -2473,10 +2595,34 @@ Berikut adalah tangkapan output terminal aktual saat pengujian dieksekusi pada l
 
    PASS  Tests\Feature\PortalPelaporan\AdminPortalServiceTest
   ✓ it paginates and filters portals with category and search
+  ✓ it returns trimmed, non-empty, and deduplicated categories in getFormCategories
   ✓ it stores a portal with auto-slug and default sort_order and form_config
   ✓ it updates portal preserving existing shared_password when password input is empty
   ✓ it formats portal metadata for edit without leaking shared password plaintext
   ✓ it toggles portal active status and deletes portal
+  ✓ it stores a portal with an uploaded icon file to public storage disk
+  ✓ it updates portal logo by storing new file and deleting previous file
+  ✓ it removes portal logo and deletes file from public disk
+  ✓ it cleans up physical logo file when destroying portal
+  ✓ it includes icon_url in paginatePortals and formatPortalForEdit
+  ✓ it safely resolves file extension using MIME type rather than client extension
+  ✓ it does not remove logo when remove_logo is string false in updatePortal
+
+   PASS  Tests\Feature\PortalPelaporan\PortalAggregatorControllerTest
+  ✓ it redirects unauthenticated guests to login
+  ✓ it allows authenticated staff to render portal-pelaporan index with user portals
+  ✓ it allows admin to see all active portals in portal-pelaporan index
+  ✓ it passes query filters category and search to aggregator service and preserves in props
+
+   PASS  Tests\Feature\PortalPelaporan\PortalAggregatorServiceTest
+  ✓ it returns only active portals where staff has active mapping
+  ✓ it excludes portals where staff mapping is inactive
+  ✓ it allows admin to see all active portals with fallback to shared credentials
+  ✓ it uses explicit mapping credentials for admin if mapping exists
+  ✓ it formats portal card attributes with icon_url and zero password leakage
+  ✓ it filters portals by category and search keyword
+  ✓ it returns unique, deduplicated, sorted list of categories for user portals
+  ✓ it allows superadmin defined in config to access all active portals
 
    PASS  Tests\Feature\PortalPelaporan\PortalDatabaseSchemaTest
   ✓ it creates portals table with expected columns and indices
@@ -2507,12 +2653,15 @@ Berikut adalah tangkapan output terminal aktual saat pengujian dieksekusi pada l
   ✓ it supportsShared and supportsPersonal helpers work correctly based on auth_type
   ✓ it verifies relationship from User to portalCredentials and portals
   ✓ it creates portal and credential records using factories
+  ✓ it provides icon_url attribute pointing to public storage path when icon_path is set
+  ✓ it returns null for icon_url when icon_path is null
 
    PASS  Tests\Feature\PortalPelaporan\PortalPersonalCredentialApiTest
   ✓ it rejects unauthenticated user
   ✓ it rejects user without mapping with 403 forbidden
   ✓ it allows authorized user to update personal username and password
   ✓ it preserves existing password when updating username with null password
+  ✓ it rejects initial personal credential setup when password is not provided
 
    PASS  Tests\Feature\PortalPelaporan\PortalPersonalCredentialServiceTest
   ✓ it updates personal username and password via service
@@ -2528,28 +2677,37 @@ Berikut adalah tangkapan output terminal aktual saat pengujian dieksekusi pada l
   ✓ it seeds all 8 portal groups idempotently with proper configurations
   ✓ it can be run through DatabaseSeeder
 
-  Tests:    62 passed (354 assertions)
-  Duration: 3.63s
+  Tests:    91 passed (542 assertions)
+  Duration: 10.62s
+
+   PASS  Tests\Feature\PortalNavParityTest
+  ✓ portal nav is the shared source of truth for desktop and mobile menus
+  ✓ portal nav hides payroll and patroli behind permission flags in source
+
+  Tests:    2 passed (32 assertions)
+  Duration: 1.84s
 ```
 
 ---
 
-#### Tabel Matriks 9 Berkas Feature Test Pest (62 Tests / 354 Assertions)
+#### Tabel Matriks 10 Rumpun Pengujian (15 Berkas Feature Test + 1 Parity Test) (93 Tests / 574 Assertions)
 
-Tabel berikut merinci 9 rumpun pengujian backend yang mencakup 13 berkas fisik test feature:
+Tabel berikut merinci 10 rumpun pengujian backend fitur beserta 1 pengujian paritas navigasi yang mencakup total 16 berkas fisik test:
 
 | No | Rumpun Pengujian & Berkas Test | Jml Test | Asersi | Komponen yang Diuji | Rincian Skenario Uji & Asersi Kunci |
 | :---: | :--- | :---: | :---: | :--- | :--- |
 | **1** | [`PortalDatabaseSchemaTest.php`](../../tests/Feature/PortalPelaporan/PortalDatabaseSchemaTest.php) | **2** | 30 | Skema Tabel `portals` & `user_portal_credentials` | • Memverifikasi 17 kolom tabel `portals` (`id`, `name`, `slug`, `category`, `url`, `url_pattern`, `icon_path`, `description`, `auth_type`, `shared_username`, `shared_password`, `shared_extra_fields`, `form_config`, `is_active`, `sort_order`, `created_at`, `updated_at`).<br/>• Memverifikasi 11 kolom tabel `user_portal_credentials` (`id`, `user_id`, `portal_id`, `credential_type`, `personal_username`, `personal_password`, `personal_extra_fields`, `is_active`, `notes`, `created_at`, `updated_at`) beserta foreign keys cascade. |
-| **2** | [`PortalModelTest.php`](../../tests/Feature/PortalPelaporan/PortalModelTest.php) | **5** | 28 | Eloquent Model `Portal` & `UserPortalCredential` | • Memverifikasi enkripsi simetris `shared_password` di tabel database (`DB::table`) menghasilkan ciphertext berbeda dari plaintext, namun terdekripsi otomatis via model attribute accessor.<br/>• Memverifikasi enkripsi `personal_password` pada model mapping.<br/>• Menguji helper boolean `supportsShared()` dan `supportsPersonal()` untuk tipe `shared`, `personal`, dan `both`.<br/>• Memverifikasi relasi Eloquent `hasMany` dan `belongsToMany` via pivot tanpa kebocoran atribut kata sandi.<br/>• Menguji integritas `PortalFactory` dan `UserPortalCredentialFactory` dengan states `shared()` dan `personal()`. |
-| **3** | [`PortalPolicyTest.php`](../../tests/Feature/PortalPelaporan/PortalPolicyTest.php) | **4** | 24 | Otorisasi Gate & `PortalPolicy` | • Gate `manage` dan `viewAnyAdmin` hanya mengizinkan user dengan role admin (`true`), dan memblokir staf biasa (`false`).<br/>• Gate `view` memverifikasi staf hanya dapat melihat portal jika memiliki mapping aktif dan portal dalam kondisi aktif (`is_active = true`), sedangkan admin memiliki hak bypass.<br/>• Gate `dispatchToken` memblokir pengunduhan kredensial jika mapping dinonaktifkan atau portal dinonaktifkan.<br/>• Gate `updatePersonalCredential` memblokir update akun personal jika portal hanya bertipe `shared`. |
+| **2** | [`PortalModelTest.php`](../../tests/Feature/PortalPelaporan/PortalModelTest.php) | **7** | 27 | Eloquent Model `Portal` & `UserPortalCredential` | • Memverifikasi enkripsi simetris `shared_password` di tabel database (`DB::table`) menghasilkan ciphertext berbeda dari plaintext, namun terdekripsi otomatis via model attribute accessor.<br/>• Memverifikasi enkripsi `personal_password` pada model mapping.<br/>• Menguji helper boolean `supportsShared()` dan `supportsPersonal()` untuk tipe `shared`, `personal`, dan `both`.<br/>• Memverifikasi relasi Eloquent `hasMany` dan `belongsToMany` via pivot tanpa kebocoran atribut kata sandi.<br/>• Menguji integritas `PortalFactory` dan `UserPortalCredentialFactory` dengan states `shared()` dan `personal()`.<br/>• Memverifikasi accessor virtual `icon_url` menghasilkan URL publik `/storage/...` saat `icon_path` terisi dan mengembalikan `null` jika kosong. |
+| **3** | [`PortalPolicyTest.php`](../../tests/Feature/PortalPelaporan/PortalPolicyTest.php) | **4** | 35 | Otorisasi Gate & `PortalPolicy` | • Gate `manage` dan `viewAnyAdmin` hanya mengizinkan user dengan role admin (`true`), dan memblokir staf biasa (`false`).<br/>• Gate `view` memverifikasi staf hanya dapat melihat portal jika memiliki mapping aktif dan portal dalam kondisi aktif (`is_active = true`), sedangkan admin memiliki hak bypass.<br/>• Gate `dispatchToken` memblokir pengunduhan kredensial jika mapping dinonaktifkan atau portal dinonaktifkan.<br/>• Gate `updatePersonalCredential` memblokir update akun personal jika portal hanya bertipe `shared`. |
 | **4** | [`PortalInertiaPropsTest.php`](../../tests/Feature/PortalPelaporan/PortalInertiaPropsTest.php) | **2** | 6 | Middleware `HandleInertiaRequests` | • Memverifikasi shared props `permissions.can_manage_portals` bernilai `true` untuk administrator dan `false` untuk staf operasional biasa pada respon halaman Inertia.<br/>• Memverifikasi pemanggilan middleware oleh guest unauthenticated mengevaluasi izin secara aman tanpa exception dan mengembalikan nilai `false`. |
-| **5** | [`AdminPortalServiceTest.php`](../../tests/Feature/PortalPelaporan/AdminPortalServiceTest.php)<br/>[`AdminPortalControllerTest.php`](../../tests/Feature/PortalPelaporan/AdminPortalControllerTest.php) | **12**<br/>*(5 Srv / 7 Ctrl)* | 68 | Manajemen Master Portal Admin (`/admin/portals`) | • Paginasi 15 item, filter kategori, dan pencarian substring nama portal.<br/>• Pembuatan portal dengan auto-slug generator dan nilai default `sort_order` serta `form_config`.<br/>• Preservasi password: saat edit portal, jika input password dikosongkan (`""`), ciphertext kata sandi lama tetap terjaga.<br/>• Formatting edit form Inertia: properti `shared_password` tidak pernah dikirimkan ke frontend, melainkan digantikan dengan indikator boolean `has_shared_password: true`.<br/>• Toggle status aktif instan via HTTP PATCH dan penghapusan entitas portal via HTTP DELETE.<br/>• Perimeter middleware otentikasi dan otorisasi: guest dialihkan ke login, staf biasa ditolak dengan 403 Forbidden. |
-| **6** | [`AdminPortalMappingServiceTest.php`](../../tests/Feature/PortalPelaporan/AdminPortalMappingServiceTest.php)<br/>[`AdminPortalMappingControllerTest.php`](../../tests/Feature/PortalPelaporan/AdminPortalMappingControllerTest.php) | **18**<br/>*(9 Srv / 9 Ctrl)* | 112 | Matriks Mapping Akses & Auto-Save (`/admin/portals/mapping`) | • Penyusunan struktur data matriks Mode Portal dan Mode User.<br/>• Sinkronisasi massal penugasan banyak user ke 1 portal (`syncPortal`) secara transaksional.<br/>• Sinkronisasi massal penugasan banyak portal ke 1 user (`syncUser`) secara transaksional.<br/>• Operasi pembaruan dan penghapusan record kredensial individual.<br/>• Fungsionalitas instant auto-save baris tunggal via endpoint JSON `save-row`.<br/>• Pemisahan note-clearing (`$updateNotes` flag): jika `notes` bernilai `null` tanpa flag update, catatan lama dipertahankan; jika dikirim dengan flag update aktif atau string kosong, catatan dihapus secara sengaja.<br/>• Sanitasi filter departemen: membersihkan nilai duplikat, `null`, dan string kosong `""`.<br/>• Pencarian staf berbasis nama atau NIK pegawai SIMRS. |
-| **7** | [`PortalDispatchServiceTest.php`](../../tests/Feature/PortalPelaporan/PortalDispatchServiceTest.php)<br/>[`PortalDispatchApiTest.php`](../../tests/Feature/PortalPelaporan/PortalDispatchApiTest.php) | **11**<br/>*(7 Srv / 4 API)* | 48 | Resolusi Kredensial & Endpoint Dispatch Token | • Resolusi kredensial bersama institusi (`type: shared`) untuk staf dengan penugasan `use_shared`.<br/>• Resolusi kredensial akun pribadi (`type: personal`) untuk staf dengan penugasan personal.<br/>• Super-privilege Admin: admin dapat melakukan dispatch akun bersama tanpa perlu dibuatkan mapping eksplisit.<br/>• Penanganan exception 403: melempar `AccessDeniedHttpException` jika staf tidak memiliki mapping aktif, portal sedang nonaktif, staf mencoba `use_shared` pada portal purely personal, atau admin mengakses portal purely personal tanpa konfigurasi akun.<br/>• Kontrak HTTP API `POST /portal-pelaporan/{id}/dispatch-token`: menolak unauthenticated dengan 401, menolak user tanpa mapping dengan 403, dan mengembalikan payload JSON terdekripsi one-time kepada user berhak. |
-| **8** | [`PortalPersonalCredentialServiceTest.php`](../../tests/Feature/PortalPelaporan/PortalPersonalCredentialServiceTest.php)<br/>[`PortalPersonalCredentialApiTest.php`](../../tests/Feature/PortalPelaporan/PortalPersonalCredentialApiTest.php) | **6**<br/>*(2 Srv / 4 API)* | 26 | Manajemen Kredensial Mandiri Staf (*Self-Service*) | • Pembaruan mandiri username dan password pribadi oleh staf yang memiliki penugasan aktif.<br/>• Proteksi penimpaan kata sandi: jika staf hanya memperbarui username dan mengirimkan `password: null`, password lama yang tersimpan terenkripsi tetap dipertahankan secara utuh.<br/>• Kontrak HTTP API `PUT /portal-pelaporan/{id}/personal-credentials`: menolak guest dengan 401, menolak staf tanpa mapping dengan 403, dan merespon 200 OK saat pembaruan berhasil. |
+| **5** | [`AdminPortalServiceTest.php`](../../tests/Feature/PortalPelaporan/AdminPortalServiceTest.php)<br/>[`AdminPortalControllerTest.php`](../../tests/Feature/PortalPelaporan/AdminPortalControllerTest.php) | **26**<br/>*(13 Srv / 13 Ctrl)* | 147 | Manajemen Master Portal Admin (`/admin/portals`) & Addendum Logo | • Paginasi 15 item, filter kategori, dan pencarian substring nama portal.<br/>• Pembuatan portal dengan auto-slug generator dan nilai default `sort_order` serta `form_config`.<br/>• Preservasi password: saat edit portal, jika input password dikosongkan (`""`), ciphertext kata sandi lama tetap terjaga.<br/>• Formatting edit form Inertia: properti `shared_password` tidak pernah dikirimkan ke frontend, melainkan digantikan dengan indikator boolean `has_shared_password: true`.<br/>• Toggle status aktif instan via HTTP PATCH dan penghapusan entitas portal via HTTP DELETE.<br/>• Validasi unggah berkas logo (`icon_file` max 2MB, ekstensi gambar yang valid diselesaikan aman via MIME type).<br/>• Upload & hapus logo cepat via dedicated endpoints (`POST /admin/portals/{id}/upload-logo` & `DELETE /admin/portals/{id}/remove-logo`).<br/>• Pembersihan berkas fisik logo pada disk penyimpanan publik saat logo diganti atau portal dihapus.<br/>• Perimeter middleware otentikasi dan otorisasi: guest dialihkan ke login, staf biasa ditolak dengan 403 Forbidden. |
+| **6** | [`AdminPortalMappingServiceTest.php`](../../tests/Feature/PortalPelaporan/AdminPortalMappingServiceTest.php)<br/>[`AdminPortalMappingControllerTest.php`](../../tests/Feature/PortalPelaporan/AdminPortalMappingControllerTest.php) | **18**<br/>*(9 Srv / 9 Ctrl)* | 132 | Matriks Mapping Akses & Auto-Save (`/admin/portals/mapping`) | • Penyusunan struktur data matriks Mode Portal dan Mode User.<br/>• Sinkronisasi massal penugasan banyak user ke 1 portal (`syncPortal`) secara transaksional.<br/>• Sinkronisasi massal penugasan banyak portal ke 1 user (`syncUser`) secara transaksional.<br/>• Operasi pembaruan dan penghapusan record kredensial individual.<br/>• Fungsionalitas instant auto-save baris tunggal via endpoint JSON `save-row`.<br/>• Pemisahan note-clearing (`$updateNotes` flag): jika `notes` bernilai `null` tanpa flag update, catatan lama dipertahankan; jika dikirim dengan flag update aktif atau string kosong, catatan dihapus secara sengaja.<br/>• Sanitasi filter departemen: membersihkan nilai duplikat, `null`, dan string kosong `""`.<br/>• Pencarian staf berbasis nama atau NIK pegawai SIMRS. |
+| **7** | [`PortalDispatchServiceTest.php`](../../tests/Feature/PortalPelaporan/PortalDispatchServiceTest.php)<br/>[`PortalDispatchApiTest.php`](../../tests/Feature/PortalPelaporan/PortalDispatchApiTest.php) | **11**<br/>*(7 Srv / 4 API)* | 28 | Resolusi Kredensial & Endpoint Dispatch Token | • Resolusi kredensial bersama institusi (`type: shared`) untuk staf dengan penugasan `use_shared`.<br/>• Resolusi kredensial akun pribadi (`type: personal`) untuk staf dengan penugasan personal.<br/>• Super-privilege Admin: admin dapat melakukan dispatch akun bersama tanpa perlu dibuatkan mapping eksplisit.<br/>• Penanganan exception 403: melempar `AccessDeniedHttpException` jika staf tidak memiliki mapping aktif, portal sedang nonaktif, staf mencoba `use_shared` pada portal purely personal, atau admin mengakses portal purely personal tanpa konfigurasi akun.<br/>• Kontrak HTTP API `POST /portal-pelaporan/{id}/dispatch-token`: menolak unauthenticated dengan 401, menolak user tanpa mapping dengan 403, dan mengembalikan payload JSON terdekripsi one-time kepada user berhak. |
+| **8** | [`PortalPersonalCredentialServiceTest.php`](../../tests/Feature/PortalPelaporan/PortalPersonalCredentialServiceTest.php)<br/>[`PortalPersonalCredentialApiTest.php`](../../tests/Feature/PortalPelaporan/PortalPersonalCredentialApiTest.php) | **7**<br/>*(2 Srv / 5 API)* | 18 | Manajemen Kredensial Mandiri Staf (*Self-Service*) | • Pembaruan mandiri username dan password pribadi oleh staf yang memiliki penugasan aktif.<br/>• Proteksi preservasi kata sandi: jika staf hanya memperbarui username dan mengirimkan `password: null` pada akun yang sudah memiliki password, password lama yang tersimpan terenkripsi tetap dipertahankan secara utuh.<br/>• Validasi dinamis pengisian awal: menolak permintaan penyiapan kredensial perdana jika kata sandi dikosongkan (`password: null`) dengan pesan kesalahan informatif *"Kata sandi wajib diisi untuk penyiapan kredensial baru."*.<br/>• Kontrak HTTP API `PUT /portal-pelaporan/{id}/personal-credentials`: menolak guest dengan 401, menolak staf tanpa mapping dengan 403, dan merespon 200 OK saat pembaruan berhasil. |
 | **9** | [`PortalSeederTest.php`](../../tests/Feature/PortalPelaporan/PortalSeederTest.php) | **2** | 12 | Database Seeding & Idempotensi | • Memverifikasi 8 kelompok portal resmi kementerian dan lembaga negara (11 entri portal: `sirika-bkkbn`, `siga-kemendukbangga`, `siha-kemenkes`, `mpdn-kemenkes`, `sitb-kemenkes`, `sigizi-kemenkes`, `satusehat-kemenkes`, `mutufasyankes-ikp`, `mutufasyankes-ppra`, `mutufasyankes-simar`, `sirs-online`) berhasil dibuat.<br/>• Memverifikasi konfigurasi khusus portal SPA (misalnya SIRS Online) memiliki selector fallback input yang valid.<br/>• Uji idempotensi: menjalankan seeder berulang kali tidak menimbulkan duplikasi baris dan tidak menimpa password produksi yang telah diubah.<br/>• Verifikasi integrasi eksekusi dari `DatabaseSeeder.php` utama. |
-| **TOTAL** | **9 Rumpun (13 Berkas)** | **62 Tests** | **354** | **Seluruh Subsistem Backend** | **STATUS: 100% LULUS (`PASS`)** |
+| **10** | [`PortalAggregatorServiceTest.php`](../../tests/Feature/PortalPelaporan/PortalAggregatorServiceTest.php)<br/>[`PortalAggregatorControllerTest.php`](../../tests/Feature/PortalPelaporan/PortalAggregatorControllerTest.php) | **12**<br/>*(8 Srv / 4 Ctrl)* | 107 | Halaman Pengguna & Portal Agregator (Plan 3) | • Penyaringan portal aktif per user staf: hanya menampilkan portal aktif yang memiliki penugasan aktif.<br/>• Hak akses superadmin/admin: melihat seluruh portal aktif dengan fallback kredensial bersama atau kredensial personal jika tersedia.<br/>• Kontrak atribut kartu portal: memuat `icon_url`, `notes`, `auth_type`, `credential_type`, `has_personal_credential`, `can_configure_personal`.<br/>• **Jaminan Zero-Leakage:** memastikan kunci `shared_password` dan `personal_password` tidak pernah hadir di payload kartu portal.<br/>• Filter kategori case-insensitive (`whereRaw('LOWER(category) = ?')`) dan pencarian live nama portal.<br/>• Daftar kategori unik yang tersortir rapi untuk dropdown filter.<br/>• Akses superadmin berbasis email konfigurasi `portal_pelaporan.superadmins`.<br/>• Pengalihan guest ke halaman login dan propagasi props Inertia `portals`, `categories`, `filters`. |
+| **11** | [`PortalNavParityTest.php`](../../tests/Feature/PortalNavParityTest.php) | **2** | 32 | Paritas Navigasi Terpusat (*Single Source of Truth*) | • Memverifikasi `resources/js/lib/portal-nav.ts` sebagai satu-satunya sumber kebenaran menu navigasi.<br/>• Memastikan menu `Portal Pelaporan` (`/portal-pelaporan`) terdaftar di `mainNavItems` dan dirender seragam pada desktop (`TemplateSidebar`) dan mobile (`TemplateMobileNav`).<br/>• Memastikan tidak ada duplikasi deklarasi menu lokal pada komponen sidebar.<br/>• Memverifikasi perlindungan flag permission untuk modul sensitif lainnya. |
+| **TOTAL** | **10 Rumpun Fitur + 1 Parity (16 Berkas)** | **93 Tests** | **574** | **Seluruh Subsistem Modul Portal Pelaporan** | **STATUS: 100% LULUS (`PASS`)** |
 
 ---
 
@@ -2625,6 +2783,123 @@ it('dispatches personal credentials when mapping is personal and portal supports
     expect($payload['credentials']['type'])->toBe('personal')
         ->and($payload['credentials']['username'])->toBe('petugas.satusehat@rsasf.co.id')
         ->and($payload['credentials']['password'])->toBe('PersonalSecret999!');
+});
+```
+
+##### 4. Pengujian Grid Portal Staf & Jaminan Zero-Leakage (`PortalAggregatorServiceTest.php`)
+Memastikan payload data kartu portal untuk halaman `/portal-pelaporan` memuat informasi fungsional lengkap (termasuk accessor `icon_url`), namun secara ketat **TIDAK PERNAH** membocorkan atribut `shared_password` ataupun `personal_password`:
+
+```php
+it('formats portal card attributes with icon_url and zero password leakage', function (): void {
+    $portal = Portal::factory()->create([
+        'name' => 'Mutu Fasyankes',
+        'slug' => 'mutu-fasyankes',
+        'category' => 'Mutu & Akreditasi',
+        'url' => 'https://mutufasyankes.kemkes.go.id',
+        'description' => 'Pelaporan mutu nasional',
+        'icon_path' => 'portal-logos/mutu.png',
+        'auth_type' => 'both',
+        'shared_password' => 'ConfidentialPass123',
+        'is_active' => true,
+    ]);
+
+    UserPortalCredential::factory()->create([
+        'user_id' => $this->staff->id,
+        'portal_id' => $portal->id,
+        'credential_type' => 'use_shared',
+        'is_active' => true,
+    ]);
+
+    $portals = $this->service->getUserPortals($this->staff);
+
+    expect($portals[0])->toMatchArray([
+        'id' => $portal->id,
+        'name' => 'Mutu Fasyankes',
+        'slug' => 'mutu-fasyankes',
+        'category' => 'Mutu & Akreditasi',
+        'url' => 'https://mutufasyankes.kemkes.go.id',
+        'icon_path' => 'portal-logos/mutu.png',
+        'icon_url' => '/storage/portal-logos/mutu.png',
+        'description' => 'Pelaporan mutu nasional',
+        'auth_type' => 'both',
+        'credential_type' => 'use_shared',
+        'personal_username' => null,
+        'has_personal_credential' => false,
+        'can_configure_personal' => true,
+    ]);
+
+    // Verifikasi mutlak: Kunci kata sandi tidak boleh pernah hadir di payload kartu
+    expect(array_key_exists('shared_password', $portals[0]))->toBeFalse();
+    expect(array_key_exists('personal_password', $portals[0]))->toBeFalse();
+});
+```
+
+##### 5. Pengujian Validasi Dinamis & Preservasi Kredensial Pribadi (`PortalPersonalCredentialApiTest.php`)
+Memastikan sistem membedakan perlakuan saat penyiapan awal (wajib password) dan saat pembaruan username lanjutan (preservasi password lama jika input dikosongkan):
+
+```php
+it('preserves existing password when updating username with null password', function (): void {
+    $mapping = UserPortalCredential::factory()->create([
+        'user_id' => $this->user->id,
+        'portal_id' => $this->portal->id,
+        'credential_type' => 'personal',
+        'personal_username' => 'dr.lama',
+        'personal_password' => 'PasswordTetapAda',
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($this->user)
+        ->putJson("/portal-pelaporan/{$this->portal->id}/personal-credentials", [
+            'username' => 'dr.baru@rsasf.co.id',
+            'password' => null,
+        ])->assertOk();
+
+    $mapping->refresh();
+    expect($mapping->personal_username)->toBe('dr.baru@rsasf.co.id')
+        ->and($mapping->personal_password)->toBe('PasswordTetapAda');
+});
+
+it('rejects initial personal credential setup when password is not provided', function (): void {
+    UserPortalCredential::factory()->create([
+        'user_id' => $this->user->id,
+        'portal_id' => $this->portal->id,
+        'credential_type' => 'personal',
+        'personal_username' => null,
+        'personal_password' => null,
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($this->user)
+        ->putJson("/portal-pelaporan/{$this->portal->id}/personal-credentials", [
+            'username' => 'dr.fatimah@rsasf.co.id',
+            'password' => null,
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['password']);
+});
+```
+
+##### 6. Pengujian Paritas Navigasi Single Source of Truth (`PortalNavParityTest.php`)
+Memastikan `Portal Pelaporan` wajib terdaftar di `resources/js/lib/portal-nav.ts` dan dirender konsisten pada template desktop maupun template navigasi mobile:
+
+```php
+test('portal nav is the shared source of truth for desktop and mobile menus', function () {
+    $portalNav = file_get_contents(resource_path('js/lib/portal-nav.ts'));
+    $sidebar = file_get_contents(resource_path('js/components/template-sidebar.tsx'));
+    $mobile = file_get_contents(resource_path('js/components/template-mobile-nav.tsx'));
+
+    expect($portalNav)
+        ->toContain("id: 'portal-pelaporan'")
+        ->toContain("label: 'Portal Pelaporan'")
+        ->toContain("href: '/portal-pelaporan'");
+
+    expect($sidebar)
+        ->toContain("from '@/lib/portal-nav'")
+        ->toContain('mainNavItems');
+
+    expect($mobile)
+        ->toContain("from '@/lib/portal-nav'")
+        ->toContain('mainNavItems');
 });
 ```
 
@@ -2965,7 +3240,7 @@ Untuk memvalidasi integrasi menyeluruh antara antarmuka web SIMRS, API backend t
      * Periksa struktur berkas hasil ekstraksi: pastikan berkas `manifest.json`, `background.js`, `content-simrs.js`, `content-autofill.js`, serta subfolder `icons/` dan `popup/` ada dan utuh.
   4. **Pengujian Dialog Panduan Instalasi Visual:**
      * Klik tombol **Panduan Instalasi (1 Menit)**.
-     * Dialog modal `<InstallGuideModal />` terbuka menampilkan 4 langkah panduan bergambar yang mudah dipahami oleh staf non-teknis IT:
+     * Dialog modal `<ExtensionInstallDialog />` terbuka menampilkan 4 langkah panduan bergambar yang mudah dipahami oleh staf non-teknis IT:
        * *Langkah 1:* Ekstrak berkas ZIP ke folder komputer.
        * *Langkah 2:* Buka menu ekstensi di browser (`chrome://extensions`).
        * *Langkah 3:* Aktifkan Mode Pengembang (*Developer Mode*).
@@ -2974,7 +3249,7 @@ Untuk memvalidasi integrasi menyeluruh antara antarmuka web SIMRS, API backend t
   5. **Pengujian Modal Pengaturan Kredensial Pribadi Mandiri:**
      * Pada kartu portal `SITB Jatim`, periksa badge tipe akun: bertuliskan `Akun Pribadi Anda`.
      * Klik tombol ikon kunci **Atur Kredensial Pribadi**.
-     * Modal dialog `<PersonalCredentialModal />` terbuka:
+     * Modal dialog `<PersonalCredentialDialog />` terbuka:
        - **Username Akun Pribadi:** Ketikkan `petugas_tb_fatimah`
        - **Password Akun Pribadi:** Ketikkan `SITB_Mandiri_Pass2026!`
      * Klik ikon mata pada kolom password untuk menguji fungsi sembunyikan/tampilkan kata sandi.
