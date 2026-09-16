@@ -18,7 +18,7 @@ Modul ini mendokumentasikan subsistem **Portal Pelaporan Eksternal & Custom Brow
 
 ---
 
-## 📑 Daftar Isi (9 Bab Definitif)
+## 📑 Daftar Isi (10 Bab Definitif)
 
 - [Bab 1: 📌 Ikhtisar Sistem & Filosofi Desain](#bab-1--ikhtisar-sistem--filosofi-desain)
   - [1.1 Konteks Bisnis & Latar Belakang Pelaporan](#11-konteks-bisnis--latar-belakang-pelaporan)
@@ -74,6 +74,13 @@ Modul ini mendokumentasikan subsistem **Portal Pelaporan Eksternal & Custom Brow
   - [9.2 Prosedur Penanganan Perubahan DOM Form Login Target](#92-prosedur-penanganan-perubahan-dom-form-login-target)
   - [9.3 Prosedur Debugging Ekstensi Chromium](#93-prosedur-debugging-ekstensi-chromium)
   - [9.4 Checklist Audit Keamanan & Zero-Leakage](#94-checklist-audit-keamanan--zero-leakage)
+- [Bab 10: ❓ Tanya Jawab Arsitektur & Fungsionalitas (FAQ)](#bab-10--tanya-jawab-arsitektur--fungsionalitas-faq)
+  - [10.1 Skenario Akun Bersama vs Akun Mandiri pada Portal Hybrid (`both`)](#101-skenario-akun-bersama-vs-akun-mandiri-pada-portal-hybrid-both)
+  - [10.2 Mekanisme Reset / Pengembalian Kredensial Personal ke Akun Bersama](#102-mekanisme-reset--pengembalian-kredensial-personal-ke-akun-bersama)
+  - [10.3 Dampak Pembaruan Password Master RS terhadap Staf Pelapor](#103-dampak-pembaruan-password-master-rs-terhadap-staf-pelapor)
+  - [10.4 Preservasi Password Personal saat Update Username Saja](#104-preservasi-password-personal-saat-update-username-saja)
+  - [10.5 Akses Darurat Super Admin Tanpa Mapping Eksplisit (Fallback Pass-Through)](#105-akses-darurat-super-admin-tanpa-mapping-eksplisit-fallback-pass-through)
+  - [10.6 Keamanan Data Kredensial Terhadap Potensi Intip Staf di Sisi Klien](#106-keamanan-data-kredensial-terhadap-potensi-intip-staf-di-sisi-klien)
 
 ---
 
@@ -1024,7 +1031,7 @@ Struktur JSON yang dikembalikan mencakup metadata navigasi web target, rantai se
 #### 5. Pembahasan Aspek Zero-Leakage
 Endpoint dispatch token dirancang khusus untuk memenuhi standar keamanan ketat:
 1. **On-Demand Dispatch:** Token kredensial hanya dipanggil ketika staf rumah sakit secara sadar mengklik tombol **"Buka Portal"** pada UI SIMRS. Kredensial tidak pernah di-load di awal (*pre-fetched*) saat halaman katalog dibuka.
-2. **Ephemerality (Sifat Sementara):** Payload JSON dikonsumsi langsung oleh *Content Bridge* ekstensi dan disimpan di memori volatile RAM Service Worker dengan waktu hidup maksimal 30 detik (lihat Bab 7).
+2. **Ephemerality (Sifat Sementara):** Payload JSON dikonsumsi langsung oleh *Content Bridge* ekstensi dan disimpan di memori volatile RAM Service Worker dengan waktu hidup maksimal 30 detik (lihat Bab 6).
 3. **No In-Page Exposure:** Kata sandi yang didekripsi tidak pernah disematkan ke dalam tag HTML DOM, objek JavaScript global `window`, maupun Inertia Page Props.
 
 ---
@@ -3575,3 +3582,140 @@ Sebagai institusi pelayanan kesehatan yang mengedepankan perlindungan data medis
   - [x] Kunci dekripsi simetris hanya tersimpan di berkas `.env` server (`APP_KEY`) dan tidak pernah dikomit ke repositori kode.
 
 ---
+
+## Bab 10: ❓ Tanya Jawab Arsitektur & Fungsionalitas (FAQ)
+
+Bab ini menyajikan kompilasi tanya jawab teknis, skenario operasional, dan klarifikasi arsitektur yang sering muncul dalam perancangan, integrasi, maupun pengoperasian subsistem Portal Pelaporan Eksternal SIMRS Sifast.
+
+---
+
+### 10.1 Skenario Akun Bersama vs Akun Mandiri pada Portal Hybrid (`both`)
+
+#### ❓ Pertanyaan:
+> *"Apabila 'Kebijakan Login Petugas' (`auth_type`) disetel ke `'both'` (Akun Bersama RS & Akun Pribadi / Hybrid), kemudian Admin menetapkan 2 petugas (User A dan User B) melalui halaman mapping dengan opsi default Akun Bersama. Jika salah satu user (misal User A) di halaman Portal Pelaporan mengubah kredensial aksesnya (Username & Password) secara mandiri, bagaimana dengan User B? Apakah User B menggunakan akses bersama yang ditetapkan di Master Portal atau ikut menggunakan akses User A? Apakah pembaruan mandiri User A hanya mengupdate kolom `personal_username` dan `personal_password`?"*
+
+#### 💡 Jawaban & Analisis Arsitektur:
+**Ya, tepat sekali.** Pemahaman tersebut 100% akurat. **User B akan tetap menggunakan Akun Bersama RS** dan sama sekali tidak terpengaruh oleh kredensial User A.
+
+##### 1. Pemisahan Tanggung Jawab Antara Tabel Master & Mapping
+Sistem menerapkan pembagian domain data yang tegas:
+* **Tabel `portals` (Master Portal):**
+  - Menyimpan kredensial bersama tingkat rumah sakit: `shared_username` dan `shared_password` (terenkripsi simetris `AES-256-CBC`).
+  - Kebijakan `auth_type = 'both'` menandakan portal mengizinkan staf memakai akun bersama atau akun personal individual.
+* **Tabel `user_portal_credentials` (Mapping Akses Petugas):**
+  - Mengikat relasi dengan batasan unik `UNIQUE(user_id, portal_id)`. Setiap staf memiliki **satu baris rekaman tersendiri dan terisolasi**.
+  - Menyimpan status granular individu: `credential_type` (`'use_shared'` atau `'personal'`), `personal_username`, dan `personal_password`.
+
+##### 2. Simulasi State Database (Sebelum vs Sesudah Self-Service)
+
+**Kondisi 1: Sesaat Setelah Admin Melakukan Mapping (Keduanya Menggunakan Akun Bersama)**
+
+| Lokasi Tabel | Entitas Rekaman | Kolom Kredensial | Tipe Aktif (`credential_type`) | Sumber Kredensial Autofill |
+| :--- | :--- | :--- | :--- | :--- |
+| `portals` | Master Portal | `shared_username: "rs_siti_fatimah"`<br/>`shared_password: [encrypted_rs_pwd]` | N/A (Master RS) | Sumber fallback akun bersama |
+| `user_portal_credentials` | **User A** (Baris #1) | `personal_username: null`<br/>`personal_password: null` | `'use_shared'` | Menginduk ke Master `portals` |
+| `user_portal_credentials` | **User B** (Baris #2) | `personal_username: null`<br/>`personal_password: null` | `'use_shared'` | Menginduk ke Master `portals` |
+
+**Kondisi 2: Setelah User A Melakukan Pembaruan Mandiri (Self-Service) di Portal Pelaporan**
+Ketika User A membuka modal *Atur Akun Pribadi* dan menekan tombol simpan:
+1. Endpoint `PUT /portal-pelaporan/{portal}/personal-credentials` memanggil method [`PortalPersonalCredentialService::updatePersonalCredential()`](../../app/Services/Portal/PortalPersonalCredentialService.php).
+2. Service mengeksekusi kueri `UserPortalCredential::where('user_id', $user->id)->where('portal_id', $portal->id)->firstOrFail()`.
+3. Mutasi data **hanya terjadi pada baris User A**:
+   - `credential_type` berubah menjadi `'personal'`.
+   - `personal_username` terisi username pribadi User A.
+   - `personal_password` terisi kata sandi pribadi User A yang langsung dienkripsi via cast Eloquent `encrypted`.
+4. Kolom `shared_username` dan `shared_password` pada tabel master `portals` **SAMA SEKALI TIDAK BERUBAH ATAU TERSENTUH**.
+
+| Lokasi Tabel | Entitas Rekaman | Kolom Kredensial | Tipe Aktif (`credential_type`) | Sumber Kredensial Autofill |
+| :--- | :--- | :--- | :--- | :--- |
+| `portals` | Master Portal | `shared_username: "rs_siti_fatimah"`<br/>`shared_password: [encrypted_rs_pwd]` | N/A (Master RS) | **Utuh & Tidak Berubah** |
+| `user_portal_credentials` | **User A** (Baris #1) | `personal_username: "usera_nik"`<br/>`personal_password: [encrypted_user_a_pwd]` | **`'personal'`** | **Akun Personal Mandiri User A** |
+| `user_portal_credentials` | **User B** (Baris #2) | `personal_username: null`<br/>`personal_password: null` | **`'use_shared'`** | **Tetap Akun Bersama Master RS** |
+
+##### 3. Alur Resolusi Dispatch Kredensial ([`PortalDispatchService`](../../app/Services/Portal/PortalDispatchService.php))
+Saat tombol "Buka Portal & Autofill" diklik oleh masing-masing pengguna:
+* **Ketika User A Meluncurkan Portal:**
+  Backend mendeteksi `$credential->isPersonal()` bernilai `true` dan `$portal->supportsPersonal()` bernilai `true`. Sistem mendekripsi dan merespons dengan `personal_username` & `personal_password` milik User A.
+* **Ketika User B Meluncurkan Portal:**
+  Backend mendeteksi `$credential->isPersonal()` bernilai `false` (karena masih `'use_shared'`). Sistem langsung mengalihkan eksekusi ke `buildSharedPayload($portal)` yang mengambil `shared_username` & `shared_password` dari master portal. User B tidak akan pernah menerima kredensial User A.
+
+---
+
+### 10.2 Mekanisme Reset / Pengembalian Kredensial Personal ke Akun Bersama
+
+#### ❓ Pertanyaan:
+> *"Jika seorang staf (misal User A) telah mengonfigurasi akun personal, apakah Admin RS dapat mengembalikannya agar staf tersebut kembali menggunakan Akun Bersama RS?"*
+
+#### 💡 Jawaban:
+**Bisa.** Administrator Rumah Sakit memiliki kendali penuh melalui halaman **Mapping Akses** (`/admin/portals/mapping`):
+1. **Melalui View Per Portal (`MappingPortalView`):**
+   - Cari nama User A pada tabel mapping portal terkait.
+   - Ubah dropdown kolom **Tipe Akun** dari *"Akun Personal"* kembali menjadi *"Akun Bersama"*.
+   - Fitur *Instant Auto-Save* (`POST /admin/portals/mapping/save-row`) seketika memperbarui kolom `credential_type` menjadi `'use_shared'` di database.
+2. **Hasil Evaluasi Dispatch:**
+   - Setelah diubah menjadi `'use_shared'`, saat User A mengklik "Buka Portal", `PortalDispatchService` akan mengabaikan nilai `personal_username` / `personal_password` yang tersimpan dan secara otomatis menggunakan kredensial master `shared_username` & `shared_password` RS.
+   - Jika diperlukan, Admin juga dapat membersihkan rekaman username/password personal melalui modal konfigurasi mapping atau menghapus baris mapping lalu mendaftarkannya ulang.
+
+---
+
+### 10.3 Dampak Pembaruan Password Master RS terhadap Staf Pelapor
+
+#### ❓ Pertanyaan:
+> *"Jika Administrator IT memperbarui kata sandi akun bersama RS (`shared_password`) pada Master Portal di `/admin/portals/{id}/edit`, apakah semua staf perlu dikonfigurasi ulang satu per satu?"*
+
+#### 💡 Jawaban:
+**Tidak perlu konfigurasi ulang.** Inilah salah satu keunggulan utama pola arsitektur terpusat:
+* **Staf dengan Tipe `use_shared` (Mayoritas Staf):**
+  - Seluruh staf yang berstatus `use_shared` (seperti User B) otomatis seketika menggunakan kata sandi baru saat peluncuran portal berikutnya.
+  - Begitu Admin menekan tombol simpan di master portal, string kata sandi dienkripsi ulang di database. Panggilan API `dispatch-token` berikutnya langsung membaca nilai baru tersebut secara real-time.
+* **Staf dengan Tipe `personal`:**
+  - Staf yang menggunakan akun personal mandiri (seperti User A) tidak terpengaruh oleh pergantian kata sandi institusi, karena proses autofill mereka merujuk langsung ke kolom `personal_password` masing-masing.
+
+---
+
+### 10.4 Preservasi Password Personal saat Update Username Saja
+
+#### ❓ Pertanyaan:
+> *"Mengapa pada modal 'Atur Akun Pribadi' staf diizinkan mengosongkan kolom password saat melakukan pembaruan (update) username personal? Apakah kata sandi lamanya akan terhapus atau menjadi kosong di database?"*
+
+#### 💡 Jawaban:
+**Kata sandi lama tidak akan terhapus.** Sistem menerapkan pola **Password Preservation** pada [`PortalPersonalCredentialService`](../../app/Services/Portal/PortalPersonalCredentialService.php):
+* **Aturan Input Kosong:** Jika input kata sandi dikosongkan (`!filled($data['password'])`), array mutasi Eloquent **hanya memperbarui `personal_username`** dan membiarkan ciphertext `personal_password` lama tetap utuh di database.
+* **Aturan Inisialisasi Baru:** Bidang password hanya bersifat wajib (*required*) saat staf baru pertama kali mengonfigurasi akun personalnya (kondisi di mana `has_personal_credential === false`). Setelah kredensial tersimpan, form menandai bahwa password sudah terkonfigurasi (*"Password sudah tersimpan. Biarkan kosong jika tidak ingin mengubah."*).
+
+---
+
+### 10.5 Akses Darurat Super Admin Tanpa Mapping Eksplisit (Fallback Pass-Through)
+
+#### ❓ Pertanyaan:
+> *"Bagaimana jika seorang Super Admin atau Admin RS perlu segera mengakses portal eksternal pada situasi darurat, namun namanya belum sempat didaftarkan di matriks mapping akses petugas?"*
+
+#### 💡 Jawaban:
+Sistem memiliki mekanisme **Admin Fallback Pass-Through** yang dirancang khusus di [`PortalDispatchService::dispatch()`](../../app/Services/Portal/PortalDispatchService.php):
+```php
+// Admin diizinkan menggunakan shared credential jika belum memiliki mapping eksplisit
+if (! $credential && ($user->isAdmin() || $user->isSuperAdmin())) {
+    if (! $portal->supportsShared()) {
+        throw new AccessDeniedHttpException('Portal ini bertipe personal dan memerlukan konfigurasi akun personal.');
+    }
+
+    return $this->buildSharedPayload($portal);
+}
+```
+* Jika user memiliki role `admin` atau `superadmin` dan portal berstatus aktif serta mendukung akun bersama (`supportsShared()`), sistem secara otomatis mengizinkan dispatch token akun bersama RS tanpa melempar exception `AccessDeniedHttpException`.
+* Hal ini memastikan operasional rumah sakit tidak terhenti ketika terjadi rotasi darurat atau audit mendadak oleh tim IT.
+
+---
+
+### 10.6 Keamanan Data Kredensial Terhadap Potensi Intip Staf di Sisi Klien
+
+#### ❓ Pertanyaan:
+> *"Apakah staf pelapor dapat mengintip kata sandi institusi RS atau kata sandi rekan kerja lainnya melalui inspect element browser atau riwayat network tab?"*
+
+#### 💡 Jawaban:
+**Sama sekali tidak bisa.** Keamanan dijamin melalui 4 lapisan proteksi:
+1. **Otorisasi Ketat pada Endpoint (`can:dispatchToken,portal`):** Setiap request dispatch token terikat dengan sesi pengguna yang sedang login. User A tidak memiliki hak maupun kemampuan untuk memanggil dispatch token atas nama User B.
+2. **Zero-Leakage Inertia Page Props:** Model Eloquent menyembunyikan kata sandi melalui array `$hidden = ['shared_password']` dan `$hidden = ['personal_password']`. Pada serialisasi JSON Inertia saat render halaman React, nilai password bernilai `undefined`.
+3. **One-Time Direct to Extension Memory:** Kredensial dikirimkan via HTTPS POST hanya saat tombol peluncuran diklik, langsung diteruskan ke memori RAM background service worker ekstensi browser, dan tidak pernah disimpan ke LocalStorage, SessionStorage, atau Cookies.
+4. **Auto-Flush Setelah Autofill:** Begitu formulir web target selesai diisi secara otomatis, ekstensi memancarkan event konsumsi selesai yang seketika menghapus payload kredensial dari RAM browser (`pendingTabs.delete(tabId)`).
+
