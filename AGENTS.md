@@ -1,4 +1,4 @@
-# CLAUDE.md - Portal Sifast (RS Aisyiyah Siti Fatimah Tulangan)
+# AGENTS.md - Portal Sifast (RS Aisyiyah Siti Fatimah Tulangan)
 
 This file contains architectural guidelines, development commands, and critical rules for developers and AI agents working on Portal Sifast.
 
