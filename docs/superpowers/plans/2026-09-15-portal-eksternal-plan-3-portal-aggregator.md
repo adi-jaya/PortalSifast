@@ -31,7 +31,7 @@
   3. Handshake proaktif dengan mengirim event `SIFAST_PING_EXTENSION` dan menunggu respon `SIFAST_PONG_EXTENSION`.
 - **Graceful Degradation (Fallback Launch):** Jika ekstensi browser belum terpasang atau belum aktif, tombol "Buka Portal" tetap dapat digunakan untuk membuka URL website target secara langsung pada tab baru (`window.open(portal.url, '_blank', 'noopener,noreferrer')`), disertai banner informasi panduan instalasi ekstensi.
 - **Strict Self-Service Boundary:** Modal "Atur Akun Pribadi" hanya boleh diakses untuk portal bertipe `personal` atau `both` di mana pengguna memiliki hak akses aktif. Perubahan kredensial disimpan melalui endpoint `PUT /portal-pelaporan/{portal}/personal-credentials` yang tidak menimpa password jika input password dikosongkan.
-- **Universal Staff Navigation:** Link menu navigasi "Portal Pelaporan" ditambahkan ke menu sidebar utama SIMRS (`resources/js/components/app-sidebar.tsx`) sehingga dapat diakses oleh seluruh staf rumah sakit yang telah login tanpa memerlukan permission admin.
+- **Universal Staff Navigation:** Link menu navigasi "Portal Pelaporan" didaftarkan ke Single Source of Truth navigasi SIMRS (`resources/js/lib/portal-nav.ts` - `mainNavItems`) sehingga aktif pada layout desktop (`TemplateSidebar`) dan mobile (`TemplateMobileNav`) bagi seluruh staf rumah sakit yang telah login tanpa memerlukan permission admin. *(Errata: hindari `resources/js/components/app-sidebar.tsx` yang tidak dirender).*
 - **TDD Mandatory:** Setiap service class, controller, dan integrasi endpoint diuji secara komprehensif menggunakan Pest 4 sebelum implementasi difinalisasi.
 
 ---
@@ -51,7 +51,7 @@ resources/
 │   ├── types/
 │   │   └── portal.ts                                # Type definitions: PortalCardItem, ExtensionStatus
 │   ├── components/
-│   │   ├── app-sidebar.tsx                          # Integrasi menu navigasi sidebar SIMRS
+│   │   ├── app-sidebar.tsx                          # [ERRATA: Dialihkan ke lib/portal-nav.ts via Commit b97e9df]
 │   │   └── portal/
 │   │       ├── use-extension-detection.ts           # Custom React hook deteksi ekstensi via dataset & event ping-pong
 │   │       ├── extension-status-badge.tsx           # Badge indikator status aktif/belum terpasang
@@ -2032,8 +2032,12 @@ git commit -m "feat(portal): add portal-pelaporan index page with live category 
 
 ### Task 7: SIMRS Navigation Sidebar Integration
 
+> [!NOTE]
+> **ERRATA / CATATAN REVISI IMPLEMENTASI (Commit `b97e9df`):**
+> Rencana pada Task 7 awalnya menginstruksikan penambahan menu "Portal Pelaporan" ke `resources/js/components/app-sidebar.tsx`. Berkas tersebut merupakan komponen starter-kit yang **tidak pernah dirender** pada layout aktif SIMRS. Implementasi sebenarnya telah dialihkan dan didaftarkan pada **`mainNavItems` di `resources/js/lib/portal-nav.ts`** (Commit `b97e9df`) agar tampil pada `TemplateSidebar` (desktop) dan `TemplateMobileNav` (mobile), serta diverifikasi oleh `tests/Feature/PortalNavParityTest.php`.
+
 **Files:**
-- Modify: `resources/js/components/app-sidebar.tsx:40-70`
+- Modify: `resources/js/components/app-sidebar.tsx:40-70` *(Legacy - dialihkan ke `portal-nav.ts`)*
 
 **Interfaces:**
 - Consumes: Route `/portal-pelaporan` (`portal-pelaporan.index`).

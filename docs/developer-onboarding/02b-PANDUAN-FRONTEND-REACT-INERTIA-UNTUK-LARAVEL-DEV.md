@@ -57,7 +57,7 @@ graph TD
         B1["Bab 1: Pergeseran Paradigma & Kamus Padanan<br/><i>(Mental Model Shift, Hooks, & Konsep Inti React)</i>"]
         B2["Bab 2: Bedah Kasus Nyata Modul Tiket<br/><i>(Alur Data Controller -> React Props -> Live Filter)</i>"]
         B3["Bab 3: Tutorial Hands-on CRUD Step-by-Step<br/><i>(Studi Kasus Modul Projects dari Nol & Refactor ConfirmDialog)</i>"]
-        B4["Bab 4: Arsitektur Styling & Komponen UI<br/><i>(Tailwind v4 @theme, Radix Primitives, Helper cn)</i>"]
+        B4["Bab 4: Arsitektur Styling, Komponen UI & Layout Shell<br/><i>(Tailwind v4 @theme, Radix Primitives, Layout Hierarchy & Single Source of Truth Navigasi)</i>"]
         B5["Bab 5: Reaktivitas Real-Time & WebSockets<br/><i>(Reverb, Echo, Presence Tracking, Dual-Source Config)</i>"]
         B6["Bab 6: Anti-Patterns, Gotchas & Debugging Toolkit<br/><i>(Error Catalog Pemula & React 19 Compiler Insights)</i>"]
         
@@ -3047,6 +3047,154 @@ Sebelum menyerahkan pull request atau mengajukan fitur baru ke review tim, pasti
 
 ---
 
+### 4.7 Arsitektur Shell & Tata Letak Navigasi (Layout Hierarchy & Single Source of Truth)
+
+Dalam aplikasi web rumah sakit yang memiliki puluhan modul dan tingkat otorisasi yang ketat, arsitektur tata letak antarmuka (*application shell*) harus menjamin konsistensi navigasi, responsivitas multi-perangkat (desktop staf poliklinik vs tablet/smartphone perawat & satpam lapangan), serta evaluasi hak akses yang deterministik.
+
+#### 1. Hierarki Rantai Tata Letak (*Layout Hierarchy*)
+
+Setiap halaman modul di Portal Sifast (seperti [`resources/js/pages/projects/index.tsx`](../../resources/js/pages/projects/index.tsx)) dibungkus oleh komponen layout utama. Alur perenderan hierarkinya berjalan sebagai berikut:
+
+```mermaid
+graph TD
+    subgraph PageLayer ["1. Halaman Modul (Page Component)"]
+        Page["Page Component<br/><i>(misal: pages/projects/index.tsx)</i>"]
+    end
+
+    subgraph WrapperLayer ["2. Layout Entry Point"]
+        AppLayout["<AppLayout><br/><i>resources/js/layouts/app-layout.tsx</i>"]
+    end
+
+    subgraph ShellLayer ["3. Application Shell Implementation"]
+        AppSidebarLayout["<AppSidebarLayout><br/><i>resources/js/layouts/app/app-sidebar-layout.tsx</i>"]
+        Presence["<PresenceProvider>"]
+        Flash["<FlashMessage />"]
+        Header["<TemplateHeader />"]
+    end
+
+    subgraph NavLayer ["4. Active Navigators (Dual Viewports)"]
+        SidebarDesktop["<TemplateSidebar /><br/><i>(Desktop: md:flex)</i>"]
+        SidebarMobile["<TemplateMobileNav /><br/><i>(Mobile Drawer / Sheet)</i>"]
+    end
+
+    subgraph SSOTLayer ["5. Single Source of Truth"]
+        PortalNav["<b>resources/js/lib/portal-nav.ts</b><br/>• mainNavItems<br/>• settingsNavItems<br/>• buildVisibleModuleGroups(permissions)"]
+    end
+
+    Page -->|wrapped by| AppLayout
+    AppLayout -->|renders| AppSidebarLayout
+    AppSidebarLayout --> Presence
+    Presence --> Flash
+    Presence --> Header
+    Presence --> SidebarDesktop
+    Presence --> SidebarMobile
+    SidebarDesktop -->|imports & renders| PortalNav
+    SidebarMobile -->|imports & renders| PortalNav
+```
+
+1. **`AppLayout` ([`resources/js/layouts/app-layout.tsx`](../../resources/js/layouts/app-layout.tsx)):**
+   Titik masuk standar yang dipanggil oleh seluruh halaman React. Komponen ini meneruskan `breadcrumbs` dan `children` ke layout template aktif (`AppSidebarLayout`).
+2. **`AppSidebarLayout` ([`resources/js/layouts/app/app-sidebar-layout.tsx`](../../resources/js/layouts/app/app-sidebar-layout.tsx)):**
+   Implementasi shell aktif aplikasi SIMRS. Mengorkestrasi:
+   - `<PresenceProvider>` untuk pelacakan staf online via WebSocket.
+   - `<FlashMessage>` untuk penanganan notifikasi toast global.
+   - `<TemplateSidebar>` untuk navigasi sidebar tetap di layar desktop (`md:ml-64`).
+   - `<TemplateMobileNav>` untuk drawer navigasi responsif pada layar mobile/tablet.
+   - `<TemplateHeader>` untuk topbar navigasi, breadcrumbs, dan toggle menu mobile.
+
+> [!CAUTION]
+> **PERINGATAN ARSITEKTUR: Komponen Mati `app-sidebar.tsx`**
+> Berkas [`resources/js/components/app-sidebar.tsx`](../../resources/js/components/app-sidebar.tsx) adalah artefak bawaan starter-kit Laravel/Inertia awal yang **TIDAK PERNAH DIRENDER** di tata letak aplikasi SIMRS.
+>
+> ❌ **JANGAN PERNAH** menambahkan atau mengubah menu di `app-sidebar.tsx`.
+>
+> Jika Anda menambahkan menu ke `app-sidebar.tsx`, menu tersebut **tidak akan pernah muncul** di layar desktop maupun mobile staf SIMRS!
+
+---
+
+#### 2. Single Source of Truth: `resources/js/lib/portal-nav.ts`
+
+Untuk mencegah duplikasi definisi menu antara tampilan desktop (`TemplateSidebar`) dan mobile (`TemplateMobileNav`), Portal Sifast memusatkan seluruh konfigurasi navigasi pada satu berkas: **[`resources/js/lib/portal-nav.ts`](../../resources/js/lib/portal-nav.ts)**.
+
+Berkas ini mengekspor tiga entitas navigasi utama:
+1. **`mainNavItems: PortalNavItem[]`**
+   Daftar navigasi tingkat atas tunggal (*Dashboard*, *Portal Pelaporan*, *Chat*, *Daftar Pegawai*, *Daftar User*).
+2. **`settingsNavItems: PortalNavItem[]`**
+   Menu pengaturan di bagian bawah (*Profil*, *Master Tiket*).
+3. **`moduleGroups: PortalNavGroup[]` & `buildVisibleModuleGroups(permissions)`**
+   Grup modul aplikasi bertingkat (Ticketing, Emergency, Payroll, Patroli, Keuangan, Kamar Inap, Inventaris, SIMMUTU, Tatanaskah, Web Official, Portal Eksternal).
+
+Setiap item navigasi didefinisikan menggunakan tipe `PortalNavItem`:
+
+```typescript
+export type PortalNavItem = {
+    id: string;                          // ID unik item (contoh: 'portal-pelaporan')
+    label: string;                       // Teks label yang tampil di antarmuka
+    href: string;                        // URL tujuan (Wayfinder URL atau path relatif)
+    icon: LucideIcon;                    // Komponen ikon dari Lucide React
+    isActive: (path: string) => boolean; // Fungsi deterministik pendeteksi rute aktif
+    fullPage?: boolean;                  // Flag jika membutuhkan full-page reload
+};
+```
+
+---
+
+#### 3. Evaluasi Izin Berbasis Inertia Shared Props
+
+Navigasi di Portal Sifast menerapkan prinsip *least privilege*—menu yang tidak berhak diakses oleh staf tidak akan dirender ke dalam DOM.
+
+Evaluasi hak akses dilakukan secara deklaratif di sisi klien menggunakan fungsi `buildVisibleModuleGroups(permissions)` yang menerima props perizinan global dari Inertia:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Request as HTTP Request
+    participant Middleware as HandleInertiaRequests.php
+    participant ReactPage as TemplateSidebar.tsx
+    participant NavHelper as portal-nav.ts
+
+    Request->>Middleware: User mengakses rute aplikasi
+    Note over Middleware: Hitung izin berdasarkan Role & Flags User:<br/>can_access_payroll, can_access_patroli,<br/>simmutu, sikat, tatanaskah, web_official, can_manage_portals
+    Middleware-->>ReactPage: Shared Props: { permissions: { ... } }
+    ReactPage->>ReactPage: const { permissions } = usePage().props;
+    ReactPage->>NavHelper: buildVisibleModuleGroups(permissions)
+    Note over NavHelper: Saring moduleGroups statis &<br/>panggil dedicated group builders
+    NavHelper-->>ReactPage: Array grup modul yang berhak dilihat user
+    ReactPage->>ReactPage: Render menu navigasi ke DOM
+```
+
+Contoh logika evaluasi di [`resources/js/lib/portal-nav.ts`](../../resources/js/lib/portal-nav.ts):
+
+```typescript
+export function buildVisibleModuleGroups(permissions?: PortalNavPermissions): PortalNavGroup[] {
+    const canAccessPayroll = Boolean(permissions?.can_access_payroll);
+    const canAccessPatroli = Boolean(permissions?.can_access_patroli);
+
+    // 1. Saring grup statis berdasarkan hak akses granular
+    const base = moduleGroups.filter((group) => {
+        if (group.id === 'payroll') return canAccessPayroll;
+        if (group.id === 'patroli') return canAccessPatroli;
+        return true;
+    });
+
+    // 2. Tambahkan grup modular kondisional melalui dedicated builders
+    const simmutuGroup = buildSimmutuNavGroup(permissions?.simmutu);
+    if (simmutuGroup) base.push(simmutuGroup);
+
+    const portalGroup = buildPortalNavGroup(permissions?.can_manage_portals);
+    if (portalGroup) base.push(portalGroup);
+
+    return base;
+}
+```
+
+Dengan arsitektur ini:
+- **Dekoupling Murni:** Komponen presentasi UI ([`TemplateSidebar`](../../resources/js/components/template-sidebar.tsx) dan [`TemplateMobileNav`](../../resources/js/components/template-mobile-nav.tsx)) murni bertindak sebagai renderer visual tanpa kode rute *hardcoded*.
+- **Konsistensi Paritas 100%:** Menu desktop dan mobile selalu identik karena keduanya membaca `portal-nav.ts`.
+- **Aman & Terverifikasi:** Arsitektur ini terproteksi oleh test regresi otomatis pada [`tests/Feature/PortalNavParityTest.php`](../../tests/Feature/PortalNavParityTest.php).
+
+---
+
 ## Bab 5: Reaktivitas Real-Time & WebSockets (Laravel Reverb & Echo di React)
 
 Dalam sistem informasi rumah sakit seperti Portal Sifast, kecepatan respons informasi dapat menentukan kelancaran penanganan medis dan respon operasional. Panggilan darurat (*code blue*, *code red*), pelaporan insiden darurat IGD, pembaruan lokasi ambulans, tiket gangguan perangkat vital (seperti printer resep obat di instalasi farmasi atau monitor hemodialisa), hingga pelacakan presensi dokter jaga memerlukan penyampaian data instan tanpa staf harus menekan tombol refresh (F5) secara manual di browser.
@@ -4017,6 +4165,7 @@ graph TD
     Check -->|Input Form Membeku / Tidak Bisa Diketik| G1["🧊 Gotcha 1: Controlled Input Tanpa onChange<br/>Solusi: Pasang onChange={e => setData('field', e.target.value)}"]
     Check -->|Layar Merah: Objects are not valid as child| G2["📦 Gotcha 2: Merender Objek Langsung di JSX<br/>Solusi: Render properti teks {user.name} bukan objek {user}"]
     Check -->|Layar Putih Bersih / Kosong Total| G3["👻 Gotcha 3: White Screen of Death (WSOD)<br/>Solusi: Buka Console DevTools, cek null pointer via Optional Chaining (?.)"]
+    Check -->|Menu Baru Tidak Muncul di Sidebar| G4["🚫 Gotcha 4: Menyunting File Mati app-sidebar.tsx<br/>Solusi: Daftarkan menu di resources/js/lib/portal-nav.ts"]
 ```
 
 ---
@@ -4157,6 +4306,40 @@ export function GoodTicketRow({ ticket }: { ticket: Ticket }) {
 > [!TIP]
 > **Kiat Pro untuk Developer Laravel:**
 > Ingatlah bahwa relasi Eloquent opsional (`belongsTo` nullable) selalu datang sebagai `null` di JavaScript jika belum terisi. Selalu gunakan operator `?.` (*optional chaining*) saat menelusuri relasi objek dari backend!
+
+---
+
+#### Gotcha 4: "Menu Navigasi Baru Tidak Muncul di Sidebar (*Editing Dead Component*)"
+
+* **Gejala:** Anda telah selesai membuat modul baru, mendaftarkan controller, rute, dan halaman React. Anda kemudian mengedit file `resources/js/components/app-sidebar.tsx` untuk menambahkan menu navigasi. Namun ketika halaman di-refresh, menu baru tersebut **sama sekali tidak tampil** baik di layar desktop maupun mobile.
+* **Penyebab:** Komponen `app-sidebar.tsx` adalah artefak starter kit bawaan yang **tidak pernah dirender** oleh layout aktif SIMRS ([`AppSidebarLayout`](../../resources/js/layouts/app/app-sidebar-layout.tsx)). Layout aktif menggunakan `<TemplateSidebar>` (desktop) dan `<TemplateMobileNav>` (mobile) yang membaca navigasi secara terpusat dari Single Source of Truth: **[`resources/js/lib/portal-nav.ts`](../../resources/js/lib/portal-nav.ts)**.
+
+```tsx
+// ❌ KESALAHAN: Menambahkan menu ke komponen mati app-sidebar.tsx
+// File: resources/js/components/app-sidebar.tsx (TIDAK PERNAH DIRENDER!)
+const mainNavItems: NavItem[] = [
+    // ...
+    { title: 'Fitur Baru', href: '/fitur-baru', icon: Sparkles },
+];
+```
+
+```typescript
+// ✅ KODE SOLUSI: Daftarkan ke Single Source of Truth
+// File: resources/js/lib/portal-nav.ts
+export const mainNavItems: PortalNavItem[] = [
+    // ...
+    {
+        id: 'fitur-baru',
+        label: 'Fitur Baru',
+        href: '/fitur-baru',
+        icon: Sparkles,
+        isActive: (path) => path === '/fitur-baru' || path.startsWith('/fitur-baru/'),
+    },
+];
+```
+
+> [!WARNING]
+> Jangan pernah mengedit `resources/js/components/app-sidebar.tsx`. Berkas tersebut telah ditandai `@deprecated`. Seluruh pendaftaran navigasi wajib dilakukan di [`resources/js/lib/portal-nav.ts`](../../resources/js/lib/portal-nav.ts).
 
 ---
 

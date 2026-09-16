@@ -1,3 +1,20 @@
+/**
+ * @deprecated [LEGACY / STARTER-KIT ARTIFACT - JANGAN DIEDIT!]
+ * ============================================================================
+ * PERINGATAN: Berkas ini TIDAK PERNAH DIRENDER pada layout aktif SIMRS.
+ *
+ * Layout aktif SIMRS (`resources/js/layouts/app/app-sidebar-layout.tsx`) menggunakan:
+ * - Desktop: `resources/js/components/template-sidebar.tsx` (<TemplateSidebar />)
+ * - Mobile:  `resources/js/components/template-mobile-nav.tsx` (<TemplateMobileNav />)
+ *
+ * Seluruh navigasi, menu utama, modul, dan evaluasi permission terpusat di:
+ * -> `resources/js/lib/portal-nav.ts` (SINGLE SOURCE OF TRUTH)
+ *
+ * DILARANG MENAMBAH / MENGUBAH MENU PADA BERKAS INI!
+ * Lihat panduan pendaftaran menu baru di: `docs/TUTORIAL-TAMBAH-FITUR-BARU.md` (Step 6).
+ * ============================================================================
+ */
+
 import { Link, usePage } from '@inertiajs/react';
 import {
     Activity,

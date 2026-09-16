@@ -43,13 +43,16 @@ app/
 resources/js/
 ├── actions/                 # Inertia/form actions helper
 ├── components/              # Reusable UI component library (Shadcn/Radix/HeadlessUI)
-│   ├── app-sidebar.tsx      # Navigasi sidebar dinamis sesuai role & permissions
+│   ├── template-sidebar.tsx # Sidebar Desktop aktif (konsumsi portal-nav.ts)
+│   ├── template-mobile-nav.tsx # Sidebar Mobile aktif (konsumsi portal-nav.ts)
+│   ├── app-sidebar.tsx      # [LEGACY / DEPRECATED - Starter Kit Only, JANGAN DIEDIT]
 │   ├── ui/                  # Atomic primitives (button, dialog, input, select, table)
 │   └── ...
 ├── contexts/                # React Contexts (User Presence, Theme, Audio Alert)
 ├── hooks/                   # Custom React Hooks (useEcho, useUserPresence, useFilter)
-├── layouts/                 # AppLayout, AuthLayout, SettingsLayout
+├── layouts/                 # AppLayout, AppSidebarLayout, AuthLayout, SettingsLayout
 ├── lib/                     # Utilities (cn, formatters, date helpers)
+│   └── portal-nav.ts        # SINGLE SOURCE OF TRUTH seluruh navigasi SIMRS (Desktop & Mobile)
 ├── pages/                   # Inertia Page Components (30+ sub-modul)
 │   ├── aset/                # Manajemen Aset Portal
 │   ├── emergency-reports/   # Command Center Panic Button

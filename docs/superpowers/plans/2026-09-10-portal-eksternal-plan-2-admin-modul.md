@@ -60,7 +60,7 @@ resources/
 │   │   ├── portal.ts                               # Type definition Portal, Credential, FormConfig
 │   │   └── index.ts                                # Re-export types
 │   ├── components/
-│   │   ├── app-sidebar.tsx                         # Menu navigasi Admin Master & Mapping Portal
+│   │   ├── app-sidebar.tsx                         # [ERRATA: Dialihkan ke lib/build-portal-nav-group.ts & portal-nav.ts via Commit 3b143af]
 │   │   └── portal/
 │   │       ├── selector-tag-input.tsx              # Input tag selector dengan preset cepat
 │   │       ├── form-config-editor.tsx              # Visual + Raw JSON form selector editor
@@ -1614,11 +1614,15 @@ git commit -m "feat(portal): add admin portal mapping controller and access matr
 
 ### Task 3: Shared Inertia Props, Global TypeScript Definitions & App Navigation
 
+> [!NOTE]
+> **ERRATA / CATATAN REVISI IMPLEMENTASI (Commit `3b143af`):**
+> Rencana awal pada Task 3 ini menginstruksikan modifikasi menu navigasi ke `resources/js/components/app-sidebar.tsx`. Namun karena berkas tersebut adalah artefak starter-kit yang **tidak pernah dirender** pada layout aktif SIMRS (`AppSidebarLayout`), implementasi navigasi menu Master Portal & Mapping Akses dialihkan secara tepat ke **`resources/js/lib/build-portal-nav-group.ts`** dan didaftarkan ke **`resources/js/lib/portal-nav.ts`** via `buildVisibleModuleGroups`. Komponen aktif `TemplateSidebar` membaca seluruh navigasi dari `portal-nav.ts`.
+
 **Files:**
 - Modify: `app/Http/Middleware/HandleInertiaRequests.php:44-67`
 - Create: `resources/js/types/portal.ts`
 - Modify: `resources/js/types/index.ts:1-10`
-- Modify: `resources/js/components/app-sidebar.tsx:130-165`
+- Modify: `resources/js/components/app-sidebar.tsx:130-165` *(Legacy - dialihkan ke `portal-nav.ts`)*
 - Test: `tests/Feature/PortalPelaporan/PortalInertiaPropsTest.php`
 
 **Interfaces:**
@@ -3016,6 +3020,10 @@ git commit -m "feat(portal): add master portal CRUD inertia views"
 ---
 
 ### Task 6: Access Mapping Matrix UI Page (`mapping.tsx`)
+
+> [!NOTE]
+> **ERRATA / CATATAN REVISI NAVIGASI:**
+> Link menu menuju halaman mapping (`/admin/portals/mapping`) diintegrasikan melalui `resources/js/lib/build-portal-nav-group.ts` dan diekspor via `resources/js/lib/portal-nav.ts` (Commit `3b143af`), bukan melalui `app-sidebar.tsx`.
 
 **Files:**
 - Create: `resources/js/components/ui/switch.tsx`

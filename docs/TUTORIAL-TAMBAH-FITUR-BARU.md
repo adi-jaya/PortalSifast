@@ -30,8 +30,9 @@ PortalSifast/
 │   └── migrations/          # File migrasi database
 ├── resources/js/
 │   ├── pages/               # Halaman React (Inertia)
-│   ├── components/          # Komponen reusable
-│   ├── layouts/             # Layout aplikasi
+│   ├── components/          # Komponen reusable (template-sidebar, template-mobile-nav, ui/)
+│   ├── layouts/             # Layout aplikasi (app-sidebar-layout, auth-layout)
+│   ├── lib/                 # Utilities & portal-nav.ts (Single Source of Truth navigasi)
 │   └── types/               # TypeScript types
 ├── routes/
 │   ├── web.php              # Routes utama
@@ -546,15 +547,132 @@ export default function AnnouncementCreate() {
 
 ## Step 6: Tambahkan Menu di Sidebar
 
-Edit file `resources/js/components/app-sidebar.tsx` atau file navigasi yang sesuai.
+> [!WARNING]
+> **JANGAN PERNAH MENGEDIT `resources/js/components/app-sidebar.tsx`!**
+> File `app-sidebar.tsx` adalah artefak bawaan starter-kit yang **TIDAK PERNAH dirender** pada layout aktif aplikasi (`AppSidebarLayout`).
+>
+> Tata letak aktif SIMRS Portal Sifast menggunakan:
+> - **Desktop**: [`resources/js/components/template-sidebar.tsx`](../resources/js/components/template-sidebar.tsx) (`<TemplateSidebar />`)
+> - **Mobile**: [`resources/js/components/template-mobile-nav.tsx`](../resources/js/components/template-mobile-nav.tsx) (`<TemplateMobileNav />`)
+>
+> Kedua komponen di atas membaca navigasi secara terpusat dari **[`resources/js/lib/portal-nav.ts`](../resources/js/lib/portal-nav.ts)** (*Single Source of Truth*). Oleh karena itu, seluruh pendaftaran menu baru **WAJIB** dilakukan di `resources/js/lib/portal-nav.ts`.
 
-### Contoh menambah menu:
-```tsx
-// Di bagian navMain atau menu items
-{
-    title: 'Pengumuman',
-    url: '/announcements',
-    icon: Megaphone, // import dari lucide-react
+Buka dan edit file [`resources/js/lib/portal-nav.ts`](../resources/js/lib/portal-nav.ts):
+
+### Opsi A: Menambahkan Menu Utama / Item Tunggal (`mainNavItems`)
+
+Gunakan opsi ini jika fitur Anda merupakan item menu mandiri tingkat atas (sejajar dengan *Dashboard*, *Portal Pelaporan*, *Daftar Pegawai*, dll.).
+
+1. Import icon yang dibutuhkan dari `lucide-react`:
+```typescript
+import { Megaphone } from 'lucide-react';
+```
+
+2. Tambahkan objek `PortalNavItem` ke dalam array `mainNavItems`:
+```typescript
+export const mainNavItems: PortalNavItem[] = [
+    // ... item yang sudah ada
+    {
+        id: 'announcements',
+        label: 'Pengumuman',
+        href: '/announcements',
+        icon: Megaphone,
+        isActive: (path) => path === '/announcements' || path.startsWith('/announcements/'),
+    },
+];
+```
+
+> [!NOTE]
+> Fungsi `isActive(path)` digunakan untuk menentukan highlight navigasi saat URL halaman aktif cocok dengan rute modul tersebut.
+
+---
+
+### Opsi B: Menambahkan Menu Modul / Grup Bertingkat
+
+Jika fitur Anda memiliki beberapa sub-menu atau memerlukan grouping terstruktur:
+
+#### 1. Modul Statis (Selalu Tampil untuk Semua Staf)
+Tambahkan grup baru langsung ke dalam array `moduleGroups`:
+
+```typescript
+export const moduleGroups: PortalNavGroup[] = [
+    // ... grup yang sudah ada (ticketing, emergency, dll.)
+    {
+        id: 'announcements',
+        label: 'Pengumuman',
+        icon: Megaphone,
+        items: [
+            {
+                id: 'announcements-list',
+                label: 'Daftar Pengumuman',
+                href: '/announcements',
+                icon: Megaphone,
+                isActive: (path) => path === '/announcements' || /^\/announcements\/\d+/.test(path),
+            },
+            {
+                id: 'announcements-create',
+                label: 'Buat Pengumuman',
+                href: '/announcements/create',
+                icon: PlusCircle,
+                isActive: (path) => path === '/announcements/create',
+            },
+        ],
+    },
+];
+```
+
+#### 2. Modul Dinamis / Kondisional Berbasis Izin (*Permissions*)
+Jika menu hanya boleh muncul untuk staf dengan hak akses tertentu:
+
+1. Buat helper builder terpisah (misal `resources/js/lib/build-announcement-nav-group.ts`):
+```typescript
+import { Megaphone, PlusCircle } from 'lucide-react';
+import type { PortalNavGroup } from '@/lib/portal-nav';
+
+export function buildAnnouncementNavGroup(canManage?: boolean): PortalNavGroup | null {
+    if (!canManage) {
+        return null;
+    }
+
+    return {
+        id: 'announcements',
+        label: 'Pengumuman',
+        icon: Megaphone,
+        items: [
+            {
+                id: 'announcements-list',
+                label: 'Daftar Pengumuman',
+                href: '/announcements',
+                icon: Megaphone,
+                isActive: (path) => path === '/announcements' || /^\/announcements\/\d+/.test(path),
+            },
+            {
+                id: 'announcements-create',
+                label: 'Buat Pengumuman',
+                href: '/announcements/create',
+                icon: PlusCircle,
+                isActive: (path) => path === '/announcements/create',
+            },
+        ],
+    };
+}
+```
+
+2. Daftarkan pemanggil builder di fungsi `buildVisibleModuleGroups` pada `resources/js/lib/portal-nav.ts`:
+```typescript
+import { buildAnnouncementNavGroup } from '@/lib/build-announcement-nav-group';
+
+export function buildVisibleModuleGroups(permissions?: PortalNavPermissions): PortalNavGroup[] {
+    // ... filter grup dasar
+    const base = moduleGroups.filter((group) => { ... });
+
+    // Tambahkan grup berizin
+    const announcementGroup = buildAnnouncementNavGroup(permissions?.can_manage_announcements);
+    if (announcementGroup) {
+        base.push(announcementGroup);
+    }
+
+    return base;
 }
 ```
 
