@@ -13,6 +13,7 @@ import {
     X,
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { FormConfigEditor } from '@/components/portal/form-config-editor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,14 +50,17 @@ export function PortalForm({
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [isInstantUploading, setIsInstantUploading] = useState(false);
     const [isInstantRemoving, setIsInstantRemoving] = useState(false);
+    const [showInstantRemoveConfirm, setShowInstantRemoveConfirm] =
+        useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const initialCategory = initialData?.category;
     const categoryOptions = React.useMemo(() => {
         const seen = new Set<string>();
         const uniqueList: string[] = [];
 
         [
-            ...(initialData?.category ? [initialData.category] : []),
+            ...(initialCategory ? [initialCategory] : []),
             ...categories,
             ...DEFAULT_CATEGORIES,
         ].forEach((cat) => {
@@ -72,7 +76,7 @@ export function PortalForm({
         return uniqueList.sort((a, b) =>
             a.localeCompare(b, undefined, { sensitivity: 'base' }),
         );
-    }, [categories, initialData?.category]);
+    }, [categories, initialCategory]);
 
     const defaultFormConfig: FormConfig = {
         is_spa: false,
@@ -130,6 +134,7 @@ export function PortalForm({
     useEffect(() => {
         if (data.icon_file) {
             const objectUrl = URL.createObjectURL(data.icon_file);
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setPreviewUrl(objectUrl);
             return () => URL.revokeObjectURL(objectUrl);
         } else {
@@ -197,11 +202,8 @@ export function PortalForm({
         );
     };
 
-    const handleInstantRemove = () => {
+    const handleConfirmInstantRemove = () => {
         if (!initialData?.id) return;
-        if (!confirm('Yakin ingin menghapus berkas logo ini secara langsung?')) {
-            return;
-        }
         setIsInstantRemoving(true);
         router.delete(`/admin/portals/${initialData.id}/logo`, {
             preserveScroll: true,
@@ -370,7 +372,7 @@ export function PortalForm({
                     </div>
 
                     {/* Logo Uploader Box */}
-                    <div className="md:col-span-2 space-y-2 rounded-xl border border-border/80 bg-muted/20 p-4">
+                    <div className="space-y-2 rounded-xl border border-border/80 bg-muted/20 p-4 md:col-span-2">
                         <Label className="text-sm font-semibold text-foreground">
                             Berkas Logo Portal
                         </Label>
@@ -452,7 +454,11 @@ export function PortalForm({
                                                     variant="ghost"
                                                     size="sm"
                                                     disabled={isInstantRemoving}
-                                                    onClick={handleInstantRemove}
+                                                    onClick={() =>
+                                                        setShowInstantRemoveConfirm(
+                                                            true,
+                                                        )
+                                                    }
                                                     className="gap-1.5 text-xs text-destructive hover:bg-destructive/10"
                                                 >
                                                     <Trash2 className="size-3.5" />
@@ -465,10 +471,13 @@ export function PortalForm({
                                                     type="button"
                                                     variant="ghost"
                                                     size="sm"
-                                                    onClick={handleMarkRemoveLogo}
+                                                    onClick={
+                                                        handleMarkRemoveLogo
+                                                    }
                                                     className="gap-1.5 text-xs text-destructive hover:bg-destructive/10"
                                                 >
-                                                    <Trash2 className="size-3.5" /> Hapus Logo
+                                                    <Trash2 className="size-3.5" />{' '}
+                                                    Hapus Logo
                                                 </Button>
                                             )}
                                         </>
@@ -476,7 +485,9 @@ export function PortalForm({
 
                                     {data.remove_logo && (
                                         <span className="flex items-center gap-2 text-xs text-destructive">
-                                            <span>Logo akan dihapus saat disimpan</span>
+                                            <span>
+                                                Logo akan dihapus saat disimpan
+                                            </span>
                                             <button
                                                 type="button"
                                                 onClick={handleUndoRemoveLogo}
@@ -489,7 +500,8 @@ export function PortalForm({
                                 </div>
 
                                 <p className="text-[11px] text-muted-foreground">
-                                    Format: PNG, JPG, WEBP, atau SVG (Maks. 2 MB). Disarankan rasio 1:1.
+                                    Format: PNG, JPG, WEBP, atau SVG (Maks. 2
+                                    MB). Disarankan rasio 1:1.
                                 </p>
 
                                 {errors.icon_file && (
@@ -724,6 +736,18 @@ export function PortalForm({
                     {processing ? 'Menyimpan...' : 'Simpan'}
                 </Button>
             </div>
+
+            <ConfirmDialog
+                open={showInstantRemoveConfirm}
+                onOpenChange={setShowInstantRemoveConfirm}
+                title="Hapus Berkas Logo"
+                description="Apakah Anda yakin ingin menghapus berkas logo ini secara langsung dari server? Tindakan ini tidak dapat dibatalkan."
+                confirmLabel="Hapus Logo"
+                cancelLabel="Batal"
+                variant="destructive"
+                onConfirm={handleConfirmInstantRemove}
+                loading={isInstantRemoving}
+            />
         </form>
     );
 }
