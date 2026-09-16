@@ -278,6 +278,7 @@ export default function PortalPelaporanIndex({
 
             {/* Modal Dialog Pengaturan Kredensial Pribadi */}
             <PersonalCredentialDialog
+                key={selectedPortalForCredentials?.id ?? 'none'}
                 portal={selectedPortalForCredentials}
                 open={isCredentialModalOpen}
                 onOpenChange={setIsCredentialModalOpen}

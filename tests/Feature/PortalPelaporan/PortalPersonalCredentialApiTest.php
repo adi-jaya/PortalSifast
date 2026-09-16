@@ -72,3 +72,22 @@ it('preserves existing password when updating username with null password', func
     expect($mapping->personal_username)->toBe('dr.baru@rsasf.co.id')
         ->and($mapping->personal_password)->toBe('PasswordTetapAda');
 });
+
+it('rejects initial personal credential setup when password is not provided', function (): void {
+    UserPortalCredential::factory()->create([
+        'user_id' => $this->user->id,
+        'portal_id' => $this->portal->id,
+        'credential_type' => 'personal',
+        'personal_username' => null,
+        'personal_password' => null,
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($this->user)
+        ->putJson("/portal-pelaporan/{$this->portal->id}/personal-credentials", [
+            'username' => 'dr.fatimah@rsasf.co.id',
+            'password' => null,
+        ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['password']);
+});

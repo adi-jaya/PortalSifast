@@ -33,7 +33,8 @@ class PortalAggregatorService
         }]);
 
         if (filled($category) && $category !== 'all') {
-            $query->where('category', trim((string) $category));
+            $cat = trim((string) $category);
+            $query->whereRaw('LOWER(category) = ?', [mb_strtolower($cat)]);
         }
 
         if (filled($search)) {
@@ -45,9 +46,7 @@ class PortalAggregatorService
             });
         }
 
-        $portals = $query->orderBy('sort_order', 'asc')
-            ->orderBy('name', 'asc')
-            ->get();
+        $portals = $query->ordered()->get();
 
         return $portals->map(function (Portal $portal) use ($user): array {
             /** @var UserPortalCredential|null $credential */
@@ -109,6 +108,9 @@ class PortalAggregatorService
             && $credential !== null
             && (bool) $credential->is_active;
 
+        $hasPersonalCredential = filled($credential?->personal_username)
+            && filled($credential?->getRawOriginal('personal_password'));
+
         return [
             'id' => $portal->id,
             'name' => $portal->name,
@@ -122,7 +124,7 @@ class PortalAggregatorService
             'auth_type' => $portal->auth_type,
             'credential_type' => $credentialType,
             'personal_username' => $credential?->personal_username,
-            'has_personal_credential' => filled($credential?->personal_username),
+            'has_personal_credential' => $hasPersonalCredential,
             'can_configure_personal' => $canConfigurePersonal,
             'sort_order' => $portal->sort_order,
         ];

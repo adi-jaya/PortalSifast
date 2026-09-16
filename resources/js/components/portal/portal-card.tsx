@@ -6,7 +6,7 @@ import {
     User,
     Users,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
@@ -26,6 +26,11 @@ export function PortalCard({
 }: PortalCardProps) {
     const [isLaunching, setIsLaunching] = useState(false);
     const [imageError, setImageError] = useState(false);
+    const [launchError, setLaunchError] = useState<string | null>(null);
+
+    useEffect(() => {
+        setImageError(false);
+    }, [portal.icon_url]);
 
     const handleLaunch = async () => {
         // Fallback: Jika ekstensi belum terpasang, langsung buka tab baru ke URL target
@@ -35,6 +40,7 @@ export function PortalCard({
         }
 
         setIsLaunching(true);
+        setLaunchError(null);
         try {
             const tokenMeta = document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement | null;
             const csrfToken = tokenMeta ? tokenMeta.content : '';
@@ -65,7 +71,10 @@ export function PortalCard({
         } catch (err: unknown) {
             // Bila terjadi galat dispatch, fallback tetap membuka portal di tab baru
             console.warn('[SIFAST Portal] Dispatch gagal, fallback ke direct tab:', err);
-            window.open(portal.url, '_blank', 'noopener,noreferrer');
+            const openedWindow = window.open(portal.url, '_blank', 'noopener,noreferrer');
+            if (!openedWindow) {
+                setLaunchError('Popup tab baru diblokir browser.');
+            }
         } finally {
             setTimeout(() => {
                 setIsLaunching(false);
@@ -214,6 +223,20 @@ export function PortalCard({
                     )}
                 </Button>
             </CardFooter>
+
+            {launchError && (
+                <div className="border-t border-amber-200 bg-amber-50 px-3 py-1.5 text-center text-[11px] text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/40 dark:text-amber-300">
+                    <span>{launchError} </span>
+                    <a
+                        href={portal.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-semibold underline hover:text-amber-950 dark:hover:text-amber-100"
+                    >
+                        Klik di sini untuk membuka
+                    </a>
+                </div>
+            )}
         </Card>
     );
 }

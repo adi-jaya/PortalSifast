@@ -46,9 +46,7 @@ export function useExtensionDetection(): ExtensionStatus {
         };
 
         // 1. Cek langsung dataset DOM
-        if (checkDataset()) {
-            return;
-        }
+        checkDataset();
 
         // 2. Handler event 'SIFAST_EXTENSION_READY' & 'SIFAST_PONG_EXTENSION'
         const handleExtensionSignal = (event: Event) => {
@@ -67,14 +65,38 @@ export function useExtensionDetection(): ExtensionStatus {
         window.addEventListener('SIFAST_EXTENSION_READY', handleExtensionSignal);
         window.addEventListener('SIFAST_PONG_EXTENSION', handleExtensionSignal);
 
-        // 3. Ping ekstensi secara aktif
+        // 3. Pasang MutationObserver untuk memantau perubahan atribut dataset secara dinamis
+        let observer: MutationObserver | null = null;
+        if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
+            observer = new MutationObserver(() => {
+                checkDataset();
+            });
+            observer.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['data-sifast-extension-installed', 'data-sifast-extension-version'],
+            });
+        }
+
+        // 4. Re-check saat window aktif/kembali fokus (misal setelah user memasang ekstensi di tab chrome://extensions)
+        const handleFocus = () => {
+            if (!checkDataset()) {
+                try {
+                    window.dispatchEvent(new CustomEvent('SIFAST_PING_EXTENSION'));
+                } catch {
+                    // Abaikan jika dispatch gagal
+                }
+            }
+        };
+        window.addEventListener('focus', handleFocus);
+
+        // 5. Ping ekstensi secara aktif
         try {
             window.dispatchEvent(new CustomEvent('SIFAST_PING_EXTENSION'));
         } catch {
             // Abaikan jika dispatch gagal di lingkungan non-browser
         }
 
-        // 4. Fallback timeout jika ekstensi tidak terpasang (berhenti checking setelah 500ms)
+        // 6. Fallback timeout jika ekstensi tidak terpasang (berhenti checking setelah 500ms)
         const timer = setTimeout(() => {
             if (isMounted) {
                 // Cek sekali lagi sebelum menyerah
@@ -90,6 +112,10 @@ export function useExtensionDetection(): ExtensionStatus {
         return () => {
             isMounted = false;
             clearTimeout(timer);
+            if (observer) {
+                observer.disconnect();
+            }
+            window.removeEventListener('focus', handleFocus);
             window.removeEventListener('SIFAST_EXTENSION_READY', handleExtensionSignal);
             window.removeEventListener('SIFAST_PONG_EXTENSION', handleExtensionSignal);
         };

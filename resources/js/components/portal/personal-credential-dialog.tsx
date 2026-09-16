@@ -65,6 +65,11 @@ export function PersonalCredentialDialog({
             return;
         }
 
+        if (!portal.has_personal_credential && !password.trim()) {
+            setErrorMessage('Password akun pribadi wajib diisi untuk konfigurasi awal.');
+            return;
+        }
+
         setIsLoading(true);
         setErrorMessage(null);
         setSuccessMessage(null);
@@ -161,7 +166,7 @@ export function PersonalCredentialDialog({
                         <div className="space-y-1.5">
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="personal_password" className="text-xs font-semibold">
-                                    Password Akun Pribadi
+                                    Password Akun Pribadi {!portal.has_personal_credential && <span className="text-rose-500">*</span>}
                                 </Label>
                                 {portal.has_personal_credential && (
                                     <span className="text-[11px] text-slate-500">
@@ -177,6 +182,7 @@ export function PersonalCredentialDialog({
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     disabled={isLoading}
+                                    required={!portal.has_personal_credential}
                                     className="h-9 pr-9 font-mono"
                                 />
                                 <button

@@ -114,6 +114,7 @@ it('uses explicit mapping credentials for admin if mapping exists', function ():
         'portal_id' => $portal->id,
         'credential_type' => 'personal',
         'personal_username' => 'admin_personal_user',
+        'personal_password' => 'AdminSecretPass123',
         'is_active' => true,
     ]);
 
@@ -209,4 +210,21 @@ it('returns unique, deduplicated, sorted list of categories for user portals', f
     $categories = $this->service->getCategoriesForUser($this->staff);
 
     expect($categories)->toBe(['Kemenkes', 'Mutu & Akreditasi']);
+});
+
+it('allows superadmin defined in config to access all active portals', function (): void {
+    config(['auth.superadmin_emails' => ['superadmin.portal@rsasf.co.id']]);
+
+    $superadmin = User::factory()->create([
+        'role' => 'staff',
+        'email' => 'superadmin.portal@rsasf.co.id',
+    ]);
+
+    Portal::factory()->create(['name' => 'Portal A', 'is_active' => true]);
+    Portal::factory()->create(['name' => 'Portal B Inactive', 'is_active' => false]);
+
+    $portals = $this->service->getUserPortals($superadmin);
+
+    expect($portals)->toHaveCount(1)
+        ->and($portals[0]['name'])->toBe('Portal A');
 });
