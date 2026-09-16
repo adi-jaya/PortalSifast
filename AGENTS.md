@@ -19,6 +19,10 @@ This file contains architectural guidelines, development commands, and critical 
 - **Tanpa `tailwind.config.js`**: Konfigurasi tema dan token visual ditulis murni di blok `@theme` pada [`resources/css/app.css`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/resources/css/app.css).
 - **Wajib gunakan helper `cn()`** dari [`resources/js/lib/utils.ts`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/PortalSifast/resources/js/lib/utils.ts) untuk class merging / conditional classes.
 
+### 3. Dual Database Connection (Khanza Read-Only)
+- Koneksi `simrs` (Khanza) bersifat **STRICTLY READ-ONLY**. Dilarang melakukan operasi write/insert/update/delete atau migration ke database Khanza.
+- Seluruh mutasi data dan pembuatan tabel baru HANYA diizinkan pada koneksi default `mysql` (Portal Sifast DB).
+
 ---
 
 ## 🛠️ Tech Stack Overview
@@ -65,3 +69,14 @@ php artisan wayfinder:generate # Regenerate type-safe route definitions
 - **Audit all branches:** Always check all active and remote branches using `git log --all --no-merges` to ensure no unmerged work or active feature branches are missed.
 - **Inspect actual code changes:** Verify file modifications using `git show --stat <commit_hash>` to determine true feature complexity rather than relying solely on commit message subjects.
 - **Cost Estimation & Value-Based Billing:** Scale feature pricing relative to the overall project baseline contract size. Acknowledge AI Agent efficiency while protecting developer margins based on delivered value.
+
+---
+
+## ✅ Definition of Done (Verification Checklist)
+
+Sebelum menandai pekerjaan selesai atau menyerahkan kode untuk review:
+1. **Navigasi Paritas**: `vendor/bin/pest tests/Feature/PortalNavParityTest.php` (lulus tanpa regresi).
+2. **Pengujian Domain**: `vendor/bin/pest --filter=<FeatureTest>` (lulus seluruh pengujian unit/feature terkait).
+3. **Kompilasi Frontend**: `npm run build` (lulus tanpa error kompilasi Vite/TypeScript).
+4. **Format & Gaya Kode**: `vendor/bin/pint --dirty` (untuk PHP) & `npm run format` (untuk frontend).
+5. **Route Wayfinder**: `php artisan wayfinder:generate` (jika menambahkan rute Laravel baru).
