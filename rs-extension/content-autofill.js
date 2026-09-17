@@ -160,9 +160,24 @@ function runHeuristicScanner(
     const passwordInputs = Array.from(
         root.querySelectorAll("input[type='password']"),
     );
-    if (passwordInputs.length > 0) {
-        passwordElement = passwordInputs[0];
-    }
+    const visiblePasswords = passwordInputs.filter((input) => {
+        if (input.disabled) return false;
+        if (
+            typeof input.getAttribute === 'function' &&
+            input.getAttribute('type') === 'hidden'
+        ) {
+            return false;
+        }
+        if (
+            input.style &&
+            (input.style.display === 'none' ||
+                input.style.visibility === 'hidden')
+        ) {
+            return false;
+        }
+        return true;
+    });
+    passwordElement = visiblePasswords[0] || passwordInputs[0] || null;
 
     // 2. Cari seluruh input di dalam scope dokumen/form
     const allInputs = Array.from(
@@ -437,7 +452,12 @@ function executeAutofill(
     if (Array.isArray(extraElements) && credentials.extra_fields) {
         for (const item of extraElements) {
             const extraVal = credentials.extra_fields[item.key];
-            if (extraVal && item.element) {
+            if (
+                extraVal !== undefined &&
+                extraVal !== null &&
+                String(extraVal).trim() !== '' &&
+                item.element
+            ) {
                 setNativeValue(item.element, String(extraVal));
                 filledCount++;
             }

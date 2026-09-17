@@ -167,4 +167,37 @@ test('Background Service Worker Credential Queue', async (t) => {
             assert.strictEqual(bg.getQueueSize(), 0);
         },
     );
+
+    await t.test(
+        'rejects portal launch if URL scheme is not http:// or https://',
+        async () => {
+            mockChrome._reset();
+            bg.initBackground();
+
+            const invalidUrls = [
+                'javascript:alert(1)',
+                'chrome://settings',
+                'file:///etc/passwd',
+                'data:text/html,<script>alert(1)</script>',
+                'ftp://ftp.example.com',
+            ];
+
+            for (const url of invalidUrls) {
+                const response = await mockChrome.runtime.onMessage._trigger({
+                    type: 'SIFAST_PORTAL_LAUNCH',
+                    payload: {
+                        portal: { id: 99, name: 'Invalid Scheme Portal', url },
+                        credentials: { username: 'user', password: 'pwd' },
+                    },
+                });
+
+                assert.strictEqual(response.success, false);
+                assert.strictEqual(
+                    response.error,
+                    'Invalid portal URL scheme. Must be http:// or https://',
+                );
+                assert.strictEqual(bg.getQueueSize(), 0);
+            }
+        },
+    );
 });

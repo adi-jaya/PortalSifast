@@ -115,6 +115,18 @@ export function initBackground() {
                     return false;
                 }
 
+                const portalUrl = String(payload.portal.url);
+                if (
+                    !portalUrl.startsWith('http://') &&
+                    !portalUrl.startsWith('https://')
+                ) {
+                    sendResponse({
+                        success: false,
+                        error: 'Invalid portal URL scheme. Must be http:// or https://',
+                    });
+                    return false;
+                }
+
                 chrome.tabs.create(
                     { url: payload.portal.url, active: true },
                     (tab) => {

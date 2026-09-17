@@ -46,6 +46,12 @@ test('Target Portal Autofill Engine (content-autofill.js)', async (t) => {
         set value(val) {
             this._value = val;
         }
+        get disabled() {
+            return !!this.attributes.disabled;
+        }
+        set disabled(val) {
+            this.attributes.disabled = val;
+        }
 
         getAttribute(name) {
             return this.attributes[name] || null;
@@ -654,6 +660,202 @@ test('Target Portal Autofill Engine (content-autofill.js)', async (t) => {
                     '&lt;img src=x onerror=alert(1)&gt;',
                 ),
                 'Escaped entity must be present in innerHTML',
+            );
+        },
+    );
+
+    await t.test(
+        'handles extra_fields with numeric 0 or "0" without dropping them',
+        () => {
+            const userInput = new MockElement('input', {
+                id: 'uname',
+                type: 'text',
+            });
+            const passInput = new MockElement('input', {
+                id: 'pwd',
+                type: 'password',
+            });
+            const zeroNumInput = new MockElement('input', {
+                id: 'zero_num',
+                type: 'text',
+            });
+            const zeroStrInput = new MockElement('input', {
+                id: 'zero_str',
+                type: 'text',
+            });
+            const emptyInput = new MockElement('input', {
+                id: 'empty_field',
+                type: 'text',
+            });
+            const nullInput = new MockElement('input', {
+                id: 'null_field',
+                type: 'text',
+            });
+
+            const root = {
+                querySelector(sel) {
+                    if (sel === '#uname') return userInput;
+                    if (sel === '#pwd') return passInput;
+                    if (sel === '#zero_num') return zeroNumInput;
+                    if (sel === '#zero_str') return zeroStrInput;
+                    if (sel === '#empty_field') return emptyInput;
+                    if (sel === '#null_field') return nullInput;
+                    return null;
+                },
+                querySelectorAll() {
+                    return [
+                        userInput,
+                        passInput,
+                        zeroNumInput,
+                        zeroStrInput,
+                        emptyInput,
+                        nullInput,
+                    ];
+                },
+            };
+
+            const payload = {
+                portal: {
+                    name: 'Test Portal Extra',
+                    form_config: {
+                        username_field: { selectors: ['#uname'] },
+                        password_field: { selectors: ['#pwd'] },
+                        extra_fields: [
+                            { key: 'zero_num', selectors: ['#zero_num'] },
+                            { key: 'zero_str', selectors: ['#zero_str'] },
+                            { key: 'empty_field', selectors: ['#empty_field'] },
+                            { key: 'null_field', selectors: ['#null_field'] },
+                        ],
+                    },
+                },
+                credentials: {
+                    username: 'admin',
+                    password: 'password123',
+                    extra_fields: {
+                        zero_num: 0,
+                        zero_str: '0',
+                        empty_field: '   ',
+                        null_field: null,
+                    },
+                },
+            };
+
+            const result = autofillEngine.executeAutofill(payload, root, {
+                showToast: false,
+            });
+            assert.strictEqual(result.success, true);
+            assert.strictEqual(
+                zeroNumInput.value,
+                '0',
+                'Numeric 0 must be filled',
+            );
+            assert.strictEqual(
+                zeroStrInput.value,
+                '0',
+                'String "0" must be filled',
+            );
+            assert.strictEqual(
+                emptyInput.value,
+                '',
+                'Whitespace-only field must not be filled',
+            );
+            assert.strictEqual(
+                nullInput.value,
+                '',
+                'Null field must not be filled',
+            );
+        },
+    );
+
+    await t.test(
+        'heuristic scanner filters out disabled, hidden, and invisible password inputs',
+        () => {
+            const disabledPass = new MockElement('input', {
+                type: 'password',
+                disabled: true,
+            });
+            const hiddenTypePass = new MockElement('input', {
+                type: 'password',
+            });
+            hiddenTypePass.setAttribute('type', 'hidden');
+
+            const displayNonePass = new MockElement('input', {
+                type: 'password',
+            });
+            displayNonePass.style.display = 'none';
+
+            const visibilityHiddenPass = new MockElement('input', {
+                type: 'password',
+            });
+            visibilityHiddenPass.style.visibility = 'hidden';
+
+            const visiblePass = new MockElement('input', {
+                type: 'password',
+                id: 'active_pass',
+            });
+            const backupPass = new MockElement('input', {
+                type: 'password',
+                id: 'backup_pass',
+            });
+
+            const allPasswordInputs = [
+                disabledPass,
+                hiddenTypePass,
+                displayNonePass,
+                visibilityHiddenPass,
+                visiblePass,
+                backupPass,
+            ];
+
+            const userInput = new MockElement('input', {
+                type: 'text',
+                name: 'username',
+            });
+
+            const root = {
+                querySelector() {
+                    return null;
+                },
+                querySelectorAll(sel) {
+                    if (sel.includes("type='password'")) {
+                        return allPasswordInputs;
+                    }
+                    if (sel === 'input, select, textarea') {
+                        return [userInput, ...allPasswordInputs];
+                    }
+                    return [];
+                },
+            };
+
+            const detected = autofillEngine.runHeuristicScanner(root);
+            assert.strictEqual(
+                detected.passwordElement,
+                visiblePass,
+                'Heuristic scanner must pick the first visible and enabled password input',
+            );
+
+            // Verify fallback when all passwords are hidden/disabled
+            const allHiddenRoot = {
+                querySelector() {
+                    return null;
+                },
+                querySelectorAll(sel) {
+                    if (sel.includes("type='password'")) {
+                        return [disabledPass, displayNonePass];
+                    }
+                    if (sel === 'input, select, textarea') {
+                        return [userInput, disabledPass, displayNonePass];
+                    }
+                    return [];
+                },
+            };
+
+            const fallbackDetected =
+                autofillEngine.runHeuristicScanner(allHiddenRoot);
+            assert.strictEqual(
+                fallbackDetected.passwordElement,
+                disabledPass,
+                'Must fall back to passwordInputs[0] if no visible password inputs exist',
             );
         },
     );
