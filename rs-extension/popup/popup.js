@@ -4,6 +4,19 @@
  */
 
 /**
+ * Meng-escape karakter khusus HTML untuk mencegah injeksi DOM (XSS).
+ */
+export function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
  * Menganalisis daftar elemen input untuk menentukan kandidat form login.
  */
 export function analyzePageInputs(inputs) {
@@ -11,12 +24,18 @@ export function analyzePageInputs(inputs) {
   let passwordCandidate = null;
   let captchaCandidate = null;
   const extraCandidates = [];
+  const ignoredTypes = ['hidden', 'submit', 'button', 'checkbox', 'radio', 'file', 'image', 'reset'];
 
   for (const el of inputs) {
     const type = (el.type || 'text').toLowerCase();
     const id = (el.id || '').toLowerCase();
     const name = (el.name || '').toLowerCase();
     const placeholder = (el.placeholder || '').toLowerCase();
+
+    // Abaikan input non-data seperti tombol, radio, checkbox, atau hidden token
+    if (ignoredTypes.includes(type)) {
+      continue;
+    }
 
     if (type === 'password' && !passwordCandidate) {
       passwordCandidate = el;
@@ -146,6 +165,12 @@ export function initPopup() {
             btnInspect.disabled = false;
             btnInspect.textContent = 'Scan Form Login Halaman Ini';
 
+            if (chrome.runtime && chrome.runtime.lastError) {
+              const errMsg = chrome.runtime.lastError.message || 'Halaman dibatasi atau tidak dapat diakses.';
+              alert(`Gagal memindai tab aktif: ${errMsg}`);
+              return;
+            }
+
             if (!results || !results[0] || !results[0].result) {
               alert('Gagal memindai tab aktif.');
               return;
@@ -157,11 +182,25 @@ export function initPopup() {
             const configJson = JSON.stringify(config, null, 2);
 
             if (summaryEl) {
+              const usernameText = escapeHtml(
+                analysis.usernameCandidate
+                  ? (analysis.usernameCandidate.id || analysis.usernameCandidate.name || 'Ditemukan')
+                  : 'Tidak terdeteksi'
+              );
+              const passwordText = escapeHtml(
+                analysis.passwordCandidate
+                  ? (analysis.passwordCandidate.id || analysis.passwordCandidate.name || 'Ditemukan')
+                  : 'Tidak terdeteksi'
+              );
+              const captchaText = escapeHtml(
+                analysis.captchaCandidate ? 'Terdeteksi (Manual Fokus)' : 'Tidak terdeteksi'
+              );
+
               summaryEl.innerHTML = `
                 <div><strong>Hasil Deteksi:</strong></div>
-                <div>Username: <code>${analysis.usernameCandidate ? (analysis.usernameCandidate.id || analysis.usernameCandidate.name || 'Ditemukan') : 'Tidak terdeteksi'}</code></div>
-                <div>Password: <code>${analysis.passwordCandidate ? (analysis.passwordCandidate.id || analysis.passwordCandidate.name || 'Ditemukan') : 'Tidak terdeteksi'}</code></div>
-                <div>CAPTCHA: <code>${analysis.captchaCandidate ? 'Terdeteksi (Manual Fokus)' : 'Tidak terdeteksi'}</code></div>
+                <div>Username: <code>${usernameText}</code></div>
+                <div>Password: <code>${passwordText}</code></div>
+                <div>CAPTCHA: <code>${captchaText}</code></div>
               `;
             }
 

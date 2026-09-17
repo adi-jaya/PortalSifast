@@ -67,6 +67,28 @@ test('Popup Admin Form Inspector Logic', async (t) => {
     assert.deepStrictEqual(emptyConfig.password_field.selectors, ["#password", "input[name='password']", "input[type='password']"]);
   });
 
+  await t.test('filters non-text input types like hidden, submit, button, checkbox', () => {
+    const inputs = [
+      new MockInput({ id: 'csrf_token', name: 'user_token', type: 'hidden', placeholder: '' }),
+      new MockInput({ id: 'remember_me', name: 'remember_user', type: 'checkbox', placeholder: '' }),
+      new MockInput({ id: 'btn_login', name: 'login_btn', type: 'submit', placeholder: '' }),
+      new MockInput({ id: 'real_username', name: 'identity', type: 'text', placeholder: 'Masukkan username' }),
+      new MockInput({ id: 'real_password', name: 'password', type: 'password', placeholder: 'Masukkan password' }),
+    ];
+
+    const inspection = popupModule.analyzePageInputs(inputs);
+    assert.strictEqual(inspection.usernameCandidate.id, 'real_username', 'Must not select hidden or checkbox as username');
+    assert.strictEqual(inspection.passwordCandidate.id, 'real_password');
+  });
+
+  await t.test('escapeHtml safely neutralizes HTML markup', () => {
+    const dangerous = `<script>alert('xss')</script>&"test"`;
+    const escaped = popupModule.escapeHtml(dangerous);
+    assert.strictEqual(escaped, '&lt;script&gt;alert(&#039;xss&#039;)&lt;/script&gt;&amp;&quot;test&quot;');
+    assert.strictEqual(popupModule.escapeHtml(''), '');
+    assert.strictEqual(popupModule.escapeHtml(null), '');
+  });
+
   await t.test('scanDomInTab extracts input fields from DOM document', () => {
     const originalDocument = globalThis.document;
     try {
@@ -91,7 +113,7 @@ test('Popup Admin Form Inspector Logic', async (t) => {
     }
   });
 
-  await t.test('initPopup attaches events and handles DOM inspection and copy flow', async () => {
+  await t.test('initPopup attaches events and handles DOM inspection and copy flow with sanitization', async () => {
     const originalChrome = globalThis.chrome;
     const originalDoc = globalThis.document;
 
@@ -151,7 +173,7 @@ test('Popup Admin Form Inspector Logic', async (t) => {
             callback([
               {
                 result: [
-                  { tagName: 'INPUT', id: 'txtEmail', name: 'user_login', type: 'text', placeholder: 'Username / Email' },
+                  { tagName: 'INPUT', id: '<img src=x onerror=1>', name: 'user_login', type: 'text', placeholder: 'Username / Email' },
                   { tagName: 'INPUT', id: 'txtPassword', name: 'user_password', type: 'password', placeholder: 'Password' },
                 ],
               },
@@ -172,8 +194,11 @@ test('Popup Admin Form Inspector Logic', async (t) => {
 
       // Verify results container is shown and JSON is generated
       assert.strictEqual(elements['inspector-results'].classList.contains('hidden'), false);
-      assert.ok(elements['json-code-block'].textContent.includes('txtEmail'));
+      assert.ok(elements['json-code-block'].textContent.includes('txtPassword'));
       assert.ok(elements['detected-summary'].innerHTML.includes('Hasil Deteksi:'));
+      // Verify malicious markup is escaped
+      assert.ok(elements['detected-summary'].innerHTML.includes('&lt;img src=x onerror=1&gt;'));
+      assert.strictEqual(elements['detected-summary'].innerHTML.includes('<img src=x onerror=1>'), false);
 
       // Simulate clicking copy button
       assert.ok(elements['btn-copy-json'].listeners['click']);
@@ -190,6 +215,61 @@ test('Popup Admin Form Inspector Logic', async (t) => {
       } else {
         delete globalThis.navigator.clipboard;
       }
+    }
+  });
+
+  await t.test('initPopup handles chrome.runtime.lastError when executeScript fails', () => {
+    const originalChrome = globalThis.chrome;
+    const originalDoc = globalThis.document;
+    const originalAlert = globalThis.alert;
+
+    let alertMsg = '';
+    globalThis.alert = (msg) => { alertMsg = msg; };
+
+    const elements = {
+      'active-tab-domain': { textContent: '' },
+      'btn-inspect-form': {
+        listeners: {},
+        disabled: false,
+        textContent: '',
+        addEventListener(event, fn) { this.listeners[event] = fn; },
+      },
+      'inspector-results': {
+        classList: { classes: new Set(['hidden']) },
+      },
+      'detected-summary': { innerHTML: '' },
+      'json-code-block': { textContent: '' },
+      'btn-copy-json': { listeners: {}, addEventListener() {} },
+    };
+
+    try {
+      globalThis.document = { getElementById: (id) => elements[id] || null };
+      globalThis.chrome = {
+        runtime: {
+          lastError: { message: 'Cannot access chrome:// page' },
+        },
+        tabs: {
+          query: (queryInfo, callback) => {
+            callback([{ id: 10, url: 'chrome://extensions' }]);
+          },
+        },
+        scripting: {
+          executeScript: (options, callback) => {
+            callback(undefined);
+          },
+        },
+      };
+
+      popupModule.initPopup();
+      elements['btn-inspect-form'].listeners['click']();
+
+      assert.ok(alertMsg.includes('Cannot access chrome:// page'));
+      assert.strictEqual(elements['btn-inspect-form'].disabled, false);
+      assert.strictEqual(elements['btn-inspect-form'].textContent, 'Scan Form Login Halaman Ini');
+    } finally {
+      globalThis.chrome = originalChrome;
+      globalThis.document = originalDoc;
+      globalThis.alert = originalAlert;
     }
   });
 });
