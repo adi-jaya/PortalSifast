@@ -1,7 +1,7 @@
-import { test } from 'node:test';
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
+import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -70,6 +70,7 @@ test('Manifest V3 validation', async (t) => {
     await t.test('service worker and content scripts are registered', () => {
         const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf-8'));
         assert.strictEqual(manifest.background.service_worker, 'background.js');
+        assert.strictEqual(manifest.background.type, 'module');
 
         assert.ok(
             Array.isArray(manifest.content_scripts),
