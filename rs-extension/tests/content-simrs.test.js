@@ -39,7 +39,13 @@ test('SIMRS Content Script Bridge (content-simrs.js)', async (t) => {
     global.CustomEvent = MockCustomEvent;
     global.chrome = mockChrome;
 
-    const simrsBridge = await import('../content-simrs.js');
+    await import('../content-simrs.js');
+    const simrsBridge = globalThis.__sifastSimrsBridge;
+
+    assert.ok(
+        simrsBridge,
+        'globalThis.__sifastSimrsBridge must be defined for tests',
+    );
 
     await t.test(
         'injects dataset attributes into document.documentElement',
@@ -109,6 +115,7 @@ test('SIMRS Content Script Bridge (content-simrs.js)', async (t) => {
         'relays SIFAST_PORTAL_LAUNCH event to background service worker',
         async () => {
             let messageSent = null;
+            mockChrome.runtime.lastError = null;
             mockChrome.runtime.sendMessage = (msg, cb) => {
                 messageSent = msg;
                 if (cb) cb({ success: true, tabId: 1005 });
@@ -175,6 +182,7 @@ test('SIMRS Content Script Bridge (content-simrs.js)', async (t) => {
     await t.test(
         'dispatches fallback ACK when background service worker returns empty response',
         () => {
+            mockChrome.runtime.lastError = null;
             mockChrome.runtime.sendMessage = (msg, cb) => {
                 if (cb) cb(null);
             };
@@ -202,6 +210,74 @@ test('SIMRS Content Script Bridge (content-simrs.js)', async (t) => {
                 ackEvent.detail.error,
                 'No response from extension background',
             );
+        },
+    );
+
+    await t.test(
+        'dispatches error ACK when chrome.runtime.lastError is present',
+        () => {
+            mockChrome.runtime.lastError = {
+                message:
+                    'Could not establish connection. Receiving end does not exist.',
+            };
+            mockChrome.runtime.sendMessage = (msg, cb) => {
+                if (cb) cb(null);
+            };
+
+            let ackEvent = null;
+            windowListeners.set('SIFAST_PORTAL_LAUNCH_ACK', [
+                (e) => {
+                    ackEvent = e;
+                },
+            ]);
+
+            simrsBridge.initSimrsBridge();
+            mockWindow.dispatchEvent(
+                new MockCustomEvent('SIFAST_PORTAL_LAUNCH', {
+                    detail: { portal: {} },
+                }),
+            );
+
+            assert.ok(ackEvent, 'ACK must be dispatched on lastError');
+            assert.strictEqual(ackEvent.detail.success, false);
+            assert.strictEqual(
+                ackEvent.detail.error,
+                'Could not establish connection. Receiving end does not exist.',
+            );
+            mockChrome.runtime.lastError = null;
+        },
+    );
+
+    await t.test(
+        'dispatches error ACK when chrome.runtime.sendMessage is unavailable or throws',
+        () => {
+            const originalSendMessage = mockChrome.runtime.sendMessage;
+            mockChrome.runtime.sendMessage = () => {
+                throw new Error('Extension context invalidated.');
+            };
+
+            let ackEvent = null;
+            windowListeners.set('SIFAST_PORTAL_LAUNCH_ACK', [
+                (e) => {
+                    ackEvent = e;
+                },
+            ]);
+
+            simrsBridge.initSimrsBridge();
+            mockWindow.dispatchEvent(
+                new MockCustomEvent('SIFAST_PORTAL_LAUNCH', {
+                    detail: { portal: {} },
+                }),
+            );
+
+            assert.ok(ackEvent, 'ACK must be dispatched on error throw');
+            assert.strictEqual(ackEvent.detail.success, false);
+            assert.strictEqual(
+                ackEvent.detail.error,
+                'Extension context invalidated.',
+            );
+
+            mockChrome.runtime.sendMessage = originalSendMessage;
         },
     );
 });

@@ -2,17 +2,19 @@
  * SIFAST Portal Autofill Extension - SIMRS Content Bridge
  *
  * Berjalan di domain SIMRS Sifast (run_at: document_start).
+ * Catatan: Dimuat sebagai Classic Script di browser Chrome (bukan ES Module).
  * 1. Menginjeksi dataset DOM agar React/Inertia dapat langsung mendeteksi ekstensi.
  * 2. Mengirim sinyal SIFAST_EXTENSION_READY dan merespons SIFAST_PING_EXTENSION.
  * 3. Menjembatani event SIFAST_PORTAL_LAUNCH dari halaman React ke Service Worker.
  */
 
 const EXTENSION_VERSION = '1.0.0';
+let bridgeInitialized = false;
 
 /**
  * Injeksi atribut dataset pada elemen <html>.
  */
-export function injectDomMarkers() {
+function injectDomMarkers() {
     if (typeof document !== 'undefined' && document.documentElement) {
         document.documentElement.dataset.sifastExtensionInstalled = 'true';
         document.documentElement.dataset.sifastExtensionVersion =
@@ -23,7 +25,7 @@ export function injectDomMarkers() {
 /**
  * Memancarkan event CustomEvent SIFAST_EXTENSION_READY ke window.
  */
-export function notifyExtensionReady() {
+function notifyExtensionReady() {
     if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
         window.dispatchEvent(
             new CustomEvent('SIFAST_EXTENSION_READY', {
@@ -39,11 +41,12 @@ export function notifyExtensionReady() {
 /**
  * Inisialisasi bridge komunikasi antara SIMRS dan ekstensi.
  */
-export function initSimrsBridge() {
+function initSimrsBridge() {
     injectDomMarkers();
     notifyExtensionReady();
 
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || bridgeInitialized) return;
+    bridgeInitialized = true;
 
     // Listener untuk navigasi SPA / Ping dari React
     window.addEventListener('SIFAST_PING_EXTENSION', () => {
@@ -69,30 +72,61 @@ export function initSimrsBridge() {
 
         const payload = event.detail;
 
-        if (
-            typeof chrome !== 'undefined' &&
-            chrome.runtime &&
-            chrome.runtime.sendMessage
-        ) {
-            chrome.runtime.sendMessage(
-                {
-                    type: 'SIFAST_PORTAL_LAUNCH',
-                    payload: payload,
-                },
-                (response) => {
-                    window.dispatchEvent(
-                        new CustomEvent('SIFAST_PORTAL_LAUNCH_ACK', {
-                            detail: response || {
-                                success: false,
-                                error: 'No response from extension background',
-                            },
-                        }),
-                    );
-                },
-            );
-        } else {
-            console.error(
-                '[SIFAST Bridge] chrome.runtime.sendMessage is not available',
+        try {
+            if (
+                typeof chrome !== 'undefined' &&
+                chrome.runtime &&
+                chrome.runtime.sendMessage
+            ) {
+                chrome.runtime.sendMessage(
+                    {
+                        type: 'SIFAST_PORTAL_LAUNCH',
+                        payload: payload,
+                    },
+                    (response) => {
+                        const lastError =
+                            chrome.runtime && chrome.runtime.lastError;
+                        const detail = lastError
+                            ? {
+                                  success: false,
+                                  error:
+                                      lastError.message ||
+                                      'Extension runtime error',
+                              }
+                            : response || {
+                                  success: false,
+                                  error: 'No response from extension background',
+                              };
+
+                        window.dispatchEvent(
+                            new CustomEvent('SIFAST_PORTAL_LAUNCH_ACK', {
+                                detail,
+                            }),
+                        );
+                    },
+                );
+            } else {
+                console.error(
+                    '[SIFAST Bridge] chrome.runtime.sendMessage is not available',
+                );
+                window.dispatchEvent(
+                    new CustomEvent('SIFAST_PORTAL_LAUNCH_ACK', {
+                        detail: {
+                            success: false,
+                            error: 'chrome.runtime.sendMessage is not available',
+                        },
+                    }),
+                );
+            }
+        } catch (err) {
+            console.error('[SIFAST Bridge] Failed to send message:', err);
+            window.dispatchEvent(
+                new CustomEvent('SIFAST_PORTAL_LAUNCH_ACK', {
+                    detail: {
+                        success: false,
+                        error: err && err.message ? err.message : String(err),
+                    },
+                }),
             );
         }
     });
@@ -112,4 +146,13 @@ if (typeof window !== 'undefined') {
     ) {
         document.addEventListener('DOMContentLoaded', injectDomMarkers);
     }
+}
+
+if (typeof globalThis !== 'undefined') {
+    globalThis.__sifastSimrsBridge = {
+        injectDomMarkers,
+        notifyExtensionReady,
+        initSimrsBridge,
+        EXTENSION_VERSION,
+    };
 }
