@@ -489,4 +489,172 @@ test('Target Portal Autofill Engine (content-autofill.js)', async (t) => {
             assert.strictEqual(result2.reason, 'NO_CREDENTIALS');
         },
     );
+
+    await t.test(
+        'retains credentials on initial SPA failed attempt and wipes only upon successful retry',
+        () => {
+            const emptyRoot = {
+                querySelector() {
+                    return null;
+                },
+                querySelectorAll() {
+                    return [];
+                },
+            };
+
+            const payload = {
+                portal: {
+                    name: 'SPA Portal',
+                    form_config: {
+                        username_field: { selectors: ['#username'] },
+                        password_field: { selectors: ['#password'] },
+                    },
+                },
+                credentials: {
+                    username: 'spa_user',
+                    password: 'spa_password123',
+                },
+            };
+
+            // Initial attempt when SPA form is not yet mounted in DOM
+            const initialResult = autofillEngine.executeAutofill(
+                payload,
+                emptyRoot,
+                { showToast: false },
+            );
+            assert.strictEqual(initialResult.success, false);
+            assert.ok(
+                payload.credentials !== null,
+                'Credentials must NOT be wiped if autofill could not find fields',
+            );
+            assert.strictEqual(payload.credentials.username, 'spa_user');
+
+            // DOM mounts inputs asynchronously
+            const userInput = new MockElement('input', { id: 'username' });
+            const passInput = new MockElement('input', { id: 'password' });
+            const mountedRoot = {
+                querySelector(sel) {
+                    if (sel === '#username') return userInput;
+                    if (sel === '#password') return passInput;
+                    return null;
+                },
+                querySelectorAll() {
+                    return [userInput, passInput];
+                },
+            };
+
+            // Retry attempt once SPA DOM has rendered
+            const retryResult = autofillEngine.executeAutofill(
+                payload,
+                mountedRoot,
+                { showToast: false },
+            );
+            assert.strictEqual(retryResult.success, true);
+            assert.strictEqual(userInput.value, 'spa_user');
+            assert.strictEqual(passInput.value, 'spa_password123');
+
+            // Must wipe credentials after successful fill
+            assert.strictEqual(
+                payload.credentials,
+                null,
+                'Credentials must be wiped once autofill succeeds',
+            );
+        },
+    );
+
+    await t.test(
+        'detectCaptcha avoids false positives on hospital codes (Kode Satker, Kode RS)',
+        () => {
+            const satkerInput = new MockElement('input', {
+                type: 'text',
+                id: 'satker_field',
+                placeholder: 'Kode Satker',
+            });
+            const rsInput = new MockElement('input', {
+                type: 'text',
+                id: 'rs_code',
+                placeholder: 'Kode RS',
+            });
+            const fasyankesInput = new MockElement('input', {
+                type: 'text',
+                id: 'faskes_code',
+                placeholder: 'Kode Fasyankes',
+            });
+
+            const nonCaptchaRoot = {
+                querySelectorAll() {
+                    return [satkerInput, rsInput, fasyankesInput];
+                },
+            };
+
+            assert.strictEqual(
+                autofillEngine.detectCaptcha(nonCaptchaRoot),
+                null,
+                'Hospital codes like Kode Satker or Kode RS must not be detected as CAPTCHA',
+            );
+
+            const validCaptchaInput = new MockElement('input', {
+                type: 'text',
+                id: 'verify_code',
+                placeholder: 'Kode Keamanan',
+            });
+            const validCaptchaRoot = {
+                querySelectorAll() {
+                    return [satkerInput, validCaptchaInput];
+                },
+            };
+
+            assert.strictEqual(
+                autofillEngine.detectCaptcha(validCaptchaRoot),
+                validCaptchaInput,
+                'Legitimate captcha inputs with Kode Keamanan must be detected',
+            );
+        },
+    );
+
+    await t.test(
+        'showAutofillToast escapes malicious HTML in portalName',
+        () => {
+            let appendedChild = null;
+
+            const mockBody = {
+                children: [],
+                appendChild(child) {
+                    appendedChild = child;
+                    child.parentElement = this;
+                    this.children.push(child);
+                    return child;
+                },
+            };
+
+            const mockDocument = {
+                body: mockBody,
+                createElement(tag) {
+                    const el = new MockElement(tag);
+                    return el;
+                },
+                getElementById(id) {
+                    if (id === 'sifast-autofill-toast') return appendedChild;
+                    return null;
+                },
+            };
+
+            global.document = mockDocument;
+
+            autofillEngine.showAutofillToast('<img src=x onerror=alert(1)>');
+            assert.ok(appendedChild, 'Toast must be created');
+            assert.ok(
+                !appendedChild.innerHTML.includes(
+                    '<img src=x onerror=alert(1)>',
+                ),
+                'Raw script/img HTML must not be injected into innerHTML',
+            );
+            assert.ok(
+                appendedChild.innerHTML.includes(
+                    '&lt;img src=x onerror=alert(1)&gt;',
+                ),
+                'Escaped entity must be present in innerHTML',
+            );
+        },
+    );
 });

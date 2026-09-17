@@ -253,6 +253,19 @@ function runHeuristicScanner(
 }
 
 /**
+ * Sanitasi string teks untuk mencegah HTML injection pada tampilan UI toast.
+ */
+function escapeHtml(str) {
+    if (typeof str !== 'string') return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+/**
  * Mendeteksi bidang input CAPTCHA jika ada pada halaman.
  */
 function detectCaptcha(
@@ -260,7 +273,9 @@ function detectCaptcha(
 ) {
     if (!root || typeof root.querySelectorAll !== 'function') return null;
 
+    const captchaCodeRegex = /kode\s*(keamanan|verifikasi|captcha|acak|unik)/i;
     const inputs = Array.from(root.querySelectorAll('input'));
+
     for (const input of inputs) {
         const type = (input.type || 'text').toLowerCase();
         if (type === 'hidden' || type === 'password' || type === 'submit')
@@ -277,8 +292,10 @@ function detectCaptcha(
             id.includes('captcha') ||
             name.includes('captcha') ||
             placeholder.includes('captcha') ||
-            placeholder.includes('kode') ||
-            className.includes('captcha')
+            className.includes('captcha') ||
+            captchaCodeRegex.test(placeholder) ||
+            captchaCodeRegex.test(name) ||
+            captchaCodeRegex.test(id)
         ) {
             return input;
         }
@@ -303,6 +320,8 @@ function showAutofillToast(portalName = 'Portal Pelaporan') {
             : null;
     if (existingToast && typeof existingToast.remove === 'function')
         existingToast.remove();
+
+    const safePortalName = escapeHtml(portalName);
 
     const toast = document.createElement('div');
     toast.id = 'sifast-autofill-toast';
@@ -335,8 +354,8 @@ function showAutofillToast(portalName = 'Portal Pelaporan') {
       </svg>
     </div>
     <div style="flex-grow: 1;">
-      <div style="font-weight: 600; font-size: 14px; margin-bottom: 2px; color: #a7f3d0;">
-        SIFAST Autofill: ${portalName}
+      <div id="sifast-toast-title" style="font-weight: 600; font-size: 14px; margin-bottom: 2px; color: #a7f3d0;">
+        SIFAST Autofill: ${safePortalName}
       </div>
       <div style="color: #ecfdf5;">
         Kredensial berhasil diisi otomatis. Silakan lengkapi <strong>CAPTCHA</strong> jika ada lalu klik tombol login.
@@ -346,6 +365,14 @@ function showAutofillToast(portalName = 'Portal Pelaporan') {
       &times;
     </button>
   `;
+
+    const titleEl =
+        typeof toast.querySelector === 'function'
+            ? toast.querySelector('#sifast-toast-title')
+            : null;
+    if (titleEl) {
+        titleEl.textContent = `SIFAST Autofill: ${portalName}`;
+    }
 
     document.body.appendChild(toast);
 
@@ -428,8 +455,11 @@ function executeAutofill(
         showAutofillToast(portal.name || 'Portal Pelaporan');
     }
 
-    // ZERO-PERSISTENCE MEMORY WIPE
-    payload.credentials = null;
+    // ZERO-PERSISTENCE MEMORY WIPE: Hanya bersihkan kredensial jika proses autofill berhasil mengisi form.
+    // Jika elemen form belum dimuat (SPA), simpan kredensial untuk percobaan berikutnya pada MutationObserver.
+    if (filledCount > 0) {
+        payload.credentials = null;
+    }
 
     return {
         success: filledCount > 0,
@@ -476,6 +506,7 @@ function initAutofill() {
             // Jika belum ditemukan (halaman SPA masih rendering DOM), pasang MutationObserver
             let observer = null;
             let timeoutId = null;
+            let fillScheduled = false;
 
             const tryFill = () => {
                 const retryResult = executeAutofill(payload, rootDoc, {
@@ -487,9 +518,18 @@ function initAutofill() {
                 }
             };
 
+            const scheduleFill = () => {
+                if (fillScheduled) return;
+                fillScheduled = true;
+                setTimeout(() => {
+                    fillScheduled = false;
+                    tryFill();
+                }, 100);
+            };
+
             if (typeof MutationObserver !== 'undefined' && rootDoc.body) {
                 observer = new MutationObserver(() => {
-                    tryFill();
+                    scheduleFill();
                 });
                 observer.observe(rootDoc.body, {
                     childList: true,
@@ -497,9 +537,10 @@ function initAutofill() {
                 });
             }
 
-            // Batasi durasi pengamatan SPA agar observer tidak menggantung
+            // Batasi durasi pengamatan SPA agar observer tidak menggantung dan bersihkan kredensial jika gagal
             timeoutId = setTimeout(() => {
                 if (observer) observer.disconnect();
+                if (payload) payload.credentials = null;
             }, waitTimeout);
         },
     );
@@ -530,5 +571,6 @@ if (typeof globalThis !== 'undefined') {
         showAutofillToast,
         executeAutofill,
         initAutofill,
+        escapeHtml,
     };
 }
