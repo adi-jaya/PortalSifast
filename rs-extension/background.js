@@ -156,6 +156,28 @@ export function initBackground() {
                     return false;
                 }
 
+                // Origin validation: verify sender tab origin matches target portal origin
+                const entry = pendingCredentials.get(tabId);
+                const portalUrl = entry?.portal?.url;
+                if (entry && sender.tab?.url && portalUrl) {
+                    try {
+                        const senderOrigin = new URL(sender.tab.url).origin;
+                        const targetOrigin = new URL(portalUrl).origin;
+                        if (senderOrigin !== targetOrigin) {
+                            console.warn(
+                                `[SIFAST Background] Origin mismatch for tabId ${tabId}: ${senderOrigin} !== ${targetOrigin}`,
+                            );
+                            sendResponse({
+                                success: false,
+                                reason: 'ORIGIN_MISMATCH',
+                            });
+                            return false;
+                        }
+                    } catch {
+                        // Ignore parse errors for non-standard test URLs
+                    }
+                }
+
                 const data = getAndFlushCredentials(tabId);
                 if (data) {
                     sendResponse({ success: true, payload: data });

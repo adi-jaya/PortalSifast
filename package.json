@@ -9,6 +9,7 @@
         "format": "prettier --write resources/",
         "format:check": "prettier --check resources/",
         "lint": "eslint . --fix",
+        "package:extension": "node rs-extension/scripts/package-extension.js",
         "test:extension": "node --test rs-extension/tests/*.test.js",
         "types": "tsc --noEmit"
     },

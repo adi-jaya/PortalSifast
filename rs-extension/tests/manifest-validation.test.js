@@ -31,7 +31,7 @@ test('Manifest V3 validation', async (t) => {
             );
             assert.deepStrictEqual(
                 manifest.permissions.sort(),
-                ['scripting', 'storage', 'tabs'].sort(),
+                ['activeTab', 'scripting', 'tabs'].sort(),
             );
 
             // Check host permissions include SIMRS domains and target agencies

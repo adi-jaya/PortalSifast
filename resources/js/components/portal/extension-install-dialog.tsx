@@ -1,4 +1,4 @@
-import { AlertCircle, Chrome, ShieldAlert } from 'lucide-react';
+import { AlertCircle, Chrome, Download, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -126,7 +126,20 @@ export function ExtensionInstallDialog({
                     </div>
                 </div>
 
-                <DialogFooter className="gap-2 sm:gap-0">
+                <DialogFooter className="gap-2 sm:gap-2">
+                    <a
+                        href="/downloads/sifast-autofill-extension.zip"
+                        download="sifast-autofill-extension.zip"
+                        className="w-full sm:w-auto"
+                    >
+                        <Button
+                            type="button"
+                            className="w-full bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600"
+                        >
+                            <Download className="mr-1.5 h-4 w-4" />
+                            Unduh Paket Ekstensi (.zip)
+                        </Button>
+                    </a>
                     <Button
                         type="button"
                         variant="outline"

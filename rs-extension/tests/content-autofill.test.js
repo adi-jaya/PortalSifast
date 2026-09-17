@@ -859,4 +859,86 @@ test('Target Portal Autofill Engine (content-autofill.js)', async (t) => {
             );
         },
     );
+
+    await t.test(
+        'setNativeValue traverses multi-level prototype inheritance to find value setter',
+        () => {
+            let capturedValue = '';
+            // Grandparent prototype with native setter
+            const GrandparentProto = {};
+            Object.defineProperty(GrandparentProto, 'value', {
+                set(val) {
+                    capturedValue = val;
+                },
+                get() {
+                    return capturedValue;
+                },
+                configurable: true,
+            });
+
+            // Parent prototype inheriting from Grandparent
+            const ParentProto = Object.create(GrandparentProto);
+
+            // Element instance inheriting from ParentProto
+            const element = Object.create(ParentProto);
+            element.value = '';
+            element.dispatchEvent = (event) => {
+                assert.ok(
+                    ['input', 'change', 'blur'].includes(event.type),
+                );
+            };
+
+            autofillEngine.setNativeValue(element, 'multi_level_secret');
+            assert.strictEqual(
+                capturedValue,
+                'multi_level_secret',
+                'Must traverse prototype chain to locate value setter in higher prototype',
+            );
+        },
+    );
+
+    await t.test(
+        'heuristic scanner respects modern checkVisibility() API',
+        () => {
+            const invisibleInput = {
+                type: 'text',
+                name: 'username',
+                disabled: false,
+                checkVisibility: () => false,
+            };
+            const visibleInput = {
+                type: 'text',
+                name: 'username_active',
+                disabled: false,
+                checkVisibility: () => true,
+            };
+            const passwordInput = {
+                type: 'password',
+                disabled: false,
+                checkVisibility: () => true,
+            };
+
+            const root = {
+                querySelector() {
+                    return null;
+                },
+                querySelectorAll(sel) {
+                    if (sel.includes("type='password'")) {
+                        return [passwordInput];
+                    }
+                    if (sel === 'input, select, textarea') {
+                        return [invisibleInput, visibleInput, passwordInput];
+                    }
+                    return [];
+                },
+            };
+
+            const detected = autofillEngine.runHeuristicScanner(root);
+            assert.strictEqual(
+                detected.usernameElement,
+                visibleInput,
+                'Must ignore inputs where checkVisibility() returns false',
+            );
+        },
+    );
 });

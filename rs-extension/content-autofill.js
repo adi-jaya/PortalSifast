@@ -22,11 +22,32 @@ function setNativeValue(element, value) {
     if (!element) return;
 
     const valueSetter = Object.getOwnPropertyDescriptor(element, 'value')?.set;
-    const prototype = Object.getPrototypeOf(element);
-    const prototypeValueSetter = Object.getOwnPropertyDescriptor(
-        prototype,
-        'value',
-    )?.set;
+    let prototype = Object.getPrototypeOf(element);
+    let prototypeValueSetter = null;
+
+    // Traverse prototype chain up to find native value setter (handles Web Components & framework HOCs)
+    while (prototype) {
+        const descriptor = Object.getOwnPropertyDescriptor(prototype, 'value');
+        if (descriptor && descriptor.set) {
+            prototypeValueSetter = descriptor.set;
+            break;
+        }
+        prototype = Object.getPrototypeOf(prototype);
+    }
+
+    if (
+        !prototypeValueSetter &&
+        typeof window !== 'undefined' &&
+        window.HTMLInputElement
+    ) {
+        const descriptor = Object.getOwnPropertyDescriptor(
+            window.HTMLInputElement.prototype,
+            'value',
+        );
+        if (descriptor && descriptor.set) {
+            prototypeValueSetter = descriptor.set;
+        }
+    }
 
     if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
         prototypeValueSetter.call(element, value);
@@ -156,27 +177,33 @@ function runHeuristicScanner(
     let passwordElement = null;
     let usernameElement = null;
 
-    // 1. Cari input bertipe password
-    const passwordInputs = Array.from(
-        root.querySelectorAll("input[type='password']"),
-    );
-    const visiblePasswords = passwordInputs.filter((input) => {
-        if (input.disabled) return false;
+    const isElementVisible = (el) => {
+        if (!el) return false;
+        if (el.disabled) return false;
         if (
-            typeof input.getAttribute === 'function' &&
-            input.getAttribute('type') === 'hidden'
+            typeof el.getAttribute === 'function' &&
+            el.getAttribute('type') === 'hidden'
         ) {
             return false;
         }
+        if (el.hidden) return false;
+        if (typeof el.checkVisibility === 'function' && !el.checkVisibility()) {
+            return false;
+        }
         if (
-            input.style &&
-            (input.style.display === 'none' ||
-                input.style.visibility === 'hidden')
+            el.style &&
+            (el.style.display === 'none' || el.style.visibility === 'hidden')
         ) {
             return false;
         }
         return true;
-    });
+    };
+
+    // 1. Cari input bertipe password
+    const passwordInputs = Array.from(
+        root.querySelectorAll("input[type='password']"),
+    );
+    const visiblePasswords = passwordInputs.filter(isElementVisible);
     passwordElement = visiblePasswords[0] || passwordInputs[0] || null;
 
     // 2. Cari seluruh input di dalam scope dokumen/form
@@ -195,6 +222,9 @@ function runHeuristicScanner(
             type === 'checkbox' ||
             type === 'radio'
         ) {
+            continue;
+        }
+        if (!isElementVisible(input)) {
             continue;
         }
 

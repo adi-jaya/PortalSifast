@@ -200,4 +200,46 @@ test('Background Service Worker Credential Queue', async (t) => {
             }
         },
     );
+
+    await t.test(
+        'rejects credential retrieval if sender tab origin does not match queued portal origin',
+        async () => {
+            mockChrome._reset();
+            bg.initBackground();
+
+            const launchPayload = {
+                portal: {
+                    id: 1,
+                    name: 'Target Portal',
+                    url: 'https://jatim.sitb.id/sitb2024/app',
+                },
+                credentials: {
+                    username: 'admin',
+                    password: 'secret',
+                },
+            };
+
+            const launchRes = await mockChrome.runtime.onMessage._trigger({
+                type: 'SIFAST_PORTAL_LAUNCH',
+                payload: launchPayload,
+            });
+            const targetTabId = launchRes.tabId;
+
+            // Simulate malicious content script from a different origin attempting to fetch credentials
+            const fetchRes = await mockChrome.runtime.onMessage._trigger(
+                { type: 'SIFAST_GET_CREDENTIALS' },
+                {
+                    tab: {
+                        id: targetTabId,
+                        url: 'https://evil-phishing-portal.com/login',
+                    },
+                },
+            );
+
+            assert.strictEqual(fetchRes.success, false);
+            assert.strictEqual(fetchRes.reason, 'ORIGIN_MISMATCH');
+            // Pending credentials should NOT be flushed to the malicious sender
+            assert.strictEqual(bg.getQueueSize(), 1);
+        },
+    );
 });
