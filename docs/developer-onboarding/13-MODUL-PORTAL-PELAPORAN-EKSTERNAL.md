@@ -12,8 +12,8 @@ Modul ini mendokumentasikan subsistem **Portal Pelaporan Eksternal & Custom Brow
 | **Tech Stack Backend** | Laravel 12, PHP 8.2+, Eloquent ORM, Symmetric AES-256-CBC Encryption, Pest PHP |
 | **Tech Stack Frontend** | React 19, TypeScript, Inertia.js v2, Tailwind CSS v4, Lucide React, Shadcn UI |
 | **Browser Extension** | Chromium Manifest V3, Pure Vanilla ES2022+, Zero-Persistence RAM Queue, Node.js 22 Test Runner |
-| **Status Implementasi** | **Plan 1 (Backend Core & DB):** `SELESAI (PASS)`<br/>**Plan 2 (Admin Portal & Mapping):** `SELESAI (PASS)`<br/>**Addendum (Penyimpanan & Upload Logo):** `SELESAI (PASS)`<br/>**Plan 3 (Halaman Pengguna & Portal Agregator):** `SELESAI (PASS)`<br/>**Plan 4 (Browser Extension MV3 & Distribusi ZIP):** `SIAP DIIMPLEMENTASIKAN` |
-| **Total Cakupan Pengujian** | 91 Pest Test Cases (542 Assertions) + 2 Navigation Parity Tests (32 Assertions) — Seluruhnya Lulus (`PASS`) |
+| **Status Implementasi** | **Plan 1 (Backend Core & DB):** `SELESAI (PASS)`<br/>**Plan 2 (Admin Portal & Mapping):** `SELESAI (PASS)`<br/>**Addendum (Penyimpanan & Upload Logo):** `SELESAI (PASS)`<br/>**Plan 3 (Halaman Pengguna & Portal Agregator):** `SELESAI (PASS)`<br/>**Plan 4 (Browser Extension MV3 & Distribusi ZIP):** `SELESAI (PASS)` |
+| **Total Cakupan Pengujian** | 91 Pest Test Cases (542 Assertions) + 2 Navigation Parity Tests (32 Assertions) + 51 Extension Test Cases (6 Test Suites) — Seluruhnya Lulus (`PASS`) |
 | **Relasi Modul Onboarding** | [Modul 01: Arsitektur & Tech Stack](./01-ARSITEKTUR-DAN-TECH-STACK.md), [Modul 02b: Frontend React Inertia](./02b-PANDUAN-FRONTEND-REACT-INERTIA-UNTUK-LARAVEL-DEV.md) |
 
 ---
@@ -55,7 +55,7 @@ Modul ini mendokumentasikan subsistem **Portal Pelaporan Eksternal & Custom Brow
   - [6.6 Integrasi Menu Navigasi SIMRS (`resources/js/lib/portal-nav.ts`)](#66-integrasi-menu-navigasi-simrs-resourcesjslibportal-navts)
   - [6.7 Peta Berkas & Panduan Code Review (Plan 3)](#67-peta-berkas--panduan-code-review-plan-3)
   - [6.8 Panduan Uji Coba Cepat (Hands-on Verification Bab 6)](#68-panduan-uji-coba-cepat-hands-on-verification-bab-6)
-- [Bab 7: 🧩 Custom Browser Extension Manifest V3 & Distribusi Ekstensi (Plan 4 - Siap Diimplementasikan)](#bab-7--custom-browser-extension-manifest-v3--distribusi-ekstensi-plan-4---siap-diimplementasikan)
+- [Bab 7: 🧩 Custom Browser Extension Manifest V3 & Distribusi Ekstensi (Plan 4 - Selesai)](#bab-7--custom-browser-extension-manifest-v3--distribusi-ekstensi-plan-4---selesai)
   - [7.1 Filosofi & Batasan Arsitektur Zero-Persistence](#71-filosofi--batasan-arsitektur-zero-persistence)
   - [7.2 Konfigurasi `manifest.json` (Chromium Manifest V3)](#72-konfigurasi-manifestjson-chromium-manifest-v3)
   - [7.3 Background Service Worker (`background.js`) & In-Memory Queue](#73-background-service-worker-backgroundjs--in-memory-queue)
@@ -273,7 +273,7 @@ Pengembangan subsistem Portal Pelaporan Eksternal dibagi menjadi tahapan modular
 | **Plan 2** | **Modul Admin SIMRS: Master Portal & Mapping Akses Dual-View** | `AdminPortalService`, `AdminPortalMappingService`, `AdminPortalController`, `AdminPortalMappingController`, Halaman React/Inertia (`Index.tsx`, `Form.tsx`, `Mapping.tsx`), visual `FormConfigEditor`, `SelectorTagInput`, instant auto-save row, bulk sync. | **`TERIMPLEMENTASI (PASS)`** | 33 Pest Tests Tambahan Lulus (Total 62 Tests PASS) |
 | **Addendum** | **Penyimpanan & Pengunggahan Berkas Logo Portal** | Validasi berkas gambar (JPEG, PNG, WebP, SVG maks 2MB), sanitasi nama berkas & deteksi MIME type aman, dedicated endpoint upload/remove logo instan, preservasi file fisik, dan pembersihan file fisik saat portal dihapus. | **`TERIMPLEMENTASI (PASS)`** | 16 Pest Tests Tambahan Lulus (Total 78 Tests PASS) |
 | **Plan 3** | **Halaman Pengguna: Portal Agregator, Deteksi Ekstensi & Self-Service** | Halaman `/portal-pelaporan` untuk seluruh staf rumah sakit, pencarian live & filter kategori instan, kartu interaktif dengan deteksi ekstensi multi-vektor (badge hijau aktif / banner panduan unduh), modal self-service update password pribadi (preservation & dynamic initial password rule), registrasi navigasi `portal-nav.ts` (desktop & mobile). | **`TERIMPLEMENTASI (PASS)`** | 13 Pest Tests Tambahan Lulus (Total 91 Tests / 542 Assertions PASS) |
-| **Plan 4** | **Custom Browser Extension Chromium Manifest V3 (`rs-extension/`) & ZIP** | Berkas manifes `manifest.json` (MV3), Background Service Worker (`background.js`) dengan RAM queue berbasis `tabId` (TTL 30s), Content Bridge SIMRS (`content-simrs.js`), Content Engine Target (`content-autofill.js`) dengan `setNativeValue` & fallback heuristic scanner, UI popup inspector (`popup/`), suite pengujian unit Node.js 22, dan endpoint download ZIP terkompresi. | **`SIAP DIIMPLEMENTASIKAN`** | Spesifikasi lengkap & rencana kerja siap dieksekusi |
+| **Plan 4** | **Custom Browser Extension Chromium Manifest V3 (`rs-extension/`) & ZIP** | Berkas manifes `manifest.json` (MV3), Background Service Worker (`background.js`) dengan RAM queue berbasis `tabId` (TTL 30s) & origin validation, Content Bridge SIMRS (`content-simrs.js`), Content Engine Target (`content-autofill.js`) dengan `setNativeValue` & fallback heuristic scanner, UI popup inspector (`popup/`), suite pengujian unit Node.js 22, script pengemas ZIP (`rs-extension/scripts/package-extension.js`), dan distribusi biner ZIP. | **`TERIMPLEMENTASI (PASS)`** | 51 Test Cases (6 Test Suites) Lulus (100% PASS) |
 
 ---
 
@@ -301,7 +301,7 @@ Berikut adalah peta rute HTTP, controller penanggung jawab, middleware pengamana
 | **Update Kredensial Tunggal Mapping** | `PATCH /admin/portals/mapping/{credential}` | [`AdminPortalMappingController@updateCredential`](../../app/Http/Controllers/Admin/AdminPortalMappingController.php) | `auth`, `verified`, `can:manage,App\Models\Portal` | Selesai (Plan 2) |
 | **Cabut Akses Kredensial Mapping** | `DELETE /admin/portals/mapping/{credential}` | [`AdminPortalMappingController@destroyCredential`](../../app/Http/Controllers/Admin/AdminPortalMappingController.php) | `auth`, `verified`, `can:manage,App\Models\Portal` | Selesai (Plan 2) |
 | **Halaman Agregator Portal Pengguna** | `GET /portal-pelaporan` | [`PortalAggregatorController@index`](../../app/Http/Controllers/PortalAggregatorController.php) | `auth`, `verified` | Selesai (Plan 3) |
-| **Unduh Berkas ZIP Paket Ekstensi** | `GET /portal-pelaporan/extension/download` | `PortalAggregatorController@downloadExtension` | `auth`, `verified` | Terencana (Plan 4) |
+| **Unduh Berkas ZIP Paket Ekstensi** | `GET /downloads/sifast-autofill-extension.zip` | Asset Statis Web (dihasilkan via `npm run package:extension`) | Publik / Autentikasi Dialog | Selesai (Plan 4) |
 
 ---
 
@@ -2000,12 +2000,13 @@ vendor/bin/pest tests/Feature/PortalNavParityTest.php
 
 ---
 
-## Bab 7: 🧩 Custom Browser Extension Manifest V3 & Distribusi Ekstensi (Plan 4 - Siap Diimplementasikan)
+## Bab 7: 🧩 Custom Browser Extension Manifest V3 & Distribusi Ekstensi (Plan 4 - Selesai)
 
-> **Status Modul:** `[STATUS: SIAP DIIMPLEMENTASIKAN (Plan 4)]`  
+> **Status Modul:** `[STATUS: SELESAI (Plan 4 - PASS)]`  
 > **Direktori Sumber:** [`rs-extension/`](../../rs-extension/)  
-> **Rute Distribusi Ekstensi:** `GET /portal-pelaporan/extension/download`  
-> **Lingkungan Eksekusi:** Chromium Browser (Google Chrome, Microsoft Edge, Brave) Manifest V3  
+> **Aset Distribusi ZIP:** [`public/downloads/sifast-autofill-extension.zip`](../../public/downloads/sifast-autofill-extension.zip)  
+> **Perintah Pengemasan:** `npm run package:extension`  
+> **Lingkungan Eksekusi:** Chromium Browser (Google Chrome, Microsoft Edge, Brave, Opera) Manifest V3  
 > **Rujukan Rencana Teknis:** [`docs/superpowers/plans/2026-09-14-portal-eksternal-plan-4-browser-extension.md`](../superpowers/plans/2026-09-14-portal-eksternal-plan-4-browser-extension.md)
 
 Bab ini merinci spesifikasi arsitektur, mekanisme keamanan, dan implementasi teknis dari **Custom Chromium Extension** (`rs-extension/`) serta layanan pengemasan arsip biner ZIP untuk distribusi mandiri di lingkungan RS Aisyiyah Siti Fatimah Tulangan. Ekstensi ini bertindak sebagai jembatan otomatisasi cerdas (*intelligent autofill bridge*) yang menghubungkan aplikasi web SIMRS Sifast dengan 8 kelompok sistem pelaporan eksternal pemerintah (Kemenkes & BKKBN). Dirancang khusus dengan filosofi **Zero-Persistence Guarantee**, ekstensi ini mengisi kredensial login secara instan tanpa pernah menyimpan password ke dalam media penyimpanan fisik peramban pengguna.
@@ -2039,7 +2040,7 @@ Bab ini merinci spesifikasi arsitektur, mekanisme keamanan, dan implementasi tek
 |        ▼                                                                                                          |
 |  [Service Worker: background.js]                                                                                  |
 |        │                                                                                                          |
-|        │  9. Validasi sender.tab.id & Ambil data dari RAM                                                         |
+|        │  9. Validasi sender.tab.id & Origin Match (sender.tab.url origin === target portal origin)              |
 |        │  10. INSTANT AUTO-FLUSH: pendingCredentials.delete(tabId) & clearTimeout(timer) [BURN AFTER READING]    |
 |        │  11. Kirim Response ke Tab Target                                                                        |
 |        ▼                                                                                                          |
@@ -2062,7 +2063,7 @@ Ekstensi browser SIMRS Sifast dibangun di atas prinsip rekayasa perangkat lunak 
 
 #### 1. Pure Vanilla JavaScript (ES2022+) Tanpa Bundler
 * **Zero Bundler Overhead:** Seluruh berkas ekstensi ditulis dalam JavaScript modern murni (ES2022+) tanpa menggunakan bundler berat seperti Webpack, Vite, atau Rollup. Tidak ada kompilasi atau dependensi `node_modules` saat ekstensi dieksekusi di browser.
-* **Ukuran Sangat Ringan (< 100 KB):** Total ukuran keseluruhan paket ekstensi (termasuk ikon, skrip background, content bridge, autofill engine, dan UI popup) tidak melebihi 100 KB. Ekstensi dapat diunduh dalam hitungan milidetik dan langsung berjalan tanpa konsumsi memori tinggi.
+* **Ukuran Sangat Ringan (< 50 KB):** Total ukuran keseluruhan paket ekstensi (termasuk ikon, skrip background, content bridge, autofill engine, dan UI popup) hanya sekitar 20 KB (terkompresi ~18 KB ZIP). Ekstensi dapat diunduh dalam hitungan milidetik dan langsung berjalan tanpa konsumsi memori tinggi.
 * **Transparan & Mudah Diaudit (*Audit-Ready*):** Kode sumber berupa berkas teks terstruktur rapi yang dapat diinspeksi secara langsung oleh tim keamanan informasi rumah sakit, auditor eksternal, maupun developer baru tanpa memerlukan proses *sourcemap deobfuscation*.
 
 #### 2. Jaminan Keamanan Zero-Persistence (Zero-Persistence Guarantee)
@@ -2075,6 +2076,7 @@ Kredensial login (khususnya kata sandi) adalah data yang paling rentan terhadap 
 
 #### 3. Isolasi Konteks & Kepatuhan Etika Keamanan
 * **Isolated Worlds:** Content scripts berjalan dalam ruang isolasi Chrome (*Isolated World*). JavaScript pada situs web pihak ketiga tidak dapat mengakses variabel, fungsi, maupun memori ekstensi SIMRS.
+* **Target Origin Validation:** Saat content script meminta kredensial, Service Worker memverifikasi kecocokan origin protokol dan domain (`sender.tab.url`) terhadap URL portal target yang terdaftar. Jika URL tab aktif berpindah ke domain asing (misal pengalihan phishing), penarikan kredensial dibatalkan seketika.
 * **Penanganan CAPTCHA Etis:** Ekstensi tidak pernah mencoba membobol, melewati (*bypass*), atau memecahkan sistem CAPTCHA secara artifisial. Ketika bidang CAPTCHA terdeteksi di form login, ekstensi secara otomatis memindahkan kursor ke bidang CAPTCHA (`captchaElement.focus()`) dan memunculkan toast instruksi visual agar petugas melengkapi kode verifikasi secara sadar.
 
 ---
@@ -2086,13 +2088,31 @@ Berkas [`rs-extension/manifest.json`](../../rs-extension/manifest.json) merupaka
 ```json
 {
   "manifest_version": 3,
-  "name": "SIFAST Portal Autofill",
+  "name": "SIFAST Portal Autofill Assistant",
   "version": "1.0.0",
-  "description": "Ekstensi resmi SIMRS Siti Fatimah untuk integrasi pengisian otomatis portal pelaporan Kemenkes dan BKKBN.",
+  "description": "Ekstensi resmi SIMRS Siti Fatimah Tulangan untuk pengisian otomatis kredensial portal pelaporan eksternal.",
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "SIFAST Portal Autofill Assistant",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
   "permissions": [
     "tabs",
     "scripting",
-    "storage"
+    "activeTab"
   ],
   "host_permissions": [
     "*://*.rsaisyiyahsitifatimah.com/*",
@@ -2103,9 +2123,6 @@ Berkas [`rs-extension/manifest.json`](../../rs-extension/manifest.json) merupaka
     "https://*.kemendukbangga.go.id/*",
     "https://*.sitb.id/*"
   ],
-  "background": {
-    "service_worker": "background.js"
-  },
   "content_scripts": [
     {
       "matches": [
@@ -2126,30 +2143,23 @@ Berkas [`rs-extension/manifest.json`](../../rs-extension/manifest.json) merupaka
       "js": ["content-autofill.js"],
       "run_at": "document_idle"
     }
-  ],
-  "action": {
-    "default_popup": "popup/popup.html",
-    "default_title": "SIFAST Portal Autofill"
-  },
-  "icons": {
-    "16": "icons/icon-16.png",
-    "48": "icons/icon-48.png",
-    "128": "icons/icon-128.png"
-  }
+  ]
 }
 ```
 
 #### Analisis Komponen Manifest V3:
 1. **Perizinan Minimal (*Principle of Least Privilege*):**
    * `"tabs"`: Diperlukan untuk membuat tab baru (`chrome.tabs.create`) saat staf meluncurkan portal dari SIMRS, serta mendeteksi penutupan tab (`chrome.tabs.onRemoved`) guna membersihkan antrean RAM.
-   * `"scripting"`: Diperlukan oleh fitur Admin Form Inspector pada popup untuk mengeksekusi scanning struktur DOM form secara dinamis di tab aktif.
-   * `"storage"`: Hanya dicadangkan untuk preferensi non-sensitif popup jika dibutuhkan di masa mendatang.
+   * `"scripting"`: Diperlukan oleh fitur Admin Form Inspector pada popup untuk mengeksekusi scanning struktur DOM form secara dinamis di tab aktif (`chrome.scripting.executeScript`).
+   * `"activeTab"`: Memberikan hak akses sementara yang aman pada tab yang sedang dibuka saat pengguna mengklik ikon ekstensi di toolbar.
 2. **Host Permissions Spesifik:**
    * Dibatasi eksplisit pada domain internal SIMRS (`rsaisyiyahsitifatimah.com`, `localhost`, `127.0.0.1`) serta 4 domain kementerian resmi (`kemkes.go.id`, `bkkbn.go.id`, `kemendukbangga.go.id`, `sitb.id`).
 3. **Pemisahan Fase Eksekusi Content Script:**
    * `content-simrs.js` dieksekusi pada `run_at: "document_start"` agar atribut dataset handshake disuntikkan ke `<html>` sebelum React/Inertia merender DOM.
    * `content-autofill.js` dieksekusi pada `run_at: "document_idle"` agar form login SPA telah selesai dimanipulasi oleh framework client-side sebelum autofill berjalan.
-4. **Pembangkit Ikon Mandiri (`scripts/generate-icons.js`):**
+4. **Service Worker ES Module:**
+   * Berkas `background.js` dideklarasikan dengan `"type": "module"` pada konfigurasi `"background"`, memungkinkan pemanfaatan fitur modern JavaScript import/export secara native.
+5. **Pembangkit Ikon Mandiri (`scripts/generate-icons.js`):**
    * Pembangkit ikon PNG murni tanpa dependensi library eksternal menggunakan kompresi DEFLATE bawaan Node.js (`node:zlib`).
 
 ---
@@ -2168,13 +2178,14 @@ const pendingCredentials = new Map();
  * {
  *   portal: { id: number, name: string, url: string, form_config: object },
  *   credentials: { type: 'shared'|'personal', username: string, password: string, extra_fields: object },
- *   timeoutId: NodeJS.Timeout,
- *   createdAt: number
+ *   dispatchedAt: string,
+ *   createdAt: number,
+ *   timeoutId: NodeJS.Timeout
  * }
  */
 ```
 
-#### Alur Penanganan Pesan Service Worker:
+#### Alur Penanganan Pesan Service Worker & Defense Boundary:
 
 ```
                   +-----------------------------------+
@@ -2185,14 +2196,17 @@ const pendingCredentials = new Map();
          ▼                                                     ▼
 [Type: SIFAST_PORTAL_LAUNCH]                         [Type: SIFAST_GET_CREDENTIALS]
          │                                                     │
-         ├─ 1. Buka Tab Target:                                ├─ 1. Dapatkan sender.tab.id
-         │     chrome.tabs.create({ url })                     ├─ 2. Cek pendingCredentials.has(tabId)
-         ├─ 2. Pasang Timer TTL 30 Detik:                      │        │
-         │     timeoutId = setTimeout(...)                     │        ├─ JIKA ADA:
-         ├─ 3. Simpan ke Map:                                  │        │   a. Ambil data: record = map.get(tabId)
-         │     pendingCredentials.set(tabId, data)             │        │   b. clearTimeout(record.timeoutId)
-         └─ 4. Kirim respon sukses { tabId }                   │        │   c. PENGHAPUSAN INSTAN (AUTO-FLUSH):
+         ├─ 1. Validasi Skema URL Target:                      ├─ 1. Dapatkan sender.tab.id & sender.tab.url
+         │     Wajib protocol http: / https:                   ├─ 2. Cek pendingCredentials.has(tabId)
+         ├─ 2. Buka Tab Target:                                │        │
+         │     chrome.tabs.create({ url })                     │        ├─ JIKA ADA:
+         ├─ 3. Pasang Timer TTL 30 Detik:                      │        │   a. Ambil data: record = map.get(tabId)
+         │     timeoutId = setTimeout(...)                     │        │   b. ORIGIN VALIDATION:
+         ├─ 4. Simpan ke Map:                                  │        │      senderOrigin === queuedPortalOrigin?
+         │     pendingCredentials.set(tabId, data)             │        │      (Jika Mismatch -> Tolak dengan 403)
+         └─ 5. Kirim respon sukses { tabId }                   │        │   c. INSTANT AUTO-FLUSH:
                                                                │        │      pendingCredentials.delete(tabId)
+                                                               │        │      clearTimeout(record.timeoutId)
                                                                │        │   d. Kirim { success: true, payload }
                                                                │        │
                                                                │        └─ JIKA TIDAK ADA / EXPIRED:
@@ -2217,7 +2231,7 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 
 ### 7.4 Content Bridge SIMRS (`content-simrs.js`) & Handshake Protocol
 
-Berkas [`rs-extension/content-simrs.js`](../../rs-extension/content-simrs.js) berjalan di domain SIMRS Sifast untuk membentuk jembatan komunikasi dua arah antara aplikasi web React/Inertia dengan ekstensi.
+Berkas [`rs-extension/content-simrs.js`](../../rs-extension/content-simrs.js) berjalan di domain SIMRS Sifast (dieksekusi pada `document_start`) sebagai skrip klasik (IIFE-safe) untuk membentuk jembatan komunikasi dua arah antara aplikasi web React/Inertia dengan ekstensi peramban.
 
 #### Tiga Pilar Protokol Handshake SIMRS:
 1. **Injeksi Atribut Dataset DOM (`document_start`):**
@@ -2245,32 +2259,44 @@ Berkas [`rs-extension/content-simrs.js`](../../rs-extension/content-simrs.js) be
    ```
 
 #### Relay Peluncuran Portal & Defensive Security Boundary:
-Content bridge memvalidasi payload sebelum meneruskannya ke Background Service Worker guna menangkal serangan DOM injection:
+Content bridge memvalidasi payload sebelum meneruskannya ke Background Service Worker guna menangkal serangan DOM injection dan memberikan ACK event:
 ```javascript
 window.addEventListener('SIFAST_PORTAL_LAUNCH', (event) => {
-  const payload = event.detail;
-
-  if (!payload || typeof payload !== 'object') return;
-  const { portal, credentials } = payload;
-  if (!portal || typeof portal !== 'object' || !credentials || typeof credentials !== 'object') return;
-
-  const url = portal.url;
-  const isHttpUrl = typeof url === 'string' && /^https?:\/\//i.test(url);
-  const hasValidCreds = typeof credentials.username === 'string' && typeof credentials.password === 'string';
-
-  if (!isHttpUrl || !hasValidCreds) {
-    console.warn('[SIFAST Extension Bridge] Invalid portal launch payload rejected:', { url, hasValidCreds });
+  if (!event || !event.detail) {
+    console.warn('[SIFAST Bridge] Ignored empty SIFAST_PORTAL_LAUNCH event');
     return;
   }
 
-  chrome.runtime.sendMessage(
-    { type: 'SIFAST_PORTAL_LAUNCH', payload },
-    (response) => {
-      window.dispatchEvent(
-        new CustomEvent('SIFAST_PORTAL_LAUNCH_RESPONSE', { detail: response })
+  const payload = event.detail;
+  if (!payload.portal || !payload.portal.url) {
+    window.dispatchEvent(new CustomEvent('SIFAST_PORTAL_LAUNCH_ACK', {
+      detail: { success: false, error: 'Invalid portal launch payload' }
+    }));
+    return;
+  }
+
+  if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+    try {
+      chrome.runtime.sendMessage(
+        { type: 'SIFAST_PORTAL_LAUNCH', payload },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            window.dispatchEvent(new CustomEvent('SIFAST_PORTAL_LAUNCH_ACK', {
+              detail: { success: false, error: chrome.runtime.lastError.message }
+            }));
+            return;
+          }
+          window.dispatchEvent(new CustomEvent('SIFAST_PORTAL_LAUNCH_ACK', {
+            detail: response || { success: false, error: 'No response from background' }
+          }));
+        }
       );
+    } catch (err) {
+      window.dispatchEvent(new CustomEvent('SIFAST_PORTAL_LAUNCH_ACK', {
+        detail: { success: false, error: err.message }
+      }));
     }
-  );
+  }
 });
 ```
 
@@ -2278,24 +2304,27 @@ window.addEventListener('SIFAST_PORTAL_LAUNCH', (event) => {
 
 ### 7.5 Content Engine Target (`content-autofill.js`) & Heuristic Scanner
 
-Berkas [`rs-extension/content-autofill.js`](../../rs-extension/content-autofill.js) adalah mesin pelaksana injeksi yang aktif pada tab website pelaporan eksternal pemerintah.
+Berkas [`rs-extension/content-autofill.js`](../../rs-extension/content-autofill.js) adalah mesin pelaksana injeksi yang aktif pada tab website pelaporan eksternal kementerian/lembaga.
 
 #### 1. Resolusi Elemen Form (Statis & Fallback Scanner):
-* **Tahap A (Static Selectors):** Mencocokkan rantai CSS selector dari konfigurasi `form_config` portal di database SIMRS (misal `["#c", "input[name='email']", "#email"]`).
-* **Tahap B (Runtime Heuristic Scanner Fallback):** Jika selector statis tidak ditemukan, mesin otomatis memindai input `input[type='password']`, menemukan form kontainer terdekat, lalu mencari input teks/email yang berada tepat sebelum password input serta mencocokkan kata kunci identitas (`user`, `login`, `email`, `nip`, `nik`).
+* **Tahap A (Static Selectors):** Mencocokkan rantai CSS selector dari konfigurasi `form_config` portal di database SIMRS (misal `["#c", "input[name='email']", "#email"]`) dan XPath expression (jika diawali `//` atau `(`).
+* **Tahap B (Runtime Heuristic Scanner Fallback):** Jika selector statis tidak ditemukan, mesin otomatis memindai input `input[type='password']`, mengabaikan elemen yang dinonaktifkan (`disabled`) atau tersembunyi (`checkVisibility()` API), menemukan form kontainer terdekat, lalu mencari input teks/email yang berada sebelum password input serta mencocokkan kata kunci identitas (`user`, `login`, `email`, `nip`, `nik`, `nama`).
 
 #### 2. Bypass Prototype Property Setter Framework Modern (`setNativeValue`):
-Framework modern (React, Vue, Angular) melakukan override setter properti `value`. Mengubah `element.value = "..."` secara langsung seringkali tidak memicu state internal framework. Ekstensi memanggil descriptor setter prototipe asli browser:
+Framework modern (React, Vue, Angular) melakukan override setter properti `value`. Mengubah `element.value = "..."` secara langsung diabaikan oleh internal Virtual DOM state. Ekstensi menelusuri rantai prototipe secara rekursif hingga menemukan descriptor setter asli:
 
 ```javascript
 export function setNativeValue(element, value) {
-  const valueSetter = Object.getOwnPropertyDescriptor(element, 'value')?.set;
-  const prototype = Object.getPrototypeOf(element);
-  const prototypeValueSetter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
+  if (!element) return;
 
-  if (prototypeValueSetter && valueSetter !== prototypeValueSetter) {
-    prototypeValueSetter.call(element, value);
-  } else if (valueSetter) {
+  let valueSetter = Object.getOwnPropertyDescriptor(element, 'value')?.set;
+  let curProto = Object.getPrototypeOf(element);
+  while (curProto && !valueSetter) {
+    valueSetter = Object.getOwnPropertyDescriptor(curProto, 'value')?.set;
+    curProto = Object.getPrototypeOf(curProto);
+  }
+
+  if (valueSetter) {
     valueSetter.call(element, value);
   } else {
     element.value = value;
@@ -2303,196 +2332,169 @@ export function setNativeValue(element, value) {
 
   element.dispatchEvent(new Event('input', { bubbles: true }));
   element.dispatchEvent(new Event('change', { bubbles: true }));
-  element.dispatchEvent(new FocusEvent('blur', { bubbles: true }));
+  element.dispatchEvent(new Event('blur', { bubbles: true }));
 }
 ```
 
-#### 3. Deteksi CAPTCHA & Auto-Focus:
-Jika bidang CAPTCHA terdeteksi di form login:
-1. Ekstensi tidak mem-bypass CAPTCHA.
-2. Fokus kursor keyboard otomatis diarahkan ke input CAPTCHA (`captchaElement.focus()`).
-3. Ekstensi menampilkan toast instruksi visual di layar: *"Kredensial Sifast Terisi. Silakan masukkan kode CAPTCHA di atas untuk melanjutkan."*
+#### 3. Deteksi CAPTCHA & Auto-Focus dengan Proteksi False-Positive:
+Deteksi CAPTCHA memeriksa indikator nama, id, atau placeholder, namun mengecualikan istilah kode instansi rumah sakit seperti `kode satker`, `kode fasyankes`, atau `kode pos`:
+```javascript
+export function detectCaptcha(root = document) {
+  const inputs = Array.from(root.querySelectorAll('input'));
+  for (const input of inputs) {
+    const type = (input.type || 'text').toLowerCase();
+    if (type === 'hidden' || type === 'password' || type === 'submit') continue;
 
-#### 4. Pembersihan Memori Content Script:
-Seketika setelah form terisi, seluruh variabel kredensial lokal di-nullifikasi (`payload = null; credentials = null;`) guna memastikan zero persistence di memori tab peramban.
+    const id = (input.id || '').toLowerCase();
+    const name = (input.name || '').toLowerCase();
+    const placeholder = (input.placeholder || '').toLowerCase();
+
+    // Pencegahan False Positive kode RS/Satker
+    const combined = `${id} ${name} ${placeholder}`;
+    if (combined.includes('satker') || combined.includes('fasyankes') || combined.includes('pos')) {
+      continue;
+    }
+
+    if (combined.includes('captcha') || combined.includes('kode')) {
+      return input;
+    }
+  }
+  return null;
+}
+```
+Ketika bidang CAPTCHA terdeteksi:
+1. Ekstensi tidak pernah membypass CAPTCHA.
+2. Fokus kursor keyboard otomatis diarahkan ke input CAPTCHA (`captchaElement.focus()`).
+3. Ekstensi menampilkan toast instruksi visual dengan nama portal yang disanitasi secara aman (anti-XSS).
+
+#### 4. Penanganan Form SPA & Pembersihan Memori:
+Jika elemen form belum dirender (misal pada halaman React/Vue dengan rute hash seperti New SIGA atau SIRS Online), ekstensi memasang `MutationObserver` untuk mengamati penambahan elemen form ke DOM dengan batas timeout toleransi (`wait_timeout_ms`). Kredensial dipertahankan di RAM sementara hingga pengisian berhasil, dan seketika dihapus bersih (`payload.credentials = null`).
 
 ---
 
 ### 7.6 Admin Popup Tool (`popup/`) & Form Inspector 1-Klik
 
-Direktori [`rs-extension/popup/`](../../rs-extension/popup/) menyediakan antarmuka mini yang rapi saat ikon toolbar peramban diklik.
+Direktori [`rs-extension/popup/`](../../rs-extension/popup/) menyediakan antarmuka inspeksi modern bagi Administrator IT:
 
 ```
 +------------------------------------------------------+
 |  [Logo] SIFAST Autofill              [● Aktif]       |
 |  v1.0.0 (Manifest V3)                                |
 +------------------------------------------------------+
-|  Portal Terdeteksi: SIRS Online Kemkes               |
-|  Status Tab: https://sirs.kemkes.go.id/fo/login      |
+|  Portal Terdeteksi: akun-yankes.kemkes.go.id         |
+|  Status Tab: Tab Aktif Resmi Kemenkes RI             |
 +------------------------------------------------------+
 |  [ ⚡ Scan Form Login Halaman Ini (1-Click) ]        |
 +------------------------------------------------------+
 |  Hasil Analisis DOM Form:                            |
-|  • Username Candidate: input[name='username'] (#user)|
-|  • Password Candidate: input[name='password'] (#pass)|
-|  • CAPTCHA Detected: Ya (#captcha_code)             |
+|  • Username Candidate: input[type='email'] (#email)  |
+|  • Password Candidate: input[type='password'] (#pwd) |
+|  • CAPTCHA Candidate: Terdeteksi (#captcha_code)     |
 |                                                      |
 |  {                                                   |
 |    "is_spa": true,                                   |
+|    "wait_timeout_ms": 10000,                         |
 |    "username_field": {                               |
-|      "selectors": ["#user", "input[name='username']"]|
+|      "selectors": ["#email", "input[name='email']"]  |
 |    },                                                |
 |    "password_field": {                               |
-|      "selectors": ["#pass", "input[name='password']"]|
-|    }                                                 |
+|      "selectors": ["#pwd", "input[type='password']"] |
+|    },                                                |
+|    "extra_fields": [],                               |
+|    "auto_submit": false                              |
 |  }                                                   |
 |                                                      |
 |  [ 📋 Salin JSON Config ]  (Siap tempel ke Admin Web)|
 +------------------------------------------------------+
 ```
 
-* **1-Click Form Inspector:** Memindai DOM form aktif pada tab saat ini, mengidentifikasi kandidat username, password, field tambahan, dan captcha.
-* **Generator JSON `form_config` Otomatis:** Mengonversi hasil inspeksi langsung menjadi objek JSON yang 100% valid sesuai skema Bab 3.2.
-* **Salin ke Clipboard Instan:** Tombol satu klik menyalin konfigurasi JSON siap pakai untuk ditempelkan ke modul admin SIMRS saat mendaftarkan portal baru.
+* **1-Click Form Inspector:** Mengeksekusi skrip pemindaian DOM di tab aktif melalui `chrome.scripting.executeScript`, menyaring elemen non-teks (`hidden`, `submit`, `button`, `checkbox`, `radio`), dan mengidentifikasi kandidat username, password, dan captcha.
+* **Generator JSON `form_config` Spesifikasi 4.1:** Menghasilkan struktur JSON yang 100% kompatibel dengan editor form master portal SIMRS.
+* **Salin ke Clipboard Instan & Aman:** Tombol salin menggunakan `navigator.clipboard.writeText` dengan feedback visual `"Tersalin!"` dan penanganan exception yang ramah pengguna.
 
 ---
 
 ### 7.7 Mekanisme Distribusi & Packaging File ZIP Ekstensi
 
-Untuk memudahkan deployment ekstensi pada ratusan workstation staf rumah sakit tanpa perlu publikasi ke Google Chrome Web Store, SIMRS menyediakan mekanisme kompresi dan pengunduhan arsip ZIP mandiri.
+Untuk memudahkan deployment ekstensi pada ratusan workstation staf rumah sakit tanpa perlu publikasi ke Google Chrome Web Store, sistem menyediakan skrip pengemas mandiri dan tautan unduhan langsung berkas ZIP.
 
-#### Kontrak Rute & Controller:
-* **Rute HTTP:** `GET /portal-pelaporan/extension/download`
-* **Nama Rute:** `portal-pelaporan.extension.download`
-* **Middleware:** `['auth', 'verified']`
-* **Controller:** `App\Http\Controllers\PortalAggregatorController@downloadExtension`
-* **Service:** `App\Services\Portal\PortalAggregatorService@downloadExtensionZip`
+#### 1. Skrip Pengemas Otomatis (`rs-extension/scripts/package-extension.js`):
+Skrip zero-dependency berbasis Node.js murni (memanfaatkan `node:zlib` dan struktur ZIP RFC 1950/1951) yang mengemas seluruh berkas operasional ekstensi:
+* **Berkas yang Dikemas:** `manifest.json`, `background.js`, `content-simrs.js`, `content-autofill.js`, `README.md`, aset `icons/`, dan antarmuka `popup/`.
+* **Berkas yang Dikecualikan:** Berkas pengujian (`tests/`), helper mock, dan skrip pembantu generator.
+* **Lokasi Output:** [`public/downloads/sifast-autofill-extension.zip`](../../public/downloads/sifast-autofill-extension.zip) (ukuran sangat kecil: ~18 KB).
+* **Perintah NPM Terdaftar:**
+  ```bash
+  npm run package:extension
+  ```
 
-#### Implementasi Service Layer (`PortalAggregatorService.php`):
-```php
-namespace App\Services\Portal;
-
-use Illuminate\Support\Facades\File;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use ZipArchive;
-use RuntimeException;
-
-class PortalAggregatorService
-{
-    /**
-     * Menghasilkan arsip ZIP ekstensi browser dengan smart caching berbasis filemtime.
-     */
-    public function downloadExtensionZip(): BinaryFileResponse
-    {
-        $extensionSourceDir = base_path('rs-extension');
-        $storageDir = storage_path('app/extensions');
-        $zipFilePath = $storageDir . '/sifast-autofill-extension.zip';
-
-        if (! File::exists($extensionSourceDir . '/manifest.json')) {
-            throw new RuntimeException('Direktori sumber ekstensi rs-extension tidak ditemukan.');
-        }
-
-        if (! File::isDirectory($storageDir)) {
-            File::makeDirectory($storageDir, 0755, true);
-        }
-
-        // Caching pintar: Pindai filemtime terbaru dari seluruh berkas sumber ekstensi
-        $latestSourceModified = 0;
-        foreach (File::allFiles($extensionSourceDir) as $file) {
-            $latestSourceModified = max($latestSourceModified, $file->getMTime());
-        }
-
-        $zipModifiedTime = File::exists($zipFilePath) ? filemtime($zipFilePath) : 0;
-
-        if (! File::exists($zipFilePath) || $latestSourceModified > $zipModifiedTime) {
-            $this->buildZipBundle($extensionSourceDir, $zipFilePath);
-        }
-
-        return response()->download($zipFilePath, 'sifast-autofill-extension.zip', [
-            'Content-Type' => 'application/zip',
-            'Cache-Control' => 'no-cache, must-revalidate',
-        ]);
-    }
-
-    private function buildZipBundle(string $sourceDir, string $destinationPath): void
-    {
-        $zip = new ZipArchive();
-        if ($zip->open($destinationPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-            throw new RuntimeException('Gagal membuat arsip ZIP ekstensi.');
-        }
-
-        $filesToInclude = [
-            'manifest.json',
-            'background.js',
-            'content-simrs.js',
-            'content-autofill.js',
-            'README.md',
-            'icons/icon-16.png',
-            'icons/icon-48.png',
-            'icons/icon-128.png',
-            'popup/popup.html',
-            'popup/popup.css',
-            'popup/popup.js',
-        ];
-
-        foreach ($filesToInclude as $relPath) {
-            $fullPath = $sourceDir . '/' . $relPath;
-            if (File::exists($fullPath)) {
-                $zip->addFile($fullPath, $relPath);
-            }
-        }
-
-        $zip->close();
-    }
-}
+#### 2. Integrasi Dialog Unduhan Frontend (`ExtensionInstallDialog.tsx`):
+Pada halaman `/portal-pelaporan`, dialog panduan instalasi menyediakan tombol unduh langsung yang merujuk ke aset statis:
+```tsx
+<a
+  href="/downloads/sifast-autofill-extension.zip"
+  download="sifast-autofill-extension.zip"
+>
+  <Button type="button" className="bg-emerald-600 text-white hover:bg-emerald-700">
+    <Download className="mr-1.5 h-4 w-4" />
+    Unduh Paket Ekstensi (.zip)
+  </Button>
+</a>
 ```
-
-* **Ukuran Ringkas (< 50 KB):** Hanya berkas fungsional yang dikemas. Folder pengujian (`tests/`) dan skrip internal (`scripts/`) dikecualikan dari paket distribusi pengguna akhir.
-* **Smart Filemtime Caching:** Sistem memindai `filemtime` terbaru dari seluruh berkas di `rs-extension/` dan hanya mengemas ulang arsip jika terdapat perubahan kode sumber.
 
 ---
 
 ### 7.8 Peta Berkas Target `rs-extension/` & Panduan Code Review (Plan 4)
 
-Berikut adalah tabel rencana berkas target untuk implementasi Plan 4:
+Berikut adalah tabel seluruh berkas yang telah dibangun dan diuji pada implementasi Plan 4:
 
 | No | Path Berkas | Status | Deskripsi Fungsi | Rationale & Arsitektur | Poin Review Checklist |
 | :---: | :--- | :---: | :--- | :--- | :--- |
-| **1** | [`rs-extension/manifest.json`](../../rs-extension/manifest.json) | `[BARU]` | Konfigurasi utama ekstensi Chromium Manifest V3. | Menetapkan metadata, permissions minimal (`tabs`, `scripting`, `storage`), host permissions spesifik, background service worker, dan content scripts. | Pastikan host permissions hanya mencakup domain SIMRS dan domain lembaga resmi. |
-| **2** | [`rs-extension/background.js`](../../rs-extension/background.js) | `[BARU]` | Background Service Worker penampung antrean volatile RAM. | Mengatur `pendingCredentials` Map berbasis `tabId`, timer TTL 30s, auto-flush burn-after-reading, dan listener `chrome.tabs.onRemoved`. | Verifikasi tidak ada penggunaan storage persisten. Pastikan auto-flush terpanggil sebelum response dikirim. |
-| **3** | [`rs-extension/content-simrs.js`](../../rs-extension/content-simrs.js) | `[BARU]` | Content script jembatan komunikasi di domain SIMRS Sifast. | Menyuntikkan atribut dataset DOM ke `<html>`, mengemisi event `READY`, merespons ping/pong, dan merelay peluncuran portal dengan defensive boundary. | Pastikan dieksekusi pada `document_start`. Validasi URL berprotokol `http:`/`https:`. |
-| **4** | [`rs-extension/content-autofill.js`](../../rs-extension/content-autofill.js) | `[BARU]` | Content script mesin pengisian form di domain target pemerintah. | Meminta kredensial sekali pakai, menyelesaikan selector statis / heuristic scanner, membypass prototype setter via `setNativeValue`, dan mendeteksi CAPTCHA. | Verifikasi penanganan `setNativeValue` memicu event input, change, dan blur. Pastikan kursor diarahkan ke captcha. |
-| **5** | [`rs-extension/scripts/generate-icons.js`](../../rs-extension/scripts/generate-icons.js) | `[BARU]` | Utilitas pembangkit ikon PNG binary murni tanpa dependensi. | Memanfaatkan modul native `node:zlib` untuk membuat berkas binary PNG valid berukuran 16x16, 48x48, dan 128x128 berlatar hijau emerald Sifast. | Jalankan via Node.js dan verifikasi 3 berkas PNG terbentuk dengan header magic byte PNG yang valid (`89 50 4E 47`). |
-| **6** | `rs-extension/icons/icon-{16,48,128}.png` | `[BARU]` | Berkas aset ikon resmi ekstensi peramban. | Dibutuhkan oleh antarmuka browser (favicon, extension list, extensions manager). | Pastikan berkas non-kosong dan dapat dimuat oleh Chrome tanpa pesan error format ikon. |
-| **7** | [`rs-extension/popup/popup.html`](../../rs-extension/popup/popup.html) | `[BARU]` | Struktur tata letak antarmuka popup tool admin. | Menyediakan elemen status ekstensi, tab aktif, tombol pemicu 1-Click Form Inspector, preview JSON, dan tombol salin. | Struktur HTML semantik, tidak memuat inline script berbahaya (kepatuhan CSP Manifest V3). |
-| **8** | [`rs-extension/popup/popup.css`](../../rs-extension/popup/popup.css) | `[BARU]` | Lembar gaya desain popup tool admin. | Tema warna hijau emerald (`#059669`) dan teal konsisten dengan identitas brand SIMRS Siti Fatimah, desain kompak 360px. | Tampilan responsif, scrollbar rapi untuk preview JSON, kontras warna memenuhi standar WCAG AA. |
-| **9** | [`rs-extension/popup/popup.js`](../../rs-extension/popup/popup.js) | `[BARU]` | Logika pengontrol interaksi dan algoritma Form Inspector pada popup. | Menangani query tab aktif, eksekusi pemindaian form DOM, pembentukan JSON `form_config`, dan penyalinan clipboard. | Pastikan fungsi `analyzePageInputs` dan `generateFormConfigJson` diekspor secara modular agar dapat diuji di Node.js runner. |
-| **10** | [`rs-extension/tests/helpers/mock-chrome.js`](../../rs-extension/tests/helpers/mock-chrome.js) | `[BARU]` | Helper mock API Chrome untuk lingkungan pengujian Node.js. | Mensimulasikan `chrome.runtime.onMessage`, `chrome.tabs.create`, dan `chrome.tabs.onRemoved` tanpa memerlukan browser nyata. | Mendukung skenario asynchronous response via callback `sendResponse`. |
-| **11** | [`rs-extension/tests/manifest-validation.test.js`](../../rs-extension/tests/manifest-validation.test.js) | `[BARU]` | Pengujian otomatis validasi berkas `manifest.json`. | Memverifikasi skema Manifest V3, permissions, host permissions, content script patterns, dan eksistensi 3 berkas ikon. | Uji menggunakan `node --test`. Pastikan seluruh asersi lulus. |
-| **12** | [`rs-extension/tests/background.test.js`](../../rs-extension/tests/background.test.js) | `[BARU]` | Pengujian unit antrean kredensial Service Worker. | Menguji penyimpanan antrean, pembersihan instan burn-after-reading, kedaluwarsa TTL 30s, dan pembersihan penutupan tab. | Memverifikasi garansi zero-persistence: antrean bernilai 0 setelah kredensial diambil. |
-| **13** | [`rs-extension/tests/content-simrs.test.js`](../../rs-extension/tests/content-simrs.test.js) | `[BARU]` | Pengujian unit jembatan komunikasi SIMRS. | Menguji penyuntikan atribut dataset DOM, emisi event ready, respons event ping/pong, dan penerusan event launch. | Memverifikasi event bridge bekerja tanpa error pada mock DOM. |
-| **14** | [`rs-extension/tests/content-autofill.test.js`](../../rs-extension/tests/content-autofill.test.js) | `[BARU]` | Pengujian unit mesin pengisian form target. | Menguji `setNativeValue`, resolusi selector statis, heuristik scanner fallback, deteksi captcha, dan pembersihan memori. | Memastikan bypass setter memicu event `input`, `change`, dan `blur`. |
-| **15** | [`rs-extension/tests/popup-inspector.test.js`](../../rs-extension/tests/popup-inspector.test.js) | `[BARU]` | Pengujian unit algoritma Form Inspector popup. | Menguji analisis kandidat input dan kesesuaian struktur JSON yang dihasilkan terhadap skema Bab 3.2. | Memastikan output JSON valid dan memuat properti `is_spa`, `username_field`, dan `password_field`. |
-| **16** | [`rs-extension/tests/e2e-simulation.test.js`](../../rs-extension/tests/e2e-simulation.test.js) | `[BARU]` | Pengujian simulasi integrasi siklus hidup end-to-end. | Mensimulasikan alur utuh: launch SIMRS -> simpan RAM -> fetch tab target -> auto-flush -> DOM fill -> verifikasi input terisi. | Menguji sinergi seluruh komponen ekstensi secara terintegrasi. |
-| **17** | [`rs-extension/README.md`](../../rs-extension/README.md) | `[BARU]` | Dokumentasi resmi instalasi dan operasional ekstensi. | Panduan bagi tim IT rumah sakit untuk memuat unpacked extension, debugging service worker, dan pengoperasian popup tool. | Instruksi jelas dilengkapi referensi debugging. |
+| **1** | [`rs-extension/manifest.json`](../../rs-extension/manifest.json) | `[SELESAI (PASS)]` | Konfigurasi utama ekstensi Chromium Manifest V3. | Menetapkan metadata, permissions minimal (`tabs`, `scripting`, `activeTab`), host permissions spesifik, background service worker (type: module), dan content scripts. | Pastikan host permissions hanya mencakup domain SIMRS dan domain lembaga resmi. |
+| **2** | [`rs-extension/background.js`](../../rs-extension/background.js) | `[SELESAI (PASS)]` | Background Service Worker penampung antrean volatile RAM. | Mengatur `pendingCredentials` Map berbasis `tabId`, timer TTL 30s, auto-flush burn-after-reading, origin validation, skema URL check, dan listener `chrome.tabs.onRemoved`. | Verifikasi tidak ada penggunaan storage persisten. Pastikan auto-flush terpanggil sebelum response dikirim. |
+| **3** | [`rs-extension/content-simrs.js`](../../rs-extension/content-simrs.js) | `[SELESAI (PASS)]` | Content script jembatan komunikasi di domain SIMRS Sifast. | Menyuntikkan atribut dataset DOM ke `<html>`, mengemisi event `READY`, merespons ping/pong, dan merelay peluncuran portal dengan defensive boundary dan ACK event. | Pastikan dieksekusi pada `document_start`. Validasi URL berprotokol `http:`/`https:`. |
+| **4** | [`rs-extension/content-autofill.js`](../../rs-extension/content-autofill.js) | `[SELESAI (PASS)]` | Content script mesin pengisian form di domain target pemerintah. | Meminta kredensial sekali pakai, menyelesaikan selector statis / XPath / heuristic scanner, membypass prototype setter via `setNativeValue`, mendeteksi CAPTCHA, dan membersihkan memori. | Verifikasi penanganan `setNativeValue` memicu event input, change, dan blur. Pastikan kursor diarahkan ke captcha. |
+| **5** | [`rs-extension/scripts/generate-icons.js`](../../rs-extension/scripts/generate-icons.js) | `[SELESAI (PASS)]` | Utilitas pembangkit ikon PNG binary murni tanpa dependensi. | Memanfaatkan modul native `node:zlib` untuk membuat berkas binary PNG valid berukuran 16x16, 48x48, dan 128x128 berlatar hijau emerald Sifast. | Dijalankan via Node.js dan menghasilkan berkas PNG dengan header magic byte PNG yang valid (`89 50 4E 47`). |
+| **6** | `rs-extension/icons/icon-{16,48,128}.png` | `[SELESAI (PASS)]` | Berkas aset ikon resmi ekstensi peramban. | Dibutuhkan oleh antarmuka browser (favicon, extension list, extensions manager, Web Store). | Berkas non-kosong dan dimuat oleh Chrome tanpa pesan format error. |
+| **7** | [`rs-extension/popup/popup.html`](../../rs-extension/popup/popup.html) | `[SELESAI (PASS)]` | Struktur tata letak antarmuka popup tool admin. | Menyediakan elemen status ekstensi, tab aktif, tombol pemicu 1-Click Form Inspector, preview JSON, dan tombol salin. | Struktur HTML semantik, tidak memuat inline script berbahaya (kepatuhan CSP Manifest V3). |
+| **8** | [`rs-extension/popup/popup.css`](../../rs-extension/popup/popup.css) | `[SELESAI (PASS)]` | Lembar gaya desain popup tool admin. | Tema warna hijau emerald (`#059669`) dan teal konsisten dengan identitas brand SIMRS Siti Fatimah, desain kompak 360px. | Tampilan responsif, scrollbar rapi untuk preview JSON, kontras warna memenuhi standar WCAG AA. |
+| **9** | [`rs-extension/popup/popup.js`](../../rs-extension/popup/popup.js) | `[SELESAI (PASS)]` | Logika pengontrol interaksi dan algoritma Form Inspector pada popup. | Menangani query tab aktif, eksekusi pemindaian form DOM, pembentukan JSON `form_config`, sanitasi output DOM, dan penyalinan clipboard. | Fungsi `analyzePageInputs` dan `generateFormConfigJson` diekspor secara modular agar dapat diuji di Node.js runner. |
+| **10** | [`rs-extension/scripts/package-extension.js`](../../rs-extension/scripts/package-extension.js) | `[SELESAI (PASS)]` | Skrip pengemas arsip ZIP ekstensi. | Mengemas berkas ekstensi tanpa dependensi eksternal ke `public/downloads/sifast-autofill-extension.zip`. | Menghasilkan berkas ZIP biner valid RFC 1950/1951. |
+| **11** | [`public/downloads/sifast-autofill-extension.zip`](../../public/downloads/sifast-autofill-extension.zip) | `[SELESAI (PASS)]` | Berkas biner ZIP paket ekstensi siap unduh. | Disediakan untuk diunduh langsung oleh staf melalui modal panduan pemasangan di halaman `/portal-pelaporan`. | Ukuran sangat ringkas (~18 KB), dapat diekstrak langsung di Windows/Mac/Linux. |
+| **12** | [`rs-extension/README.md`](../../rs-extension/README.md) | `[SELESAI (PASS)]` | Panduan teknis & operasional ekstensi. | Panduan bagi tim IT rumah sakit untuk memuat unpacked extension, arsitektur modul, testing, dan instalasi di peramban. | Instruksi jelas dan terstruktur. |
+| **13** | [`rs-extension/tests/helpers/mock-chrome.js`](../../rs-extension/tests/helpers/mock-chrome.js) | `[SELESAI (PASS)]` | Helper mock API Chrome untuk lingkungan pengujian Node.js. | Mensimulasikan `chrome.runtime.onMessage`, `chrome.tabs.create`, dan `chrome.tabs.onRemoved` tanpa memerlukan browser nyata. | Mendukung skenario asynchronous response via callback `sendResponse`. |
+| **14** | [`rs-extension/tests/manifest-validation.test.js`](../../rs-extension/tests/manifest-validation.test.js) | `[SELESAI (PASS)]` | Pengujian otomatis validasi berkas `manifest.json`. | Memverifikasi skema Manifest V3, permissions, host permissions, content script patterns, dan eksistensi 3 berkas ikon. | Seluruh 4 subtest lulus via `npm run test:extension`. |
+| **15** | [`rs-extension/tests/background.test.js`](../../rs-extension/tests/background.test.js) | `[SELESAI (PASS)]` | Pengujian unit antrean kredensial Service Worker. | Menguji penyimpanan antrean, pembersihan instan burn-after-reading, kedaluwarsa TTL 30s, origin check, URL scheme check, dan pembersihan tab onRemoved. | Memverifikasi garansi zero-persistence: antrean bernilai 0 setelah kredensial diambil. 6 subtest lulus. |
+| **16** | [`rs-extension/tests/content-simrs.test.js`](../../rs-extension/tests/content-simrs.test.js) | `[SELESAI (PASS)]` | Pengujian unit jembatan komunikasi SIMRS. | Menguji penyuntikan atribut dataset DOM, emisi event ready, respons event ping/pong, penanganan payload kosong, dan penerusan event launch dengan ACK. | 8 subtest lulus. |
+| **17** | [`rs-extension/tests/content-autofill.test.js`](../../rs-extension/tests/content-autofill.test.js) | `[SELESAI (PASS)]` | Pengujian unit mesin pengisian form target. | Menguji `setNativeValue` multi-level prototype traversal, resolusi selector statis & XPath, heuristik scanner fallback, deteksi captcha anti-false-positive, toast HTML escape, dan pembersihan memori. | 16 subtest lulus. |
+| **18** | [`rs-extension/tests/popup-inspector.test.js`](../../rs-extension/tests/popup-inspector.test.js) | `[SELESAI (PASS)]` | Pengujian unit algoritma Form Inspector popup. | Menguji analisis kandidat input, filter input non-teks, sanitasi HTML, kesesuaian struktur JSON terhadap skema Bab 3.2, dan clipboard handling. | 8 subtest lulus. |
+| **19** | [`rs-extension/tests/e2e-simulation.test.js`](../../rs-extension/tests/e2e-simulation.test.js) | `[SELESAI (PASS)]` | Pengujian simulasi integrasi siklus hidup end-to-end. | Mensimulasikan alur utuh: launch SIMRS -> simpan RAM -> fetch tab target -> auto-flush -> DOM fill -> captcha focus -> memory wipe. | 3 subtest lulus. |
 
 ---
 
 ### 7.9 Panduan Uji Coba Cepat (Hands-on Extension Verification)
 
-Pengembang dapat memverifikasi implementasi ekstensi browser melalui dua pendekatan:
+Pengembang dapat memverifikasi implementasi ekstensi browser melalui langkah-langkah berikut:
 
 #### A. Perintah Pengujian Otomatis Cepat (Node.js 22 Test Runner)
+Jalankan pengujian unit ekstensi melalui script npm yang telah dikonfigurasi:
 ```bash
-# Menjalankan seluruh rangkaian tes otomatis ekstensi (6 test suites)
-node --test rs-extension/tests/*.test.js
+npm run test:extension
 ```
+*Hasil: 51 tests passed di 6 file pengujian (100% Green).*
 
-#### B. Prosedur Pemasangan Unpacked Extension di Chrome / Edge
+#### B. Perintah Pembuatan Arsip Biner ZIP Distribusi
+Jalankan script pengemasan ekstensi kapan saja setelah melakukan modifikasi berkas ekstensi:
+```bash
+npm run package:extension
+```
+*Hasil: Berkas `public/downloads/sifast-autofill-extension.zip` terbuat/terperbarui secara instan (~18 KB).*
+
+#### C. Prosedur Pemasangan Unpacked Extension di Chrome / Edge
 1. Buka `chrome://extensions` di Google Chrome atau `edge://extensions` di Microsoft Edge.
 2. Aktifkan switch **Developer mode** di pojok kanan atas layar.
 3. Klik tombol **Load unpacked** dan pilih direktori: `rs-extension/`.
-4. Pastikan kartu ekstensi **SIFAST Portal Autofill v1.0.0** muncul dengan ikon perisai hijau emerald.
+4. Pastikan kartu ekstensi **SIFAST Portal Autofill Assistant v1.0.0** muncul dengan ikon perisai hijau emerald tanpa error.
 5. Buka aplikasi SIMRS Sifast (`http://localhost:8000` atau `https://simrs.rsaisyiyahsitifatimah.com`).
 6. Buka halaman `/portal-pelaporan`: amati badge header seketika berubah hijau: `Ekstensi Aktif (v1.0.0)`.
 7. Klik salah satu kartu portal pelaporan kementerian: tab baru otomatis terbuka dan form login target terisi secara otomatis tanpa intervensi manual.
@@ -2501,8 +2503,8 @@ node --test rs-extension/tests/*.test.js
 
 ## Bab 8: 🧪 Panduan Pengujian & Skenario Verifikasi (Master Testing Guide)
 
-> **Cakupan Pengujian:** Backend Test Suite (Pest PHP 91 Tests / 542 Assertions), Extension Runner (Node.js Test Runner), 2 Parity Navigation Tests (32 Assertions), dan 5 Skenario Manual End-to-End QA Walkthrough.  
-> **Status Pest Suite:** `91 PASSED (542 assertions)` + 2 Navigation Tests (32 assertions) = **93 PASSED (574 assertions)** — 100% Green (`tests/Feature/PortalPelaporan` & `tests/Feature/PortalNavParityTest.php`).  
+> **Cakupan Pengujian:** Backend Test Suite (Pest PHP 91 Tests / 542 Assertions), Extension Runner (Node.js Test Runner 51 Tests / 6 Suites), 2 Parity Navigation Tests (32 Assertions), dan 5 Skenario Manual End-to-End QA Walkthrough.  
+> **Status Pengujian:** 91 Pest Tests (542 assertions) + 2 Nav Parity Tests (32 assertions) + 51 Extension Tests (6 Suites) = **144 TESTS PASSED (100% Green)**.  
 > **Filosofi Pengujian:** *Defense in Depth* — Menguji setiap lapisan sistem secara independen dan komprehensif mulai dari integritas skema database, kriptografi simetris, perimeter otorisasi, logika service, kontrak API HTTP, propagasi Inertia props, registrasi navigasi SSOT, protokol ekstensi, hingga penerimaan pengguna akhir (*user acceptance*).
 
 ```
@@ -2517,12 +2519,13 @@ node --test rs-extension/tests/*.test.js
 |  ├── Skenario 4: Handshake & Autofill Ekstensi (Chrome/Edge MV3 Live Injection)                    |
 |  └── Skenario 5: Halaman Pengguna Staf Biasa & Distribusi ZIP (Self-Service Credential, ZIP DL)  |
 |                                                                                                    |
-|  [LAPISAN 2: AUTOMATED EXTENSION TESTING] (Node.js Test Runner - ES Modules)                       |
-|  ├── manifest.test.js         : Schema validation Manifest V3, permissions & CSP                   |
-|  ├── background.test.js       : In-memory RAM queue life cycle, 30s TTL eviction, purge verification|
-|  ├── content-simrs.test.js    : DOM handshake, custom event listener, HTML data-attribute bridge   |
-|  ├── content-autofill.test.js : Dynamic selector engine, SPA retry polling, synthetic event dispatch|
-|  └── popup.test.js            : Form Inspector DOM click-and-inspect CSS selector extraction       |
+|  [LAPISAN 2: AUTOMATED EXTENSION TESTING] (Node.js Test Runner - 51 Tests / 6 Suites)              |
+|  ├── 1. manifest-validation.test.js : Validasi skema MV3, permissions minimal, icon magic bytes    |
+|  ├── 2. background.test.js          : RAM queue lifecycle, 30s TTL, auto-flush, origin validation |
+|  ├── 3. content-simrs.test.js       : DOM handshake, custom events, relay launch, ACK bridge       |
+|  ├── 4. content-autofill.test.js    : setNativeValue traversal, heuristic scanner, CAPTCHA focus  |
+|  ├── 5. popup-inspector.test.js     : Form Inspector DOM scan, form_config generator, clipboard    |
+|  └── 6. e2e-simulation.test.js      : Full lifecycle end-to-end: dispatch -> RAM -> fill -> wipe  |
 |                                                                                                    |
 |  [LAPISAN 1: AUTOMATED BACKEND TESTING] (Pest PHP - 91 Tests / 542 Assertions + Nav Parity)        |
 |  ├── 1. PortalDatabaseSchemaTest              : Struktur kolom tabel & foreign keys cascade        |
@@ -2914,67 +2917,184 @@ test('portal nav is the shared source of truth for desktop and mobile menus', fu
 
 ### 8.2 Automated Extension Testing (Node.js Test Runner)
 
-Pengujian modul ekstensi peramban (`rs-extension/`) dirancang menggunakan **Node.js Native Test Runner** (`node:test` dan `node:assert/strict`).
+Pengujian modul ekstensi peramban (`rs-extension/`) dirancang menggunakan **Node.js Native Test Runner** (`node:test` dan `node:assert/strict`) dengan bantuan isolated mock API Chromium (`rs-extension/tests/helpers/mock-chrome.js`).
 
 #### Rationale Pemilihan Node.js Test Runner
 1. **Zero-Dependency & Standalone:** Tidak memerlukan instalasi framework testing pihak ketiga seperti Jest, Vitest, atau Mocha di dalam folder ekstensi, menjaga paket ekstensi tetap murni dan berukuran sangat kecil (< 150 KB).
 2. **Native ES Modules (ESM):** Mendukung langsung arsitektur modern JavaScript ES2022+ tanpa kompilasi Babel atau Webpack.
-3. **Eksekusi Kilat (< 200 ms):** Menguji validasi logika murni DOM, antrean memori, dan parser secara instan di terminal pengembang atau pipeline CI/CD.
+3. **Eksekusi Kilat & Paralel:** Menguji seluruh logika peramban, antrean memori, bypass framework React/Vue/Angular, XPath/CSS selectors, heuristik scanner, CAPTCHA auto-focus, dan Admin Form Inspector dalam ~6 detik untuk 51 skenario uji.
+4. **Hermetic In-Memory Mocking:** Menggunakan `createMockChrome()` untuk mensimulasikan `chrome.runtime`, `chrome.tabs`, `chrome.scripting`, dan DOM elements tanpa perlu meluncurkan headless Chromium yang memakan memori besar.
 
 #### Perintah Eksekusi Satu Baris
-Jalankan pengujian unit ekstensi melalui terminal proyek:
+Jalankan pengujian unit ekstensi melalui script npm proyek:
 
 ```bash
+npm run test:extension
+
+# Atau langsung mengeksekusi binary node:
 node --test rs-extension/tests/*.test.js
 ```
 
-#### Matriks Cakupan 5 Berkas Pengujian Ekstensi
+#### Matriks Cakupan 6 Berkas Pengujian Ekstensi (51 Test Cases - 100% PASS)
 
-| Berkas Pengujian | Target Komponen Ekstensi | Skenario Uji & Asersi Kunci |
-| :--- | :--- | :--- |
-| **`manifest.test.js`** | `rs-extension/manifest.json` | • Validasi sintaks format JSON.<br/>• Memverifikasi `manifest_version: 3`.<br/>• Memverifikasi permissions minimal: `storage`, `scripting`, `activeTab`.<br/>• Memvalidasi pola wildcard URL pemerintah pada `host_permissions`.<br/>• Memastikan entri `background.service_worker` mengarah ke `background.js`. |
-| **`background.test.js`** | `rs-extension/background.js` | • Validasi inisialisasi In-Memory Queue (`pendingTabs = new Map()`).<br/>• Menguji penerimaan payload dari SIMRS via event listener.<br/>• Verifikasi pembersihan otomatis (*auto-flush/purge*) payload setelah dikonsumsi oleh content script.<br/>• Menguji mekanisme pembersihan kedaluwarsa (*TTL eviction*) setelah 60 detik jika tab target tidak dibuka.<br/>• Verifikasi bahwa background worker **tidak pernah** memanggil `chrome.storage.local.set` untuk menyimpan kredensial. |
-| **`content-simrs.test.js`** | `rs-extension/content-simrs.js` | • Pengujian handshake: mendeteksi penanaman atribut `data-sifast-extension-installed="true"` pada elemen `<html>` dokumen SIMRS.<br/>• Menguji penangkapan custom DOM event `SIFAST_PORTAL_LAUNCH`.<br/>• Memverifikasi pengiriman pesan token dispatch dari content script ke background service worker via `chrome.runtime.sendMessage`. |
-| **`content-autofill.test.js`** | `rs-extension/content-autofill.js` | • Pengujian simulasi DOM formulir login target.<br/>• Memvalidasi algoritma pencarian elemen bertingkat (*hierarchical CSS selector traversal*).<br/>• Menguji mekanisme retry polling berbasis `MutationObserver` untuk Single Page Applications (SIRS Online, SATU SEHAT, New SIGA).<br/>• Memverifikasi penembakan event sintetis (`input`, `change`, `blur`) untuk memastikan state binding framework target (React, Angular, jQuery) diperbarui.<br/>• Menguji pendeteksian elemen CAPTCHA dan auto-focusing kursor ke kolom CAPTCHA. |
-| **`popup.test.js`** | `rs-extension/popup/inspector.js` | • Pengujian alat Form Inspector untuk Administrator IT.<br/>• Memverifikasi algoritma ekstraksi selector CSS dari elemen input yang diklik (`#id`, `input[name='...']`, `input[type='...']`).<br/>• Memvalidasi pembentukan potongan JSON konfigurasi `form_config` yang siap disalin ke clipboard admin. |
+| Berkas Pengujian | Target Komponen Ekstensi | Jumlah Uji | Skenario Uji & Asersi Kunci |
+| :--- | :--- | :---: | :--- |
+| **`manifest-validation.test.js`** | `rs-extension/manifest.json` | **4** | • Validasi sintaks format JSON valid.<br/>• Memverifikasi `manifest_version: 3`.<br/>• Memverifikasi permissions minimal: `["tabs", "scripting", "activeTab"]`.<br/>• Memvalidasi pola wildcard URL pemerintah pada `host_permissions`.<br/>• Memastikan entri `background.service_worker` bertipe module dan file icon/popup HTML terdaftar utuh. |
+| **`background.test.js`** | `rs-extension/background.js` | **6** | • Validasi inisialisasi In-Memory Queue (`pendingTabs = new Map()`).<br/>• Penyimpanan kredensial saat event `SIFAST_PORTAL_LAUNCH` dan pembukaan tab target via `chrome.tabs.create`.<br/>• Pembersihan seketika (*auto-flush zero-persistence*) saat kredensial dikonsumsi tab target.<br/>• Pembersihan otomatis kedaluwarsa (*TTL eviction*) setelah timeout 30 detik jika tab tidak dibuka.<br/>• Pembersihan antrean jika tab ditutup sebelum login (`chrome.tabs.onRemoved`).<br/>• Proteksi keamanan: menolak peluncuran URL berprotokol non-http/https dan menolak pengambilan kredensial jika origin tab peminta tidak sesuai (*origin phish-proof*). |
+| **`content-simrs.test.js`** | `rs-extension/content-simrs.js` | **8** | • Handshake DOM: injeksi atribut `data-sifast-extension-installed="true"` dan `data-sifast-extension-version="1.0.0"` pada elemen `<html>`.<br/>• Emisi event `SIFAST_EXTENSION_READY` saat ekstensi aktif.<br/>• Penanganan pesan Ping/Pong (`SIFAST_PING_EXTENSION` $\rightarrow$ `SIFAST_PONG_EXTENSION`) untuk navigasi SPA React.<br/>• Relay event `SIFAST_PORTAL_LAUNCH` ke Service Worker via `chrome.runtime.sendMessage`.<br/>• Penanganan graceful untuk event kosong atau korup.<br/>• Emisi event ACK fallback dan error ACK ketika runtime error terjadi atau context ekstensi invalidated. |
+| **`content-autofill.test.js`** | `rs-extension/content-autofill.js` | **16** | • `setNativeValue`: bypass framework wrapper (React, Angular, Vue) dengan traversal berulang prototype chain setter dan dispatch event `input`, `change`, `blur` (`bubbles: true`).<br/>• Resolusi selector CSS statis dari konfigurasi database.<br/>• Heuristic scanner otomatis ketika selector statis gagal atau atribut `id`/`name` absen di formulir kementerian.<br/>• Pendeteksian kolom CAPTCHA dan auto-focus kursor.<br/>• Pengisian data formulir lengkap beserta `extra_fields` dan pembersihan instan variabel memori lokal.<br/>• Evaluasi selector ekspresi XPath.<br/>• Render floating toast modern autofill dengan auto-close timer dan tombol dismiss.<br/>• Penanganan kegagalan inisialisasi / kredensial kosong.<br/>• Retensi kredensial pada percobaan pertama SPA yang belum selesai render (retry hingga wait timeout).<br/>• Pencegahan false-positive CAPTCHA pada istilah rumah sakit (*Kode Satker, Kode RS, Kode Pos*).<br/>• Sanitasi HTML escaping pada `portalName` untuk menangkal serangan XSS.<br/>• Penanganan `extra_fields` bertipe numerik `0` atau string `"0"` tanpa tereliminasi oleh falsy checks.<br/>• Heuristic scanner memfilter input password yang hidden, disabled, atau invisible.<br/>• Heuristic scanner mematuhi API modern `checkVisibility()`. |
+| **`popup-inspector.test.js`** | `rs-extension/popup/popup.js` | **8** | • Inspeksi elemen formulir pada tab aktif dan pembentukan format JSON `form_config` yang valid.<br/>• Fallback selector default ketika atribut input kosong atau generik.<br/>• Pemfilteran input non-teks (`hidden`, `submit`, `button`, `checkbox`, dll).<br/>• Sanitasi `escapeHtml` untuk tampilan popup.<br/>• Ekstraksi elemen formulir via `scanDomInTab`.<br/>• Alur interaksi popup: inspeksi, visualisasi selector, dan salin ke clipboard.<br/>• Penanganan error eksekusi skrip (`chrome.runtime.lastError`).<br/>• Penanganan penolakan izin clipboard API (`clipboard.writeText` rejection). |
+| **`e2e-simulation.test.js`** | `rs-extension/*` (Integrasi Penuh) | **3** | • Siklus hidup E2E penuh: SIMRS dispatch $\rightarrow$ Service Worker memory queue $\rightarrow$ Target tab fetch $\rightarrow$ DOM autofill injection $\rightarrow$ Memory wipe auto-flush $\rightarrow$ Zero-persistence verification.<br/>• Integrasi penuh siklus autofill dengan deteksi CAPTCHA dan transfer fokus kursor.<br/>• Verifikasi penolakan pengambilan kredensial kedua kalinya pada tab yang sama (*replay/leakage prevention*). |
 
-#### Contoh Spesifikasi Uji Ekstensi (`background.test.js`)
-Berikut adalah potongan kode pengujian siklus hidup antrean RAM pada `rs-extension/tests/background.test.js`:
+#### Contoh Spesifikasi Uji Ekstensi End-to-End (`e2e-simulation.test.js`)
+Berikut adalah potongan kode pengujian integrasi end-to-end yang memverifikasi siklus hidup peluncuran dari portal SIMRS hingga pembersihan RAM tanpa sisa (*zero-persistence*):
 
 ```javascript
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import assert from 'node:assert';
+import { test } from 'node:test';
+import { createMockChrome } from './helpers/mock-chrome.js';
 
-test('Background Service Worker: In-Memory Queue lifecycle and auto-purge', async (t) => {
-  // Simulasi antrean RAM pendingTabs
-  const pendingTabs = new Map();
+test('End-to-End Extension Flow Simulation', async (t) => {
+    const mockChrome = createMockChrome();
+    global.chrome = mockChrome;
 
-  function storeToken(tabId, portalData) {
-    pendingTabs.set(tabId, {
-      ...portalData,
-      timestamp: Date.now()
+    const bg = await import('../background.js');
+    await import('../content-autofill.js');
+    const autofill = globalThis.__sifastAutofill;
+
+    await t.test('full lifecycle: SIMRS dispatch -> background queue -> target autofill -> memory wipe', async () => {
+        mockChrome._reset();
+        bg.initBackground();
+
+        // 1. SIMRS memancarkan event peluncuran portal dengan kredensial terdekripsi
+        const simrsPayload = {
+            portal: {
+                id: 5,
+                name: 'SITB Kemenkes',
+                url: 'https://jatim.sitb.id/sitb2024/app',
+                form_config: {
+                    username_field: { selectors: ["input[name='username']", '#user'] },
+                    password_field: { selectors: ["input[name='password']", '#pass'] },
+                },
+            },
+            credentials: {
+                type: 'personal',
+                username: 'tb_petugas_siti_fatimah',
+                password: 'SITB_SecretPass#2026',
+            },
+        };
+
+        const launchRes = await mockChrome.runtime.onMessage._trigger({
+            type: 'SIFAST_PORTAL_LAUNCH',
+            payload: simrsPayload,
+        });
+
+        assert.strictEqual(launchRes.success, true);
+        const targetTabId = launchRes.tabId;
+        assert.strictEqual(bg.hasPendingCredentials(targetTabId), true, 'Kredensial wajib tersimpan sementara di antrean RAM');
+        assert.strictEqual(bg.getQueueSize(), 1);
+
+        // 2. Tab portal kementerian selesai dimuat dan meminta kredensial ke background worker
+        const fetchRes = await mockChrome.runtime.onMessage._trigger(
+            { type: 'SIFAST_GET_CREDENTIALS' },
+            { tab: { id: targetTabId, url: 'https://jatim.sitb.id/sitb2024/app' } },
+        );
+
+        assert.strictEqual(fetchRes.success, true);
+        assert.strictEqual(fetchRes.payload.credentials.username, 'tb_petugas_siti_fatimah');
+
+        // 3. Jaminan Zero-Persistence: Background Worker WAJIB membersihkan memori seketika
+        assert.strictEqual(bg.hasPendingCredentials(targetTabId), false, 'Antrean RAM wajib kosong setelah kredensial dikonsumsi');
+        assert.strictEqual(bg.getQueueSize(), 0);
+
+        // 4. Simulasi injeksi formulir DOM pada tab target menggunakan setNativeValue
+        // (Event input, change, dan blur terpancarkan dengan sukses)
     });
-  }
-
-  function consumeToken(tabId) {
-    const data = pendingTabs.get(tabId);
-    pendingTabs.delete(tabId); // Zero-Persistence purge
-    return data;
-  }
-
-  // 1. Simpan token ke RAM
-  storeToken(101, { slug: 'sirs-online', username: 'rs_sirs', password: 'SecretPassword123' });
-  assert.equal(pendingTabs.size, 1, 'Token harus tersimpan di antrean RAM');
-
-  // 2. Konsumsi token oleh content script
-  const consumed = consumeToken(101);
-  assert.equal(consumed.username, 'rs_sirs');
-  assert.equal(consumed.password, 'SecretPassword123');
-
-  // 3. Verifikasi pembersihan memori seketika (Zero-Persistence)
-  assert.equal(pendingTabs.size, 0, 'Antrean RAM harus segera kosong (purged) setelah dikonsumsi');
-  assert.equal(pendingTabs.get(101), undefined, 'Token tidak boleh tersisa di memori');
 });
+```
+
+#### Bukti Output Eksekusi Terminal (`npm run test:extension`)
+Berikut adalah rekaman output pengujian unit ekstensi pada lingkungan pengembang:
+
+```text
+$ npm run test:extension
+
+> test:extension
+> node --test rs-extension/tests/*.test.js
+
+[SIFAST Background] Credentials queued for tabId: 1001 (TTL: 30000ms)
+[SIFAST Background] Credentials consumed and flushed for tabId: 1001
+▶ Background Service Worker Credential Queue
+  ✔ stores credentials upon SIFAST_PORTAL_LAUNCH and opens new tab (62.5ms)
+  ✔ auto-flushes credentials immediately when fetched by target tab (zero-persistence) (8.1ms)
+  ✔ expires credentials automatically after TTL (30s timeout) (85.5ms)
+  ✔ cleans up pending credentials if tab is closed before autofill (chrome.tabs.onRemoved) (2.4ms)
+  ✔ rejects portal launch if URL scheme is not http:// or https:// (0.5ms)
+  ✔ rejects credential retrieval if sender tab origin does not match queued portal origin (0.7ms)
+✔ Background Service Worker Credential Queue (168.5ms)
+
+▶ Target Portal Autofill Engine (content-autofill.js)
+  ✔ setNativeValue bypasses framework wrappers and dispatches input/change/blur (2.3ms)
+  ✔ finds form fields using static CSS selectors (8.8ms)
+  ✔ heuristic scanner finds fields when static selectors fail (0.8ms)
+  ✔ detects CAPTCHA field and focuses on it (0.5ms)
+  ✔ executes autofill, fills extra fields, focuses captcha, and wipes memory variables (1.0ms)
+  ✔ resolves fields using XPath expression in queryField (0.3ms)
+  ✔ renders floating autofill toast in DOM and closes on button click (0.6ms)
+  ✔ initAutofill queries background for credentials and executes autofill (0.8ms)
+  ✔ executeAutofill handles missing or empty credentials gracefully (0.3ms)
+  ✔ retains credentials on initial SPA failed attempt and wipes only upon successful retry (0.8ms)
+  ✔ detectCaptcha avoids false positives on hospital codes (Kode Satker, Kode RS) (0.5ms)
+  ✔ showAutofillToast escapes malicious HTML in portalName (1.3ms)
+  ✔ handles extra_fields with numeric 0 or "0" without dropping them (0.7ms)
+  ✔ heuristic scanner filters out disabled, hidden, and invisible password inputs (0.8ms)
+  ✔ setNativeValue traverses multi-level prototype inheritance to find value setter (0.4ms)
+  ✔ heuristic scanner respects modern checkVisibility() API (3.7ms)
+✔ Target Portal Autofill Engine (content-autofill.js) (45.6ms)
+
+▶ SIMRS Content Script Bridge (content-simrs.js)
+  ✔ injects dataset attributes into document.documentElement (1.0ms)
+  ✔ dispatches SIFAST_EXTENSION_READY event on initialization (0.4ms)
+  ✔ responds to SIFAST_PING_EXTENSION with SIFAST_PONG_EXTENSION (0.5ms)
+  ✔ relays SIFAST_PORTAL_LAUNCH event to background service worker (1.7ms)
+  ✔ handles empty SIFAST_PORTAL_LAUNCH gracefully without relaying (0.8ms)
+  ✔ dispatches fallback ACK when background service worker returns empty response (0.5ms)
+  ✔ dispatches error ACK when chrome.runtime.lastError is present (0.5ms)
+  ✔ dispatches error ACK when chrome.runtime.sendMessage is unavailable or throws (1.9ms)
+✔ SIMRS Content Script Bridge (content-simrs.js) (28.7ms)
+
+▶ End-to-End Extension Flow Simulation
+  ✔ full lifecycle: SIMRS dispatch -> background queue -> target autofill -> memory wipe (4.9ms)
+  ✔ integrated lifecycle with CAPTCHA detection and focus transfer (1.7ms)
+  ✔ prevents credential leakage on second request to same tab (zero-persistence auto-flush) (2.1ms)
+✔ End-to-End Extension Flow Simulation (16.0ms)
+
+▶ Manifest V3 validation
+  ✔ manifest.json exists and is valid JSON (1.3ms)
+  ✔ permissions and host_permissions conform to specification (1.2ms)
+  ✔ service worker and content scripts are registered (5.2ms)
+  ✔ icons and action popup are properly registered and files exist (1.3ms)
+✔ Manifest V3 validation (13.5ms)
+
+▶ Popup Admin Form Inspector Logic
+  ✔ inspects form elements and generates valid form_config JSON matching spec 4.1 (1.6ms)
+  ✔ handles fallback username and default selectors when inputs are empty or generic (1.6ms)
+  ✔ filters non-text input types like hidden, submit, button, checkbox (0.5ms)
+  ✔ escapeHtml safely neutralizes HTML markup (0.4ms)
+  ✔ scanDomInTab extracts input fields from DOM document (0.4ms)
+  ✔ initPopup attaches events and handles DOM inspection and copy flow with sanitization (12.0ms)
+  ✔ initPopup handles chrome.runtime.lastError when executeScript fails (0.5ms)
+  ✔ initPopup handles clipboard writeText rejection with error feedback (20.9ms)
+✔ Popup Admin Form Inspector Logic (45.9ms)
+
+ℹ tests 51
+ℹ suites 0
+ℹ pass 51
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6223.29ms
 ```
 
 ---

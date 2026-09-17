@@ -28,6 +28,10 @@ export function storeCredentials(tabId, payload, customTtlMs = TTL_MS) {
         );
     }, customTtlMs);
 
+    if (typeof timeoutId === 'object' && typeof timeoutId?.unref === 'function') {
+        timeoutId.unref();
+    }
+
     pendingCredentials.set(tabId, {
         portal: payload.portal,
         credentials: payload.credentials,

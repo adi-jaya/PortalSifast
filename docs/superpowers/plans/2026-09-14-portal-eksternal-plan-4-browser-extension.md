@@ -7,8 +7,8 @@
 > **Daftar Rencana Modular:**
 > 1. **Plan 1: Fondasi Backend & Database** *(Selesai - 29 Tests PASS)*
 > 2. **Plan 2: Modul Admin (Master Portal & Mapping Akses)** *(Selesai - 33 Tests PASS, Total 62 Tests PASS)*
-> 3. **Plan 3: Halaman Pengguna (Portal Agregator, Deteksi Ekstensi & Self-Service Kredensial)** *(Tahap Sebelum Dokumen Ini)*
-> 4. **Plan 4: Custom Browser Extension Manifest V3 (rs-extension: Background Worker, Content Bridge, Autofill Injector, Heuristic Scanner, Popup Inspector)** *(Dokumen ini)*
+> 3. **Plan 3: Halaman Pengguna (Portal Agregator, Deteksi Ekstensi & Self-Service Kredensial)** *(Selesai - 13 Tests PASS, Total 91 Backend Tests PASS)*
+> 4. **Plan 4: Custom Browser Extension Manifest V3 (rs-extension: Background Worker, Content Bridge, Autofill Injector, Heuristic Scanner, Popup Inspector)** *(Selesai - 51 Extension Tests PASS)*
 
 **Goal:** Membangun ekstensi browser Chromium berbasis Manifest V3 (`rs-extension/`) yang aman (*zero-persistence* in-memory queue), mampu mendeteksi keberadaannya di portal SIMRS Sifast, mengisi otomatis kredensial login pada 8 kelompok website eksternal pemerintah (Kemenkes & BKKBN) menggunakan synthetic event dispatcher & heuristic scanner, serta menyediakan popup inspector 1-klik bagi Admin IT untuk mengekstrak selector form baru.
 
@@ -79,7 +79,7 @@ rs-extension/
 - Consumes: Spesifikasi Bagian 5.1 & 5.2 terkait perizinan `manifest.json`.
 - Produces: Berkas `manifest.json` yang valid untuk Chromium Manifest V3, 3 file PNG icon, serta validasi skema otomatis melalui `node --test`.
 
-- [ ] **Step 1: Write the failing manifest validation test**
+- [x] **Step 1: Write the failing manifest validation test**
 
 Buat berkas test `rs-extension/tests/manifest-validation.test.js` yang memverifikasi bahwa `manifest.json` dan ketiga berkas icon ada, memiliki struktur Manifest V3 yang valid, permission yang tepat, serta script paths yang terdaftar.
 
@@ -160,13 +160,13 @@ test('Manifest V3 validation', async (t) => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Jalankan test runner Node.js:
 Run: `node --test rs-extension/tests/manifest-validation.test.js`
 Expected: FAIL dengan error "manifest.json must exist" atau file not found.
 
-- [ ] **Step 3: Implement icon generator script and create manifest.json**
+- [x] **Step 3: Implement icon generator script and create manifest.json**
 
 1. Buat `rs-extension/scripts/generate-icons.js`:
 Script pure Node.js (menggunakan `zlib.deflateSync`) untuk membuat file binary PNG valid dengan ukuran 16x16, 48x48, dan 128x128 berlatar hijau khas SIMRS Siti Fatimah (`#059669` emerald) dengan lambang tanda centang / perisai putih.
@@ -354,12 +354,12 @@ Run: `node rs-extension/scripts/generate-icons.js`
     },
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npm run test:extension`
 Expected: PASS untuk `rs-extension/tests/manifest-validation.test.js` (4 subtests ok).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add package.json rs-extension/manifest.json rs-extension/scripts/generate-icons.js rs-extension/icons/ rs-extension/tests/manifest-validation.test.js
@@ -383,7 +383,7 @@ git commit -m "feat(extension): initialize Manifest V3 scaffold, icons, and vali
   - Timer TTL 30 detik auto-expire untuk mencegah kebocoran memori.
   - Listener `chrome.tabs.onRemoved` untuk membersihkan kredensial tab yang ditutup pengguna sebelum login.
 
-- [ ] **Step 1: Write the failing background service worker tests**
+- [x] **Step 1: Write the failing background service worker tests**
 
 1. Buat `rs-extension/tests/helpers/mock-chrome.js` untuk menyediakan mock API Chrome standar (`chrome.runtime`, `chrome.tabs`) di lingkungan Node.js test:
 
@@ -580,12 +580,12 @@ test('Background Service Worker Credential Queue', async (t) => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `node --test rs-extension/tests/background.test.js`
 Expected: FAIL dengan error "Cannot find module '../background.js'".
 
-- [ ] **Step 3: Write implementation of `rs-extension/background.js`**
+- [x] **Step 3: Write implementation of `rs-extension/background.js`**
 
 Buat berkas `rs-extension/background.js`:
 
@@ -752,12 +752,12 @@ export function initBackground() {
 initBackground();
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `node --test rs-extension/tests/background.test.js`
 Expected: PASS untuk seluruh 4 subtest (stores credentials, auto-flushes, expires on TTL, cleans up on tab removed).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add rs-extension/tests/helpers/mock-chrome.js rs-extension/tests/background.test.js rs-extension/background.js
@@ -781,7 +781,7 @@ git commit -m "feat(extension): implement background service worker in-memory cr
   - Dispatch event `SIFAST_PONG_EXTENSION` saat menerima ping.
   - Forward event `SIFAST_PORTAL_LAUNCH` ke Service Worker via `chrome.runtime.sendMessage`.
 
-- [ ] **Step 1: Write the failing content-simrs tests**
+- [x] **Step 1: Write the failing content-simrs tests**
 
 Buat berkas `rs-extension/tests/content-simrs.test.js`:
 
@@ -890,12 +890,12 @@ test('SIMRS Content Script Bridge (content-simrs.js)', async (t) => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `node --test rs-extension/tests/content-simrs.test.js`
 Expected: FAIL dengan error "Cannot find module '../content-simrs.js'".
 
-- [ ] **Step 3: Write implementation of `rs-extension/content-simrs.js`**
+- [x] **Step 3: Write implementation of `rs-extension/content-simrs.js`**
 
 Buat berkas `rs-extension/content-simrs.js`:
 
@@ -999,12 +999,12 @@ if (typeof window !== 'undefined') {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `node --test rs-extension/tests/content-simrs.test.js`
 Expected: PASS untuk seluruh 4 subtest (injects dataset, dispatches ready, responds to ping, relays launch).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add rs-extension/tests/content-simrs.test.js rs-extension/content-simrs.js
@@ -1029,7 +1029,7 @@ git commit -m "feat(extension): implement SIMRS content script DOM detection and
   - `showAutofillToast(portalName)`: Tampilan toast notifikasi status di pojok kanan bawah target tab.
   - Pembersihan seketika variabel memori kredensial setelah proses pengisian selesai.
 
-- [ ] **Step 1: Write the failing content-autofill tests**
+- [x] **Step 1: Write the failing content-autofill tests**
 
 Buat berkas `rs-extension/tests/content-autofill.test.js`:
 
@@ -1234,12 +1234,12 @@ test('Target Portal Autofill Engine (content-autofill.js)', async (t) => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `node --test rs-extension/tests/content-autofill.test.js`
 Expected: FAIL dengan error "Cannot find module '../content-autofill.js'".
 
-- [ ] **Step 3: Write implementation of `rs-extension/content-autofill.js`**
+- [x] **Step 3: Write implementation of `rs-extension/content-autofill.js`**
 
 Buat berkas `rs-extension/content-autofill.js`:
 
@@ -1632,12 +1632,12 @@ if (typeof window !== 'undefined') {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `node --test rs-extension/tests/content-autofill.test.js`
 Expected: PASS untuk seluruh 5 subtest (setNativeValue, resolveFormFields, heuristic scanner, detectCaptcha, executeAutofill zero-leakage).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add rs-extension/tests/content-autofill.test.js rs-extension/content-autofill.js
@@ -1661,7 +1661,7 @@ git commit -m "feat(extension): implement target portal autofill engine with syn
   - Fitur Admin Form Inspector: tombol 1-klik "Scan Form Login Halaman Ini" yang mendeteksi seluruh input (type, name, id, placeholder) dan menghasilkan konfigurasi `form_config` JSON siap pakai sesuai Bagian 4.1 spesifikasi.
   - Tombol "Salin JSON Config" yang menyalin JSON ke clipboard dengan feedback visual.
 
-- [ ] **Step 1: Write the failing popup inspector unit test**
+- [x] **Step 1: Write the failing popup inspector unit test**
 
 Buat berkas `rs-extension/tests/popup-inspector.test.js`:
 
@@ -1715,12 +1715,12 @@ test('Popup Admin Form Inspector Logic', async (t) => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `node --test rs-extension/tests/popup-inspector.test.js`
 Expected: FAIL dengan error "Cannot find module '../popup/popup.js'".
 
-- [ ] **Step 3: Write implementation of `rs-extension/popup/`**
+- [x] **Step 3: Write implementation of `rs-extension/popup/`**
 
 1. Buat `rs-extension/popup/popup.html`:
 
@@ -2240,12 +2240,12 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `node --test rs-extension/tests/popup-inspector.test.js`
 Expected: PASS untuk `analyzePageInputs` dan `generateFormConfigJson` (2 tests ok).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add rs-extension/popup/ rs-extension/tests/popup-inspector.test.js
@@ -2266,7 +2266,7 @@ git commit -m "feat(extension): implement popup UI with Admin Form Inspector and
   - Uji simulasi end-to-end lengkap dari klik tombol SIMRS -> antrean background -> autofill target tab -> pembersihan RAM (zero-persistence) -> verifikasi DOM input terisi.
   - Dokumentasi resmi instalasi dan cara penggunaan ekstensi bagi tim IT & staf rumah sakit (`README.md`).
 
-- [ ] **Step 1: Write the failing end-to-end simulation test**
+- [x] **Step 1: Write the failing end-to-end simulation test**
 
 Buat berkas `rs-extension/tests/e2e-simulation.test.js`:
 
@@ -2376,12 +2376,12 @@ test('End-to-End Extension Flow Simulation', async (t) => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `node --test rs-extension/tests/e2e-simulation.test.js`
 Expected: FAIL jika ada modul yang belum terintegrasi dengan sempurna.
 
-- [ ] **Step 3: Run test and ensure it passes, then write documentation**
+- [x] **Step 3: Run test and ensure it passes, then write documentation**
 
 1. Jalankan test:
 Run: `node --test rs-extension/tests/e2e-simulation.test.js`
@@ -2462,7 +2462,7 @@ Test suite mencakup:
 - Simulasi alur penuh (*End-to-End*) dari peluncuran hingga pembersihan memori (`e2e-simulation.test.js`).
 ```
 
-- [ ] **Step 4: Run full extension test suite to verify everything passes**
+- [x] **Step 4: Run full extension test suite to verify everything passes**
 
 Run: `npm run test:extension`
 Expected: PASS untuk seluruh 6 file test:
@@ -2473,7 +2473,7 @@ Expected: PASS untuk seluruh 6 file test:
 - `popup-inspector.test.js`
 - `e2e-simulation.test.js`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add rs-extension/tests/e2e-simulation.test.js rs-extension/README.md

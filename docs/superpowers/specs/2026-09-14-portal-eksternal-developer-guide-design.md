@@ -16,8 +16,8 @@ Subsistem **Portal Pelaporan Eksternal & Custom Browser Extension Autofill** mer
 Pengembangan subsistem ini dirancang secara modular melalui 4 tahapan (*Implementation Plans*):
 * **Plan 1:** Fondasi Backend, Database, Model, Service Layer, & Otorisasi *(Selesai - 29 Pest Tests PASS)*
 * **Plan 2:** Modul Admin (Master Portal & Matriks Mapping Akses Dual-View) *(Selesai - 33 Pest Tests PASS, Total 62 Tests PASS)*
-* **Plan 3:** Custom Browser Extension Manifest V3 (`rs-extension/`) *(Siap Diimplementasikan)*
-* **Plan 4:** Halaman Pengguna (Portal Agregator, Deteksi Ekstensi & Distribusi ZIP) *(Terencana)*
+* **Plan 3:** Halaman Pengguna (Portal Agregator, Deteksi Ekstensi & Distribusi ZIP) *(Selesai - 29 Pest Tests PASS, Total 91 Pest Tests PASS)*
+* **Plan 4:** Custom Browser Extension Manifest V3 (`rs-extension/`) *(Selesai - 51 Node.js Tests PASS)*
 
 ### Prinsip Single Source of Truth (SSOT):
 Dokumen implementasi teknis (*plans*) dan dokumen spesifikasi sementara (*specs*) akan dihapus setelah seluruh subsistem selesai diimplementasikan. Oleh karena itu, panduan developer ini dirancang untuk:
@@ -45,8 +45,8 @@ Dokumen `docs/developer-onboarding/13-MODUL-PORTAL-PELAPORAN-EKSTERNAL.md` akan 
 * **2.1. Matriks Status Rencana Modular:**
   * Plan 1 (Fondasi Backend & DB): `[STATUS: TERIMPLEMENTASI (PASS)]`
   * Plan 2 (Modul Admin Master & Mapping): `[STATUS: TERIMPLEMENTASI (PASS)]`
-  * Plan 3 (Browser Extension Manifest V3): `[STATUS: SIAP DIIMPLEMENTASIKAN]`
-  * Plan 4 (Halaman Pengguna & Distribusi ZIP): `[STATUS: TERENCANA]`
+  * Plan 3 (Halaman Pengguna & Distribusi ZIP): `[STATUS: TERIMPLEMENTASI (PASS)]`
+  * Plan 4 (Browser Extension Manifest V3): `[STATUS: TERIMPLEMENTASI (PASS)]`
 * **2.2. Matriks Fitur, Rute, & Hak Akses:** Tabel pemetaan fitur, rute web/API, permission Gate/Policy yang dibutuhkan, dan status ketersediaannya.
 
 ### Bab 3: 🗄️ Model Data & Skema Database (Plan 1 - Selesai)
@@ -93,54 +93,56 @@ Dokumen `docs/developer-onboarding/13-MODUL-PORTAL-PELAPORAN-EKSTERNAL.md` akan 
   * Skenario langkah-demi-langkah mencoba di browser admin: buat portal, uji tag selector, uji auto-save mapping, verifikasi DB.
   * Perintah test cepat: `php artisan test --filter=AdminPortal`. Tautan ke Bab 8.
 
-### Bab 6: 🧩 Custom Browser Extension Manifest V3 (Plan 3 - Siap Diimplementasikan)
-* **Status:** `[STATUS: SIAP DIIMPLEMENTASIKAN (Plan 3)]`
-* **6.1. Filosofi & Batasan Teknis:** Pure Vanilla JS (ES2022+), zero bundler runtime bloat, ukuran < 100 KB, mudah diaudit.
-* **6.2. Konfigurasi `manifest.json` (Manifest V3):** Permissions spesifik, host permissions terbatas (domain RS & domain target pemerintah).
-* **6.3. Background Service Worker (`background.js`):**
+### Bab 6: 🚀 Modul Pengguna: Portal Agregator & Distribusi Ekstensi (Plan 3 - Selesai)
+* **Status:** `[STATUS: TERIMPLEMENTASI (Plan 3 - PASS)]`
+* **6.1. Halaman Agregator Pengguna (`/portal-pelaporan`):**
+  * Grid kartu portal interaktif sesuai hak akses staf terdaftar.
+  * Filter kategori dan pencarian live. Indikator tipe akun pada kartu.
+* **6.2. Handshake Ekstensi di UI React:**
+  * Pengecekan dataset dan ping ekstensi.
+  * Tampilan badge hijau `● Ekstensi Sifast Aktif (v1.0.0)` jika terpasang.
+  * Banner bantuan edukatif dengan tombol unduh jika ekstensi belum terpasang.
+* **6.3. Modal Kredensial Pribadi Mandiri (*Self-Service Credential Modal*):**
+  * Pengaturan username & password pribadi langsung oleh staf pemilik akun.
+* **6.4. Mekanisme Distribusi & Packaging File ZIP:**
+  * Distribusi aset statis `GET /downloads/sifast-autofill-extension.zip` yang dipaketkan via `npm run package:extension`.
+* **6.5. Peta Berkas Target & Rencana Code Review (Plan 3):** Tabel berkas halaman pengguna dan controller.
+* **6.6. Panduan Uji Coba Cepat (Hands-on Verification Bab 6):** Skenario pengujian akses staf dan unduhan ZIP. Tautan ke Bab 8.
+
+### Bab 7: 🧩 Custom Browser Extension Manifest V3 (Plan 4 - Selesai)
+* **Status:** `[STATUS: TERIMPLEMENTASI (Plan 4 - PASS)]`
+* **7.1. Filosofi & Batasan Teknis:** Pure Vanilla JS (ES2022+), zero bundler runtime bloat, ukuran < 100 KB, mudah diaudit.
+* **7.2. Konfigurasi `manifest.json` (Manifest V3):** Permissions spesifik (`["tabs", "scripting", "activeTab"]`), host permissions terbatas (domain RS & domain target pemerintah).
+* **7.3. Background Service Worker (`background.js`):**
   * In-memory RAM Map queue ber-index `tabId`: `pendingTabs.set(targetTabId, payload)`.
   * TTL 30 detik auto-expire.
   * Auto-flush seketika setelah kredensial dikonsumsi oleh content script target (`pendingTabs.delete(targetTabId)`).
   * Listener darurat penutupan tab (`chrome.tabs.onRemoved`).
-* **6.4. Content Bridge SIMRS (`content-simrs.js`):**
+  * Validasi protokol (hanya http/https) dan origin matching.
+* **7.4. Content Bridge SIMRS (`content-simrs.js`):**
   * Handshake atribut dataset DOM pada elemen `<html>` (`dataset.sifastExtensionInstalled`, `dataset.sifastExtensionVersion`).
   * Emisi event `SIFAST_EXTENSION_READY` & listener ping/pong `SIFAST_PING_EXTENSION` untuk dukungan navigasi SPA React.
   * Relay event klik kartu `SIFAST_PORTAL_LAUNCH` ke Service Worker.
-* **6.5. Content Engine Target (`content-autofill.js`):**
+* **7.5. Content Engine Target (`content-autofill.js`):**
   * Pengambilan payload dari background worker berbasis `tabId`.
   * Resolusi selector statis dari database (`form_config`).
   * Fallback Runtime Heuristic Scanner jika selector DOM tidak ditemukan.
   * Bypass setter framework modern via `setNativeValue` (prototype setter invocation + event bubbles).
   * Deteksi bidang CAPTCHA: auto-focus ke input CAPTCHA dan pemunculan toast ramah pengguna (CAPTCHA tetap manual).
-* **6.6. Admin Popup Tool (`popup/`):**
+* **7.6. Admin Popup Tool (`popup/`):**
   * UI popup status koneksi ekstensi.
   * Fitur 1-Click Form Inspector: menganalisis form aktif di tab target dan menghasilkan JSON `form_config` siap salin.
-* **6.7. Peta Berkas Target & Rencana Code Review (Plan 3):** Tabel berkas dalam `rs-extension/` dan tes Node.js.
-* **6.8. Panduan Uji Coba Cepat (Hands-on Extension Verification):** Perintah `node --test` dan cara memuat unpacked extension di Chrome/Edge (`chrome://extensions`). Tautan ke Bab 8.
-
-### Bab 7: 🚀 Modul Pengguna: Portal Agregator & Distribusi Ekstensi (Plan 4 - Terencana)
-* **Status:** `[STATUS: TERENCANA (Plan 4)]`
-* **7.1. Halaman Agregator Pengguna (`/portal-pelaporan`):**
-  * Grid kartu portal interaktif sesuai hak akses staf terdaftar.
-  * Filter kategori dan pencarian live. Indikator tipe akun pada kartu.
-* **7.2. Handshake Ekstensi di UI React:**
-  * Pengecekan dataset dan ping ekstensi.
-  * Tampilan badge hijau `● Ekstensi Sifast Aktif (v1.0.0)` jika terpasang.
-  * Banner bantuan edukatif dengan tombol unduh jika ekstensi belum terpasang.
-* **7.3. Modal Kredensial Pribadi Mandiri (*Self-Service Credential Modal*):**
-  * Pengaturan username & password pribadi langsung oleh staf pemilik akun.
-* **7.4. Mekanisme Distribusi & Packaging File ZIP:**
-  * Endpoint `GET /portal-pelaporan/extension/download` untuk mengunduh paket `sifast-autofill-extension.zip`.
-* **7.5. Peta Berkas Target & Rencana Code Review (Plan 4):** Tabel berkas halaman pengguna dan controller.
-* **7.6. Panduan Uji Coba Cepat (Hands-on Verification Bab 7):** Skenario pengujian akses staf dan unduhan ZIP. Tautan ke Bab 8.
+* **7.7. Packaging & Distribusi Ekstensi:** Script pengemasan `rs-extension/scripts/package-extension.js`.
+* **7.8. Peta Berkas Target & Rencana Code Review (Plan 4):** Tabel 19 berkas dalam `rs-extension/` dan tes Node.js.
+* **7.9. Panduan Uji Coba Cepat (Hands-on Extension Verification Bab 7):** Perintah `npm run test:extension` dan cara memuat unpacked extension di Chrome/Edge (`chrome://extensions`). Tautan ke Bab 8.
 
 ### Bab 8: 🧪 Panduan Pengujian & Skenario Verifikasi (Master Testing Guide)
 * **8.1. Automated Backend Testing (Pest PHP):**
-  * Perintah eksekusi: `php artisan test --filter=PortalPelaporan`.
-  * Tabel matriks 9 berkas test feature Pest beserta deskripsi cakupan dan asersinya (62 Tests PASS).
-* **8.2. Automated Extension Testing (Node.js Test Runner - Plan 3):**
-  * Perintah eksekusi: `node --test rs-extension/tests/*.test.js`.
-  * Cakupan tes: manifest schema, background RAM queue, content bridge DOM handshake, autofill heuristic scanner, popup inspector.
+  * Perintah eksekusi: `vendor/bin/pest tests/Feature/PortalPelaporan tests/Feature/PortalNavParityTest.php`.
+  * Matriks 13 berkas test feature Pest beserta deskripsi cakupan dan asersinya (91 Feature Tests + 2 Nav Tests PASS).
+* **8.2. Automated Extension Testing (Node.js Test Runner - Plan 4):**
+  * Perintah eksekusi: `npm run test:extension` (atau `node --test rs-extension/tests/*.test.js`).
+  * Matriks 6 berkas test suite Node.js (51 Tests PASS).
 * **8.3. Skenario Manual QA Langkah-demi-Langkah (Walkthrough Komprehensif):**
   * Skenario 1: CRUD Master Portal & Selector Tag Editor (UI, validasi, enkripsi DB).
   * Skenario 2: Matriks Mapping Akses & Instant Auto-Save (Dual-view, switch toggle, onBlur note, refresh persistence).
