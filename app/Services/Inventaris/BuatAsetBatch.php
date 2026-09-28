@@ -18,6 +18,7 @@ class BuatAsetBatch
     public function __construct(
         private GeneratorKodeAset $generator,
         private PengaturanPenyusutanAset $pengaturanPenyusutan,
+        private KatalogAsetBarang $katalog,
     ) {}
 
     /**
@@ -114,9 +115,9 @@ class BuatAsetBatch
     {
         if (! empty($data['aset_barang_id'])) {
             $barang = AsetBarang::query()->findOrFail($data['aset_barang_id']);
-            $barang->update($this->payloadBarang($data, $barang->kode_barang));
+            $data['nama_barang'] = filled($data['nama_barang'] ?? null) ? $data['nama_barang'] : $barang->nama_barang;
 
-            return $barang->id;
+            return $this->pakaiBarangAda($barang, $data, $this->payloadBarang($data, $barang->kode_barang));
         }
 
         if (! empty($data['aset_aspak_alat_id'])) {
@@ -175,9 +176,7 @@ class BuatAsetBatch
         );
 
         if ($existing !== null) {
-            $existing->update($payload);
-
-            return $existing->id;
+            return $this->pakaiBarangAda($existing, $data, $payload);
         }
 
         return AsetBarang::query()->create($payload)->id;
@@ -229,12 +228,33 @@ class BuatAsetBatch
         );
 
         if ($existing !== null) {
-            $existing->update($payload);
-
-            return $existing->id;
+            return $this->pakaiBarangAda($existing, $data, $payload);
         }
 
         return AsetBarang::query()->create($payload)->id;
+    }
+
+    /**
+     * Master yang sudah dipakai unit lain tidak boleh ditimpa spesifikasinya.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  array<string, mixed>  $payload
+     */
+    private function pakaiBarangAda(AsetBarang $barang, array $data, array $payload): int
+    {
+        if (! $this->katalog->dipakaiUnitLain($barang)) {
+            $barang->update($payload);
+
+            return $barang->id;
+        }
+
+        $keys = $this->katalog->identityKeys($data, $payload);
+
+        if (! $this->katalog->berbeda($barang, $payload, $keys)) {
+            return $barang->id;
+        }
+
+        return ($this->katalog->cariIdentik($barang, $payload, $keys) ?? $this->katalog->salin($barang, $payload))->id;
     }
 
     private function kodeBarangDariNonAlkes(AsetNonAlkes $nonAlkes): string

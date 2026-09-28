@@ -10,6 +10,7 @@ class UpdateAsetUnit
 {
     public function __construct(
         private PengaturanPenyusutanAset $pengaturanPenyusutan,
+        private KatalogAsetBarang $katalog,
     ) {}
 
     /**
@@ -68,28 +69,15 @@ class UpdateAsetUnit
     {
         $barang = AsetBarang::query()->findOrFail($barangId);
         $payload = $this->catalogPayload($validated);
+        $keys = $this->katalog->identityKeys($validated, $payload);
 
-        $sharedWithOthers = Aset::query()
-            ->where('aset_barang_id', $barang->id)
-            ->where('id', '!=', $aset->id)
-            ->exists();
-
-        if (! $sharedWithOthers || ! $this->identityCatalogChanged($barang, $payload, $validated)) {
+        if (! $this->katalog->dipakaiUnitLain($barang, $aset->id) || ! $this->katalog->berbeda($barang, $payload, $keys)) {
             $barang->update($payload);
 
             return $barang->id;
         }
 
-        $clone = $barang->replicate();
-        $clone->kode_barang = $this->kodeBarangUnik((string) $barang->kode_barang);
-        $clone->jumlah = 0;
-        $clone->hash_sumber = null;
-        $clone->disinkron_pada = null;
-        $clone->sumber_hilang_pada = null;
-        $clone->fill($payload);
-        $clone->save();
-
-        return $clone->id;
+        return ($this->katalog->cariIdentik($barang, $payload, $keys) ?? $this->katalog->salin($barang, $payload))->id;
     }
 
     /**
@@ -130,93 +118,5 @@ class UpdateAsetUnit
         }
 
         return $payload;
-    }
-
-    /**
-     * Clone hanya jika field identitas katalog berubah.
-     * Umur/residu hasil resolve default tidak memicu clone (hindari pecah master saat edit SN/harga saja).
-     *
-     * @param  array<string, mixed>  $payload
-     * @param  array<string, mixed>  $validated
-     */
-    private function identityCatalogChanged(AsetBarang $barang, array $payload, array $validated): bool
-    {
-        $keys = [
-            'kelas_aset',
-            'wajib_kalibrasi',
-            'aset_kategori_id',
-            'aset_jenis_id',
-            'aset_merk_id',
-            'aset_produsen_id',
-            'aset_aspak_alat_id',
-            'aset_non_alkes_id',
-            'no_akl_akd',
-            'daya_watt',
-            'level_teknologi',
-            'tahun_produksi',
-            'tahun_mulai_operasi',
-        ];
-
-        if (array_key_exists('nama_barang', $payload)) {
-            $keys[] = 'nama_barang';
-        }
-        if (array_key_exists('umur_ekonomis_bulan', $validated)) {
-            $keys[] = 'umur_ekonomis_bulan';
-        }
-        if (array_key_exists('nilai_residu', $validated)) {
-            $keys[] = 'nilai_residu';
-        }
-
-        foreach ($keys as $key) {
-            if (! array_key_exists($key, $payload)) {
-                continue;
-            }
-
-            if ($this->normalizeComparable($barang->getAttribute($key)) !== $this->normalizeComparable($payload[$key])) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function normalizeComparable(mixed $value): mixed
-    {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        if (is_bool($value)) {
-            return $value;
-        }
-
-        if (is_numeric($value) && ! is_string($value)) {
-            return is_float($value + 0) && ! is_int($value + 0)
-                ? round((float) $value, 2)
-                : (int) $value;
-        }
-
-        if (is_string($value) && is_numeric($value)) {
-            return str_contains($value, '.')
-                ? round((float) $value, 2)
-                : (int) $value;
-        }
-
-        return $value;
-    }
-
-    private function kodeBarangUnik(string $sumber): string
-    {
-        $cleaned = preg_replace('/[^A-Za-z0-9.\-]/', '', $sumber) ?: 'CLONE';
-        $base = substr($cleaned, 0, 14);
-        $n = 1;
-
-        do {
-            $suffix = 'U'.$n;
-            $kode = substr($base, 0, max(1, 20 - strlen($suffix))).$suffix;
-            $n++;
-        } while (AsetBarang::withTrashed()->where('kode_barang', $kode)->exists());
-
-        return $kode;
     }
 }
