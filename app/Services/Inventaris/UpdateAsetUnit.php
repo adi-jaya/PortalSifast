@@ -8,6 +8,21 @@ use Illuminate\Support\Facades\DB;
 
 class UpdateAsetUnit
 {
+    private const CATALOG_FIELDS = [
+        'kelas_aset',
+        'aset_kategori_id',
+        'aset_jenis_id',
+        'aset_merk_id',
+        'aset_produsen_id',
+        'aset_aspak_alat_id',
+        'aset_non_alkes_id',
+        'no_akl_akd',
+        'daya_watt',
+        'level_teknologi',
+        'tahun_produksi',
+        'tahun_mulai_operasi',
+    ];
+
     public function __construct(
         private PengaturanPenyusutanAset $pengaturanPenyusutan,
         private KatalogAsetBarang $katalog,
@@ -30,10 +45,12 @@ class UpdateAsetUnit
                 : $aset->aset_barang_id;
 
             if ($targetBarangId) {
-                $targetBarangId = $this->applyCatalogChanges(
-                    $aset,
-                    $targetBarangId,
+                $barang = AsetBarang::query()->findOrFail($targetBarangId);
+                $targetBarangId = $this->katalog->terapkanUntukUnit(
+                    $barang,
+                    $this->catalogPayload($barang, $validated),
                     $validated,
+                    $aset->id,
                 );
             }
 
@@ -63,59 +80,33 @@ class UpdateAsetUnit
     }
 
     /**
-     * @param  array<string, mixed>  $validated
-     */
-    private function applyCatalogChanges(Aset $aset, int $barangId, array $validated): int
-    {
-        $barang = AsetBarang::query()->findOrFail($barangId);
-        $payload = $this->catalogPayload($validated);
-        $keys = $this->katalog->identityKeys($validated, $payload);
-
-        if (! $this->katalog->dipakaiUnitLain($barang, $aset->id) || ! $this->katalog->berbeda($barang, $payload, $keys)) {
-            $barang->update($payload);
-
-            return $barang->id;
-        }
-
-        return ($this->katalog->cariIdentik($barang, $payload, $keys) ?? $this->katalog->salin($barang, $payload))->id;
-    }
-
-    /**
+     * Hanya field yang dikirim form yang ikut diubah; field yang tidak dikirim
+     * (mis. aset_non_alkes_id, form edit tidak punya input-nya) tetap memakai nilai master.
+     *
      * @param  array<string, mixed>  $validated
      * @return array<string, mixed>
      */
-    private function catalogPayload(array $validated): array
+    private function catalogPayload(AsetBarang $barang, array $validated): array
     {
+        $payload = array_intersect_key($validated, array_flip(self::CATALOG_FIELDS));
+
+        if (array_key_exists('wajib_kalibrasi', $validated)) {
+            $payload['wajib_kalibrasi'] = (bool) $validated['wajib_kalibrasi'];
+        }
+
+        if (filled($validated['nama_barang'] ?? null)) {
+            $payload['nama_barang'] = $validated['nama_barang'];
+        }
+
         $resolved = $this->pengaturanPenyusutan->resolveUntukAset(
             $validated['harga'] ?? null,
             isset($validated['umur_ekonomis_bulan']) ? (int) $validated['umur_ekonomis_bulan'] : null,
             $validated['nilai_residu'] ?? null,
-            $validated['kelas_aset'] ?? null,
+            $payload['kelas_aset'] ?? $barang->kelas_aset,
         );
 
-        $payload = [
-            'kelas_aset' => $validated['kelas_aset'] ?? null,
-            'wajib_kalibrasi' => array_key_exists('wajib_kalibrasi', $validated)
-                ? (bool) $validated['wajib_kalibrasi']
-                : false,
-            'umur_ekonomis_bulan' => $resolved['umur_bulan'],
-            'aset_kategori_id' => $validated['aset_kategori_id'] ?? null,
-            'aset_jenis_id' => $validated['aset_jenis_id'] ?? null,
-            'aset_merk_id' => $validated['aset_merk_id'] ?? null,
-            'aset_produsen_id' => $validated['aset_produsen_id'] ?? null,
-            'aset_aspak_alat_id' => $validated['aset_aspak_alat_id'] ?? null,
-            'aset_non_alkes_id' => $validated['aset_non_alkes_id'] ?? null,
-            'no_akl_akd' => $validated['no_akl_akd'] ?? null,
-            'daya_watt' => $validated['daya_watt'] ?? null,
-            'level_teknologi' => $validated['level_teknologi'] ?? null,
-            'tahun_produksi' => $validated['tahun_produksi'] ?? null,
-            'tahun_mulai_operasi' => $validated['tahun_mulai_operasi'] ?? null,
-            'nilai_residu' => $resolved['nilai_residu'],
-        ];
-
-        if (array_key_exists('nama_barang', $validated) && filled($validated['nama_barang'])) {
-            $payload['nama_barang'] = $validated['nama_barang'];
-        }
+        $payload['umur_ekonomis_bulan'] = $resolved['umur_bulan'];
+        $payload['nilai_residu'] = $resolved['nilai_residu'];
 
         return $payload;
     }

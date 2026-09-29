@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import {
     Activity,
     BarChart3,
@@ -27,6 +27,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import type { PortalNavPermissions } from '@/lib/portal-nav';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 import AppLogo from './app-logo';
@@ -116,6 +117,11 @@ const settingsNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
+    const { permissions } = usePage<{ permissions?: PortalNavPermissions }>().props;
+    const visibleMainNavItems = mainNavItems.filter(
+        (item) => item.href !== '/aset' || Boolean(permissions?.can_access_aset),
+    );
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -131,7 +137,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain items={visibleMainNavItems} />
                 <NavMain items={monitoringNavItems} label="Monitoring" />
                 <NavMain items={settingsNavItems} label="Pengaturan" />
             </SidebarContent>

@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAsetDetailHref } from '@/hooks/use-aset-detail-href';
 import { cn } from '@/lib/utils';
 
 export type LinkableAssetOption = {
@@ -41,6 +42,7 @@ export function AssetLinkPicker({
 }: Props) {
     const [query, setQuery] = useState('');
     const [editing, setEditing] = useState(!linkedAset);
+    const asetDetailHref = useAsetDetailHref();
 
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase();
@@ -60,7 +62,7 @@ export function AssetLinkPicker({
                             Inventaris
                         </p>
                         <a
-                            href={`/aset/${linkedAset.kode_aset}`}
+                            href={asetDetailHref(linkedAset.kode_aset)}
                             className="mt-1 block truncate text-base font-semibold tracking-tight text-foreground underline-offset-2 hover:underline"
                         >
                             {linkedAset.kode_aset}
@@ -71,7 +73,7 @@ export function AssetLinkPicker({
                     </div>
                     <div className="flex flex-wrap gap-2">
                         <Button type="button" variant="outline" size="sm" asChild>
-                            <a href={`/aset/${linkedAset.kode_aset}`}>Buka inventaris</a>
+                            <a href={asetDetailHref(linkedAset.kode_aset)}>Buka inventaris</a>
                         </Button>
                         <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(true)}>
                             <Link2 className="size-3.5" />

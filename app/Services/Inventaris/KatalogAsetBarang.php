@@ -12,6 +12,7 @@ use App\Models\AsetBarang;
 class KatalogAsetBarang
 {
     private const IDENTITY_KEYS = [
+        'nama_barang',
         'kelas_aset',
         'wajib_kalibrasi',
         'aset_kategori_id',
@@ -28,20 +29,52 @@ class KatalogAsetBarang
     ];
 
     /**
+     * Terapkan perubahan master untuk satu unit dan kembalikan id master yang harus dipakai unit itu.
+     * Field yang tidak ada di $payload dianggap tidak berubah.
+     *
+     * @param  array<string, mixed>  $payload
+     * @param  array<string, mixed>  $input
+     */
+    public function terapkanUntukUnit(AsetBarang $barang, array $payload, array $input, ?int $kecualiAsetId = null): int
+    {
+        $payload = array_merge($barang->only(self::IDENTITY_KEYS), $payload);
+
+        if (! $this->dipakaiUnitLain($barang, $kecualiAsetId)) {
+            $barang->update($payload);
+
+            return $barang->id;
+        }
+
+        $keys = $this->identityKeys($input);
+
+        if (! $this->berbeda($barang, $payload, $keys)) {
+            return $barang->id;
+        }
+
+        return ($this->cariIdentik($barang, $payload, $keys) ?? $this->salin($barang, $payload))->id;
+    }
+
+    /**
+     * Sidik jari spesifikasi lengkap (termasuk umur & residu) untuk mendeteksi master duplikat.
+     */
+    public function sidikJari(AsetBarang $barang): string
+    {
+        $keys = [...self::IDENTITY_KEYS, 'umur_ekonomis_bulan', 'nilai_residu'];
+
+        return (string) json_encode(array_map(fn (string $key) => $this->normalize($barang->getAttribute($key)), $keys));
+    }
+
+    /**
      * Umur/residu hanya ikut dibandingkan bila diisi manual; nilai default hasil resolve
      * tidak boleh memecah master.
      *
      * @param  array<string, mixed>  $input
-     * @param  array<string, mixed>  $payload
      * @return list<string>
      */
-    public function identityKeys(array $input, array $payload): array
+    private function identityKeys(array $input): array
     {
         $keys = self::IDENTITY_KEYS;
 
-        if (filled($payload['nama_barang'] ?? null)) {
-            $keys[] = 'nama_barang';
-        }
         if (filled($input['umur_ekonomis_bulan'] ?? null)) {
             $keys[] = 'umur_ekonomis_bulan';
         }
@@ -49,17 +82,17 @@ class KatalogAsetBarang
             $keys[] = 'nilai_residu';
         }
 
-        return array_values(array_filter($keys, fn (string $key) => array_key_exists($key, $payload)));
+        return $keys;
     }
 
     /**
      * @param  array<string, mixed>  $payload
      * @param  list<string>  $keys
      */
-    public function berbeda(AsetBarang $barang, array $payload, array $keys): bool
+    private function berbeda(AsetBarang $barang, array $payload, array $keys): bool
     {
         foreach ($keys as $key) {
-            if ($this->normalize($barang->getAttribute($key)) !== $this->normalize($payload[$key])) {
+            if ($this->normalize($barang->getAttribute($key)) !== $this->normalize($payload[$key] ?? null)) {
                 return true;
             }
         }
@@ -67,7 +100,7 @@ class KatalogAsetBarang
         return false;
     }
 
-    public function dipakaiUnitLain(AsetBarang $barang, ?int $kecualiAsetId = null): bool
+    private function dipakaiUnitLain(AsetBarang $barang, ?int $kecualiAsetId): bool
     {
         return Aset::query()
             ->where('aset_barang_id', $barang->id)
@@ -81,11 +114,11 @@ class KatalogAsetBarang
      * @param  array<string, mixed>  $payload
      * @param  list<string>  $keys
      */
-    public function cariIdentik(AsetBarang $sumber, array $payload, array $keys): ?AsetBarang
+    private function cariIdentik(AsetBarang $sumber, array $payload, array $keys): ?AsetBarang
     {
         return AsetBarang::query()
             ->whereKeyNot($sumber->id)
-            ->where('nama_barang', $payload['nama_barang'] ?? $sumber->nama_barang)
+            ->where('nama_barang', $payload['nama_barang'])
             ->get()
             ->first(fn (AsetBarang $kandidat) => ! $this->berbeda($kandidat, $payload, $keys));
     }
@@ -93,7 +126,7 @@ class KatalogAsetBarang
     /**
      * @param  array<string, mixed>  $payload
      */
-    public function salin(AsetBarang $sumber, array $payload): AsetBarang
+    private function salin(AsetBarang $sumber, array $payload): AsetBarang
     {
         unset($payload['kode_barang']);
 

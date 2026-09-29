@@ -190,6 +190,11 @@ class User extends Authenticatable
         return $this->isSuperAdmin() || $this->isAdmin() || $this->isStaff();
     }
 
+    public function canAccessAset(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin() || $this->isStaff();
+    }
+
     /**
      * Akun integrasi API (token service / kepegawaian). Tidak memiliki NIK pegawai di profil;
      * endpoint payroll harus mengirim ?nik= atau header X-Sifast-Nik.

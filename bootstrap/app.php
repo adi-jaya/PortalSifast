@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\AuthenticateAgent;
 use App\Http\Middleware\AuthenticateBerkasScanAgent;
+use App\Http\Middleware\EnsureAsetAccess;
 use App\Http\Middleware\EnsureBerkasKepegawaianAccess;
 use App\Http\Middleware\EnsureDriverChecklistAccess;
 use App\Http\Middleware\EnsureInventarisAccess;
@@ -46,6 +47,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'officer' => EnsureUserIsOfficer::class,
             'admin' => EnsureUserIsAdmin::class,
             'inventaris.access' => EnsureInventarisAccess::class,
+            'aset.access' => EnsureAsetAccess::class,
             'payroll.access' => EnsurePayrollAccess::class,
             'patroli.access' => EnsurePatroliAccess::class,
             'driver.access' => EnsureDriverChecklistAccess::class,

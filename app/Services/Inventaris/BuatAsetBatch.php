@@ -242,19 +242,7 @@ class BuatAsetBatch
      */
     private function pakaiBarangAda(AsetBarang $barang, array $data, array $payload): int
     {
-        if (! $this->katalog->dipakaiUnitLain($barang)) {
-            $barang->update($payload);
-
-            return $barang->id;
-        }
-
-        $keys = $this->katalog->identityKeys($data, $payload);
-
-        if (! $this->katalog->berbeda($barang, $payload, $keys)) {
-            return $barang->id;
-        }
-
-        return ($this->katalog->cariIdentik($barang, $payload, $keys) ?? $this->katalog->salin($barang, $payload))->id;
+        return $this->katalog->terapkanUntukUnit($barang, $payload, $data);
     }
 
     private function kodeBarangDariNonAlkes(AsetNonAlkes $nonAlkes): string

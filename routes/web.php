@@ -195,154 +195,156 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     // Aset portal (database utama)
-    Route::get('aset/sinkron', [AsetSinkronController::class, 'index'])->name('aset.sinkron.index');
-    Route::post('aset/sinkron/preview', [AsetSinkronController::class, 'preview'])->name('aset.sinkron.preview');
-    Route::post('aset/sinkron/apply', [AsetSinkronController::class, 'apply'])->name('aset.sinkron.apply');
+    Route::middleware('aset.access')->group(function (): void {
+        Route::get('aset/sinkron', [AsetSinkronController::class, 'index'])->name('aset.sinkron.index');
+        Route::post('aset/sinkron/preview', [AsetSinkronController::class, 'preview'])->name('aset.sinkron.preview');
+        Route::post('aset/sinkron/apply', [AsetSinkronController::class, 'apply'])->name('aset.sinkron.apply');
 
-    Route::get('aset/audit', [AuditAsetController::class, 'index'])->name('aset.audit.index');
-    Route::get('aset/audit/create', [AuditAsetController::class, 'create'])->name('aset.audit.create');
-    Route::post('aset/audit', [AuditAsetController::class, 'store'])->name('aset.audit.store');
-    Route::get('aset/audit/{audit}', [AuditAsetController::class, 'show'])->name('aset.audit.show');
-    Route::post('aset/audit/{audit}/scan', [AuditAsetController::class, 'scan'])->name('aset.audit.scan');
-    Route::post('aset/audit/{audit}/selesai', [AuditAsetController::class, 'selesai'])->name('aset.audit.selesai');
-    Route::post('aset/audit/{audit}/setujui', [AuditAsetController::class, 'setujui'])->name('aset.audit.setujui');
-    Route::patch('aset/audit/{audit}/item/{item}', [AuditAsetController::class, 'updateItem'])->name('aset.audit.item.update');
-    Route::post('aset/audit/{audit}/item/{item}/bukti', [AuditAsetController::class, 'storeBukti'])->name('aset.audit.item.bukti');
+        Route::get('aset/audit', [AuditAsetController::class, 'index'])->name('aset.audit.index');
+        Route::get('aset/audit/create', [AuditAsetController::class, 'create'])->name('aset.audit.create');
+        Route::post('aset/audit', [AuditAsetController::class, 'store'])->name('aset.audit.store');
+        Route::get('aset/audit/{audit}', [AuditAsetController::class, 'show'])->name('aset.audit.show');
+        Route::post('aset/audit/{audit}/scan', [AuditAsetController::class, 'scan'])->name('aset.audit.scan');
+        Route::post('aset/audit/{audit}/selesai', [AuditAsetController::class, 'selesai'])->name('aset.audit.selesai');
+        Route::post('aset/audit/{audit}/setujui', [AuditAsetController::class, 'setujui'])->name('aset.audit.setujui');
+        Route::patch('aset/audit/{audit}/item/{item}', [AuditAsetController::class, 'updateItem'])->name('aset.audit.item.update');
+        Route::post('aset/audit/{audit}/item/{item}/bukti', [AuditAsetController::class, 'storeBukti'])->name('aset.audit.item.bukti');
 
-    Route::get('aset/created', [AsetController::class, 'created'])->name('aset.created');
-    Route::post('aset/bulk-delete', [AsetController::class, 'bulkDestroy'])->name('aset.bulk-destroy');
+        Route::get('aset/created', [AsetController::class, 'created'])->name('aset.created');
+        Route::post('aset/bulk-delete', [AsetController::class, 'bulkDestroy'])->name('aset.bulk-destroy');
 
-    Route::get('aset/import', [AsetImportController::class, 'create'])->name('aset.import');
-    Route::get('aset/import/template', [AsetImportController::class, 'template'])->name('aset.import.template');
-    Route::post('aset/import/preview', [AsetImportController::class, 'preview'])->name('aset.import.preview');
-    Route::post('aset/import', [AsetImportController::class, 'store'])->name('aset.import.store');
-    Route::delete('aset/import/preview', [AsetImportController::class, 'clear'])->name('aset.import.clear');
+        Route::get('aset/import', [AsetImportController::class, 'create'])->name('aset.import');
+        Route::get('aset/import/template', [AsetImportController::class, 'template'])->name('aset.import.template');
+        Route::post('aset/import/preview', [AsetImportController::class, 'preview'])->name('aset.import.preview');
+        Route::post('aset/import', [AsetImportController::class, 'store'])->name('aset.import.store');
+        Route::delete('aset/import/preview', [AsetImportController::class, 'clear'])->name('aset.import.clear');
 
-    Route::get('aset-peminjaman/search-aset', [AsetPeminjamanController::class, 'searchAset'])->name('aset-peminjaman.search-aset');
-    Route::get('aset-peminjaman/search-pegawai', [AsetPeminjamanController::class, 'searchPegawai'])->name('aset-peminjaman.search-pegawai');
-    Route::get('aset-peminjaman/search-user', [AsetPeminjamanController::class, 'searchUser'])->name('aset-peminjaman.search-user');
-    Route::post('aset-peminjaman/{peminjaman}/kembalikan', [AsetPeminjamanController::class, 'kembalikan'])->name('aset-peminjaman.kembalikan');
-    Route::get('aset-peminjaman/{peminjaman}/print', AsetPeminjamanPrintController::class)->name('aset-peminjaman.print');
-    Route::resource('aset-peminjaman', AsetPeminjamanController::class)
-        ->parameters(['aset-peminjaman' => 'peminjaman'])
-        ->only(['index', 'create', 'store', 'show']);
+        Route::get('aset-peminjaman/search-aset', [AsetPeminjamanController::class, 'searchAset'])->name('aset-peminjaman.search-aset');
+        Route::get('aset-peminjaman/search-pegawai', [AsetPeminjamanController::class, 'searchPegawai'])->name('aset-peminjaman.search-pegawai');
+        Route::get('aset-peminjaman/search-user', [AsetPeminjamanController::class, 'searchUser'])->name('aset-peminjaman.search-user');
+        Route::post('aset-peminjaman/{peminjaman}/kembalikan', [AsetPeminjamanController::class, 'kembalikan'])->name('aset-peminjaman.kembalikan');
+        Route::get('aset-peminjaman/{peminjaman}/print', AsetPeminjamanPrintController::class)->name('aset-peminjaman.print');
+        Route::resource('aset-peminjaman', AsetPeminjamanController::class)
+            ->parameters(['aset-peminjaman' => 'peminjaman'])
+            ->only(['index', 'create', 'store', 'show']);
 
-    Route::get('aset-mutasi-lokasi/search-aset', [AsetMutasiLokasiController::class, 'searchAset'])->name('aset-mutasi-lokasi.search-aset');
-    Route::get('aset-mutasi-lokasi/search-pegawai', [AsetMutasiLokasiController::class, 'searchPegawai'])->name('aset-mutasi-lokasi.search-pegawai');
-    Route::get('aset-mutasi-lokasi/search-user', [AsetMutasiLokasiController::class, 'searchUser'])->name('aset-mutasi-lokasi.search-user');
-    Route::get('aset-mutasi-lokasi/{mutasi}/print', AsetMutasiLokasiPrintController::class)->name('aset-mutasi-lokasi.print');
-    Route::resource('aset-mutasi-lokasi', AsetMutasiLokasiController::class)
-        ->parameters(['aset-mutasi-lokasi' => 'mutasi'])
-        ->only(['index', 'create', 'store', 'show']);
+        Route::get('aset-mutasi-lokasi/search-aset', [AsetMutasiLokasiController::class, 'searchAset'])->name('aset-mutasi-lokasi.search-aset');
+        Route::get('aset-mutasi-lokasi/search-pegawai', [AsetMutasiLokasiController::class, 'searchPegawai'])->name('aset-mutasi-lokasi.search-pegawai');
+        Route::get('aset-mutasi-lokasi/search-user', [AsetMutasiLokasiController::class, 'searchUser'])->name('aset-mutasi-lokasi.search-user');
+        Route::get('aset-mutasi-lokasi/{mutasi}/print', AsetMutasiLokasiPrintController::class)->name('aset-mutasi-lokasi.print');
+        Route::resource('aset-mutasi-lokasi', AsetMutasiLokasiController::class)
+            ->parameters(['aset-mutasi-lokasi' => 'mutasi'])
+            ->only(['index', 'create', 'store', 'show']);
 
-    Route::post('aset/master/{tipe}', [AsetMasterController::class, 'store'])
-        ->whereIn('tipe', ['kategori', 'jenis', 'merk', 'produsen', 'distributor'])
-        ->name('aset.master.store');
-    Route::get('aset/master/non-alkes/search', [AsetMasterController::class, 'searchNonAlkes'])
-        ->name('aset.master.non-alkes.search');
-    Route::get('aset/master/non-alkes/suggest-kode', [AsetNonAlkesController::class, 'suggestKode'])
-        ->name('aset.master.non-alkes.suggest-kode');
-    Route::get('aset/master/non-alkes', [AsetNonAlkesController::class, 'index'])
-        ->name('aset.master.non-alkes.index');
-    Route::post('aset/master/non-alkes', [AsetNonAlkesController::class, 'store'])
-        ->name('aset.master.non-alkes.store');
-    Route::patch('aset/master/non-alkes/{nonAlkes}/kategori', [AsetNonAlkesController::class, 'updateKategori'])
-        ->name('aset.master.non-alkes.kategori');
-    Route::patch('aset/master/non-alkes/{nonAlkes}/nama', [AsetNonAlkesController::class, 'updateNama'])
-        ->name('aset.master.non-alkes.nama');
-    Route::patch('aset/master/non-alkes/{nonAlkes}', [AsetNonAlkesController::class, 'update'])
-        ->name('aset.master.non-alkes.update');
-    Route::delete('aset/master/non-alkes/{nonAlkes}', [AsetNonAlkesController::class, 'destroy'])
-        ->name('aset.master.non-alkes.destroy');
-    Route::get('aset/master/aspak/search', [AsetMasterController::class, 'searchAspak'])
-        ->name('aset.master.aspak.search');
-    Route::get('aset/master/aspak/suggest-kode', [AsetAspakController::class, 'suggestKode'])
-        ->name('aset.master.aspak.suggest-kode');
-    Route::get('aset/master/aspak', [AsetAspakController::class, 'index'])
-        ->name('aset.master.aspak.index');
-    Route::post('aset/master/aspak', [AsetAspakController::class, 'store'])
-        ->name('aset.master.aspak.store');
-    Route::patch('aset/master/aspak/{aspak}', [AsetAspakController::class, 'update'])
-        ->name('aset.master.aspak.update');
-    Route::delete('aset/master/aspak/{aspak}', [AsetAspakController::class, 'destroy'])
-        ->name('aset.master.aspak.destroy');
-    Route::get('aset/master/ruang', [AsetRuangController::class, 'index'])
-        ->name('aset.master.ruang.index');
-    Route::post('aset/master/ruang/simpan', [AsetRuangController::class, 'store'])
-        ->name('aset.master.ruang.store');
-    Route::patch('aset/master/ruang/{ruang}', [AsetRuangController::class, 'update'])
-        ->name('aset.master.ruang.update');
-    Route::delete('aset/master/ruang/{ruang}', [AsetRuangController::class, 'destroy'])
-        ->name('aset.master.ruang.destroy');
-    Route::post('aset/master/ruang/bulk-delete', [AsetRuangController::class, 'bulkDestroy'])
-        ->name('aset.master.ruang.bulk-destroy');
-    Route::get('aset/master/{tipe}/csv/template', [AsetMasterCsvController::class, 'template'])
-        ->whereIn('tipe', ['ruang', 'aspak', 'non_alkes'])
-        ->name('aset.master.csv.template');
-    Route::get('aset/master/{tipe}/csv/export', [AsetMasterCsvController::class, 'export'])
-        ->whereIn('tipe', ['ruang', 'aspak', 'non_alkes'])
-        ->name('aset.master.csv.export');
-    Route::post('aset/master/{tipe}/csv/import', [AsetMasterCsvController::class, 'import'])
-        ->whereIn('tipe', ['ruang', 'aspak', 'non_alkes'])
-        ->name('aset.master.csv.import');
-    Route::get('aset/master/jenis', [AsetJenisController::class, 'index'])
-        ->name('aset.master.jenis.index');
-    Route::post('aset/master/jenis/simpan', [AsetJenisController::class, 'store'])
-        ->name('aset.master.jenis.store');
-    Route::patch('aset/master/jenis/{jenis}', [AsetJenisController::class, 'update'])
-        ->name('aset.master.jenis.update');
-    Route::delete('aset/master/jenis/{jenis}', [AsetJenisController::class, 'destroy'])
-        ->name('aset.master.jenis.destroy');
-    Route::post('aset/master/jenis/bulk-delete', [AsetJenisController::class, 'bulkDestroy'])
-        ->name('aset.master.jenis.bulk-destroy');
-    Route::patch('aset/master/jenis/{jenis}/merk', [AsetJenisController::class, 'updateMerk'])
-        ->name('aset.master.jenis.merk');
-    Route::get('aset/master/merk', [AsetMerkController::class, 'index'])
-        ->name('aset.master.merk.index');
-    Route::post('aset/master/merk/simpan', [AsetMerkController::class, 'store'])
-        ->name('aset.master.merk.store');
-    Route::patch('aset/master/merk/{merk}', [AsetMerkController::class, 'update'])
-        ->name('aset.master.merk.update');
-    Route::delete('aset/master/merk/{merk}', [AsetMerkController::class, 'destroy'])
-        ->name('aset.master.merk.destroy');
-    Route::post('aset/master/merk/bulk-delete', [AsetMerkController::class, 'bulkDestroy'])
-        ->name('aset.master.merk.bulk-destroy');
-    Route::get('aset/master/distributor', [AsetDistributorController::class, 'index'])
-        ->name('aset.master.distributor.index');
-    Route::post('aset/master/distributor/simpan', [AsetDistributorController::class, 'store'])
-        ->name('aset.master.distributor.store');
-    Route::patch('aset/master/distributor/{distributor}', [AsetDistributorController::class, 'update'])
-        ->name('aset.master.distributor.update');
-    Route::delete('aset/master/distributor/{distributor}', [AsetDistributorController::class, 'destroy'])
-        ->name('aset.master.distributor.destroy');
-    Route::post('aset/master/distributor/bulk-delete', [AsetDistributorController::class, 'bulkDestroy'])
-        ->name('aset.master.distributor.bulk-destroy');
-    Route::get('aset/master/kategori', [AsetKategoriController::class, 'index'])
-        ->name('aset.master.kategori.index');
-    Route::post('aset/master/kategori/simpan', [AsetKategoriController::class, 'store'])
-        ->name('aset.master.kategori.store');
-    Route::patch('aset/master/kategori/{kategori}', [AsetKategoriController::class, 'update'])
-        ->name('aset.master.kategori.update');
-    Route::delete('aset/master/kategori/{kategori}', [AsetKategoriController::class, 'destroy'])
-        ->name('aset.master.kategori.destroy');
-    Route::post('aset/master/kategori/{kategori}/merge', [AsetKategoriController::class, 'merge'])
-        ->name('aset.master.kategori.merge');
-    Route::get('aset/pengaturan-penyusutan', [AsetPenyusutanSettingsController::class, 'edit'])
-        ->name('aset.pengaturan-penyusutan.edit');
-    Route::put('aset/pengaturan-penyusutan', [AsetPenyusutanSettingsController::class, 'update'])
-        ->name('aset.pengaturan-penyusutan.update');
+        Route::post('aset/master/{tipe}', [AsetMasterController::class, 'store'])
+            ->whereIn('tipe', ['kategori', 'jenis', 'merk', 'produsen', 'distributor'])
+            ->name('aset.master.store');
+        Route::get('aset/master/non-alkes/search', [AsetMasterController::class, 'searchNonAlkes'])
+            ->name('aset.master.non-alkes.search');
+        Route::get('aset/master/non-alkes/suggest-kode', [AsetNonAlkesController::class, 'suggestKode'])
+            ->name('aset.master.non-alkes.suggest-kode');
+        Route::get('aset/master/non-alkes', [AsetNonAlkesController::class, 'index'])
+            ->name('aset.master.non-alkes.index');
+        Route::post('aset/master/non-alkes', [AsetNonAlkesController::class, 'store'])
+            ->name('aset.master.non-alkes.store');
+        Route::patch('aset/master/non-alkes/{nonAlkes}/kategori', [AsetNonAlkesController::class, 'updateKategori'])
+            ->name('aset.master.non-alkes.kategori');
+        Route::patch('aset/master/non-alkes/{nonAlkes}/nama', [AsetNonAlkesController::class, 'updateNama'])
+            ->name('aset.master.non-alkes.nama');
+        Route::patch('aset/master/non-alkes/{nonAlkes}', [AsetNonAlkesController::class, 'update'])
+            ->name('aset.master.non-alkes.update');
+        Route::delete('aset/master/non-alkes/{nonAlkes}', [AsetNonAlkesController::class, 'destroy'])
+            ->name('aset.master.non-alkes.destroy');
+        Route::get('aset/master/aspak/search', [AsetMasterController::class, 'searchAspak'])
+            ->name('aset.master.aspak.search');
+        Route::get('aset/master/aspak/suggest-kode', [AsetAspakController::class, 'suggestKode'])
+            ->name('aset.master.aspak.suggest-kode');
+        Route::get('aset/master/aspak', [AsetAspakController::class, 'index'])
+            ->name('aset.master.aspak.index');
+        Route::post('aset/master/aspak', [AsetAspakController::class, 'store'])
+            ->name('aset.master.aspak.store');
+        Route::patch('aset/master/aspak/{aspak}', [AsetAspakController::class, 'update'])
+            ->name('aset.master.aspak.update');
+        Route::delete('aset/master/aspak/{aspak}', [AsetAspakController::class, 'destroy'])
+            ->name('aset.master.aspak.destroy');
+        Route::get('aset/master/ruang', [AsetRuangController::class, 'index'])
+            ->name('aset.master.ruang.index');
+        Route::post('aset/master/ruang/simpan', [AsetRuangController::class, 'store'])
+            ->name('aset.master.ruang.store');
+        Route::patch('aset/master/ruang/{ruang}', [AsetRuangController::class, 'update'])
+            ->name('aset.master.ruang.update');
+        Route::delete('aset/master/ruang/{ruang}', [AsetRuangController::class, 'destroy'])
+            ->name('aset.master.ruang.destroy');
+        Route::post('aset/master/ruang/bulk-delete', [AsetRuangController::class, 'bulkDestroy'])
+            ->name('aset.master.ruang.bulk-destroy');
+        Route::get('aset/master/{tipe}/csv/template', [AsetMasterCsvController::class, 'template'])
+            ->whereIn('tipe', ['ruang', 'aspak', 'non_alkes'])
+            ->name('aset.master.csv.template');
+        Route::get('aset/master/{tipe}/csv/export', [AsetMasterCsvController::class, 'export'])
+            ->whereIn('tipe', ['ruang', 'aspak', 'non_alkes'])
+            ->name('aset.master.csv.export');
+        Route::post('aset/master/{tipe}/csv/import', [AsetMasterCsvController::class, 'import'])
+            ->whereIn('tipe', ['ruang', 'aspak', 'non_alkes'])
+            ->name('aset.master.csv.import');
+        Route::get('aset/master/jenis', [AsetJenisController::class, 'index'])
+            ->name('aset.master.jenis.index');
+        Route::post('aset/master/jenis/simpan', [AsetJenisController::class, 'store'])
+            ->name('aset.master.jenis.store');
+        Route::patch('aset/master/jenis/{jenis}', [AsetJenisController::class, 'update'])
+            ->name('aset.master.jenis.update');
+        Route::delete('aset/master/jenis/{jenis}', [AsetJenisController::class, 'destroy'])
+            ->name('aset.master.jenis.destroy');
+        Route::post('aset/master/jenis/bulk-delete', [AsetJenisController::class, 'bulkDestroy'])
+            ->name('aset.master.jenis.bulk-destroy');
+        Route::patch('aset/master/jenis/{jenis}/merk', [AsetJenisController::class, 'updateMerk'])
+            ->name('aset.master.jenis.merk');
+        Route::get('aset/master/merk', [AsetMerkController::class, 'index'])
+            ->name('aset.master.merk.index');
+        Route::post('aset/master/merk/simpan', [AsetMerkController::class, 'store'])
+            ->name('aset.master.merk.store');
+        Route::patch('aset/master/merk/{merk}', [AsetMerkController::class, 'update'])
+            ->name('aset.master.merk.update');
+        Route::delete('aset/master/merk/{merk}', [AsetMerkController::class, 'destroy'])
+            ->name('aset.master.merk.destroy');
+        Route::post('aset/master/merk/bulk-delete', [AsetMerkController::class, 'bulkDestroy'])
+            ->name('aset.master.merk.bulk-destroy');
+        Route::get('aset/master/distributor', [AsetDistributorController::class, 'index'])
+            ->name('aset.master.distributor.index');
+        Route::post('aset/master/distributor/simpan', [AsetDistributorController::class, 'store'])
+            ->name('aset.master.distributor.store');
+        Route::patch('aset/master/distributor/{distributor}', [AsetDistributorController::class, 'update'])
+            ->name('aset.master.distributor.update');
+        Route::delete('aset/master/distributor/{distributor}', [AsetDistributorController::class, 'destroy'])
+            ->name('aset.master.distributor.destroy');
+        Route::post('aset/master/distributor/bulk-delete', [AsetDistributorController::class, 'bulkDestroy'])
+            ->name('aset.master.distributor.bulk-destroy');
+        Route::get('aset/master/kategori', [AsetKategoriController::class, 'index'])
+            ->name('aset.master.kategori.index');
+        Route::post('aset/master/kategori/simpan', [AsetKategoriController::class, 'store'])
+            ->name('aset.master.kategori.store');
+        Route::patch('aset/master/kategori/{kategori}', [AsetKategoriController::class, 'update'])
+            ->name('aset.master.kategori.update');
+        Route::delete('aset/master/kategori/{kategori}', [AsetKategoriController::class, 'destroy'])
+            ->name('aset.master.kategori.destroy');
+        Route::post('aset/master/kategori/{kategori}/merge', [AsetKategoriController::class, 'merge'])
+            ->name('aset.master.kategori.merge');
+        Route::get('aset/pengaturan-penyusutan', [AsetPenyusutanSettingsController::class, 'edit'])
+            ->name('aset.pengaturan-penyusutan.edit');
+        Route::put('aset/pengaturan-penyusutan', [AsetPenyusutanSettingsController::class, 'update'])
+            ->name('aset.pengaturan-penyusutan.update');
 
-    Route::post('aset/{aset}/foto', [AsetFotoController::class, 'store'])->name('aset.foto.store');
-    Route::delete('aset/{aset}/foto/{foto}', [AsetFotoController::class, 'destroy'])->name('aset.foto.destroy');
-    Route::post('aset/{aset}/dokumen', [AsetDokumenController::class, 'store'])->name('aset.dokumen.store');
-    Route::get('aset/{aset}/dokumen/{dokumen}/unduh', [AsetDokumenController::class, 'unduh'])->name('aset.dokumen.unduh');
-    Route::delete('aset/{aset}/dokumen/{dokumen}', [AsetDokumenController::class, 'destroy'])->name('aset.dokumen.destroy');
-    Route::post('aset/{aset}/verifikasi', [AsetController::class, 'verifikasi'])->name('aset.verifikasi');
-    Route::patch('aset/{aset}/monitoring', [AsetController::class, 'updateMonitoring'])
-        ->name('aset.monitoring.update');
-    Route::get('aset/{aset}/label-print', [AsetController::class, 'labelPrint'])->name('aset.label-print');
-    Route::get('aset/{aset}/foto-sumber', [AsetFotoController::class, 'showSumber'])->name('aset.foto-sumber');
-    Route::resource('aset', AsetController::class)->parameters(['aset' => 'aset']);
+        Route::post('aset/{aset}/foto', [AsetFotoController::class, 'store'])->name('aset.foto.store');
+        Route::delete('aset/{aset}/foto/{foto}', [AsetFotoController::class, 'destroy'])->name('aset.foto.destroy');
+        Route::post('aset/{aset}/dokumen', [AsetDokumenController::class, 'store'])->name('aset.dokumen.store');
+        Route::get('aset/{aset}/dokumen/{dokumen}/unduh', [AsetDokumenController::class, 'unduh'])->name('aset.dokumen.unduh');
+        Route::delete('aset/{aset}/dokumen/{dokumen}', [AsetDokumenController::class, 'destroy'])->name('aset.dokumen.destroy');
+        Route::post('aset/{aset}/verifikasi', [AsetController::class, 'verifikasi'])->name('aset.verifikasi');
+        Route::patch('aset/{aset}/monitoring', [AsetController::class, 'updateMonitoring'])
+            ->name('aset.monitoring.update');
+        Route::get('aset/{aset}/label-print', [AsetController::class, 'labelPrint'])->name('aset.label-print');
+        Route::get('aset/{aset}/foto-sumber', [AsetFotoController::class, 'showSumber'])->name('aset.foto-sumber');
+        Route::resource('aset', AsetController::class)->parameters(['aset' => 'aset']);
+    });
 
     Route::middleware('monitoring.kategori')->group(function (): void {
         Route::get('monitoring/pengaturan-kategori', [MonitoringKategoriSettingsController::class, 'edit'])

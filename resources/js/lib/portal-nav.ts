@@ -65,6 +65,7 @@ export type PortalNavGroup = {
 export type PortalNavPermissions = {
     can_manage_users?: boolean;
     can_access_inventaris_simrs?: boolean;
+    can_access_aset?: boolean;
     can_access_payroll?: boolean;
     can_access_patroli?: boolean;
     can_access_checklist_kendaraan?: boolean;
@@ -639,9 +640,13 @@ export function buildVisibleModuleGroups(permissions?: PortalNavPermissions): Po
     const canAccessMonitoring = Boolean(permissions?.can_access_monitoring);
     const canManageMonitoringKategori = Boolean(permissions?.can_manage_monitoring_kategori);
     const canAccessBerkasKepegawaian = Boolean(permissions?.can_access_berkas_kepegawaian);
+    const canAccessAset = Boolean(permissions?.can_access_aset);
 
     const base = moduleGroups
         .filter((group) => {
+            if (group.id === 'inventaris') {
+                return canAccessAset;
+            }
             if (group.id === 'payroll') {
                 return canAccessPayroll;
             }
