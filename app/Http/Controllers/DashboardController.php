@@ -130,11 +130,19 @@ class DashboardController extends Controller
                 'count' => (int) $item->count,
             ]);
 
+        $isSqlite = DB::connection()->getDriverName() === 'sqlite';
+        $weekRaw = $isSqlite
+            ? "strftime('%Y%W', created_at) as week, COUNT(*) as count"
+            : 'YEARWEEK(created_at, 1) as week, COUNT(*) as count';
+        $monthRaw = $isSqlite
+            ? "strftime('%Y-%m', created_at) as month, COUNT(*) as count"
+            : 'DATE_FORMAT(created_at, "%Y-%m") as month, COUNT(*) as count';
+
         // Ticket volume by week (last 12 weeks)
         $weeklyVolume = Ticket::query()
             ->published()
             ->where('created_at', '>=', $now->copy()->subWeeks(12))
-            ->selectRaw('YEARWEEK(created_at, 1) as week, COUNT(*) as count')
+            ->selectRaw($weekRaw)
             ->groupBy('week')
             ->orderBy('week')
             ->get()
@@ -147,7 +155,7 @@ class DashboardController extends Controller
         $monthlyVolume = Ticket::query()
             ->published()
             ->where('created_at', '>=', $now->copy()->subMonths(12))
-            ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, COUNT(*) as count')
+            ->selectRaw($monthRaw)
             ->groupBy('month')
             ->orderBy('month')
             ->get()

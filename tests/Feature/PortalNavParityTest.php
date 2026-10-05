@@ -22,14 +22,14 @@ test('portal nav is the shared source of truth for desktop and mobile menus', fu
     expect($sidebar)
         ->toContain("from '@/lib/portal-nav'")
         ->toContain('buildVisibleModuleGroups')
-        ->toContain('mainNavItems')
+        ->toContain('buildVisibleMainNavItems')
         ->toContain('settingsNavItems')
         ->not->toContain('const moduleGroups');
 
     expect($mobile)
         ->toContain("from '@/lib/portal-nav'")
         ->toContain('buildVisibleModuleGroups')
-        ->toContain('mainNavItems')
+        ->toContain('buildVisibleMainNavItems')
         ->toContain('settingsNavItems')
         ->not->toContain('const moduleGroups')
         ->not->toContain("label: 'Titik & QR'")

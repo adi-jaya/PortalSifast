@@ -95,7 +95,11 @@ export type PortalNavPermissions = {
 };
 
 function isTicketListActive(path: string): boolean {
-    return path === '/tickets' || /^\/tickets\/\d+/.test(path) || /^\/tickets\/\d+\/edit/.test(path);
+    return (
+        path === '/tickets' ||
+        /^\/tickets\/\d+/.test(path) ||
+        /^\/tickets\/\d+\/edit/.test(path)
+    );
 }
 
 function isTicketCreateActive(path: string): boolean {
@@ -166,7 +170,13 @@ export const moduleGroups: PortalNavGroup[] = [
         label: 'Ticketing',
         icon: ListTodo,
         items: [
-            { id: 'tickets', label: 'Daftar Tiket', href: '/tickets', icon: ListTodo, isActive: isTicketListActive },
+            {
+                id: 'tickets',
+                label: 'Daftar Tiket',
+                href: '/tickets',
+                icon: ListTodo,
+                isActive: isTicketListActive,
+            },
             {
                 id: 'tickets-board',
                 label: 'Papan Tiket',
@@ -193,7 +203,8 @@ export const moduleGroups: PortalNavGroup[] = [
                 label: 'Catatan Kerja',
                 href: '/catatan',
                 icon: FileText,
-                isActive: (path) => path === '/catatan' || path.startsWith('/catatan?'),
+                isActive: (path) =>
+                    path === '/catatan' || path.startsWith('/catatan?'),
             },
             {
                 id: 'projects',
@@ -211,7 +222,8 @@ export const moduleGroups: PortalNavGroup[] = [
                 label: 'Laporan',
                 href: '/reports',
                 icon: BarChart3,
-                isActive: (path) => path === '/reports' || /^\/reports\/.+/.test(path),
+                isActive: (path) =>
+                    path === '/reports' || /^\/reports\/.+/.test(path),
             },
         ],
     },
@@ -225,7 +237,9 @@ export const moduleGroups: PortalNavGroup[] = [
                 label: 'Daftar Laporan',
                 href: '/emergency-reports',
                 icon: AlertTriangle,
-                isActive: (path) => path === '/emergency-reports' || /^\/emergency-reports\/\d+/.test(path),
+                isActive: (path) =>
+                    path === '/emergency-reports' ||
+                    /^\/emergency-reports\/\d+/.test(path),
             },
             {
                 id: 'emergency-reports-create',
@@ -285,7 +299,8 @@ export const moduleGroups: PortalNavGroup[] = [
                 href: '/payroll/employee-history',
                 icon: UserCircle,
                 isActive: (path) =>
-                    path === '/payroll/employee-history' || path.startsWith('/payroll/employee/'),
+                    path === '/payroll/employee-history' ||
+                    path.startsWith('/payroll/employee/'),
             },
             {
                 id: 'payroll-audit-logs',
@@ -330,7 +345,9 @@ export const moduleGroups: PortalNavGroup[] = [
                 label: 'Area & Ruang',
                 href: '/patroli/area',
                 icon: MapPin,
-                isActive: (path) => path.startsWith('/patroli/area') || path.startsWith('/patroli/titik'),
+                isActive: (path) =>
+                    path.startsWith('/patroli/area') ||
+                    path.startsWith('/patroli/titik'),
             },
         ],
     },
@@ -397,14 +414,16 @@ export const moduleGroups: PortalNavGroup[] = [
                 icon: Activity,
                 isActive: (path) =>
                     path === '/monitoring' ||
-                    (/^\/monitoring\/\d+/.test(path) && !path.startsWith('/monitoring/pengaturan')),
+                    (/^\/monitoring\/\d+/.test(path) &&
+                        !path.startsWith('/monitoring/pengaturan')),
             },
             {
                 id: 'monitoring-kategori',
                 label: 'Kategori Monitor',
                 href: '/monitoring/pengaturan-kategori',
                 icon: Settings2,
-                isActive: (path) => path.startsWith('/monitoring/pengaturan-kategori'),
+                isActive: (path) =>
+                    path.startsWith('/monitoring/pengaturan-kategori'),
             },
             {
                 id: 'infrastruktur',
@@ -557,7 +576,8 @@ export const moduleGroups: PortalNavGroup[] = [
                 label: 'Pengaturan Penyusutan',
                 href: '/aset/pengaturan-penyusutan',
                 icon: Wallet,
-                isActive: (path) => path.startsWith('/aset/pengaturan-penyusutan'),
+                isActive: (path) =>
+                    path.startsWith('/aset/pengaturan-penyusutan'),
             },
             {
                 id: 'aset-sinkron',
@@ -579,14 +599,17 @@ export const moduleGroups: PortalNavGroup[] = [
                 label: 'Katalog Inventaris',
                 href: '/inventaris',
                 icon: Package,
-                isActive: (path) => path === '/inventaris' || /^\/inventaris\/[^/]+/.test(path),
+                isActive: (path) =>
+                    path === '/inventaris' || /^\/inventaris\/[^/]+/.test(path),
             },
             {
                 id: 'inventaris-barang',
                 label: 'Barang',
                 href: '/inventaris-barang',
                 icon: Boxes,
-                isActive: (path) => path === '/inventaris-barang' || /^\/inventaris-barang\/[^/]+/.test(path),
+                isActive: (path) =>
+                    path === '/inventaris-barang' ||
+                    /^\/inventaris-barang\/[^/]+/.test(path),
             },
             {
                 id: 'inventaris-ruang',
@@ -627,7 +650,9 @@ export const moduleGroups: PortalNavGroup[] = [
     },
 ];
 
-export function buildVisibleMainNavItems(permissions?: PortalNavPermissions): PortalNavItem[] {
+export function buildVisibleMainNavItems(
+    permissions?: PortalNavPermissions,
+): PortalNavItem[] {
     const canManageUsers = Boolean(permissions?.can_manage_users);
 
     return mainNavItems.filter((item) => {
@@ -639,20 +664,32 @@ export function buildVisibleMainNavItems(permissions?: PortalNavPermissions): Po
     });
 }
 
-export function buildVisibleModuleGroups(permissions?: PortalNavPermissions): PortalNavGroup[] {
+export function buildVisibleModuleGroups(
+    permissions?: PortalNavPermissions,
+): PortalNavGroup[] {
     const canAccessPayroll = Boolean(permissions?.can_access_payroll);
     const canAccessPatroli = Boolean(permissions?.can_access_patroli);
-    const canCreateDriverPemeriksaan = Boolean(permissions?.can_create_driver_pemeriksaan);
-    const canCoordinateDriver = Boolean(permissions?.can_coordinate_checklist_kendaraan);
-    const canManageDriverMaster = Boolean(permissions?.can_manage_driver_master);
+    const canCreateDriverPemeriksaan = Boolean(
+        permissions?.can_create_driver_pemeriksaan,
+    );
+    const canCoordinateDriver = Boolean(
+        permissions?.can_coordinate_checklist_kendaraan,
+    );
+    const canManageDriverMaster = Boolean(
+        permissions?.can_manage_driver_master,
+    );
     const canAccessDriver =
         Boolean(permissions?.can_access_checklist_kendaraan) ||
         canCreateDriverPemeriksaan ||
         canCoordinateDriver ||
         canManageDriverMaster;
     const canAccessMonitoring = Boolean(permissions?.can_access_monitoring);
-    const canManageMonitoringKategori = Boolean(permissions?.can_manage_monitoring_kategori);
-    const canAccessBerkasKepegawaian = Boolean(permissions?.can_access_berkas_kepegawaian);
+    const canManageMonitoringKategori = Boolean(
+        permissions?.can_manage_monitoring_kategori,
+    );
+    const canAccessBerkasKepegawaian = Boolean(
+        permissions?.can_access_berkas_kepegawaian,
+    );
     const canAccessAset = Boolean(permissions?.can_access_aset);
 
     const base = moduleGroups
@@ -693,7 +730,10 @@ export function buildVisibleModuleGroups(permissions?: PortalNavPermissions): Po
                         if (item.id === 'driver-laporan') {
                             return canCoordinateDriver || canManageDriverMaster;
                         }
-                        if (item.id === 'driver-kendaraan' || item.id === 'driver-item-checklist') {
+                        if (
+                            item.id === 'driver-kendaraan' ||
+                            item.id === 'driver-item-checklist'
+                        ) {
                             return canManageDriverMaster;
                         }
 
@@ -728,12 +768,16 @@ export function buildVisibleModuleGroups(permissions?: PortalNavPermissions): Po
         base.push(simmutuGroup);
     }
 
-    const tatanaskahGroup = buildTatanaskahNavGroup(permissions?.tatanaskah?.can_view);
+    const tatanaskahGroup = buildTatanaskahNavGroup(
+        permissions?.tatanaskah?.can_view,
+    );
     if (tatanaskahGroup) {
         base.push(tatanaskahGroup);
     }
 
-    const webOfficialGroup = buildWebOfficialNavGroup(permissions?.web_official);
+    const webOfficialGroup = buildWebOfficialNavGroup(
+        permissions?.web_official,
+    );
     if (webOfficialGroup) {
         base.push(webOfficialGroup);
     }

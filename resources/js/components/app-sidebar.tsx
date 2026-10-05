@@ -155,7 +155,8 @@ const portalNavItems: NavItem[] = [
 export function AppSidebar() {
     const { permissions } = usePage<SharedData>().props;
     const visibleMainNavItems = mainNavItems.filter(
-        (item) => item.href !== '/aset' || Boolean(permissions?.can_access_aset),
+        (item) =>
+            item.href !== '/aset' || Boolean(permissions?.can_access_aset),
     );
 
     return (
