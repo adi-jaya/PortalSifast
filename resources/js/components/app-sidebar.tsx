@@ -14,13 +14,10 @@
  * Lihat panduan pendaftaran menu baru di: `docs/TUTORIAL-TAMBAH-FITUR-BARU.md` (Step 6).
  * ============================================================================
  */
-
 import { Link, usePage } from '@inertiajs/react';
 import {
     Activity,
     BarChart3,
-    Boxes,
-    Building2,
     Columns3,
     FilePenLine,
     FileText,
@@ -28,7 +25,6 @@ import {
     Globe,
     LayoutGrid,
     ListFilter,
-    MapPin,
     Package,
     Server,
     Settings2,
@@ -49,6 +45,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import type { PortalNavPermissions } from '@/lib/portal-nav';
 import { dashboard } from '@/routes';
 import type { NavItem, SharedData } from '@/types';
 import AppLogo from './app-logo';
@@ -105,26 +102,6 @@ const mainNavItems: NavItem[] = [
         icon: Package,
     },
     {
-        title: 'Inventaris SIMRS',
-        href: '/inventaris',
-        icon: Package,
-    },
-    {
-        title: 'Master Barang',
-        href: '/inventaris-barang',
-        icon: Boxes,
-    },
-    {
-        title: 'Master Ruang',
-        href: '/inventaris-ruang',
-        icon: MapPin,
-    },
-    {
-        title: 'Master Produsen',
-        href: '/inventaris-produsen',
-        icon: Building2,
-    },
-    {
         title: 'User Online',
         href: '/users/online',
         icon: Wifi,
@@ -177,6 +154,9 @@ const portalNavItems: NavItem[] = [
 
 export function AppSidebar() {
     const { permissions } = usePage<SharedData>().props;
+    const visibleMainNavItems = mainNavItems.filter(
+        (item) => item.href !== '/aset' || Boolean(permissions?.can_access_aset),
+    );
 
     return (
         <Sidebar collapsible="icon" variant="inset">
@@ -193,7 +173,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain items={visibleMainNavItems} />
                 {permissions?.can_manage_portals && (
                     <NavMain items={portalNavItems} label="Portal Eksternal" />
                 )}

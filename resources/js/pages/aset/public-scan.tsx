@@ -372,11 +372,11 @@ export default function AsetPublicScan({
                             <Button asChild className="h-11 w-full bg-teal-700 hover:bg-teal-800">
                                 <Link href={manageUrl}>Buka di portal</Link>
                             </Button>
-                        ) : (
+                        ) : !authenticated ? (
                             <Button asChild className="h-11 w-full bg-teal-700 hover:bg-teal-800">
                                 <Link href={manageUrl}>Masuk untuk lihat detail lengkap</Link>
                             </Button>
-                        )}
+                        ) : null}
                         <p className="text-center text-[11px] text-muted-foreground">
                             RS Aisyiyah Siti Fatimah · Inventaris Portal
                         </p>

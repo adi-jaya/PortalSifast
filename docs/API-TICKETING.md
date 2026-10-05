@@ -134,6 +134,22 @@ Format response, filter `period`, detail per ID, dan import CSV ada di **[api-do
 
 ---
 
+## Driver (checklist kendaraan) — **cara NIK sama persis**
+
+Gunakan **token yang sama** dan **NIK yang sama** seperti tiket/payroll.
+
+**Cek akses dulu:**
+
+`GET /api/sifast/driver/me?nik={nik}`  
+Header: `Authorization: Bearer {token}` (sama `VITE_PORTALSIFAST_API_TOKEN`).
+
+Response **200** berisi `can_create_driver_pemeriksaan` dan `can_access_checklist_kendaraan`.  
+Keduanya harus `true` sebelum membuka form. Jika `false`: aktifkan flag Driver di PortalSifast → Users (**bukan** masalah CORS — jika tiket dari app yang sama sudah jalan, CORS biasanya sudah OK).
+
+Dokumentasi lengkap: **[DRIVER-API-ANDROID.md](./DRIVER-API-ANDROID.md)**.
+
+---
+
 ## Endpoint
 
 Ada 2 versi endpoint:

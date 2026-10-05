@@ -14,6 +14,7 @@ import {
     Globe,
     HandCoins,
     HeartPulse,
+    Inbox,
     LayoutGrid,
     ListFilter,
     ListTodo,
@@ -33,6 +34,8 @@ import {
     Wallet,
     Boxes,
     BarChart3,
+    Car,
+    FileStack,
 } from 'lucide-react';
 import { buildPortalNavGroup } from '@/lib/build-portal-nav-group';
 import { buildSikatNavGroup } from '@/lib/build-sikat-nav-group';
@@ -63,8 +66,18 @@ export type PortalNavGroup = {
 
 export type PortalNavPermissions = {
     can_manage_portals?: boolean;
+    can_manage_users?: boolean;
+    can_access_inventaris_simrs?: boolean;
+    can_access_aset?: boolean;
     can_access_payroll?: boolean;
     can_access_patroli?: boolean;
+    can_access_checklist_kendaraan?: boolean;
+    can_create_driver_pemeriksaan?: boolean;
+    can_coordinate_checklist_kendaraan?: boolean;
+    can_manage_driver_master?: boolean;
+    can_access_monitoring?: boolean;
+    can_manage_monitoring_kategori?: boolean;
+    can_access_berkas_kepegawaian?: boolean;
     simmutu?: {
         can_view?: boolean;
         can_manage?: boolean;
@@ -322,6 +335,56 @@ export const moduleGroups: PortalNavGroup[] = [
         ],
     },
     {
+        id: 'driver',
+        label: 'Driver',
+        icon: Car,
+        hint: 'Checklist kendaraan',
+        items: [
+            {
+                id: 'driver-dashboard',
+                label: 'Checklist Hari Ini',
+                href: '/driver',
+                icon: ClipboardCheck,
+                isActive: (path) => path === '/driver',
+            },
+            {
+                id: 'driver-pemeriksaan',
+                label: 'Pemeriksaan',
+                href: '/driver/pemeriksaan',
+                icon: ListTodo,
+                isActive: (path) => path.startsWith('/driver/pemeriksaan'),
+            },
+            {
+                id: 'driver-riwayat',
+                label: 'Riwayat',
+                href: '/driver/riwayat',
+                icon: FileText,
+                isActive: (path) => path.startsWith('/driver/riwayat'),
+            },
+            {
+                id: 'driver-laporan',
+                label: 'Laporan',
+                href: '/driver/laporan',
+                icon: BarChart3,
+                isActive: (path) => path.startsWith('/driver/laporan'),
+            },
+            {
+                id: 'driver-kendaraan',
+                label: 'Master Kendaraan',
+                href: '/driver/kendaraan',
+                icon: Car,
+                isActive: (path) => path.startsWith('/driver/kendaraan'),
+            },
+            {
+                id: 'driver-item-checklist',
+                label: 'Item Checklist',
+                href: '/driver/item-checklist',
+                icon: Tags,
+                isActive: (path) => path.startsWith('/driver/item-checklist'),
+            },
+        ],
+    },
+    {
         id: 'monitoring',
         label: 'Monitoring',
         icon: Activity,
@@ -352,6 +415,52 @@ export const moduleGroups: PortalNavGroup[] = [
                     path === '/infrastruktur' ||
                     path.startsWith('/infrastruktur') ||
                     path.startsWith('/laporan-tianji'),
+            },
+        ],
+    },
+    {
+        id: 'berkas-kepegawaian',
+        label: 'Berkas Kepegawaian',
+        icon: FileStack,
+        items: [
+            {
+                id: 'berkas-kepegawaian-list',
+                label: 'Daftar Pegawai',
+                href: '/berkas-kepegawaian',
+                icon: Users,
+                isActive: (path) =>
+                    path === '/berkas-kepegawaian' ||
+                    (path.startsWith('/berkas-kepegawaian/') &&
+                        !path.startsWith('/berkas-kepegawaian/master') &&
+                        !path.startsWith('/berkas-kepegawaian/inbox') &&
+                        !path.startsWith('/berkas-kepegawaian/referensi')),
+            },
+            {
+                id: 'berkas-kepegawaian-inbox',
+                label: 'Inbox Scan',
+                href: '/berkas-kepegawaian/inbox',
+                icon: Inbox,
+                isActive: (path) =>
+                    path === '/berkas-kepegawaian/inbox' ||
+                    path.startsWith('/berkas-kepegawaian/inbox/'),
+            },
+            {
+                id: 'berkas-kepegawaian-master',
+                label: 'Master Jenis Berkas',
+                href: '/berkas-kepegawaian/master',
+                icon: FolderCog,
+                isActive: (path) =>
+                    path === '/berkas-kepegawaian/master' ||
+                    path.startsWith('/berkas-kepegawaian/master/'),
+            },
+            {
+                id: 'berkas-kepegawaian-referensi',
+                label: 'Master Referensi',
+                href: '/berkas-kepegawaian/referensi',
+                icon: ListFilter,
+                isActive: (path) =>
+                    path === '/berkas-kepegawaian/referensi' ||
+                    path.startsWith('/berkas-kepegawaian/referensi/'),
             },
         ],
     },
@@ -407,6 +516,20 @@ export const moduleGroups: PortalNavGroup[] = [
                 href: '/aset/master/jenis',
                 icon: Shapes,
                 isActive: (path) => path.startsWith('/aset/master/jenis'),
+            },
+            {
+                id: 'aset-master-merk',
+                label: 'Master Merk',
+                href: '/aset/master/merk',
+                icon: BadgeCheck,
+                isActive: (path) => path.startsWith('/aset/master/merk'),
+            },
+            {
+                id: 'aset-master-distributor',
+                label: 'Master Distributor',
+                href: '/aset/master/distributor',
+                icon: Building2,
+                isActive: (path) => path.startsWith('/aset/master/distributor'),
             },
             {
                 id: 'aset-master-ruang',
@@ -504,20 +627,96 @@ export const moduleGroups: PortalNavGroup[] = [
     },
 ];
 
-export function buildVisibleModuleGroups(permissions?: PortalNavPermissions): PortalNavGroup[] {
-    const canAccessPayroll = Boolean(permissions?.can_access_payroll);
-    const canAccessPatroli = Boolean(permissions?.can_access_patroli);
+export function buildVisibleMainNavItems(permissions?: PortalNavPermissions): PortalNavItem[] {
+    const canManageUsers = Boolean(permissions?.can_manage_users);
 
-    const base = moduleGroups.filter((group) => {
-        if (group.id === 'payroll') {
-            return canAccessPayroll;
-        }
-        if (group.id === 'patroli') {
-            return canAccessPatroli;
+    return mainNavItems.filter((item) => {
+        if (item.id === 'users') {
+            return canManageUsers;
         }
 
         return true;
     });
+}
+
+export function buildVisibleModuleGroups(permissions?: PortalNavPermissions): PortalNavGroup[] {
+    const canAccessPayroll = Boolean(permissions?.can_access_payroll);
+    const canAccessPatroli = Boolean(permissions?.can_access_patroli);
+    const canCreateDriverPemeriksaan = Boolean(permissions?.can_create_driver_pemeriksaan);
+    const canCoordinateDriver = Boolean(permissions?.can_coordinate_checklist_kendaraan);
+    const canManageDriverMaster = Boolean(permissions?.can_manage_driver_master);
+    const canAccessDriver =
+        Boolean(permissions?.can_access_checklist_kendaraan) ||
+        canCreateDriverPemeriksaan ||
+        canCoordinateDriver ||
+        canManageDriverMaster;
+    const canAccessMonitoring = Boolean(permissions?.can_access_monitoring);
+    const canManageMonitoringKategori = Boolean(permissions?.can_manage_monitoring_kategori);
+    const canAccessBerkasKepegawaian = Boolean(permissions?.can_access_berkas_kepegawaian);
+    const canAccessAset = Boolean(permissions?.can_access_aset);
+
+    const base = moduleGroups
+        .filter((group) => {
+            if (group.id === 'inventaris') {
+                return canAccessAset;
+            }
+            if (group.id === 'payroll') {
+                return canAccessPayroll;
+            }
+            if (group.id === 'patroli') {
+                return canAccessPatroli;
+            }
+            if (group.id === 'driver') {
+                return canAccessDriver;
+            }
+            if (group.id === 'monitoring') {
+                return canAccessMonitoring;
+            }
+            if (group.id === 'berkas-kepegawaian') {
+                return canAccessBerkasKepegawaian;
+            }
+            // Sembunyikan dari sidebar untuk sementara — modul belum dipakai.
+            if (group.id === 'inventaris-simrs') {
+                return false;
+            }
+
+            return true;
+        })
+        .map((group) => {
+            if (group.id === 'driver') {
+                return {
+                    ...group,
+                    items: group.items.filter((item) => {
+                        if (item.id === 'driver-pemeriksaan') {
+                            return canCreateDriverPemeriksaan;
+                        }
+                        if (item.id === 'driver-laporan') {
+                            return canCoordinateDriver || canManageDriverMaster;
+                        }
+                        if (item.id === 'driver-kendaraan' || item.id === 'driver-item-checklist') {
+                            return canManageDriverMaster;
+                        }
+
+                        return true;
+                    }),
+                };
+            }
+
+            if (group.id === 'monitoring') {
+                return {
+                    ...group,
+                    items: group.items.filter((item) => {
+                        if (item.id === 'monitoring-kategori') {
+                            return canManageMonitoringKategori;
+                        }
+
+                        return true;
+                    }),
+                };
+            }
+
+            return group;
+        });
 
     const sikatGroup = buildSikatNavGroup(permissions?.sikat?.enabled);
     if (sikatGroup) {

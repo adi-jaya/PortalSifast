@@ -12,6 +12,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useAsetDetailHref } from '@/hooks/use-aset-detail-href';
 import AppLayout from '@/layouts/app-layout';
 import { formatRelativeId } from '@/lib/monitoring';
 import { cn } from '@/lib/utils';
@@ -72,6 +73,7 @@ export default function MonitoringIndex({ devices, filters, stats }: Props) {
     const [status, setStatus] = useState(filters.status || 'all');
     const [sort, setSort] = useState(filters.sort || 'last_seen');
     const [asetLink, setAsetLink] = useState(filters.aset_link || 'all');
+    const asetDetailHref = useAsetDetailHref();
 
     usePoll(30000, {
         only: ['devices', 'stats'],
@@ -385,7 +387,7 @@ export default function MonitoringIndex({ devices, filters, stats }: Props) {
                                             <td className="px-3 py-3">
                                                 {device.aset ? (
                                                     <Link
-                                                        href={`/aset/${device.aset.kode_aset}`}
+                                                        href={asetDetailHref(device.aset.kode_aset)}
                                                         className="inline-flex items-center gap-1 text-sm font-medium underline-offset-2 hover:underline"
                                                         onClick={(e) => e.stopPropagation()}
                                                     >

@@ -38,6 +38,11 @@ type Props = {
         dep_id: string | null;
         can_access_payroll?: boolean;
         can_access_patroli?: boolean;
+        can_access_checklist_kendaraan?: boolean;
+        can_coordinate_checklist_kendaraan?: boolean;
+        can_access_monitoring?: boolean;
+        can_manage_monitoring_kategori?: boolean;
+        can_access_berkas_kepegawaian?: boolean;
         can_manage_mutu?: boolean;
         can_input_mutu?: boolean;
         can_view_mutu_dashboard?: boolean;
@@ -46,6 +51,9 @@ type Props = {
     departments: Department[];
     canManagePayrollAccess: boolean;
     canManagePatroliAccess: boolean;
+    canManageDriverAccess: boolean;
+    canManageMonitoringAccess: boolean;
+    canManageBerkasKepegawaianAccess: boolean;
     canManageMutuAccess: boolean;
     canManageWebOfficialAccess: boolean;
 };
@@ -55,6 +63,9 @@ export default function UsersEdit({
     departments,
     canManagePayrollAccess,
     canManagePatroliAccess,
+    canManageDriverAccess,
+    canManageMonitoringAccess,
+    canManageBerkasKepegawaianAccess,
     canManageMutuAccess,
     canManageWebOfficialAccess,
 }: Props) {
@@ -68,6 +79,11 @@ export default function UsersEdit({
         dep_id: user.dep_id || '__none__',
         can_access_payroll: Boolean(user.can_access_payroll),
         can_access_patroli: Boolean(user.can_access_patroli),
+        can_access_checklist_kendaraan: Boolean(user.can_access_checklist_kendaraan),
+        can_coordinate_checklist_kendaraan: Boolean(user.can_coordinate_checklist_kendaraan),
+        can_access_monitoring: Boolean(user.can_access_monitoring),
+        can_manage_monitoring_kategori: Boolean(user.can_manage_monitoring_kategori),
+        can_access_berkas_kepegawaian: Boolean(user.can_access_berkas_kepegawaian),
         can_manage_mutu: Boolean(user.can_manage_mutu),
         can_input_mutu: Boolean(user.can_input_mutu),
         can_view_mutu_dashboard: Boolean(user.can_view_mutu_dashboard),
@@ -96,6 +112,17 @@ export default function UsersEdit({
         }
         if (canManagePatroliAccess) {
             payload.can_access_patroli = Boolean(data.can_access_patroli);
+        }
+        if (canManageDriverAccess) {
+            payload.can_access_checklist_kendaraan = Boolean(data.can_access_checklist_kendaraan);
+            payload.can_coordinate_checklist_kendaraan = Boolean(data.can_coordinate_checklist_kendaraan);
+        }
+        if (canManageMonitoringAccess) {
+            payload.can_access_monitoring = Boolean(data.can_access_monitoring);
+            payload.can_manage_monitoring_kategori = Boolean(data.can_manage_monitoring_kategori);
+        }
+        if (canManageBerkasKepegawaianAccess) {
+            payload.can_access_berkas_kepegawaian = Boolean(data.can_access_berkas_kepegawaian);
         }
         if (canManageMutuAccess) {
             payload.can_manage_mutu = Boolean(data.can_manage_mutu);
@@ -229,9 +256,104 @@ export default function UsersEdit({
                                 </Label>
                             </div>
                             <p className="text-xs text-muted-foreground">
-                                Hanya superadmin yang dapat memberi/mencabut akses patroli.
+                                Hanya admin yang dapat memberi/mencabut akses patroli.
                             </p>
                             <InputError message={getError('can_access_patroli')} />
+                        </div>
+                    )}
+
+                    {canManageDriverAccess && (
+                        <div className="grid gap-3 rounded-lg border border-border p-4">
+                            <p className="text-sm font-medium">Driver — Checklist Kendaraan</p>
+                            <div className="flex items-center gap-3">
+                                <Checkbox
+                                    id="can_access_checklist_kendaraan"
+                                    checked={Boolean(data.can_access_checklist_kendaraan)}
+                                    onCheckedChange={(checked) =>
+                                        setData('can_access_checklist_kendaraan', checked === true)
+                                    }
+                                />
+                                <Label htmlFor="can_access_checklist_kendaraan" className="cursor-pointer">
+                                    Izinkan input pemeriksaan (petugas)
+                                </Label>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <Checkbox
+                                    id="can_coordinate_checklist_kendaraan"
+                                    checked={Boolean(data.can_coordinate_checklist_kendaraan)}
+                                    onCheckedChange={(checked) =>
+                                        setData('can_coordinate_checklist_kendaraan', checked === true)
+                                    }
+                                />
+                                <Label htmlFor="can_coordinate_checklist_kendaraan" className="cursor-pointer">
+                                    Izinkan akses laporan / koordinator
+                                </Label>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                Role admin otomatis punya akses master/laporan. Flag ini untuk staff.
+                                Hanya admin yang dapat mengatur.
+                            </p>
+                            <InputError message={getError('can_access_checklist_kendaraan')} />
+                            <InputError message={getError('can_coordinate_checklist_kendaraan')} />
+                        </div>
+                    )}
+
+                    {canManageMonitoringAccess && (
+                        <div className="grid gap-3 rounded-lg border border-border p-4">
+                            <p className="text-sm font-medium">Monitoring</p>
+                            <div className="flex items-center gap-3">
+                                <Checkbox
+                                    id="can_access_monitoring"
+                                    checked={Boolean(data.can_access_monitoring)}
+                                    onCheckedChange={(checked) =>
+                                        setData('can_access_monitoring', checked === true)
+                                    }
+                                />
+                                <Label htmlFor="can_access_monitoring" className="cursor-pointer">
+                                    Izinkan akses Monitoring
+                                </Label>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <Checkbox
+                                    id="can_manage_monitoring_kategori"
+                                    checked={Boolean(data.can_manage_monitoring_kategori)}
+                                    onCheckedChange={(checked) =>
+                                        setData('can_manage_monitoring_kategori', checked === true)
+                                    }
+                                />
+                                <Label htmlFor="can_manage_monitoring_kategori" className="cursor-pointer">
+                                    Izinkan kelola pengaturan kategori
+                                </Label>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                Role admin otomatis punya akses. Flag ini untuk staff. Hanya admin yang
+                                dapat mengatur.
+                            </p>
+                            <InputError message={getError('can_access_monitoring')} />
+                            <InputError message={getError('can_manage_monitoring_kategori')} />
+                        </div>
+                    )}
+
+                    {canManageBerkasKepegawaianAccess && (
+                        <div className="grid gap-3 rounded-lg border border-border p-4">
+                            <p className="text-sm font-medium">Berkas Kepegawaian</p>
+                            <div className="flex items-center gap-3">
+                                <Checkbox
+                                    id="can_access_berkas_kepegawaian"
+                                    checked={Boolean(data.can_access_berkas_kepegawaian)}
+                                    onCheckedChange={(checked) =>
+                                        setData('can_access_berkas_kepegawaian', checked === true)
+                                    }
+                                />
+                                <Label htmlFor="can_access_berkas_kepegawaian" className="cursor-pointer">
+                                    Izinkan akses Berkas Kepegawaian
+                                </Label>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                Role admin otomatis punya akses. Flag ini untuk staff. Hanya admin yang
+                                dapat mengatur.
+                            </p>
+                            <InputError message={getError('can_access_berkas_kepegawaian')} />
                         </div>
                     )}
 
