@@ -10,6 +10,8 @@ final class WebOfficialMediaStorageService
 {
     private const MAX_SIZE_KB = 2048;
 
+    public const FOLDERS = ['informasi', 'kamar-inap', 'promosi', 'poliklinik', 'rekanan', 'bio-links'];
+
     /**
      * @return array{url: string, path: string, original_name: string, mime_type: string, size: int}
      */
@@ -54,7 +56,7 @@ final class WebOfficialMediaStorageService
     {
         $folder = Str::slug($folder);
 
-        return in_array($folder, ['informasi', 'kamar-inap', 'promosi', 'poliklinik'], true) ? $folder : 'informasi';
+        return in_array($folder, self::FOLDERS, true) ? $folder : 'informasi';
     }
 
     private function safeOriginalFilename(UploadedFile $file): string

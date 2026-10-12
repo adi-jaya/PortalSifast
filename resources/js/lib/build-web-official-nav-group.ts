@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { BedDouble, FileText, Handshake, Instagram, LayoutGrid, MessageSquareWarning, Newspaper, Stethoscope, TicketPercent } from 'lucide-react';
+import { BedDouble, FileText, Handshake, Instagram, LayoutGrid, Link2, MessageSquareWarning, Newspaper, Stethoscope, TicketPercent } from 'lucide-react';
 
 export type WebOfficialNavPermissions = {
     can_manage?: boolean;
@@ -71,6 +71,13 @@ export function buildWebOfficialNavGroup(perm?: WebOfficialNavPermissions): NavG
                 href: '/web-official/rekanan',
                 icon: Handshake,
                 isActive: (path) => path.startsWith('/web-official/rekanan'),
+            },
+            {
+                id: 'web-official-bio-links',
+                label: 'Bio Links',
+                href: '/web-official/bio-links',
+                icon: Link2,
+                isActive: (path) => path.startsWith('/web-official/bio-links'),
             },
             {
                 id: 'web-official-kritik-saran',

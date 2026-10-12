@@ -1,7 +1,11 @@
 <?php
 
+use App\Http\Controllers\Api\Agent\AgentCommandResultController;
+use App\Http\Controllers\Api\Agent\HeartbeatController;
+use App\Http\Controllers\Api\Agent\RegisterController;
 use App\Http\Controllers\Api\ApiAuthSessionController;
 use App\Http\Controllers\Api\ApiTicketController;
+use App\Http\Controllers\Api\BerkasScanInboxController;
 use App\Http\Controllers\Api\Driver\DriverHariIniController;
 use App\Http\Controllers\Api\Driver\DriverKendaraanController as ApiDriverKendaraanController;
 use App\Http\Controllers\Api\Driver\DriverMeController as ApiDriverMeController;
@@ -28,6 +32,8 @@ use App\Http\Controllers\Api\WebOfficial\InstagramFeedAdminController;
 use App\Http\Controllers\Api\WebOfficial\InstagramFeedController;
 use App\Http\Controllers\Api\WebOfficial\WebOfficialArticleAdminController;
 use App\Http\Controllers\Api\WebOfficial\WebOfficialArticleController;
+use App\Http\Controllers\Api\WebOfficial\WebOfficialBioLinkAdminController;
+use App\Http\Controllers\Api\WebOfficial\WebOfficialBioLinkController;
 use App\Http\Controllers\Api\WebOfficial\WebOfficialFeedbackAdminController;
 use App\Http\Controllers\Api\WebOfficial\WebOfficialFeedbackController;
 use App\Http\Controllers\Api\WebOfficial\WebOfficialMediaController;
@@ -197,6 +203,8 @@ Route::post('kritik-saran', [WebOfficialFeedbackController::class, 'store'])
     ->middleware('throttle:kritik-saran');
 Route::get('service-units', [WebOfficialFeedbackController::class, 'serviceUnits']);
 
+Route::get('bio-links', WebOfficialBioLinkController::class);
+
 Route::get('instagram-feed', [InstagramFeedController::class, 'index']);
 Route::get('berita-eksternal', [ExternalRssFeedController::class, 'index']);
 
@@ -259,21 +267,30 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'webofficial.admin'])->group
     Route::get('/kritik-saran/{feedback}', [WebOfficialFeedbackAdminController::class, 'show']);
     Route::patch('/kritik-saran/{feedback}', [WebOfficialFeedbackAdminController::class, 'partialUpdate']);
     Route::delete('/kritik-saran/{feedback}', [WebOfficialFeedbackAdminController::class, 'destroy']);
+
+    Route::put('/bio-links/order', [WebOfficialBioLinkAdminController::class, 'reorder']);
+    Route::get('/bio-links', [WebOfficialBioLinkAdminController::class, 'index']);
+    Route::post('/bio-links', [WebOfficialBioLinkAdminController::class, 'store']);
+    Route::get('/bio-links/{bioLink}', [WebOfficialBioLinkAdminController::class, 'show'])->whereUuid('bioLink');
+    Route::patch('/bio-links/{bioLink}', [WebOfficialBioLinkAdminController::class, 'update'])->whereUuid('bioLink');
+    Route::delete('/bio-links/{bioLink}', [WebOfficialBioLinkAdminController::class, 'destroy'])->whereUuid('bioLink');
+    Route::get('/bio-socials', [WebOfficialBioLinkAdminController::class, 'socials']);
+    Route::put('/bio-socials', [WebOfficialBioLinkAdminController::class, 'updateSocials']);
 });
 
 // RS Agent monitoring (machine clients — enrollment key / device API key)
 Route::prefix('agent')->group(function () {
-    Route::post('/register', \App\Http\Controllers\Api\Agent\RegisterController::class);
-    Route::post('/heartbeat', \App\Http\Controllers\Api\Agent\HeartbeatController::class)
+    Route::post('/register', RegisterController::class);
+    Route::post('/heartbeat', HeartbeatController::class)
         ->middleware('auth.agent');
-    Route::post('/commands/result', \App\Http\Controllers\Api\Agent\AgentCommandResultController::class)
+    Route::post('/commands/result', AgentCommandResultController::class)
         ->middleware('auth.agent');
 });
 
 // Berkas scan agent (Plustek OCR inbox) — dedicated static token
 Route::prefix('berkas-scan')->middleware('auth.berkas-scan-agent')->group(function (): void {
-    Route::post('/inbox', [\App\Http\Controllers\Api\BerkasScanInboxController::class, 'store']);
-    Route::get('/jenis', [\App\Http\Controllers\Api\BerkasScanInboxController::class, 'jenis']);
+    Route::post('/inbox', [BerkasScanInboxController::class, 'store']);
+    Route::get('/jenis', [BerkasScanInboxController::class, 'jenis']);
 });
 
 // Telegram bot webhook (tanpa auth — dipanggil oleh Telegram)

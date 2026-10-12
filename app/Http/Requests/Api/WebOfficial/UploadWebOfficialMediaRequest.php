@@ -25,7 +25,7 @@ class UploadWebOfficialMediaRequest extends FormRequest
                 'mimes:jpeg,jpg,png,webp',
                 'max:'.WebOfficialMediaStorageService::maxSizeKb(),
             ],
-            'folder' => ['nullable', 'string', Rule::in(['informasi', 'kamar-inap', 'promosi', 'poliklinik', 'rekanan'])],
+            'folder' => ['nullable', 'string', Rule::in(WebOfficialMediaStorageService::FOLDERS)],
         ];
     }
 
