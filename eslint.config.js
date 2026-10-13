@@ -9,7 +9,15 @@ import typescript from 'typescript-eslint';
 /** @type {import('eslint').Linter.Config[]} */
 export default [
     js.configs.recommended,
-    reactHooks.configs.flat.recommended,
+    {
+        plugins: {
+            'react-hooks': reactHooks,
+        },
+        rules: {
+            'react-hooks/rules-of-hooks': 'error',
+            'react-hooks/exhaustive-deps': 'warn',
+        },
+    },
     ...typescript.configs.recommended,
     {
         ...react.configs.flat.recommended,
@@ -60,12 +68,35 @@ export default [
                 {
                     prefer: 'type-imports',
                     fixStyle: 'separate-type-imports',
+                    disallowTypeAnnotations: false,
                 },
             ],
+            '@typescript-eslint/no-unused-vars': [
+                'warn',
+                {
+                    argsIgnorePattern: '^_',
+                    varsIgnorePattern: '^_',
+                    caughtErrorsIgnorePattern: '^_',
+                },
+            ],
+            '@typescript-eslint/no-explicit-any': 'warn',
+            '@typescript-eslint/no-empty-object-type': 'warn',
+            'no-empty-pattern': 'warn',
+            'no-useless-escape': 'warn',
         },
     },
     {
-        ignores: ['vendor', 'node_modules', 'public', 'bootstrap/ssr', 'tailwind.config.js', 'vite.config.ts'],
+        ignores: [
+            'vendor',
+            'node_modules',
+            'public',
+            'bootstrap/ssr',
+            'tailwind.config.js',
+            'vite.config.ts',
+            'rs-extension/**',
+            'resources/js/actions/**',
+            'resources/js/routes/**',
+        ],
     },
     prettier, // Turn off all rules that might conflict with Prettier
 ];

@@ -6,10 +6,15 @@ import {
     User,
     Users,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardFooter,
+    CardHeader,
+} from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { PortalCardItem } from '@/types/portal';
 
@@ -26,11 +31,12 @@ export function PortalCard({
 }: PortalCardProps) {
     const [isLaunching, setIsLaunching] = useState(false);
     const [imageError, setImageError] = useState(false);
-    const [launchError, setLaunchError] = useState<string | null>(null);
-
-    useEffect(() => {
+    const [prevIconUrl, setPrevIconUrl] = useState(portal.icon_url);
+    if (prevIconUrl !== portal.icon_url) {
+        setPrevIconUrl(portal.icon_url);
         setImageError(false);
-    }, [portal.icon_url]);
+    }
+    const [launchError, setLaunchError] = useState<string | null>(null);
 
     const handleLaunch = async () => {
         // Fallback: Jika ekstensi belum terpasang, langsung buka tab baru ke URL target
@@ -42,22 +48,29 @@ export function PortalCard({
         setIsLaunching(true);
         setLaunchError(null);
         try {
-            const tokenMeta = document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement | null;
+            const tokenMeta = document.querySelector(
+                'meta[name="csrf-token"]',
+            ) as HTMLMetaElement | null;
             const csrfToken = tokenMeta ? tokenMeta.content : '';
 
-            const response = await fetch(`/portal-pelaporan/${portal.id}/dispatch-token`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest',
+            const response = await fetch(
+                `/portal-pelaporan/${portal.id}/dispatch-token`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
                 },
-            });
+            );
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || 'Gagal memproses kredensial portal.');
+                throw new Error(
+                    errorData.message || 'Gagal memproses kredensial portal.',
+                );
             }
 
             const payload = await response.json();
@@ -70,8 +83,15 @@ export function PortalCard({
             );
         } catch (err: unknown) {
             // Bila terjadi galat dispatch, fallback tetap membuka portal di tab baru
-            console.warn('[SIFAST Portal] Dispatch gagal, fallback ke direct tab:', err);
-            const openedWindow = window.open(portal.url, '_blank', 'noopener,noreferrer');
+            console.warn(
+                '[SIFAST Portal] Dispatch gagal, fallback ke direct tab:',
+                err,
+            );
+            const openedWindow = window.open(
+                portal.url,
+                '_blank',
+                'noopener,noreferrer',
+            );
             if (!openedWindow) {
                 setLaunchError('Popup tab baru diblokir browser.');
             }
@@ -109,7 +129,9 @@ export function PortalCard({
                             />
                         ) : (
                             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-500/10 to-teal-500/20 text-xs font-bold text-emerald-700 dark:text-emerald-300">
-                                {initials || <Globe className="h-5 w-5 text-emerald-600" />}
+                                {initials || (
+                                    <Globe className="h-5 w-5 text-emerald-600" />
+                                )}
                             </div>
                         )}
                     </div>
