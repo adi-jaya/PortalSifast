@@ -36,11 +36,26 @@ type BarangOpt = {
     kode_barang: string;
     nama_barang: string;
     kelas_aset: string | null;
+    wajib_kalibrasi: boolean;
     aset_merk_id: number | null;
     aset_jenis_id: number | null;
     aset_kategori_id: number | null;
     aset_produsen_id: number | null;
+    aset_aspak_alat_id: number | null;
+    no_akl_akd: string | null;
+    daya_watt: number | null;
+    level_teknologi: string | null;
+    tahun_produksi: number | null;
+    tahun_mulai_operasi: number | null;
+    umur_ekonomis_bulan: number | null;
+    nilai_residu: number | null;
+    nama_merk: string | null;
+    nama_jenis: string | null;
 };
+
+function idToField(value: number | null | undefined): string {
+    return value != null ? String(value) : '';
+}
 
 type Props = {
     aset: {
@@ -149,9 +164,42 @@ export default function AsetEdit({
     });
 
     const barangOptions = useMemo(
-        () => barang.map((b) => ({ value: String(b.id), label: b.nama_barang, description: b.kode_barang })),
+        () =>
+            barang.map((b) => ({
+                value: String(b.id),
+                label: b.nama_barang,
+                description: [b.kode_barang, b.nama_merk, b.nama_jenis].filter(Boolean).join(' · '),
+            })),
         [barang],
     );
+
+    const onBarangChange = (value: string) => {
+        const selected = barang.find((b) => String(b.id) === value);
+        if (!selected) {
+            setData('aset_barang_id', value);
+
+            return;
+        }
+
+        setData((d) => ({
+            ...d,
+            aset_barang_id: value,
+            aset_kategori_id: idToField(selected.aset_kategori_id),
+            aset_jenis_id: idToField(selected.aset_jenis_id),
+            aset_merk_id: idToField(selected.aset_merk_id),
+            aset_produsen_id: idToField(selected.aset_produsen_id),
+            aset_aspak_alat_id: idToField(selected.aset_aspak_alat_id),
+            kelas_aset: selected.kelas_aset ?? '',
+            wajib_kalibrasi: Boolean(selected.wajib_kalibrasi),
+            no_akl_akd: selected.no_akl_akd ?? '',
+            daya_watt: idToField(selected.daya_watt),
+            level_teknologi: selected.level_teknologi ?? '',
+            tahun_produksi: idToField(selected.tahun_produksi),
+            tahun_mulai_operasi: idToField(selected.tahun_mulai_operasi),
+            umur_ekonomis_bulan: idToField(selected.umur_ekonomis_bulan),
+            nilai_residu: idToField(selected.nilai_residu),
+        }));
+    };
     const ruangOptions = useMemo(
         () => ruang.map((r) => ({ value: String(r.id), label: r.nama_ruang, description: r.kode_ruang })),
         [ruang],
@@ -298,7 +346,7 @@ export default function AsetEdit({
                             <SearchSelect
                                 options={barangOptions}
                                 value={data.aset_barang_id}
-                                onChange={(v) => setData('aset_barang_id', v)}
+                                onChange={onBarangChange}
                                 placeholder="Cari barang..."
                                 isClearable={false}
                             />
@@ -404,7 +452,7 @@ export default function AsetEdit({
                 <section className="space-y-4 rounded-xl border border-border/80 bg-card p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
                     <h2 className="text-sm font-semibold tracking-tight">Klasifikasi barang</h2>
                     <p className="text-xs text-muted-foreground">
-                        Perubahan di sini berlaku untuk semua unit dengan barang yang sama.
+                        Perubahan di sini hanya berlaku untuk unit ini. Unit lain dengan barang yang sama tidak ikut berubah.
                     </p>
                     <div className="grid gap-4 sm:grid-cols-2">
                         <CreatableField label="Kategori" options={kategoriOptions} value={data.aset_kategori_id} onChange={(v) => setData('aset_kategori_id', v)} onCreate={(n) => createMaster('kategori', n)} isCreating={creatingMaster === 'kategori'} />

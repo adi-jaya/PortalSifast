@@ -129,6 +129,7 @@ return [
     */
 
     'limiters' => [
+        // Keep a generous HTTP safety throttle; progressive lockout is enforced in the login pipeline.
         'login' => 'login',
         'two-factor' => 'two-factor',
     ],
@@ -157,8 +158,12 @@ return [
     |
     */
 
-    'features' => [
-        Features::registration(),
+    'features' => array_values(array_filter([
+        // Public registration off di production kecuali ALLOW_PUBLIC_REGISTRATION=true.
+        filter_var(
+            env('ALLOW_PUBLIC_REGISTRATION', env('APP_ENV', 'production') !== 'production'),
+            FILTER_VALIDATE_BOOLEAN
+        ) ? Features::registration() : null,
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([
@@ -166,6 +171,6 @@ return [
             'confirmPassword' => true,
             // 'window' => 0
         ]),
-    ],
+    ])),
 
 ];

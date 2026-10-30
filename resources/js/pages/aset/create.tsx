@@ -572,39 +572,24 @@ export default function AsetCreate({
                                             onCreate={(n) => createMaster('jenis', n)}
                                             isCreating={creatingMaster === 'jenis'}
                                         />
-                                        {data.kelas_aset === 'non_medis' && (
-                                            <>
-                                                <CreatableField
-                                                    label="Kategori"
-                                                    inputId="aset_kategori_id"
-                                                    options={kategoriOptions}
-                                                    value={data.aset_kategori_id}
-                                                    onChange={(v) => setData('aset_kategori_id', v)}
-                                                    onCreate={(n) => createMaster('kategori', n)}
-                                                    isCreating={creatingMaster === 'kategori'}
-                                                />
-                                                <CreatableField
-                                                    label="Produsen"
-                                                    inputId="aset_produsen_id"
-                                                    options={produsenOptions}
-                                                    value={data.aset_produsen_id}
-                                                    onChange={(v) => setData('aset_produsen_id', v)}
-                                                    onCreate={(n) => createMaster('produsen', n)}
-                                                    isCreating={creatingMaster === 'produsen'}
-                                                />
-                                            </>
-                                        )}
-                                        {data.kelas_aset === 'medis' && (
-                                            <CreatableField
-                                                label="Produsen"
-                                                inputId="aset_produsen_id_medis"
-                                                options={produsenOptions}
-                                                value={data.aset_produsen_id}
-                                                onChange={(v) => setData('aset_produsen_id', v)}
-                                                onCreate={(n) => createMaster('produsen', n)}
-                                                isCreating={creatingMaster === 'produsen'}
-                                            />
-                                        )}
+                                        <CreatableField
+                                            label="Kategori"
+                                            inputId="aset_kategori_id"
+                                            options={kategoriOptions}
+                                            value={data.aset_kategori_id}
+                                            onChange={(v) => setData('aset_kategori_id', v)}
+                                            onCreate={(n) => createMaster('kategori', n)}
+                                            isCreating={creatingMaster === 'kategori'}
+                                        />
+                                        <CreatableField
+                                            label="Produsen"
+                                            inputId="aset_produsen_id"
+                                            options={produsenOptions}
+                                            value={data.aset_produsen_id}
+                                            onChange={(v) => setData('aset_produsen_id', v)}
+                                            onCreate={(n) => createMaster('produsen', n)}
+                                            isCreating={creatingMaster === 'produsen'}
+                                        />
                                     </div>
                                     <InputError message={errors.aset_merk_id} />
                                     <InputError message={errors.aset_jenis_id} />

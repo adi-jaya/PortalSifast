@@ -21,8 +21,9 @@ use App\Models\Ticket;
 use App\Services\Inventaris\BuatAsetBatch;
 use App\Services\Inventaris\GeneratorKodeAset;
 use App\Services\Inventaris\HitungPenyusutanAset;
-use App\Services\Inventaris\PemetaanStatusAset;
+use App\Services\Inventaris\KatalogAsetBarang;
 use App\Services\Inventaris\PengaturanPenyusutanAset;
+use App\Services\Inventaris\UpdateAsetUnit;
 use App\Services\InventarisQrCodeGenerator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -501,62 +502,50 @@ class AsetController extends Controller
                 'nama_barang' => $aset->barang?->nama_barang,
             ],
             ...$this->masterFormOptions(),
-            'barang' => AsetBarang::query()
-                ->orderBy('nama_barang')
-                ->limit(500)
-                ->get(['id', 'kode_barang', 'nama_barang', 'kelas_aset', 'aset_merk_id', 'aset_jenis_id', 'aset_kategori_id', 'aset_produsen_id']),
+            'barang' => $this->barangOptionsUntukEdit($aset->aset_barang_id),
             'penyusutanDefaults' => app(PengaturanPenyusutanAset::class)->all(),
         ]);
     }
 
-    public function update(StoreAsetRequest $request, Aset $aset): RedirectResponse
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function barangOptionsUntukEdit(?int $barangTerpasangId): array
     {
-        $v = $request->validated();
-        $status = PemetaanStatusAset::dariInputForm(
-            $v['status_fungsi'] ?? $aset->status_fungsi,
-            $v['tingkat_kerusakan'] ?? $aset->tingkat_kerusakan,
-        );
+        $columns = [
+            'id', 'kode_barang', 'nama_barang', 'kelas_aset', 'wajib_kalibrasi',
+            'aset_kategori_id', 'aset_jenis_id', 'aset_merk_id', 'aset_produsen_id', 'aset_aspak_alat_id',
+            'no_akl_akd', 'daya_watt', 'level_teknologi', 'tahun_produksi', 'tahun_mulai_operasi',
+            'umur_ekonomis_bulan', 'nilai_residu',
+        ];
 
-        $aset->update([
-            'aset_barang_id' => $v['aset_barang_id'] ?? $aset->aset_barang_id,
-            'aset_ruang_id' => $v['aset_ruang_id'],
-            'aset_distributor_id' => $v['aset_distributor_id'] ?? null,
-            'tahun_registrasi' => $v['tahun_registrasi'],
-            'asal_barang' => $v['asal_barang'] ?? null,
-            'tanggal_pengadaan' => $v['tanggal_pengadaan'] ?? null,
-            'harga' => $v['harga'] ?? null,
-            'kondisi' => $status['kondisi'],
-            'status_fungsi' => $status['status_fungsi'],
-            'tingkat_kerusakan' => $status['tingkat_kerusakan'],
-            'no_seri' => filled($v['no_seri'] ?? null) ? $v['no_seri'] : null,
-        ]);
+        $barang = AsetBarang::query()
+            ->with(['merk:id,nama_merk', 'jenis:id,nama_jenis'])
+            ->orderBy('nama_barang')
+            ->orderBy('kode_barang')
+            ->limit(500)
+            ->get($columns);
 
-        if ($aset->aset_barang_id) {
-            $resolved = app(PengaturanPenyusutanAset::class)->resolveUntukAset(
-                $v['harga'] ?? $aset->harga,
-                isset($v['umur_ekonomis_bulan']) ? (int) $v['umur_ekonomis_bulan'] : null,
-                $v['nilai_residu'] ?? null,
-                $v['kelas_aset'] ?? null,
-            );
-
-            AsetBarang::query()->whereKey($aset->aset_barang_id)->update([
-                'kelas_aset' => $v['kelas_aset'] ?? null,
-                'wajib_kalibrasi' => array_key_exists('wajib_kalibrasi', $v) ? (bool) $v['wajib_kalibrasi'] : false,
-                'umur_ekonomis_bulan' => $resolved['umur_bulan'],
-                'aset_kategori_id' => $v['aset_kategori_id'] ?? null,
-                'aset_jenis_id' => $v['aset_jenis_id'] ?? null,
-                'aset_merk_id' => $v['aset_merk_id'] ?? null,
-                'aset_produsen_id' => $v['aset_produsen_id'] ?? null,
-                'aset_aspak_alat_id' => $v['aset_aspak_alat_id'] ?? null,
-                'aset_non_alkes_id' => $v['aset_non_alkes_id'] ?? null,
-                'no_akl_akd' => $v['no_akl_akd'] ?? null,
-                'daya_watt' => $v['daya_watt'] ?? null,
-                'level_teknologi' => $v['level_teknologi'] ?? null,
-                'tahun_produksi' => $v['tahun_produksi'] ?? null,
-                'tahun_mulai_operasi' => $v['tahun_mulai_operasi'] ?? null,
-                'nilai_residu' => $resolved['nilai_residu'],
-            ]);
+        if ($barangTerpasangId !== null && ! $barang->contains('id', $barangTerpasangId)) {
+            $terpasang = AsetBarang::query()
+                ->with(['merk:id,nama_merk', 'jenis:id,nama_jenis'])
+                ->find($barangTerpasangId, $columns);
+            if ($terpasang !== null) {
+                $barang->prepend($terpasang);
+            }
         }
+
+        return $barang->map(fn (AsetBarang $item): array => [
+            ...$item->only($columns),
+            'wajib_kalibrasi' => (bool) $item->wajib_kalibrasi,
+            'nama_merk' => $item->merk?->nama_merk,
+            'nama_jenis' => $item->jenis?->nama_jenis,
+        ])->all();
+    }
+
+    public function update(StoreAsetRequest $request, Aset $aset, UpdateAsetUnit $updateAsetUnit): RedirectResponse
+    {
+        $updateAsetUnit->handle($aset, $request->validated());
 
         return redirect()
             ->route('aset.show', $aset)
@@ -587,20 +576,29 @@ class AsetController extends Controller
     public function verifikasi(
         VerifikasiAsetRequest $request,
         Aset $aset,
-        GeneratorKodeAset $generator
+        GeneratorKodeAset $generator,
+        KatalogAsetBarang $katalog,
     ): RedirectResponse {
         $v = $request->validated();
         $ruang = AsetRuang::query()->findOrFail($v['aset_ruang_id']);
 
-        DB::transaction(function () use ($request, $aset, $v, $ruang, $generator) {
+        DB::transaction(function () use ($request, $aset, $v, $ruang, $generator, $katalog) {
+            $previousBarangId = $aset->aset_barang_id;
+            $barangId = $previousBarangId;
+
             if ($aset->barang) {
-                $aset->barang->update([
-                    'kelas_aset' => $v['kelas_aset'] ?? $aset->barang->kelas_aset,
-                    'wajib_kalibrasi' => array_key_exists('wajib_kalibrasi', $v)
-                        ? (bool) $v['wajib_kalibrasi']
-                        : $aset->barang->wajib_kalibrasi,
-                    'umur_ekonomis_bulan' => $v['umur_ekonomis_bulan'] ?? $aset->barang->umur_ekonomis_bulan,
-                ]);
+                $barangId = $katalog->terapkanUntukUnit(
+                    $aset->barang,
+                    [
+                        'kelas_aset' => $v['kelas_aset'] ?? $aset->barang->kelas_aset,
+                        'wajib_kalibrasi' => array_key_exists('wajib_kalibrasi', $v)
+                            ? (bool) $v['wajib_kalibrasi']
+                            : $aset->barang->wajib_kalibrasi,
+                        'umur_ekonomis_bulan' => $v['umur_ekonomis_bulan'] ?? $aset->barang->umur_ekonomis_bulan,
+                    ],
+                    $v,
+                    $aset->id,
+                );
             }
 
             $kodeAset = $aset->kode_aset;
@@ -615,6 +613,7 @@ class AsetController extends Controller
 
             $aset->update([
                 'kode_aset' => $kodeAset,
+                'aset_barang_id' => $barangId,
                 'aset_ruang_id' => $ruang->id,
                 'kode_ruang_registrasi' => $ruang->kode_ruang,
                 'tahun_registrasi' => $tahun,
@@ -623,6 +622,11 @@ class AsetController extends Controller
                 'diverifikasi_pada' => now(),
                 'diverifikasi_oleh' => $request->user()?->id,
             ]);
+
+            if ($barangId !== $previousBarangId) {
+                AsetBarang::hitungUlangJumlah((int) $previousBarangId);
+                AsetBarang::hitungUlangJumlah((int) $barangId);
+            }
 
             $aset->riwayat()->create([
                 'pengguna_id' => $request->user()?->id,

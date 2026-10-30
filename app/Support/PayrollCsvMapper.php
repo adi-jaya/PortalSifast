@@ -81,7 +81,7 @@ final class PayrollCsvMapper
             'hutang_seragam' => self::moneyOrNull($raw['hutang_seragam'] ?? null),
             'ikkm' => self::moneyOrNull($raw['ikkm'] ?? null),
             'keterlambatan' => self::moneyOrNull($raw['keterlambatan'] ?? null),
-            'ijin' => self::moneyOrNull($raw['ijin'] ?? null),
+            'ijin' => self::resolveIjin($raw),
             'lain_pot' => self::resolveLainPot($raw),
             'jumlah' => self::moneyOrNull($raw['jumlah'] ?? null),
             'jumlah_tunjangan' => self::moneyOrNull($raw['jumlah_tunjangan'] ?? null),
@@ -273,22 +273,30 @@ final class PayrollCsvMapper
             ];
         }
 
-        foreach ([
-            ['csv_key' => 'keterlambatan', 'csv_label' => 'Keterlambatan', 'db_key' => 'keterlambatan'],
-            ['csv_key' => 'ijin', 'csv_label' => 'Ijin', 'db_key' => 'ijin'],
-        ] as $field) {
-            $csvValue = self::moneyOrNull($raw[$field['csv_key']] ?? null);
-            $dbValue = self::moneyOrNull($dbAttributes[$field['db_key']] ?? null);
-            if ($csvValue !== null || $dbValue !== null) {
-                $rows[] = [
-                    'csv_key' => $field['csv_key'],
-                    'csv_label' => $field['csv_label'],
-                    'csv_value' => $csvValue,
-                    'db_key' => $field['db_key'],
-                    'db_value' => $dbValue,
-                    'match' => self::moneyEquals($csvValue, $dbValue),
-                ];
-            }
+        $keterlambatanCsv = self::moneyOrNull($raw['keterlambatan'] ?? null);
+        $dbKeterlambatan = self::moneyOrNull($dbAttributes['keterlambatan'] ?? null);
+        if ($keterlambatanCsv !== null || $dbKeterlambatan !== null) {
+            $rows[] = [
+                'csv_key' => 'keterlambatan',
+                'csv_label' => 'Keterlambatan',
+                'csv_value' => $keterlambatanCsv,
+                'db_key' => 'keterlambatan',
+                'db_value' => $dbKeterlambatan,
+                'match' => self::moneyEquals($keterlambatanCsv, $dbKeterlambatan),
+            ];
+        }
+
+        $ijinCsv = self::resolveIjin($raw);
+        $dbIjin = self::moneyOrNull($dbAttributes['ijin'] ?? null);
+        if ($ijinCsv !== null || $dbIjin !== null) {
+            $rows[] = [
+                'csv_key' => self::resolveIjinCsvKey($raw),
+                'csv_label' => 'Ijin',
+                'csv_value' => $ijinCsv,
+                'db_key' => 'ijin',
+                'db_value' => $dbIjin,
+                'match' => self::moneyEquals($ijinCsv, $dbIjin),
+            ];
         }
 
         $lainPotCsv = self::resolveLainPot($raw);
@@ -423,6 +431,35 @@ final class PayrollCsvMapper
         }
 
         return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $raw
+     */
+    public static function resolveIjin(array $raw): ?string
+    {
+        foreach (['ijin', 'ijin_dl', 'izin'] as $key) {
+            $money = self::moneyOrNull($raw[$key] ?? null);
+            if ($money !== null) {
+                return $money;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $raw
+     */
+    public static function resolveIjinCsvKey(array $raw): string
+    {
+        foreach (['ijin', 'ijin_dl', 'izin'] as $key) {
+            if (self::moneyOrNull($raw[$key] ?? null) !== null) {
+                return $key;
+            }
+        }
+
+        return 'ijin';
     }
 
     /**

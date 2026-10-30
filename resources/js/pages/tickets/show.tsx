@@ -46,6 +46,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { useAsetDetailHref } from '@/hooks/use-aset-detail-href';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import type { BreadcrumbItem, User as AuthUser } from '@/types';
@@ -467,6 +468,7 @@ export default function TicketShow({
     }>().props;
     const user = auth.user;
     const isStaffOrAdmin = (user as unknown as { role?: string }).role !== 'pemohon';
+    const asetDetailHref = useAsetDetailHref();
 
     const [activeTab, setActiveTab] = useState<'comments' | 'activities'>('comments');
     const [optionalSectionOpen, setOptionalSectionOpen] = useState(false);
@@ -2039,7 +2041,7 @@ export default function TicketShow({
                                     {ticket.aset ? (
                                         <>
                                             <Link
-                                                href={`/aset/${ticket.aset.kode_aset}`}
+                                                href={asetDetailHref(ticket.aset.kode_aset)}
                                                 className="font-mono font-medium text-primary hover:underline"
                                             >
                                                 {ticket.aset.kode_aset}

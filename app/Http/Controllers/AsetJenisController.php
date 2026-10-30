@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\BulkDestroyAsetJenisRequest;
+use App\Http\Requests\StoreAsetJenisRequest;
 use App\Http\Requests\UpdateAsetJenisMerkRequest;
+use App\Http\Requests\UpdateAsetJenisRequest;
 use App\Models\AsetJenis;
 use App\Models\AsetMerk;
+use App\Services\Inventaris\GeneratorKodeMasterAset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -20,6 +24,7 @@ class AsetJenisController extends Controller
 
         $items = AsetJenis::query()
             ->with('merk:id,nama_merk')
+            ->withCount('barang')
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($inner) use ($q) {
                     $inner->where('nama_jenis', 'like', "%{$q}%")
@@ -40,6 +45,7 @@ class AsetJenisController extends Controller
                 'nama_jenis' => $item->nama_jenis,
                 'aset_merk_id' => $item->aset_merk_id,
                 'merk_nama' => $item->merk?->nama_merk,
+                'barang_count' => (int) $item->barang_count,
             ]);
 
         $total = AsetJenis::query()->count();
@@ -65,6 +71,84 @@ class AsetJenisController extends Controller
                     'nama' => $m->nama_merk,
                 ]),
         ]);
+    }
+
+    public function store(StoreAsetJenisRequest $request, GeneratorKodeMasterAset $generator): RedirectResponse
+    {
+        $validated = $request->validated();
+        $kode = $validated['kode_jenis'] ?? null;
+
+        if ($kode === null) {
+            $kode = $generator->generate($validated['nama_jenis'], new AsetJenis, 'kode_jenis');
+        }
+
+        AsetJenis::query()->create([
+            'kode_jenis' => $kode,
+            'nama_jenis' => $validated['nama_jenis'],
+            'aset_merk_id' => $validated['aset_merk_id'] ?? null,
+        ]);
+
+        return redirect()
+            ->route('aset.master.jenis.index')
+            ->with('success', 'Jenis berhasil ditambahkan.');
+    }
+
+    public function update(UpdateAsetJenisRequest $request, AsetJenis $jenis): RedirectResponse
+    {
+        $jenis->update($request->validated());
+
+        return redirect()
+            ->route('aset.master.jenis.index')
+            ->with('success', 'Jenis berhasil diperbarui.');
+    }
+
+    public function destroy(AsetJenis $jenis): RedirectResponse
+    {
+        $usage = $jenis->barang()->count();
+
+        if ($usage > 0) {
+            return back()->with(
+                'error',
+                "Jenis \"{$jenis->nama_jenis}\" masih dipakai ({$usage} barang). Ubah referensi barang sebelum menghapus.",
+            );
+        }
+
+        $nama = $jenis->nama_jenis;
+        $jenis->delete();
+
+        return redirect()
+            ->route('aset.master.jenis.index')
+            ->with('success', "Jenis \"{$nama}\" berhasil dihapus.");
+    }
+
+    public function bulkDestroy(BulkDestroyAsetJenisRequest $request): RedirectResponse
+    {
+        /** @var list<int> $ids */
+        $ids = $request->validated('ids');
+
+        $deletableIds = AsetJenis::query()
+            ->whereIn('id', $ids)
+            ->whereDoesntHave('barang')
+            ->pluck('id');
+
+        if ($deletableIds->isEmpty()) {
+            return back()->with(
+                'error',
+                'Tidak ada jenis yang bisa dihapus — semua yang dipilih masih dipakai barang.',
+            );
+        }
+
+        $deleted = AsetJenis::query()->whereIn('id', $deletableIds)->delete();
+        $skipped = count($ids) - $deleted;
+
+        if ($skipped > 0) {
+            return back()->with(
+                'success',
+                "{$deleted} jenis berhasil dihapus. {$skipped} dilewati karena masih dipakai barang.",
+            );
+        }
+
+        return back()->with('success', "{$deleted} jenis berhasil dihapus.");
     }
 
     public function updateMerk(UpdateAsetJenisMerkRequest $request, AsetJenis $jenis): RedirectResponse

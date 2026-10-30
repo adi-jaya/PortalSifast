@@ -30,6 +30,7 @@ class AsetPublicController extends Controller
         $aset->load(['barang.merk', 'barang.jenis', 'barang.kategori', 'ruang', 'fotoUtama']);
 
         $authenticated = $request->user() !== null;
+        $canManage = $request->user()?->canAccessAset() ?? false;
 
         $fotoPortal = $aset->fotoUtama?->path;
         $photoSrc = $fotoPortal
@@ -59,14 +60,14 @@ class AsetPublicController extends Controller
                 'photo_src' => $photoSrc,
             ],
             'authenticated' => $authenticated,
-            'canManage' => $authenticated,
-            'manageUrl' => $authenticated
+            'canManage' => $canManage,
+            'manageUrl' => $canManage
                 ? route('aset.show', $aset)
                 : url('/'),
             'ticketCreateUrl' => '/tickets/create?asset_id='.$aset->id,
             'riwayat' => [
-                'peminjaman' => $this->riwayatPeminjaman($aset, $authenticated),
-                'mutasi' => $this->riwayatMutasi($aset, $authenticated),
+                'peminjaman' => $this->riwayatPeminjaman($aset, $authenticated, $canManage),
+                'mutasi' => $this->riwayatMutasi($aset, $authenticated, $canManage),
                 'tiket' => $this->riwayatTiket($aset, $authenticated),
             ],
         ]);
@@ -75,7 +76,7 @@ class AsetPublicController extends Controller
     /**
      * @return list<array<string, mixed>>
      */
-    private function riwayatPeminjaman(Aset $aset, bool $authenticated): array
+    private function riwayatPeminjaman(Aset $aset, bool $authenticated, bool $canManage): array
     {
         $rows = AsetPeminjaman::query()
             ->with('peminjamUser:id,name')
@@ -89,7 +90,7 @@ class AsetPublicController extends Controller
             ? Pegawai::query()->whereIn('nik', $niks)->pluck('nama', 'nik')
             : collect();
 
-        return $rows->map(function (AsetPeminjaman $row) use ($authenticated, $pegawaiNama) {
+        return $rows->map(function (AsetPeminjaman $row) use ($authenticated, $canManage, $pegawaiNama) {
             $item = [
                 'id' => $row->id,
                 'nomor' => $row->nomor,
@@ -102,6 +103,9 @@ class AsetPublicController extends Controller
             if ($authenticated) {
                 $item['peminjam_label'] = $row->peminjamUser?->name
                     ?? ($row->peminjam_nik ? ($pegawaiNama[$row->peminjam_nik] ?? $row->peminjam_nik) : null);
+            }
+
+            if ($canManage) {
                 $item['url'] = route('aset-peminjaman.show', $row);
             }
 
@@ -112,7 +116,7 @@ class AsetPublicController extends Controller
     /**
      * @return list<array<string, mixed>>
      */
-    private function riwayatMutasi(Aset $aset, bool $authenticated): array
+    private function riwayatMutasi(Aset $aset, bool $authenticated, bool $canManage): array
     {
         $rows = AsetMutasiLokasi::query()
             ->with(['ruangAsal:id,nama_ruang', 'ruangTujuan:id,nama_ruang', 'penerimaUser:id,name'])
@@ -126,7 +130,7 @@ class AsetPublicController extends Controller
             ? Pegawai::query()->whereIn('nik', $niks)->pluck('nama', 'nik')
             : collect();
 
-        return $rows->map(function (AsetMutasiLokasi $row) use ($authenticated, $pegawaiNama) {
+        return $rows->map(function (AsetMutasiLokasi $row) use ($authenticated, $canManage, $pegawaiNama) {
             $item = [
                 'id' => $row->id,
                 'nomor' => $row->nomor,
@@ -138,6 +142,9 @@ class AsetPublicController extends Controller
             if ($authenticated) {
                 $item['penerima_label'] = $row->penerimaUser?->name
                     ?? ($row->penerima_nik ? ($pegawaiNama[$row->penerima_nik] ?? $row->penerima_nik) : null);
+            }
+
+            if ($canManage) {
                 $item['url'] = route('aset-mutasi-lokasi.show', $row);
             }
 

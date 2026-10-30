@@ -1,5 +1,21 @@
 <?php
 
+use App\Http\Middleware\AuthenticateAgent;
+use App\Http\Middleware\AuthenticateBerkasScanAgent;
+use App\Http\Middleware\EnsureAsetAccess;
+use App\Http\Middleware\EnsureBerkasKepegawaianAccess;
+use App\Http\Middleware\EnsureDriverChecklistAccess;
+use App\Http\Middleware\EnsureInventarisAccess;
+use App\Http\Middleware\EnsureMonitoringAccess;
+use App\Http\Middleware\EnsureMonitoringKategoriAccess;
+use App\Http\Middleware\EnsurePatroliAccess;
+use App\Http\Middleware\EnsurePayrollAccess;
+use App\Http\Middleware\EnsureSimmutuInputAccess;
+use App\Http\Middleware\EnsureSimmutuManageAccess;
+use App\Http\Middleware\EnsureSimmutuViewAccess;
+use App\Http\Middleware\EnsureUserIsAdmin;
+use App\Http\Middleware\EnsureUserIsOfficer;
+use App\Http\Middleware\EnsureWebOfficialAdminAccess;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\TrackUserActivity;
@@ -23,19 +39,27 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->statefulApi();
 
         // API SiFast (frontend kepegawaian) memakai Bearer token saja; tidak perlu CSRF cookie
-        $middleware->validateCsrfTokens(['api/sifast/*', 'api/agent/*']);
+        $middleware->validateCsrfTokens(['api/sifast/*', 'api/agent/*', 'api/berkas-scan/*']);
 
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         $middleware->alias([
-            'officer' => \App\Http\Middleware\EnsureUserIsOfficer::class,
-            'payroll.access' => \App\Http\Middleware\EnsurePayrollAccess::class,
-            'patroli.access' => \App\Http\Middleware\EnsurePatroliAccess::class,
-            'simmutu.view' => \App\Http\Middleware\EnsureSimmutuViewAccess::class,
-            'simmutu.manage' => \App\Http\Middleware\EnsureSimmutuManageAccess::class,
-            'simmutu.input' => \App\Http\Middleware\EnsureSimmutuInputAccess::class,
-            'webofficial.admin' => \App\Http\Middleware\EnsureWebOfficialAdminAccess::class,
-            'auth.agent' => \App\Http\Middleware\AuthenticateAgent::class,
+            'officer' => EnsureUserIsOfficer::class,
+            'admin' => EnsureUserIsAdmin::class,
+            'inventaris.access' => EnsureInventarisAccess::class,
+            'aset.access' => EnsureAsetAccess::class,
+            'payroll.access' => EnsurePayrollAccess::class,
+            'patroli.access' => EnsurePatroliAccess::class,
+            'driver.access' => EnsureDriverChecklistAccess::class,
+            'monitoring.access' => EnsureMonitoringAccess::class,
+            'monitoring.kategori' => EnsureMonitoringKategoriAccess::class,
+            'berkas-kepegawaian.access' => EnsureBerkasKepegawaianAccess::class,
+            'simmutu.view' => EnsureSimmutuViewAccess::class,
+            'simmutu.manage' => EnsureSimmutuManageAccess::class,
+            'simmutu.input' => EnsureSimmutuInputAccess::class,
+            'webofficial.admin' => EnsureWebOfficialAdminAccess::class,
+            'auth.agent' => AuthenticateAgent::class,
+            'auth.berkas-scan-agent' => AuthenticateBerkasScanAgent::class,
         ]);
 
         $middleware->web(append: [
@@ -46,7 +70,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->respond(function (Response $response, \Throwable $exception, Request $request): Response {
+        $exceptions->respond(function (Response $response, Throwable $exception, Request $request): Response {
             if (! app()->environment(['local', 'testing']) && in_array($response->getStatusCode(), [500, 503, 404, 403])) {
                 return Inertia::render('errors/error', [
                     'status' => $response->getStatusCode(),

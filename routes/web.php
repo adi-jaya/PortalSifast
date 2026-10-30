@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\DashboardNotificationController;
 use App\Http\Controllers\Api\DashboardTextAnalyticsController;
 use App\Http\Controllers\AsetAspakController;
 use App\Http\Controllers\AsetController;
+use App\Http\Controllers\AsetDistributorController;
 use App\Http\Controllers\AsetDokumenController;
 use App\Http\Controllers\AsetFotoController;
 use App\Http\Controllers\AsetImportController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\AsetJenisController;
 use App\Http\Controllers\AsetKategoriController;
 use App\Http\Controllers\AsetMasterController;
 use App\Http\Controllers\AsetMasterCsvController;
+use App\Http\Controllers\AsetMerkController;
 use App\Http\Controllers\AsetMutasiLokasiController;
 use App\Http\Controllers\AsetMutasiLokasiPrintController;
 use App\Http\Controllers\AsetNonAlkesController;
@@ -24,11 +26,22 @@ use App\Http\Controllers\AsetPublicController;
 use App\Http\Controllers\AsetRuangController;
 use App\Http\Controllers\AsetSinkronController;
 use App\Http\Controllers\AuditAsetController;
+use App\Http\Controllers\BerkasKepegawaian\BerkasKepegawaianController;
+use App\Http\Controllers\BerkasKepegawaian\BerkasScanInboxController;
+use App\Http\Controllers\BerkasKepegawaian\MasterBerkasPegawaiController;
+use App\Http\Controllers\BerkasKepegawaian\ReferensiKepegawaianController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\DailyActivityReportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentReportController;
 use App\Http\Controllers\DepartmentReportPrintController;
+use App\Http\Controllers\Driver\DriverChecklistItemController;
+use App\Http\Controllers\Driver\DriverDashboardController;
+use App\Http\Controllers\Driver\DriverKendaraanController;
+use App\Http\Controllers\Driver\DriverLaporanController;
+use App\Http\Controllers\Driver\DriverLaporanPrintController;
+use App\Http\Controllers\Driver\DriverPemeriksaanController;
+use App\Http\Controllers\Driver\DriverRiwayatController;
 use App\Http\Controllers\EmergencyReportWebController;
 use App\Http\Controllers\EmployeeSalaryWebImportController;
 use App\Http\Controllers\Integrations\SikatInboundSsoController;
@@ -156,11 +169,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::delete('/mapping/{credential}', [AdminPortalMappingController::class, 'destroyCredential'])->name('mapping.destroy-credential');
         });
 
-    Route::get('users', [UsersController::class, 'index'])->name('users.index');
-    Route::get('users/create', [UsersController::class, 'create'])->name('users.create');
-    Route::post('users', [UsersController::class, 'store'])->name('users.store');
-    Route::get('users/{user}/edit', [UsersController::class, 'edit'])->name('users.edit');
-    Route::put('users/{user}', [UsersController::class, 'update'])->name('users.update');
+    Route::middleware('admin')->group(function (): void {
+        Route::get('users', [UsersController::class, 'index'])->name('users.index');
+        Route::get('users/create', [UsersController::class, 'create'])->name('users.create');
+        Route::post('users', [UsersController::class, 'store'])->name('users.store');
+        Route::get('users/{user}/edit', [UsersController::class, 'edit'])->name('users.edit');
+        Route::put('users/{user}', [UsersController::class, 'update'])->name('users.update');
+    });
     Route::get('pegawai', [PegawaiController::class, 'index'])->name('pegawai.index');
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('reports/sla', SlaReportController::class)->name('reports.sla');
@@ -184,179 +199,330 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('panic-staff', [EmergencyReportWebController::class, 'staff'])->name('emergency-reports.staff');
 
     // Inventaris SIMRS (read-only) — write dinonaktifkan, gunakan modul Aset
-    Route::get('inventaris/export', [InventarisController::class, 'export'])->name('inventaris.export');
-    Route::get('inventaris/audit', [InventarisController::class, 'audit'])->name('inventaris.audit');
-    Route::get('inventaris/label-print-batch', [InventarisController::class, 'labelPrintBatch'])->name('inventaris.label-print-batch');
-    Route::get('inventaris/{inventaris}/label-print', [InventarisController::class, 'labelPrint'])->name('inventaris.label-print');
-    Route::get('inventaris/{inventaris}/photo', [InventarisGambarController::class, 'show'])->name('inventaris.photo');
-    Route::resource('inventaris', InventarisController::class)
-        ->only(['index', 'show'])
-        ->parameters(['inventaris' => 'inventaris:no_inventaris']);
+    Route::middleware('inventaris.access')->group(function (): void {
+        Route::get('inventaris/export', [InventarisController::class, 'export'])->name('inventaris.export');
+        Route::get('inventaris/audit', [InventarisController::class, 'audit'])->name('inventaris.audit');
+        Route::get('inventaris/label-print-batch', [InventarisController::class, 'labelPrintBatch'])->name('inventaris.label-print-batch');
+        Route::get('inventaris/{inventaris}/label-print', [InventarisController::class, 'labelPrint'])->name('inventaris.label-print');
+        Route::get('inventaris/{inventaris}/photo', [InventarisGambarController::class, 'show'])->name('inventaris.photo');
+        Route::resource('inventaris', InventarisController::class)
+            ->only(['index', 'show'])
+            ->parameters(['inventaris' => 'inventaris:no_inventaris']);
 
-    // Inventaris Barang (read-only SIMRS)
-    Route::resource('inventaris-barang', InventarisBarangController::class)
-        ->only(['index', 'show'])
-        ->parameters(['inventaris-barang' => 'barang'])
-        ->where(['barang' => '.*']);
+        // Inventaris Barang (read-only SIMRS)
+        Route::resource('inventaris-barang', InventarisBarangController::class)
+            ->only(['index', 'show'])
+            ->parameters(['inventaris-barang' => 'barang'])
+            ->where(['barang' => '.*']);
 
-    // Master lookup inventaris (read-only SIMRS)
-    Route::resource('inventaris-ruang', InventarisRuangController::class)
-        ->only(['index'])
-        ->parameters(['inventaris-ruang' => 'ruang']);
-    Route::resource('inventaris-kategori', InventarisKategoriController::class)
-        ->only(['index'])
-        ->parameters(['inventaris-kategori' => 'kategori']);
-    Route::resource('inventaris-jenis', InventarisJenisController::class)
-        ->only(['index'])
-        ->parameters(['inventaris-jenis' => 'jenis']);
-    Route::resource('inventaris-merk', InventarisMerkController::class)
-        ->only(['index'])
-        ->parameters(['inventaris-merk' => 'merk']);
-    Route::resource('inventaris-produsen', InventarisProdusenController::class)
-        ->only(['index'])
-        ->parameters(['inventaris-produsen' => 'produsen']);
+        // Master lookup inventaris (read-only SIMRS)
+        Route::resource('inventaris-ruang', InventarisRuangController::class)
+            ->only(['index'])
+            ->parameters(['inventaris-ruang' => 'ruang']);
+        Route::resource('inventaris-kategori', InventarisKategoriController::class)
+            ->only(['index'])
+            ->parameters(['inventaris-kategori' => 'kategori']);
+        Route::resource('inventaris-jenis', InventarisJenisController::class)
+            ->only(['index'])
+            ->parameters(['inventaris-jenis' => 'jenis']);
+        Route::resource('inventaris-merk', InventarisMerkController::class)
+            ->only(['index'])
+            ->parameters(['inventaris-merk' => 'merk']);
+        Route::resource('inventaris-produsen', InventarisProdusenController::class)
+            ->only(['index'])
+            ->parameters(['inventaris-produsen' => 'produsen']);
+    });
 
     // Aset portal (database utama)
-    Route::get('aset/sinkron', [AsetSinkronController::class, 'index'])->name('aset.sinkron.index');
-    Route::post('aset/sinkron/preview', [AsetSinkronController::class, 'preview'])->name('aset.sinkron.preview');
-    Route::post('aset/sinkron/apply', [AsetSinkronController::class, 'apply'])->name('aset.sinkron.apply');
+    Route::middleware('aset.access')->group(function (): void {
+        Route::get('aset/sinkron', [AsetSinkronController::class, 'index'])->name('aset.sinkron.index');
+        Route::post('aset/sinkron/preview', [AsetSinkronController::class, 'preview'])->name('aset.sinkron.preview');
+        Route::post('aset/sinkron/apply', [AsetSinkronController::class, 'apply'])->name('aset.sinkron.apply');
 
-    Route::get('aset/audit', [AuditAsetController::class, 'index'])->name('aset.audit.index');
-    Route::get('aset/audit/create', [AuditAsetController::class, 'create'])->name('aset.audit.create');
-    Route::post('aset/audit', [AuditAsetController::class, 'store'])->name('aset.audit.store');
-    Route::get('aset/audit/{audit}', [AuditAsetController::class, 'show'])->name('aset.audit.show');
-    Route::post('aset/audit/{audit}/scan', [AuditAsetController::class, 'scan'])->name('aset.audit.scan');
-    Route::post('aset/audit/{audit}/selesai', [AuditAsetController::class, 'selesai'])->name('aset.audit.selesai');
-    Route::post('aset/audit/{audit}/setujui', [AuditAsetController::class, 'setujui'])->name('aset.audit.setujui');
-    Route::patch('aset/audit/{audit}/item/{item}', [AuditAsetController::class, 'updateItem'])->name('aset.audit.item.update');
-    Route::post('aset/audit/{audit}/item/{item}/bukti', [AuditAsetController::class, 'storeBukti'])->name('aset.audit.item.bukti');
+        Route::get('aset/audit', [AuditAsetController::class, 'index'])->name('aset.audit.index');
+        Route::get('aset/audit/create', [AuditAsetController::class, 'create'])->name('aset.audit.create');
+        Route::post('aset/audit', [AuditAsetController::class, 'store'])->name('aset.audit.store');
+        Route::get('aset/audit/{audit}', [AuditAsetController::class, 'show'])->name('aset.audit.show');
+        Route::post('aset/audit/{audit}/scan', [AuditAsetController::class, 'scan'])->name('aset.audit.scan');
+        Route::post('aset/audit/{audit}/selesai', [AuditAsetController::class, 'selesai'])->name('aset.audit.selesai');
+        Route::post('aset/audit/{audit}/setujui', [AuditAsetController::class, 'setujui'])->name('aset.audit.setujui');
+        Route::patch('aset/audit/{audit}/item/{item}', [AuditAsetController::class, 'updateItem'])->name('aset.audit.item.update');
+        Route::post('aset/audit/{audit}/item/{item}/bukti', [AuditAsetController::class, 'storeBukti'])->name('aset.audit.item.bukti');
 
-    Route::get('aset/created', [AsetController::class, 'created'])->name('aset.created');
-    Route::post('aset/bulk-delete', [AsetController::class, 'bulkDestroy'])->name('aset.bulk-destroy');
+        Route::get('aset/created', [AsetController::class, 'created'])->name('aset.created');
+        Route::post('aset/bulk-delete', [AsetController::class, 'bulkDestroy'])->name('aset.bulk-destroy');
 
-    Route::get('aset/import', [AsetImportController::class, 'create'])->name('aset.import');
-    Route::get('aset/import/template', [AsetImportController::class, 'template'])->name('aset.import.template');
-    Route::post('aset/import/preview', [AsetImportController::class, 'preview'])->name('aset.import.preview');
-    Route::post('aset/import', [AsetImportController::class, 'store'])->name('aset.import.store');
-    Route::delete('aset/import/preview', [AsetImportController::class, 'clear'])->name('aset.import.clear');
+        Route::get('aset/import', [AsetImportController::class, 'create'])->name('aset.import');
+        Route::get('aset/import/template', [AsetImportController::class, 'template'])->name('aset.import.template');
+        Route::post('aset/import/preview', [AsetImportController::class, 'preview'])->name('aset.import.preview');
+        Route::post('aset/import', [AsetImportController::class, 'store'])->name('aset.import.store');
+        Route::delete('aset/import/preview', [AsetImportController::class, 'clear'])->name('aset.import.clear');
 
-    Route::get('aset-peminjaman/search-aset', [AsetPeminjamanController::class, 'searchAset'])->name('aset-peminjaman.search-aset');
-    Route::get('aset-peminjaman/search-pegawai', [AsetPeminjamanController::class, 'searchPegawai'])->name('aset-peminjaman.search-pegawai');
-    Route::get('aset-peminjaman/search-user', [AsetPeminjamanController::class, 'searchUser'])->name('aset-peminjaman.search-user');
-    Route::post('aset-peminjaman/{peminjaman}/kembalikan', [AsetPeminjamanController::class, 'kembalikan'])->name('aset-peminjaman.kembalikan');
-    Route::get('aset-peminjaman/{peminjaman}/print', AsetPeminjamanPrintController::class)->name('aset-peminjaman.print');
-    Route::resource('aset-peminjaman', AsetPeminjamanController::class)
-        ->parameters(['aset-peminjaman' => 'peminjaman'])
-        ->only(['index', 'create', 'store', 'show']);
+        Route::get('aset-peminjaman/search-aset', [AsetPeminjamanController::class, 'searchAset'])->name('aset-peminjaman.search-aset');
+        Route::get('aset-peminjaman/search-pegawai', [AsetPeminjamanController::class, 'searchPegawai'])->name('aset-peminjaman.search-pegawai');
+        Route::get('aset-peminjaman/search-user', [AsetPeminjamanController::class, 'searchUser'])->name('aset-peminjaman.search-user');
+        Route::post('aset-peminjaman/{peminjaman}/kembalikan', [AsetPeminjamanController::class, 'kembalikan'])->name('aset-peminjaman.kembalikan');
+        Route::get('aset-peminjaman/{peminjaman}/print', AsetPeminjamanPrintController::class)->name('aset-peminjaman.print');
+        Route::resource('aset-peminjaman', AsetPeminjamanController::class)
+            ->parameters(['aset-peminjaman' => 'peminjaman'])
+            ->only(['index', 'create', 'store', 'show']);
 
-    Route::get('aset-mutasi-lokasi/search-aset', [AsetMutasiLokasiController::class, 'searchAset'])->name('aset-mutasi-lokasi.search-aset');
-    Route::get('aset-mutasi-lokasi/search-pegawai', [AsetMutasiLokasiController::class, 'searchPegawai'])->name('aset-mutasi-lokasi.search-pegawai');
-    Route::get('aset-mutasi-lokasi/search-user', [AsetMutasiLokasiController::class, 'searchUser'])->name('aset-mutasi-lokasi.search-user');
-    Route::get('aset-mutasi-lokasi/{mutasi}/print', AsetMutasiLokasiPrintController::class)->name('aset-mutasi-lokasi.print');
-    Route::resource('aset-mutasi-lokasi', AsetMutasiLokasiController::class)
-        ->parameters(['aset-mutasi-lokasi' => 'mutasi'])
-        ->only(['index', 'create', 'store', 'show']);
+        Route::get('aset-mutasi-lokasi/search-aset', [AsetMutasiLokasiController::class, 'searchAset'])->name('aset-mutasi-lokasi.search-aset');
+        Route::get('aset-mutasi-lokasi/search-pegawai', [AsetMutasiLokasiController::class, 'searchPegawai'])->name('aset-mutasi-lokasi.search-pegawai');
+        Route::get('aset-mutasi-lokasi/search-user', [AsetMutasiLokasiController::class, 'searchUser'])->name('aset-mutasi-lokasi.search-user');
+        Route::get('aset-mutasi-lokasi/{mutasi}/print', AsetMutasiLokasiPrintController::class)->name('aset-mutasi-lokasi.print');
+        Route::resource('aset-mutasi-lokasi', AsetMutasiLokasiController::class)
+            ->parameters(['aset-mutasi-lokasi' => 'mutasi'])
+            ->only(['index', 'create', 'store', 'show']);
 
-    Route::post('aset/master/{tipe}', [AsetMasterController::class, 'store'])
-        ->whereIn('tipe', ['kategori', 'jenis', 'merk', 'produsen', 'distributor'])
-        ->name('aset.master.store');
-    Route::get('aset/master/non-alkes/search', [AsetMasterController::class, 'searchNonAlkes'])
-        ->name('aset.master.non-alkes.search');
-    Route::get('aset/master/non-alkes/suggest-kode', [AsetNonAlkesController::class, 'suggestKode'])
-        ->name('aset.master.non-alkes.suggest-kode');
-    Route::get('aset/master/non-alkes', [AsetNonAlkesController::class, 'index'])
-        ->name('aset.master.non-alkes.index');
-    Route::post('aset/master/non-alkes', [AsetNonAlkesController::class, 'store'])
-        ->name('aset.master.non-alkes.store');
-    Route::patch('aset/master/non-alkes/{nonAlkes}/kategori', [AsetNonAlkesController::class, 'updateKategori'])
-        ->name('aset.master.non-alkes.kategori');
-    Route::patch('aset/master/non-alkes/{nonAlkes}/nama', [AsetNonAlkesController::class, 'updateNama'])
-        ->name('aset.master.non-alkes.nama');
-    Route::patch('aset/master/non-alkes/{nonAlkes}', [AsetNonAlkesController::class, 'update'])
-        ->name('aset.master.non-alkes.update');
-    Route::delete('aset/master/non-alkes/{nonAlkes}', [AsetNonAlkesController::class, 'destroy'])
-        ->name('aset.master.non-alkes.destroy');
-    Route::get('aset/master/aspak/search', [AsetMasterController::class, 'searchAspak'])
-        ->name('aset.master.aspak.search');
-    Route::get('aset/master/aspak/suggest-kode', [AsetAspakController::class, 'suggestKode'])
-        ->name('aset.master.aspak.suggest-kode');
-    Route::get('aset/master/aspak', [AsetAspakController::class, 'index'])
-        ->name('aset.master.aspak.index');
-    Route::post('aset/master/aspak', [AsetAspakController::class, 'store'])
-        ->name('aset.master.aspak.store');
-    Route::patch('aset/master/aspak/{aspak}', [AsetAspakController::class, 'update'])
-        ->name('aset.master.aspak.update');
-    Route::delete('aset/master/aspak/{aspak}', [AsetAspakController::class, 'destroy'])
-        ->name('aset.master.aspak.destroy');
-    Route::get('aset/master/ruang', [AsetRuangController::class, 'index'])
-        ->name('aset.master.ruang.index');
-    Route::get('aset/master/{tipe}/csv/template', [AsetMasterCsvController::class, 'template'])
-        ->whereIn('tipe', ['ruang', 'aspak', 'non_alkes'])
-        ->name('aset.master.csv.template');
-    Route::get('aset/master/{tipe}/csv/export', [AsetMasterCsvController::class, 'export'])
-        ->whereIn('tipe', ['ruang', 'aspak', 'non_alkes'])
-        ->name('aset.master.csv.export');
-    Route::post('aset/master/{tipe}/csv/import', [AsetMasterCsvController::class, 'import'])
-        ->whereIn('tipe', ['ruang', 'aspak', 'non_alkes'])
-        ->name('aset.master.csv.import');
-    Route::get('aset/master/jenis', [AsetJenisController::class, 'index'])
-        ->name('aset.master.jenis.index');
-    Route::patch('aset/master/jenis/{jenis}/merk', [AsetJenisController::class, 'updateMerk'])
-        ->name('aset.master.jenis.merk');
-    Route::get('aset/master/kategori', [AsetKategoriController::class, 'index'])
-        ->name('aset.master.kategori.index');
-    Route::post('aset/master/kategori/simpan', [AsetKategoriController::class, 'store'])
-        ->name('aset.master.kategori.store');
-    Route::patch('aset/master/kategori/{kategori}', [AsetKategoriController::class, 'update'])
-        ->name('aset.master.kategori.update');
-    Route::delete('aset/master/kategori/{kategori}', [AsetKategoriController::class, 'destroy'])
-        ->name('aset.master.kategori.destroy');
-    Route::post('aset/master/kategori/{kategori}/merge', [AsetKategoriController::class, 'merge'])
-        ->name('aset.master.kategori.merge');
-    Route::get('aset/pengaturan-penyusutan', [AsetPenyusutanSettingsController::class, 'edit'])
-        ->name('aset.pengaturan-penyusutan.edit');
-    Route::put('aset/pengaturan-penyusutan', [AsetPenyusutanSettingsController::class, 'update'])
-        ->name('aset.pengaturan-penyusutan.update');
+        Route::post('aset/master/{tipe}', [AsetMasterController::class, 'store'])
+            ->whereIn('tipe', ['kategori', 'jenis', 'merk', 'produsen', 'distributor'])
+            ->name('aset.master.store');
+        Route::get('aset/master/non-alkes/search', [AsetMasterController::class, 'searchNonAlkes'])
+            ->name('aset.master.non-alkes.search');
+        Route::get('aset/master/non-alkes/suggest-kode', [AsetNonAlkesController::class, 'suggestKode'])
+            ->name('aset.master.non-alkes.suggest-kode');
+        Route::get('aset/master/non-alkes', [AsetNonAlkesController::class, 'index'])
+            ->name('aset.master.non-alkes.index');
+        Route::post('aset/master/non-alkes', [AsetNonAlkesController::class, 'store'])
+            ->name('aset.master.non-alkes.store');
+        Route::patch('aset/master/non-alkes/{nonAlkes}/kategori', [AsetNonAlkesController::class, 'updateKategori'])
+            ->name('aset.master.non-alkes.kategori');
+        Route::patch('aset/master/non-alkes/{nonAlkes}/nama', [AsetNonAlkesController::class, 'updateNama'])
+            ->name('aset.master.non-alkes.nama');
+        Route::patch('aset/master/non-alkes/{nonAlkes}', [AsetNonAlkesController::class, 'update'])
+            ->name('aset.master.non-alkes.update');
+        Route::delete('aset/master/non-alkes/{nonAlkes}', [AsetNonAlkesController::class, 'destroy'])
+            ->name('aset.master.non-alkes.destroy');
+        Route::get('aset/master/aspak/search', [AsetMasterController::class, 'searchAspak'])
+            ->name('aset.master.aspak.search');
+        Route::get('aset/master/aspak/suggest-kode', [AsetAspakController::class, 'suggestKode'])
+            ->name('aset.master.aspak.suggest-kode');
+        Route::get('aset/master/aspak', [AsetAspakController::class, 'index'])
+            ->name('aset.master.aspak.index');
+        Route::post('aset/master/aspak', [AsetAspakController::class, 'store'])
+            ->name('aset.master.aspak.store');
+        Route::patch('aset/master/aspak/{aspak}', [AsetAspakController::class, 'update'])
+            ->name('aset.master.aspak.update');
+        Route::delete('aset/master/aspak/{aspak}', [AsetAspakController::class, 'destroy'])
+            ->name('aset.master.aspak.destroy');
+        Route::get('aset/master/ruang', [AsetRuangController::class, 'index'])
+            ->name('aset.master.ruang.index');
+        Route::post('aset/master/ruang/simpan', [AsetRuangController::class, 'store'])
+            ->name('aset.master.ruang.store');
+        Route::patch('aset/master/ruang/{ruang}', [AsetRuangController::class, 'update'])
+            ->name('aset.master.ruang.update');
+        Route::delete('aset/master/ruang/{ruang}', [AsetRuangController::class, 'destroy'])
+            ->name('aset.master.ruang.destroy');
+        Route::post('aset/master/ruang/bulk-delete', [AsetRuangController::class, 'bulkDestroy'])
+            ->name('aset.master.ruang.bulk-destroy');
+        Route::get('aset/master/{tipe}/csv/template', [AsetMasterCsvController::class, 'template'])
+            ->whereIn('tipe', ['ruang', 'aspak', 'non_alkes'])
+            ->name('aset.master.csv.template');
+        Route::get('aset/master/{tipe}/csv/export', [AsetMasterCsvController::class, 'export'])
+            ->whereIn('tipe', ['ruang', 'aspak', 'non_alkes'])
+            ->name('aset.master.csv.export');
+        Route::post('aset/master/{tipe}/csv/import', [AsetMasterCsvController::class, 'import'])
+            ->whereIn('tipe', ['ruang', 'aspak', 'non_alkes'])
+            ->name('aset.master.csv.import');
+        Route::get('aset/master/jenis', [AsetJenisController::class, 'index'])
+            ->name('aset.master.jenis.index');
+        Route::post('aset/master/jenis/simpan', [AsetJenisController::class, 'store'])
+            ->name('aset.master.jenis.store');
+        Route::patch('aset/master/jenis/{jenis}', [AsetJenisController::class, 'update'])
+            ->name('aset.master.jenis.update');
+        Route::delete('aset/master/jenis/{jenis}', [AsetJenisController::class, 'destroy'])
+            ->name('aset.master.jenis.destroy');
+        Route::post('aset/master/jenis/bulk-delete', [AsetJenisController::class, 'bulkDestroy'])
+            ->name('aset.master.jenis.bulk-destroy');
+        Route::patch('aset/master/jenis/{jenis}/merk', [AsetJenisController::class, 'updateMerk'])
+            ->name('aset.master.jenis.merk');
+        Route::get('aset/master/merk', [AsetMerkController::class, 'index'])
+            ->name('aset.master.merk.index');
+        Route::post('aset/master/merk/simpan', [AsetMerkController::class, 'store'])
+            ->name('aset.master.merk.store');
+        Route::patch('aset/master/merk/{merk}', [AsetMerkController::class, 'update'])
+            ->name('aset.master.merk.update');
+        Route::delete('aset/master/merk/{merk}', [AsetMerkController::class, 'destroy'])
+            ->name('aset.master.merk.destroy');
+        Route::post('aset/master/merk/bulk-delete', [AsetMerkController::class, 'bulkDestroy'])
+            ->name('aset.master.merk.bulk-destroy');
+        Route::get('aset/master/distributor', [AsetDistributorController::class, 'index'])
+            ->name('aset.master.distributor.index');
+        Route::post('aset/master/distributor/simpan', [AsetDistributorController::class, 'store'])
+            ->name('aset.master.distributor.store');
+        Route::patch('aset/master/distributor/{distributor}', [AsetDistributorController::class, 'update'])
+            ->name('aset.master.distributor.update');
+        Route::delete('aset/master/distributor/{distributor}', [AsetDistributorController::class, 'destroy'])
+            ->name('aset.master.distributor.destroy');
+        Route::post('aset/master/distributor/bulk-delete', [AsetDistributorController::class, 'bulkDestroy'])
+            ->name('aset.master.distributor.bulk-destroy');
+        Route::get('aset/master/kategori', [AsetKategoriController::class, 'index'])
+            ->name('aset.master.kategori.index');
+        Route::post('aset/master/kategori/simpan', [AsetKategoriController::class, 'store'])
+            ->name('aset.master.kategori.store');
+        Route::patch('aset/master/kategori/{kategori}', [AsetKategoriController::class, 'update'])
+            ->name('aset.master.kategori.update');
+        Route::delete('aset/master/kategori/{kategori}', [AsetKategoriController::class, 'destroy'])
+            ->name('aset.master.kategori.destroy');
+        Route::post('aset/master/kategori/{kategori}/merge', [AsetKategoriController::class, 'merge'])
+            ->name('aset.master.kategori.merge');
+        Route::get('aset/pengaturan-penyusutan', [AsetPenyusutanSettingsController::class, 'edit'])
+            ->name('aset.pengaturan-penyusutan.edit');
+        Route::put('aset/pengaturan-penyusutan', [AsetPenyusutanSettingsController::class, 'update'])
+            ->name('aset.pengaturan-penyusutan.update');
 
-    Route::post('aset/{aset}/foto', [AsetFotoController::class, 'store'])->name('aset.foto.store');
-    Route::delete('aset/{aset}/foto/{foto}', [AsetFotoController::class, 'destroy'])->name('aset.foto.destroy');
-    Route::post('aset/{aset}/dokumen', [AsetDokumenController::class, 'store'])->name('aset.dokumen.store');
-    Route::get('aset/{aset}/dokumen/{dokumen}/unduh', [AsetDokumenController::class, 'unduh'])->name('aset.dokumen.unduh');
-    Route::delete('aset/{aset}/dokumen/{dokumen}', [AsetDokumenController::class, 'destroy'])->name('aset.dokumen.destroy');
-    Route::post('aset/{aset}/verifikasi', [AsetController::class, 'verifikasi'])->name('aset.verifikasi');
-    Route::patch('aset/{aset}/monitoring', [AsetController::class, 'updateMonitoring'])
-        ->name('aset.monitoring.update');
-    Route::get('aset/{aset}/label-print', [AsetController::class, 'labelPrint'])->name('aset.label-print');
-    Route::get('aset/{aset}/foto-sumber', [AsetFotoController::class, 'showSumber'])->name('aset.foto-sumber');
-    Route::resource('aset', AsetController::class)->parameters(['aset' => 'aset']);
+        Route::post('aset/{aset}/foto', [AsetFotoController::class, 'store'])->name('aset.foto.store');
+        Route::delete('aset/{aset}/foto/{foto}', [AsetFotoController::class, 'destroy'])->name('aset.foto.destroy');
+        Route::post('aset/{aset}/dokumen', [AsetDokumenController::class, 'store'])->name('aset.dokumen.store');
+        Route::get('aset/{aset}/dokumen/{dokumen}/unduh', [AsetDokumenController::class, 'unduh'])->name('aset.dokumen.unduh');
+        Route::delete('aset/{aset}/dokumen/{dokumen}', [AsetDokumenController::class, 'destroy'])->name('aset.dokumen.destroy');
+        Route::post('aset/{aset}/verifikasi', [AsetController::class, 'verifikasi'])->name('aset.verifikasi');
+        Route::patch('aset/{aset}/monitoring', [AsetController::class, 'updateMonitoring'])
+            ->name('aset.monitoring.update');
+        Route::get('aset/{aset}/label-print', [AsetController::class, 'labelPrint'])->name('aset.label-print');
+        Route::get('aset/{aset}/foto-sumber', [AsetFotoController::class, 'showSumber'])->name('aset.foto-sumber');
+        Route::resource('aset', AsetController::class)->parameters(['aset' => 'aset']);
+    });
 
-    Route::get('monitoring', [MonitoringDeviceController::class, 'index'])->name('monitoring.index');
-    Route::get('monitoring/pengaturan-kategori', [MonitoringKategoriSettingsController::class, 'edit'])
-        ->name('monitoring.pengaturan-kategori.edit');
-    Route::put('monitoring/pengaturan-kategori', [MonitoringKategoriSettingsController::class, 'update'])
-        ->name('monitoring.pengaturan-kategori.update');
-    Route::get('monitoring/{device}', [MonitoringDeviceController::class, 'show'])->name('monitoring.show');
-    Route::get('monitoring/{device}/desktop', [MonitoringDeviceController::class, 'desktop'])
-        ->name('monitoring.desktop');
-    Route::post('monitoring/{device}/commands', [MonitoringDeviceController::class, 'storeCommand'])
-        ->name('monitoring.commands.store');
-    Route::patch('monitoring/{device}/aset', [MonitoringDeviceController::class, 'updateAset'])
-        ->name('monitoring.aset.update');
-    Route::delete('monitoring/{device}', [MonitoringDeviceController::class, 'destroy'])
-        ->name('monitoring.destroy');
+    Route::middleware('monitoring.kategori')->group(function (): void {
+        Route::get('monitoring/pengaturan-kategori', [MonitoringKategoriSettingsController::class, 'edit'])
+            ->name('monitoring.pengaturan-kategori.edit');
+        Route::put('monitoring/pengaturan-kategori', [MonitoringKategoriSettingsController::class, 'update'])
+            ->name('monitoring.pengaturan-kategori.update');
+    });
 
-    Route::get('infrastruktur', [TianjiLaporanController::class, 'index'])->name('infrastruktur.index');
-    Route::redirect('laporan-tianji', '/infrastruktur');
-    Route::get('laporan-tianji/export/ringkasan', [TianjiLaporanController::class, 'exportRingkasan'])
-        ->name('laporan-tianji.export.ringkasan');
-    Route::get('laporan-tianji/export/harian', [TianjiLaporanController::class, 'exportHarian'])
-        ->name('laporan-tianji.export.harian');
-    Route::get('laporan-tianji/export/gangguan', [TianjiLaporanController::class, 'exportGangguan'])
-        ->name('laporan-tianji.export.gangguan');
-    Route::get('laporan-tianji/export/agent', [TianjiLaporanController::class, 'exportAgent'])
-        ->name('laporan-tianji.export.agent');
-    Route::get('laporan-tianji/export/detail', [TianjiLaporanController::class, 'exportDetail'])
-        ->name('laporan-tianji.export.detail');
+    Route::middleware('monitoring.access')->group(function (): void {
+        Route::get('monitoring', [MonitoringDeviceController::class, 'index'])->name('monitoring.index');
+        Route::get('monitoring/{device}', [MonitoringDeviceController::class, 'show'])->name('monitoring.show');
+        Route::get('monitoring/{device}/desktop', [MonitoringDeviceController::class, 'desktop'])
+            ->name('monitoring.desktop');
+        Route::post('monitoring/{device}/commands', [MonitoringDeviceController::class, 'storeCommand'])
+            ->name('monitoring.commands.store');
+        Route::patch('monitoring/{device}/aset', [MonitoringDeviceController::class, 'updateAset'])
+            ->name('monitoring.aset.update');
+        Route::delete('monitoring/{device}', [MonitoringDeviceController::class, 'destroy'])
+            ->name('monitoring.destroy');
+
+        Route::get('infrastruktur', [TianjiLaporanController::class, 'index'])->name('infrastruktur.index');
+        Route::redirect('laporan-tianji', '/infrastruktur');
+        Route::get('laporan-tianji/export/ringkasan', [TianjiLaporanController::class, 'exportRingkasan'])
+            ->name('laporan-tianji.export.ringkasan');
+        Route::get('laporan-tianji/export/harian', [TianjiLaporanController::class, 'exportHarian'])
+            ->name('laporan-tianji.export.harian');
+        Route::get('laporan-tianji/export/gangguan', [TianjiLaporanController::class, 'exportGangguan'])
+            ->name('laporan-tianji.export.gangguan');
+        Route::get('laporan-tianji/export/agent', [TianjiLaporanController::class, 'exportAgent'])
+            ->name('laporan-tianji.export.agent');
+        Route::get('laporan-tianji/export/detail', [TianjiLaporanController::class, 'exportDetail'])
+            ->name('laporan-tianji.export.detail');
+    });
+
+    Route::middleware('berkas-kepegawaian.access')->group(function (): void {
+        Route::get('berkas-kepegawaian', [BerkasKepegawaianController::class, 'index'])
+            ->name('berkas-kepegawaian.index');
+
+        Route::get('berkas-kepegawaian/inbox', [BerkasScanInboxController::class, 'index'])
+            ->name('berkas-kepegawaian.inbox.index');
+        Route::get('berkas-kepegawaian/inbox/{inbox}/preview', [BerkasScanInboxController::class, 'preview'])
+            ->name('berkas-kepegawaian.inbox.preview');
+        Route::post('berkas-kepegawaian/inbox/{inbox}/confirm', [BerkasScanInboxController::class, 'confirm'])
+            ->name('berkas-kepegawaian.inbox.confirm');
+        Route::post('berkas-kepegawaian/inbox/{inbox}/reject', [BerkasScanInboxController::class, 'reject'])
+            ->name('berkas-kepegawaian.inbox.reject');
+
+        Route::get('berkas-kepegawaian/master', [MasterBerkasPegawaiController::class, 'index'])
+            ->name('berkas-kepegawaian.master.index');
+        Route::post('berkas-kepegawaian/master', [MasterBerkasPegawaiController::class, 'store'])
+            ->name('berkas-kepegawaian.master.store');
+        Route::put('berkas-kepegawaian/master/{kode}', [MasterBerkasPegawaiController::class, 'update'])
+            ->name('berkas-kepegawaian.master.update')
+            ->where('kode', '[A-Za-z0-9._-]+');
+        Route::delete('berkas-kepegawaian/master/{kode}', [MasterBerkasPegawaiController::class, 'destroy'])
+            ->name('berkas-kepegawaian.master.destroy')
+            ->where('kode', '[A-Za-z0-9._-]+');
+
+        Route::get('berkas-kepegawaian/referensi', [ReferensiKepegawaianController::class, 'index'])
+            ->name('berkas-kepegawaian.referensi.index');
+
+        Route::get('berkas-kepegawaian/{nik}', [BerkasKepegawaianController::class, 'show'])
+            ->name('berkas-kepegawaian.show')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::put('berkas-kepegawaian/{nik}/profil', [BerkasKepegawaianController::class, 'updateProfil'])
+            ->name('berkas-kepegawaian.profil.update')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::post('berkas-kepegawaian/{nik}/riwayat/surat-peringatan', [BerkasKepegawaianController::class, 'storeSuratPeringatan'])
+            ->name('berkas-kepegawaian.riwayat.surat-peringatan.store')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::put('berkas-kepegawaian/{nik}/riwayat/surat-peringatan', [BerkasKepegawaianController::class, 'updateSuratPeringatan'])
+            ->name('berkas-kepegawaian.riwayat.surat-peringatan.update')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::delete('berkas-kepegawaian/{nik}/riwayat/surat-peringatan', [BerkasKepegawaianController::class, 'destroySuratPeringatan'])
+            ->name('berkas-kepegawaian.riwayat.surat-peringatan.destroy')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+
+        Route::post('berkas-kepegawaian/{nik}/riwayat/penghargaan', [BerkasKepegawaianController::class, 'storePenghargaan'])
+            ->name('berkas-kepegawaian.riwayat.penghargaan.store')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::put('berkas-kepegawaian/{nik}/riwayat/penghargaan', [BerkasKepegawaianController::class, 'updatePenghargaan'])
+            ->name('berkas-kepegawaian.riwayat.penghargaan.update')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::delete('berkas-kepegawaian/{nik}/riwayat/penghargaan', [BerkasKepegawaianController::class, 'destroyPenghargaan'])
+            ->name('berkas-kepegawaian.riwayat.penghargaan.destroy')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+
+        Route::post('berkas-kepegawaian/{nik}/riwayat/pendidikan', [BerkasKepegawaianController::class, 'storePendidikan'])
+            ->name('berkas-kepegawaian.riwayat.pendidikan.store')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::put('berkas-kepegawaian/{nik}/riwayat/pendidikan', [BerkasKepegawaianController::class, 'updatePendidikan'])
+            ->name('berkas-kepegawaian.riwayat.pendidikan.update')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::delete('berkas-kepegawaian/{nik}/riwayat/pendidikan', [BerkasKepegawaianController::class, 'destroyPendidikan'])
+            ->name('berkas-kepegawaian.riwayat.pendidikan.destroy')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+
+        Route::post('berkas-kepegawaian/{nik}/riwayat/jabatan', [BerkasKepegawaianController::class, 'storeJabatan'])
+            ->name('berkas-kepegawaian.riwayat.jabatan.store')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::put('berkas-kepegawaian/{nik}/riwayat/jabatan', [BerkasKepegawaianController::class, 'updateJabatan'])
+            ->name('berkas-kepegawaian.riwayat.jabatan.update')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::delete('berkas-kepegawaian/{nik}/riwayat/jabatan', [BerkasKepegawaianController::class, 'destroyJabatan'])
+            ->name('berkas-kepegawaian.riwayat.jabatan.destroy')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+
+        Route::post('berkas-kepegawaian/{nik}/riwayat/seminar', [BerkasKepegawaianController::class, 'storeSeminar'])
+            ->name('berkas-kepegawaian.riwayat.seminar.store')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::put('berkas-kepegawaian/{nik}/riwayat/seminar', [BerkasKepegawaianController::class, 'updateSeminar'])
+            ->name('berkas-kepegawaian.riwayat.seminar.update')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::delete('berkas-kepegawaian/{nik}/riwayat/seminar', [BerkasKepegawaianController::class, 'destroySeminar'])
+            ->name('berkas-kepegawaian.riwayat.seminar.destroy')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+
+        Route::post('berkas-kepegawaian/{nik}/riwayat/penelitian', [BerkasKepegawaianController::class, 'storePenelitian'])
+            ->name('berkas-kepegawaian.riwayat.penelitian.store')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::put('berkas-kepegawaian/{nik}/riwayat/penelitian', [BerkasKepegawaianController::class, 'updatePenelitian'])
+            ->name('berkas-kepegawaian.riwayat.penelitian.update')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::delete('berkas-kepegawaian/{nik}/riwayat/penelitian', [BerkasKepegawaianController::class, 'destroyPenelitian'])
+            ->name('berkas-kepegawaian.riwayat.penelitian.destroy')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+
+        Route::post('berkas-kepegawaian/{nik}', [BerkasKepegawaianController::class, 'store'])
+            ->name('berkas-kepegawaian.store')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+');
+        Route::post('berkas-kepegawaian/{nik}/{kode}/replace', [BerkasKepegawaianController::class, 'replace'])
+            ->name('berkas-kepegawaian.replace')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+')
+            ->where('kode', '[A-Za-z0-9._-]+');
+        Route::delete('berkas-kepegawaian/{nik}/{kode}', [BerkasKepegawaianController::class, 'destroy'])
+            ->name('berkas-kepegawaian.destroy')
+            ->where('nik', '(?!master$|inbox$|referensi$)[A-Za-z0-9._-]+')
+            ->where('kode', '[A-Za-z0-9._-]+');
+    });
 
     // Rencana / Project (tracking per project)
     Route::resource('projects', ProjectController::class);
@@ -550,6 +716,33 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('area/{area}/ruang/{ruang}/label', [PatroliAreaController::class, 'labelPrint'])->name('area.ruang.label');
 
         Route::redirect('titik', '/patroli/area');
+    });
+
+    // Driver — Checklist Kendaraan
+    Route::middleware('driver.access')->prefix('driver')->name('driver.')->group(function (): void {
+        Route::get('/', DriverDashboardController::class)->name('dashboard');
+
+        Route::get('pemeriksaan', [DriverPemeriksaanController::class, 'index'])->name('pemeriksaan.index');
+        Route::get('pemeriksaan/buat/{kendaraan}', [DriverPemeriksaanController::class, 'create'])->name('pemeriksaan.create');
+        Route::post('pemeriksaan/batch', [DriverPemeriksaanController::class, 'storeBatch'])->name('pemeriksaan.store-batch');
+        Route::post('pemeriksaan', [DriverPemeriksaanController::class, 'store'])->name('pemeriksaan.store');
+        Route::get('pemeriksaan/{pemeriksaan}', [DriverPemeriksaanController::class, 'show'])->name('pemeriksaan.show');
+        Route::delete('pemeriksaan/{pemeriksaan}', [DriverPemeriksaanController::class, 'destroy'])->name('pemeriksaan.destroy');
+
+        Route::get('riwayat', DriverRiwayatController::class)->name('riwayat');
+
+        Route::get('laporan', DriverLaporanController::class)->name('laporan');
+        Route::get('laporan/print', DriverLaporanPrintController::class)->name('laporan.print');
+
+        Route::get('kendaraan', [DriverKendaraanController::class, 'index'])->name('kendaraan.index');
+        Route::post('kendaraan', [DriverKendaraanController::class, 'store'])->name('kendaraan.store');
+        Route::put('kendaraan/{kendaraan}', [DriverKendaraanController::class, 'update'])->name('kendaraan.update');
+        Route::get('kendaraan/{kendaraan}/item', [DriverKendaraanController::class, 'editItems'])->name('kendaraan.items.edit');
+        Route::put('kendaraan/{kendaraan}/item', [DriverKendaraanController::class, 'syncItems'])->name('kendaraan.items.sync');
+
+        Route::get('item-checklist', [DriverChecklistItemController::class, 'index'])->name('item-checklist.index');
+        Route::post('item-checklist', [DriverChecklistItemController::class, 'store'])->name('item-checklist.store');
+        Route::put('item-checklist/{itemChecklist}', [DriverChecklistItemController::class, 'update'])->name('item-checklist.update');
     });
 });
 

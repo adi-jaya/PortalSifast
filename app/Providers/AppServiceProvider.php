@@ -13,6 +13,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -38,8 +39,8 @@ class AppServiceProvider extends ServiceProvider
         }
 
         // Register event listeners for user presence tracking
-        \Event::listen(Login::class, SetUserOnlineOnLogin::class);
-        \Event::listen(Logout::class, SetUserOfflineOnLogout::class);
+        Event::listen(Login::class, SetUserOnlineOnLogin::class);
+        Event::listen(Logout::class, SetUserOfflineOnLogout::class);
 
         RateLimiter::for('kritik-saran', function (Request $request) {
             return Limit::perHour(5)->by($request->ip());

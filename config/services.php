@@ -126,4 +126,18 @@ return [
         ],
     ],
 
+    'berkas_pegawai' => [
+        'receiver_url' => env('WEBAPPS_BERKAS_PEGAWAI_RECEIVER_URL'),
+        'receiver_token' => env('WEBAPPS_BERKAS_PEGAWAI_RECEIVER_TOKEN'),
+        'public_base_url' => env(
+            'WEBAPPS_BERKAS_PEGAWAI_PUBLIC_BASE_URL',
+            'http://'.env('DB_HOST_2', '127.0.0.1').'/webapps2/penggajian'
+        ),
+        'timeout' => (int) env('WEBAPPS_BERKAS_PEGAWAI_TIMEOUT', 30),
+    ],
+
+    'berkas_scan' => [
+        'agent_token' => env('BERKAS_SCAN_AGENT_TOKEN'),
+    ],
+
 ];

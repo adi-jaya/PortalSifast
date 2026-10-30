@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -10,11 +11,11 @@ class UpdateUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->canManageUsers() ?? false;
     }
 
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -29,6 +30,11 @@ class UpdateUserRequest extends FormRequest
             'dep_id' => ['nullable', 'string', 'max:50'],
             'can_access_payroll' => ['nullable', 'boolean'],
             'can_access_patroli' => ['nullable', 'boolean'],
+            'can_access_checklist_kendaraan' => ['nullable', 'boolean'],
+            'can_coordinate_checklist_kendaraan' => ['nullable', 'boolean'],
+            'can_access_monitoring' => ['nullable', 'boolean'],
+            'can_access_berkas_kepegawaian' => ['nullable', 'boolean'],
+            'can_manage_monitoring_kategori' => ['nullable', 'boolean'],
             'can_manage_mutu' => ['nullable', 'boolean'],
             'can_input_mutu' => ['nullable', 'boolean'],
             'can_view_mutu_dashboard' => ['nullable', 'boolean'],

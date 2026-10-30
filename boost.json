@@ -2,10 +2,7 @@
     "agents": [
         "cursor"
     ],
-    "skills": [
-        "wayfinder-development",
-        "pest-testing",
-        "inertia-react-development",
-        "tailwindcss-development"
-    ]
+    "mcp": true,
+    "nightwatch": false,
+    "sail": false
 }

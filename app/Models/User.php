@@ -3,16 +3,19 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Session\DatabaseSession;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable, TwoFactorAuthenticatable;
 
     /**
@@ -38,6 +41,11 @@ class User extends Authenticatable
         'dep_id',
         'can_access_payroll',
         'can_access_patroli',
+        'can_access_checklist_kendaraan',
+        'can_coordinate_checklist_kendaraan',
+        'can_access_monitoring',
+        'can_access_berkas_kepegawaian',
+        'can_manage_monitoring_kategori',
         'can_manage_mutu',
         'can_input_mutu',
         'can_view_mutu_dashboard',
@@ -75,6 +83,11 @@ class User extends Authenticatable
             'two_factor_confirmed_at' => 'datetime',
             'can_access_payroll' => 'boolean',
             'can_access_patroli' => 'boolean',
+            'can_access_checklist_kendaraan' => 'boolean',
+            'can_coordinate_checklist_kendaraan' => 'boolean',
+            'can_access_monitoring' => 'boolean',
+            'can_access_berkas_kepegawaian' => 'boolean',
+            'can_manage_monitoring_kategori' => 'boolean',
             'can_manage_mutu' => 'boolean',
             'can_input_mutu' => 'boolean',
             'can_view_mutu_dashboard' => 'boolean',
@@ -95,7 +108,7 @@ class User extends Authenticatable
      */
     public function sessions(): HasMany
     {
-        return $this->hasMany(\Illuminate\Session\DatabaseSession::class, 'user_id');
+        return $this->hasMany(DatabaseSession::class, 'user_id');
     }
 
     /**
@@ -111,7 +124,7 @@ class User extends Authenticatable
     /**
      * Tiket yang dibuat oleh user ini (sebagai pemohon)
      */
-    public function requestedTickets(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function requestedTickets(): HasMany
     {
         return $this->hasMany(Ticket::class, 'requester_id');
     }
@@ -119,7 +132,7 @@ class User extends Authenticatable
     /**
      * Tiket yang ditugaskan ke user ini (sebagai assignee)
      */
-    public function assignedTickets(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function assignedTickets(): HasMany
     {
         return $this->hasMany(Ticket::class, 'assignee_id');
     }
@@ -127,7 +140,7 @@ class User extends Authenticatable
     /**
      * Komentar tiket oleh user ini
      */
-    public function ticketComments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function ticketComments(): HasMany
     {
         return $this->hasMany(TicketComment::class);
     }
@@ -135,7 +148,7 @@ class User extends Authenticatable
     /**
      * Aktivitas tiket oleh user ini
      */
-    public function ticketActivities(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function ticketActivities(): HasMany
     {
         return $this->hasMany(TicketActivity::class);
     }
@@ -165,6 +178,21 @@ class User extends Authenticatable
     public function isPemohon(): bool
     {
         return $this->role === 'pemohon';
+    }
+
+    public function canManageUsers(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin();
+    }
+
+    public function canAccessInventarisSimrs(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin() || $this->isStaff();
+    }
+
+    public function canAccessAset(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin() || $this->isStaff();
     }
 
     /**
@@ -197,7 +225,74 @@ class User extends Authenticatable
 
     public function canManagePatroliAccess(): bool
     {
-        return $this->isSuperAdmin();
+        return $this->isSuperAdmin() || $this->isAdmin();
+    }
+
+    public function canAccessChecklistKendaraan(): bool
+    {
+        return $this->isSuperAdmin() || (bool) $this->can_access_checklist_kendaraan;
+    }
+
+    public function canCreateDriverPemeriksaan(): bool
+    {
+        return $this->canAccessChecklistKendaraan() || $this->canManageDriverMaster();
+    }
+
+    public function canCoordinateChecklistKendaraan(): bool
+    {
+        return $this->isSuperAdmin()
+            || $this->isAdmin()
+            || (bool) $this->can_coordinate_checklist_kendaraan;
+    }
+
+    public function canAccessDriverModule(): bool
+    {
+        return $this->canAccessChecklistKendaraan()
+            || $this->canCoordinateChecklistKendaraan()
+            || $this->canManageDriverMaster();
+    }
+
+    public function canManageDriverMaster(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin();
+    }
+
+    public function canManageDriverAccess(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin();
+    }
+
+    public function canAccessMonitoring(): bool
+    {
+        return $this->isSuperAdmin()
+            || $this->isAdmin()
+            || (bool) $this->can_access_monitoring;
+    }
+
+    public function canManageMonitoringKategori(): bool
+    {
+        if ($this->isSuperAdmin() || $this->isAdmin()) {
+            return true;
+        }
+
+        return (bool) $this->can_manage_monitoring_kategori && $this->canAccessMonitoring();
+    }
+
+    public function canManageMonitoringAccess(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin();
+    }
+
+    public function canAccessBerkasKepegawaian(): bool
+    {
+        return $this->isSuperAdmin()
+            || $this->isAdmin()
+            || (bool) $this->can_access_berkas_kepegawaian;
+    }
+
+    public function canManageBerkasKepegawaianAccess(): bool
+    {
+        return $this->isSuperAdmin() || $this->isAdmin();
     }
 
     public function canManageWebOfficial(): bool
@@ -227,6 +322,10 @@ class User extends Authenticatable
             'dep_id' => $this->dep_id,
             'can_manage_web_official' => $this->canManageWebOfficial(),
             'can_access_patroli' => $this->canAccessPatroli(),
+            'can_access_checklist_kendaraan' => $this->canAccessChecklistKendaraan(),
+            'can_create_driver_pemeriksaan' => $this->canCreateDriverPemeriksaan(),
+            'can_access_monitoring' => $this->canAccessMonitoring(),
+            'can_manage_monitoring_kategori' => $this->canManageMonitoringKategori(),
         ];
     }
 
@@ -350,7 +449,7 @@ class User extends Authenticatable
 
     // ==================== CHAT ====================
 
-    public function conversations(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function conversations(): BelongsToMany
     {
         return $this->belongsToMany(Conversation::class, 'conversation_user')->withTimestamps();
     }
