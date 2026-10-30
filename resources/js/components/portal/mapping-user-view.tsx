@@ -203,7 +203,7 @@ export function MappingUserView({
         };
 
         setAssignments((prev) => ({ ...prev, [portalId]: updated }));
-        autoSaveRow(
+        void autoSaveRow(
             portalId,
             updated.has_access,
             updated.credential_type,
@@ -228,7 +228,7 @@ export function MappingUserView({
         };
 
         setAssignments((prev) => ({ ...prev, [portalId]: updated }));
-        autoSaveRow(
+        void autoSaveRow(
             portalId,
             updated.has_access,
             updated.credential_type,
@@ -240,7 +240,7 @@ export function MappingUserView({
     const handleNotesBlur = (portalId: number, notes: string) => {
         const current = assignments[portalId];
         if (!current) return;
-        autoSaveRow(
+        void autoSaveRow(
             portalId,
             current.has_access,
             current.credential_type,
@@ -305,7 +305,10 @@ export function MappingUserView({
             <div className="flex flex-col justify-between gap-4 rounded-xl border border-border bg-card p-4 lg:flex-row lg:items-center">
                 <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
                     <div className="w-full sm:w-72 md:w-80">
-                        <label className="mb-1 block text-xs font-semibold text-muted-foreground">
+                        <label
+                            htmlFor="target-user-select"
+                            className="mb-1 block text-xs font-semibold text-muted-foreground"
+                        >
                             Pilih Petugas Target
                         </label>
                         <Select
@@ -313,6 +316,7 @@ export function MappingUserView({
                             onValueChange={handleSelectUser}
                         >
                             <SelectTrigger
+                                id="target-user-select"
                                 className="h-9 text-xs"
                                 aria-label="Pilih Petugas Rumah Sakit"
                             >
@@ -343,12 +347,16 @@ export function MappingUserView({
                     </div>
 
                     <div className="w-full sm:w-64 md:w-72">
-                        <label className="mb-1 block text-xs font-semibold text-muted-foreground">
+                        <label
+                            htmlFor="search-user-input"
+                            className="mb-1 block text-xs font-semibold text-muted-foreground"
+                        >
                             Cari Petugas
                         </label>
                         <div className="relative">
                             <Search className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
                             <Input
+                                id="search-user-input"
                                 placeholder="Ketik nama, NIK, unit..."
                                 value={userSearchTerm}
                                 onChange={(e) => setUserSearchTerm(e.target.value)}

@@ -176,7 +176,7 @@ export function FormConfigEditor({ value, onChange }: FormConfigEditorProps) {
                                 onChange={(e) =>
                                     handleVisualUpdate({
                                         wait_timeout_ms:
-                                            parseInt(e.target.value, 10) ||
+                                            Number.parseInt(e.target.value, 10) ||
                                             10000,
                                     })
                                 }

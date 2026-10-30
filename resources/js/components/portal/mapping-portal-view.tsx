@@ -366,7 +366,7 @@ export function MappingPortalView({
         };
 
         setLocalAssignments((prev) => ({ ...prev, [userId]: updated }));
-        autoSaveRow(
+        void autoSaveRow(
             userId,
             updated.has_access,
             updated.credential_type,
@@ -386,7 +386,7 @@ export function MappingPortalView({
         };
 
         setLocalAssignments((prev) => ({ ...prev, [userId]: updated }));
-        autoSaveRow(
+        void autoSaveRow(
             userId,
             updated.has_access,
             updated.credential_type,
@@ -397,7 +397,7 @@ export function MappingPortalView({
 
     const handleNotesBlur = (userId: number, notes: string) => {
         const current = getAssignment(userId);
-        autoSaveRow(
+        void autoSaveRow(
             userId,
             current.has_access,
             current.credential_type,
@@ -469,7 +469,10 @@ export function MappingPortalView({
             {/* Portal Selection & Filters */}
             <div className="grid grid-cols-1 gap-4 rounded-xl border border-border bg-card p-4 md:grid-cols-4">
                 <div>
-                    <label className="text-xs font-semibold text-muted-foreground">
+                    <label
+                        htmlFor="target-portal-select"
+                        className="text-xs font-semibold text-muted-foreground"
+                    >
                         Pilih Portal Target
                     </label>
                     <Select
@@ -477,6 +480,7 @@ export function MappingPortalView({
                         onValueChange={handleSelectPortal}
                     >
                         <SelectTrigger
+                            id="target-portal-select"
                             className="mt-1 text-xs"
                             aria-label="Pilih Portal Target"
                         >
@@ -496,7 +500,10 @@ export function MappingPortalView({
                 </div>
 
                 <div>
-                    <label className="text-xs font-semibold text-muted-foreground">
+                    <label
+                        htmlFor="department-filter-select"
+                        className="text-xs font-semibold text-muted-foreground"
+                    >
                         Filter Departemen
                     </label>
                     <Select
@@ -507,6 +514,7 @@ export function MappingPortalView({
                         disabled={!selectedPortal}
                     >
                         <SelectTrigger
+                            id="department-filter-select"
                             className="mt-1 text-xs"
                             aria-label="Filter Departemen"
                         >
@@ -526,12 +534,16 @@ export function MappingPortalView({
                 </div>
 
                 <div className="md:col-span-2">
-                    <label className="text-xs font-semibold text-muted-foreground">
+                    <label
+                        htmlFor="search-petugas-portal-input"
+                        className="text-xs font-semibold text-muted-foreground"
+                    >
                         Cari Nama / Email / NIK
                     </label>
                     <div className="relative mt-1">
                         <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
+                            id="search-petugas-portal-input"
                             placeholder="Ketik nama atau NIK petugas..."
                             aria-label="Cari Nama atau NIK Petugas"
                             value={searchTerm}

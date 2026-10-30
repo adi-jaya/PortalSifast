@@ -437,13 +437,15 @@ function showAutofillToast(portalName = 'Portal Pelaporan') {
     }, 6000);
 }
 
+const DEFAULT_AUTOFILL_OPTIONS = Object.freeze({ showToast: true });
+
 /**
  * Menjalankan proses pengisian autofill dan mengosongkan kredensial dari memori.
  */
 function executeAutofill(
     payload,
     root = typeof document !== 'undefined' ? document : null,
-    options = { showToast: true },
+    options = DEFAULT_AUTOFILL_OPTIONS,
 ) {
     if (!payload || !payload.credentials) {
         return { success: false, reason: 'NO_CREDENTIALS' };

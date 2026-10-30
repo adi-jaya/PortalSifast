@@ -1,5 +1,5 @@
-import { test } from 'node:test';
 import assert from 'node:assert';
+import { test } from 'node:test';
 import { createMockChrome } from './helpers/mock-chrome.js';
 
 test('SIMRS Content Script Bridge (content-simrs.js)', async (t) => {

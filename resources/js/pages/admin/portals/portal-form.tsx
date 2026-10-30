@@ -540,7 +540,7 @@ export function PortalForm({
                             onChange={(e) =>
                                 setData(
                                     'sort_order',
-                                    parseInt(e.target.value, 10) || 0,
+                                    Number.parseInt(e.target.value, 10) || 0,
                                 )
                             }
                             className="mt-1 w-32"
