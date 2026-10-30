@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminPortalController;
+use App\Http\Controllers\Admin\AdminPortalMappingController;
 use App\Http\Controllers\Api\DashboardActivityController;
 use App\Http\Controllers\Api\DashboardAnalyticsController;
 use App\Http\Controllers\Api\DashboardNotificationController;
@@ -61,6 +63,9 @@ use App\Http\Controllers\PatroliCheckinController;
 use App\Http\Controllers\PatroliLaporanController;
 use App\Http\Controllers\PatroliTemplateController;
 use App\Http\Controllers\PegawaiController;
+use App\Http\Controllers\PortalAggregatorController;
+use App\Http\Controllers\PortalDispatchController;
+use App\Http\Controllers\PortalPersonalCredentialController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RequesterReportController;
@@ -130,6 +135,40 @@ Broadcast::routes(['middleware' => ['web', 'auth']]);
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('integrations/sikat/go', SikatSsoRedirectController::class)
         ->name('integrations.sikat.go');
+
+    // Portal Pelaporan Eksternal
+    Route::get('portal-pelaporan', [PortalAggregatorController::class, 'index'])
+        ->name('portal-pelaporan.index');
+    Route::post('portal-pelaporan/{portal}/dispatch-token', [PortalDispatchController::class, 'dispatch'])
+        ->middleware('throttle:30,1')
+        ->name('portal-pelaporan.dispatch-token');
+    Route::put('portal-pelaporan/{portal}/personal-credentials', [PortalPersonalCredentialController::class, 'update'])
+        ->middleware('throttle:30,1')
+        ->name('portal-pelaporan.personal-credentials.update');
+
+    // Master Portal Pelaporan Eksternal (Admin)
+    Route::prefix('admin/portals')
+        ->name('admin.portals.')
+        ->middleware('can:manage,App\Models\Portal')
+        ->group(function (): void {
+            Route::get('/', [AdminPortalController::class, 'index'])->name('index');
+            Route::get('/create', [AdminPortalController::class, 'create'])->name('create');
+            Route::post('/', [AdminPortalController::class, 'store'])->name('store');
+            Route::get('/{portal}/edit', [AdminPortalController::class, 'edit'])->name('edit');
+            Route::put('/{portal}', [AdminPortalController::class, 'update'])->name('update');
+            Route::delete('/{portal}', [AdminPortalController::class, 'destroy'])->name('destroy');
+            Route::patch('/{portal}/toggle-active', [AdminPortalController::class, 'toggleActive'])->name('toggle-active');
+            Route::post('/{portal}/logo', [AdminPortalController::class, 'uploadLogo'])->name('logo.upload');
+            Route::delete('/{portal}/logo', [AdminPortalController::class, 'removeLogo'])->name('logo.remove');
+
+            // Mapping Akses Petugas
+            Route::get('/mapping', [AdminPortalMappingController::class, 'index'])->name('mapping.index');
+            Route::post('/mapping/save-row', [AdminPortalMappingController::class, 'saveRow'])->name('mapping.save-row');
+            Route::post('/mapping/sync-portal', [AdminPortalMappingController::class, 'syncPortal'])->name('mapping.sync-portal');
+            Route::post('/mapping/sync-user', [AdminPortalMappingController::class, 'syncUser'])->name('mapping.sync-user');
+            Route::patch('/mapping/{credential}', [AdminPortalMappingController::class, 'updateCredential'])->name('mapping.update-credential');
+            Route::delete('/mapping/{credential}', [AdminPortalMappingController::class, 'destroyCredential'])->name('mapping.destroy-credential');
+        });
 
     Route::middleware('admin')->group(function (): void {
         Route::get('users', [UsersController::class, 'index'])->name('users.index');

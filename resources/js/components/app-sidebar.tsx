@@ -1,3 +1,19 @@
+/**
+ * @deprecated [LEGACY / STARTER-KIT ARTIFACT - JANGAN DIEDIT!]
+ * ============================================================================
+ * PERINGATAN: Berkas ini TIDAK PERNAH DIRENDER pada layout aktif SIMRS.
+ *
+ * Layout aktif SIMRS (`resources/js/layouts/app/app-sidebar-layout.tsx`) menggunakan:
+ * - Desktop: `resources/js/components/template-sidebar.tsx` (<TemplateSidebar />)
+ * - Mobile:  `resources/js/components/template-mobile-nav.tsx` (<TemplateMobileNav />)
+ *
+ * Seluruh navigasi, menu utama, modul, dan evaluasi permission terpusat di:
+ * -> `resources/js/lib/portal-nav.ts` (SINGLE SOURCE OF TRUTH)
+ *
+ * DILARANG MENAMBAH / MENGUBAH MENU PADA BERKAS INI!
+ * Lihat panduan pendaftaran menu baru di: `docs/TUTORIAL-TAMBAH-FITUR-BARU.md` (Step 6).
+ * ============================================================================
+ */
 import { Link, usePage } from '@inertiajs/react';
 import {
     Activity,
@@ -6,11 +22,13 @@ import {
     FilePenLine,
     FileText,
     FolderCog,
+    Globe,
     LayoutGrid,
     ListFilter,
     Package,
     Server,
     Settings2,
+    ShieldCheck,
     Ticket,
     UserCircle,
     Users,
@@ -29,7 +47,7 @@ import {
 } from '@/components/ui/sidebar';
 import type { PortalNavPermissions } from '@/lib/portal-nav';
 import { dashboard } from '@/routes';
-import type { NavItem } from '@/types';
+import type { NavItem, SharedData } from '@/types';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -37,6 +55,11 @@ const mainNavItems: NavItem[] = [
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
+    },
+    {
+        title: 'Portal Pelaporan',
+        href: '/portal-pelaporan',
+        icon: Globe,
     },
     {
         title: 'Tiket',
@@ -116,10 +139,24 @@ const settingsNavItems: NavItem[] = [
     },
 ];
 
+const portalNavItems: NavItem[] = [
+    {
+        title: 'Master Portal',
+        href: '/admin/portals',
+        icon: Globe,
+    },
+    {
+        title: 'Mapping Akses',
+        href: '/admin/portals/mapping',
+        icon: ShieldCheck,
+    },
+];
+
 export function AppSidebar() {
-    const { permissions } = usePage<{ permissions?: PortalNavPermissions }>().props;
+    const { permissions } = usePage<SharedData>().props;
     const visibleMainNavItems = mainNavItems.filter(
-        (item) => item.href !== '/aset' || Boolean(permissions?.can_access_aset),
+        (item) =>
+            item.href !== '/aset' || Boolean(permissions?.can_access_aset),
     );
 
     return (
@@ -138,6 +175,9 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <NavMain items={visibleMainNavItems} />
+                {permissions?.can_manage_portals && (
+                    <NavMain items={portalNavItems} label="Portal Eksternal" />
+                )}
                 <NavMain items={monitoringNavItems} label="Monitoring" />
                 <NavMain items={settingsNavItems} label="Pengaturan" />
             </SidebarContent>
@@ -148,3 +188,5 @@ export function AppSidebar() {
         </Sidebar>
     );
 }
+
+export default AppSidebar;

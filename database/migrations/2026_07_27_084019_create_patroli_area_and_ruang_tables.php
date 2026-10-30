@@ -74,7 +74,6 @@ return new class extends Migration
                 $table->index(['patroli_ruang_id', 'checked_at']);
             });
         }
-
         if (Schema::hasColumn('aset_ruang', 'patroli_template_id')) {
             Schema::table('aset_ruang', function (Blueprint $table) {
                 $table->dropConstrainedForeignId('patroli_template_id');
@@ -88,7 +87,12 @@ return new class extends Migration
         DB::table('patroli_checkin')->delete();
 
         Schema::table('patroli_checkin', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('patroli_ruang_id');
+            $table->dropForeign(['patroli_ruang_id']);
+            $table->dropIndex(['patroli_ruang_id', 'checked_at']);
+            $table->dropColumn('patroli_ruang_id');
+        });
+
+        Schema::table('patroli_checkin', function (Blueprint $table) {
             $table->foreignId('aset_ruang_id')
                 ->after('id')
                 ->constrained('aset_ruang')
@@ -99,12 +103,15 @@ return new class extends Migration
         Schema::dropIfExists('patroli_ruang');
         Schema::dropIfExists('patroli_area');
 
-        Schema::table('aset_ruang', function (Blueprint $table) {
-            $table->foreignId('patroli_template_id')
-                ->nullable()
-                ->after('nama_ruang')
-                ->constrained('patroli_template')
-                ->nullOnDelete();
-        });
+        if (! Schema::hasColumn('aset_ruang', 'patroli_template_id')) {
+            Schema::table('aset_ruang', function (Blueprint $table) {
+                $table->foreignId('patroli_template_id')
+                    ->nullable()
+                    ->after('nama_ruang')
+                    ->constrained('patroli_template')
+                    ->nullOnDelete();
+            });
+        }
     }
 };
+

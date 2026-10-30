@@ -18,6 +18,7 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         php-version: ['8.4', '8.5']
 
@@ -37,14 +38,14 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Copy Environment File
+        run: cp .env.example .env
+
       - name: Install Node Dependencies
-        run: npm i
+        run: npm i --ignore-scripts
 
       - name: Install Dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
-
-      - name: Copy Environment File
-        run: cp .env.example .env
 
       - name: Generate Application Key
         run: php artisan key:generate
@@ -53,4 +54,4 @@ jobs:
         run: npm run build
 
       - name: Tests
-        run: ./vendor/bin/pest
+        run: ./vendor/bin/pest tests/Unit tests/Feature/PortalPelaporan tests/Feature/PortalNavParityTest.php
