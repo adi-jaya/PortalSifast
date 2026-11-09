@@ -36,10 +36,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->trustProxies(at: '*');
+
         $middleware->statefulApi();
 
         // API SiFast (frontend kepegawaian) memakai Bearer token saja; tidak perlu CSRF cookie
-        $middleware->validateCsrfTokens(['api/sifast/*', 'api/agent/*', 'api/berkas-scan/*']);
+        $middleware->validateCsrfTokens(except: ['api/sifast/*', 'api/agent/*', 'api/berkas-scan/*']);
 
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
@@ -71,6 +73,12 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->respond(function (Response $response, Throwable $exception, Request $request): Response {
+            if ($response->getStatusCode() === 419 && ! $request->expectsJson()) {
+                return back()->with([
+                    'message' => 'Sesi Anda telah berakhir. Silakan coba kembali.',
+                ]);
+            }
+
             if (! app()->environment(['local', 'testing']) && in_array($response->getStatusCode(), [500, 503, 404, 403])) {
                 return Inertia::render('errors/error', [
                     'status' => $response->getStatusCode(),
