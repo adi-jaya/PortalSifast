@@ -45,6 +45,7 @@ use App\Http\Controllers\Api\WebOfficial\WebOfficialPromoAdminController;
 use App\Http\Controllers\Api\WebOfficial\WebOfficialPromoController;
 use App\Http\Controllers\Api\WebOfficial\WebOfficialRoomAdminController;
 use App\Http\Controllers\Api\WebOfficial\WebOfficialRoomController;
+use App\Http\Controllers\Api\WebOfficial\WebOfficialRujukanFaskesController;
 use App\Http\Controllers\Api\WorkNoteController;
 use App\Models\TicketCategory;
 use App\Models\TicketPriority;
@@ -202,6 +203,14 @@ Route::prefix('rekanan')->group(function () {
 Route::post('kritik-saran', [WebOfficialFeedbackController::class, 'store'])
     ->middleware('throttle:kritik-saran');
 Route::get('service-units', [WebOfficialFeedbackController::class, 'serviceUnits']);
+
+Route::post('rujukan-faskes', [WebOfficialRujukanFaskesController::class, 'store'])
+    ->middleware('throttle:5,1');
+
+Route::prefix('portal')->group(function () {
+    Route::post('/rujukan-faskes', [WebOfficialRujukanFaskesController::class, 'store'])
+        ->middleware('throttle:5,1');
+});
 
 Route::get('bio-links', WebOfficialBioLinkController::class);
 
