@@ -57,6 +57,11 @@ graph TB
 * Formulir penerimaan aspirasi pasien website.
 * Dilindungi rate limiter khusus `RateLimiter::for('kritik-saran')` (maksimal 5 request per jam per alamat IP) untuk mencegah bot spam.
 
+### G. Gateway Permintaan Rujukan Masuk FASKES (`WebOfficialRujukanFaskesController`)
+* Endpoint penerimaan rujukan pasien gawat darurat dari faskes perujuk (FKTP / Puskesmas / Klinik).
+* Berinteraksi langsung ke database SIMRS `sik` (`dbsimrs.permintaan_rujukan_faskes`) dengan penomoran unik atomik (`RF-YYYYMMDD-XXXX`), MySQL named mutex locks (`GET_LOCK`), serta proteksi anti-spam ganda (honeypot `_hp_code` dan durasi pengisian `_form_time`).
+* Dokumentasi teknis lengkap: [RUJUKAN-MASUK-FASKES-API.md](../RUJUKAN-MASUK-FASKES-API.md).
+
 ---
 
 ## 3. Integrasi Feed Otomatis Eksternal
